@@ -12,11 +12,11 @@ and Master-Repo `starter/v3/V3-SPEC.md`.
 | 2 | Repo layout; qrcode.js, 12 fonts, 3 icons vendored from v2 unchanged; app shell stubs (index.html, app.js, styles.css); SW template; package.json (jsdom, ajv); SessionStart hook runs `npm ci` | done |
 | 3 | `schema/` (dataset, era-file, event; JSON Schema 2020-12) + `tools/build.py` (stitch, event merge on issueId, derived 13-digit keys + 9-digit altKey, validation, credits + creator index, id stability, content-hash stamping of data.js / sw.js / manifest.json, `--check`); root starter dataset | done |
 | 4 | Fixtures: `basic` (invented franchise, 5 eras in 5 per-era files, 2 bands, 61 rows incl. #0/#-1/#½/#1.5/Annual/#1,000,000, special-character and very long titles, same-number volumes, flashback via sortDate, graphic novel, game, TV episode, ALT track, GAPNOTE/RENUM, one event with merged + migrated-id + placed chapters, credits with split + overrides + mononym), `no-periods` (same data, no bands), `broken/*` (20 one-error cases + a valid base) | done |
-| 5 | Harness skeleton | — |
+| 5 | Harness: `test/run.js` (fails on any failure, any crash, or zero assertions) + 9 suites: runner gate, schema (ajv vs every fixture; schema/build issueId agreement), build (3 datasets, keys, determinism, `--check`, id stability, 64-era stress, universal strand), identity, credits, events, validation (20 broken cases, field-order shuffle), shell (real index.html in jsdom), guards (listeners, one token block, zero !important, sw.js evaluated, duplicate functions, franchise strings, precache paths). Guards mutation-checked. | done |
 | 6 | GitHub Actions workflow | — |
 | 7 | Closing checkpoint | — |
 
-**Harness assertion count:** no harness yet.
+**Harness assertion count:** 307 assertions, 0 failed (9 suites).
 
 ## Decisions locked (session 1)
 - Sort key `RRRR·YYYYMM·NNN`, 13 digits; first era rank 5000, spacing 10; derived by the build, never hand-written; `NNN` assigned by the build.
