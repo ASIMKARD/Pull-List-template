@@ -11,7 +11,7 @@ and Master-Repo `starter/v3/V3-SPEC.md`.
 | 1 | FEATURE-INVENTORY.md (parity gate): 60 F, 31 S, 123 T, 9 L, 13 D, 28 V, 10 CR, 12 FP, 20 XM, 3 X, 6 B lines | done |
 | 2 | Repo layout; qrcode.js, 12 fonts, 3 icons vendored from v2 unchanged; app shell stubs (index.html, app.js, styles.css); SW template; package.json (jsdom, ajv); SessionStart hook runs `npm ci` | done |
 | 3 | `schema/` (dataset, era-file, event; JSON Schema 2020-12) + `tools/build.py` (stitch, event merge on issueId, derived 13-digit keys + 9-digit altKey, validation, credits + creator index, id stability, content-hash stamping of data.js / sw.js / manifest.json, `--check`); root starter dataset | done |
-| 4 | Fixtures (basic, no-periods, broken) | — |
+| 4 | Fixtures: `basic` (invented franchise, 5 eras in 5 per-era files, 2 bands, 61 rows incl. #0/#-1/#½/#1.5/Annual/#1,000,000, special-character and very long titles, same-number volumes, flashback via sortDate, graphic novel, game, TV episode, ALT track, GAPNOTE/RENUM, one event with merged + migrated-id + placed chapters, credits with split + overrides + mononym), `no-periods` (same data, no bands), `broken/*` (20 one-error cases + a valid base) | done |
 | 5 | Harness skeleton | — |
 | 6 | GitHub Actions workflow | — |
 | 7 | Closing checkpoint | — |

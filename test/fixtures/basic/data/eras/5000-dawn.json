@@ -1,0 +1,399 @@
+{
+ "$schema": "../../../../../schema/era-file.schema.json",
+ "era": "dawn",
+ "rows": [
+  {
+   "issueId": "fixture-hero-1980-0",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "0",
+   "title": "Fixture Hero (1980) #0",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-01",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-1",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "1",
+   "title": "Fixture Hero (1980) #1",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-02",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ],
+   "seq": 1
+  },
+  {
+   "issueId": "fixture-hero-1980-1-5",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "1.5",
+   "title": "Fixture Hero (1980) #1.5",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-02",
+    "source": "fixture ledger (invented)"
+   },
+   "seq": 2,
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-2",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "2",
+   "title": "Fixture Hero (1980) #2",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-03",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-3",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "3",
+   "title": "Fixture Hero (1980) #3",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-04",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "cameo"
+    }
+   ],
+   "core": true
+  },
+  {
+   "issueId": "fixture-hero-1980-4",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "4",
+   "title": "Fixture Hero (1980) #4",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-05",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ],
+   "credits": {
+    "artists": [
+     "Dorian Vale"
+    ]
+   }
+  },
+  {
+   "issueId": "fixture-hero-1980-5",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "5",
+   "title": "Fixture Hero (1980) #5",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-06",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-6",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "6",
+   "title": "Fixture Hero (1980) #6",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-07",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "cameo"
+    }
+   ],
+   "note": "First appearance of the Ledger."
+  },
+  {
+   "issueId": "fixture-hero-1980-7",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "7",
+   "title": "Fixture Hero (1980) #7",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-08",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-8",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "8",
+   "title": "Fixture Hero (1980) #8",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-09",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-9",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "9",
+   "title": "Fixture Hero (1980) #9",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-10",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "cameo"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-10",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "10",
+   "title": "Fixture Hero (1980) #10",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-11",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ],
+   "credits": {
+    "writers": [
+     "Fen Larkspur"
+    ]
+   }
+  },
+  {
+   "issueId": "fixture-hero-1980-11",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "11",
+   "title": "Fixture Hero (1980) #11",
+   "arc": "origins",
+   "date": {
+    "cover": "1980-12",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-12",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "12",
+   "title": "Fixture Hero (1980) #12",
+   "arc": "origins",
+   "date": {
+    "cover": "1981-01",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "cameo"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-half",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "½",
+   "title": "Fixture Hero (1980) #½",
+   "arc": "origins",
+   "date": {
+    "cover": "1981-02",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "SPECIAL_NUMBERING"
+   ],
+   "note": "Mail-away promo issue."
+  },
+  {
+   "issueId": "fixture-hero-1980-annual-1",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "Annual 1",
+   "title": "Fixture Hero (1980) Annual #1",
+   "arc": "origins",
+   "date": {
+    "cover": "1981-06",
+    "source": "fixture ledger (invented)"
+   },
+   "core": true,
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-13",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "13",
+   "title": "Fixture Hero (1980) #13",
+   "arc": "origins",
+   "date": {
+    "cover": "1981-07",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "fixture-hero-1980-14",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "14",
+   "title": "Fixture Hero (1980) #14",
+   "arc": "origins",
+   "date": {
+    "cover": "1981-08",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "fixture-hero-1980-1000000",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "1,000,000",
+   "title": "Fixture Hero (1980) #1,000,000",
+   "arc": "origins",
+   "date": {
+    "cover": "1982-11",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "SPECIAL_NUMBERING"
+   ],
+   "note": "A one-off far-future issue."
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "id": "ev",
+ "name": "Ev",
+ "chapters": [
+  {
+   "issueId": "Ev #1",
+   "title": "Ev (1990) #1",
+   "date": {
+    "cover": "1990-03",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 1,
+   "role": "core",
+   "relevant": []
+  }
+ ]
+}
