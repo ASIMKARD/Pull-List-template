@@ -9,7 +9,7 @@ and Master-Repo `starter/v3/V3-SPEC.md`.
 |---|---|---|
 | 0 | `main` created and default; session branch; CLAUDE.md (read-only rule, John's standing rule, v2 traps) | done |
 | 1 | FEATURE-INVENTORY.md (parity gate): 60 F, 31 S, 123 T, 9 L, 13 D, 28 V, 10 CR, 12 FP, 20 XM, 3 X, 6 B lines | done |
-| 2 | Repo layout, vendored qrcode.js / fonts / icons | — |
+| 2 | Repo layout; qrcode.js, 12 fonts, 3 icons vendored from v2 unchanged; app shell stubs (index.html, app.js, styles.css); SW template; package.json (jsdom, ajv); SessionStart hook runs `npm ci` | done |
 | 3 | dataset schema + `tools/build.py` | — |
 | 4 | Fixtures (basic, no-periods, broken) | — |
 | 5 | Harness skeleton | — |

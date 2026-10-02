@@ -1,0 +1,34 @@
+/* Pull List template v3 — styles.
+   ONE colour-token block (the :root rule below) is the single source of colour.
+   Skins and eras derive from these tokens (session 4). Zero !important. */
+:root {
+  --paper: #f4f2ec;
+  --card: #ffffff;
+  --ink: #1b1d24;
+  --ink-soft: #5a5d68;
+  --line: #d9d6cc;
+  --accent: #2f5d9e;
+  --accent-ink: #ffffff;
+  --radius: 10px;
+  --gap: 10px;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-display: 'Anton', Impact, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+[hidden] { display: none; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); }
+.phead { padding: 16px; }
+.ptitle { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: .02em; }
+.pmeta { margin: 4px 0 0; color: var(--ink-soft); font-size: 13px; }
+.loading { padding: 24px 16px; color: var(--ink-soft); }
+.era { margin: 0 16px var(--gap); }
+.era-head {
+  display: flex; gap: var(--gap); align-items: baseline; width: 100%;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--card); color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.ename { font-weight: 600; }
+.eyears, .ecount { color: var(--ink-soft); font-size: 13px; }
+.ecount { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { * { transition: none; animation: none; } }
