@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 603 assertions, 0 failed, 16 suites (end of session 2, after John's two closing fixes).
+**Harness:** 617 assertions, 0 failed, 16 suites (end of session 2, after John's closing fixes and the format decision).
 Session 1 ended at 307; CI green on every run.
 
 ---
@@ -163,8 +163,8 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
 - The review button moves to session 3 with its editor.
 - **Always land collapsed (closing fix 1).** Saved filters persist, but every boot lands collapsed. Matches auto-expand only after a search or filter change made during the current visit.
 - **Banner maths: plan always, browsing when active (closing fix 2).** Filters come in three kinds:
-  - **Plan** (depth tier, mandatory only, hide skipped, ALT; later Essential/Complete): progress, time left and finish-by always follow them.
-  - **Browse** (search, creator, era, type, format, character): while any is active, banners and header count only that view, with a "filtered" marker, and revert when it is cleared. Format is classed as browse alongside type.
+  - **Plan** (depth tier, mandatory only, hide skipped, ALT, **format**; later Essential/Complete): progress, time left and finish-by always follow them. Format moved here from browse: **decided by John, 2 Oct**.
+  - **Browse** (search, creator, era, type, character): while any is active, banners and header count only that view, with a "filtered" marker, and revert when it is cleared.
   - **Display-only** (unread only, order): never change a number.
   - Finish-by stays cumulative in reading order in every case. "Showing N of M" counts the list against the whole view.
   - Tested in `96-figures`; each rule was checked by putting the old behaviour back (16 / 2 / 3 failures).

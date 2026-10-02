@@ -32,7 +32,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-9 | Row subnote shown under the title when a note exists and isn't a FB/ALT popover | S2 | present (90-render) |
 | F-10 | Period band heads: name, years label, blurb intro, done/total count | S2 | present (90-render: name, years label, intro, read count) |
 | F-11 | Era heads: name, "cont." when an era recurs, intro once, done/total count; arc heads: name ("· cont."), year · title meta, blurb (suppressed when equal to era intro) | S2 | present (90-render: cont., credits, intro once) |
-| F-12 | Counts reflect the current filters (tallyEras counts only visible rows) | S2 | re-express → present: plan filters always count, browse filters count while active (marked "filtered"), display-only never (96-figures) |
+| F-12 | Counts reflect the current filters (tallyEras counts only visible rows) | S2 | re-express → present: plan filters (tier, mandatory, hide skipped, ALT, format) always count; browse filters (search, creator, era, type, character) count while active, marked "filtered"; display-only (unread, order) never (96-figures) |
 | F-13 | Empty bands/eras/arcs hide under a filter; "Nothing matches these filters." empty state | S2 | present (92-filters: empty bands/eras hide, empty state) |
 | F-14 | Global progress: count, %, bar, `aria-valuenow`; progress mode combined vs per medium | S2 | present — combined progress (90-render, 95-pace); per-medium mode S3 |
 | F-15 | Progress header (phead): title, offline-edition line, strapline + build tag, bar, "n / N read", days remaining | S2 | present (90-render: title, strapline, build, bar, n/N, time left, finish-by) |

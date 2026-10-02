@@ -1,7 +1,7 @@
 /* John's closing fixes for session 2 (2 Oct):
    1. every boot lands collapsed, whatever filters were saved; only a change
       made during the visit auto-expands matches;
-   2. banner/header figures: PLAN filters always count, BROWSE filters count
+   2. banner/header figures: PLAN filters (incl. format) always count, BROWSE filters count
       while active (marked "filtered"), DISPLAY-ONLY filters never count.
       Finish-by stays cumulative in reading order in every case. */
 'use strict';
@@ -90,6 +90,17 @@ module.exports = async function (t) {
   expectFig('plan: alternate stories off', fig(i => !(D.issues[i][6] & D.flagBits.ALT), marks));
   t.ok('plan: ALT off is not marked as filtered', !read().marked);
   $('#fsec-story .chip[data-k="alt"]').click();
+  // format is a PLAN filter (decided 2 Oct): figures follow it, never marked "filtered"
+  const comic = D.media.indexOf('comic'), game = D.media.indexOf('game');
+  $(`#fsec-story .chip[data-k="media"][data-v="${game}"]`).click();
+  expectFig('plan: format = Games', fig(i => D.issueMedium[i] === game, marks));
+  t.ok('plan: format is not marked as filtered', !read().marked);
+  $(`#fsec-story .chip[data-k="media"][data-v="${game}"]`).click();
+  $(`#fsec-story .chip[data-k="media"][data-v="${comic}"]`).click();
+  expectFig('plan: format = Comics', fig(i => D.issueMedium[i] === comic, marks));
+  t.ok('plan: format = Comics is not marked as filtered', !read().marked);
+  $(`#fsec-story .chip[data-k="media"][data-v="${comic}"]`).click();
+  expectFig('plan: format cleared, figures revert', base);
   $('#fsec-reading .chip[data-k="hideSkip"]').click();
   expectFig('plan: hide skipped', fig(i => marks[D.ids[i]] !== 'skip', marks));
   t.ok('plan: hide skipped drops the "skipped" note from the header', !/skipped/.test($('#pprog .pcount').textContent));

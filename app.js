@@ -214,16 +214,16 @@
      FILTERS
      ====================================================================== */
   /* Three kinds of filter (decided 2 Oct):
-     - PLAN   (depth tier, mandatory only, hide skipped, ALT; Essential/Complete):
+     - PLAN   (depth tier, mandatory only, hide skipped, ALT, format; Essential/Complete):
               progress, time left and finish-by ALWAYS follow these.
-     - BROWSE (search, creator, era, type, format, character): while any is
+     - BROWSE (search, creator, era, type, character): while any is
               active, banners and header count only that view, marked "filtered".
      - DISPLAY-ONLY (unread only, order): never change any number. */
   function browsing() {
-    return !!(F.q || F.creator || F.eras.length || F.types.length || F.media.length || F.strands.length);
+    return !!(F.q || F.creator || F.eras.length || F.types.length || F.strands.length);
   }
   function narrowing() {
-    return !!(browsing() || F.tier < D.tiers.length - 1 || F.unread || F.hideSkip || F.mandatory || !F.alt);
+    return !!(browsing() || F.tier < D.tiers.length - 1 || F.media.length || F.unread || F.hideSkip || F.mandatory || !F.alt);
   }
   function planOk(i) {
     var r = D.issues[i];
@@ -233,6 +233,7 @@
     if (D.issueTier[i] > F.tier) return false;
     if (F.mandatory && !r[4]) return false;
     if (F.hideSkip && stateOf(i) === 'skip') return false;
+    if (F.media.length && F.media.indexOf(D.issueMedium[i]) === -1) return false;
     return true;
   }
   function browseOk(i) {
@@ -243,7 +244,6 @@
     if (F.q && HAY[i].indexOf(F.q.toLowerCase()) === -1) return false;
     if (F.creator && CREATORS_HAY[i].indexOf(F.creator.toLowerCase()) === -1) return false;
     if (F.types.length && F.types.indexOf(r[3]) === -1) return false;
-    if (F.media.length && F.media.indexOf(D.issueMedium[i]) === -1) return false;
     return true;
   }
   /* What the list shows: plan + browse + display-only. */
