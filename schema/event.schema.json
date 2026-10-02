@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pull-list/schema/event.schema.json",
+  "title": "Pull List canonical event (events/<id>.json)",
+  "description": "One crossover event, defined once and copied into every tracker it touches. Chapters carry no tracker key and no progress id: each tracker's build places them in its own timeline, merging on issueId.",
+  "type": "object",
+  "required": ["id", "name", "chapters"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "chapters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["issueId", "title", "date", "order", "role", "relevant"],
+        "additionalProperties": false,
+        "properties": {
+          "issueId": { "$ref": "dataset.schema.json#/$defs/issueId" },
+          "series": { "type": "string" },
+          "vol": { "type": "string", "pattern": "^[0-9]{4}$" },
+          "num": { "type": "string" },
+          "title": { "type": "string", "minLength": 1 },
+          "date": { "$ref": "dataset.schema.json#/$defs/row/properties/date" },
+          "sortDate": { "$ref": "dataset.schema.json#/$defs/date" },
+          "seq": { "type": "integer", "minimum": 0 },
+          "order": { "type": "integer", "minimum": 1, "description": "Position in the event's reading order." },
+          "role": { "enum": ["core", "tie-in"] },
+          "relevant": { "type": "array", "items": { "type": "string" }, "description": "Trackers that consider this chapter essential." },
+          "credits": { "$ref": "dataset.schema.json#/$defs/credits" },
+          "presence": { "$ref": "dataset.schema.json#/$defs/presence" },
+          "medium": { "type": "string" },
+          "type": { "type": "string" },
+          "note": { "type": "string" },
+          "flags": { "$ref": "dataset.schema.json#/$defs/row/properties/flags" }
+        }
+      }
+    }
+  }
+}
