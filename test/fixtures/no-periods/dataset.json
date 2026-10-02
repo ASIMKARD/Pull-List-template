@@ -16,8 +16,11 @@
    "b": "Published"
   },
   "storage": {
-   "legacyPrefix": "fixture-old:v1:",
-   "legacyQrPrefix": "FIXT1:"
+   "legacy": {
+    "prefix": "fixture-old:v1:",
+    "format": "v2",
+    "qrPrefix": "FIXT1:"
+   }
   },
   "strictCredits": false,
   "eventRelevance": "fixture"

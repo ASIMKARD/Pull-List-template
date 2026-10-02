@@ -81,7 +81,7 @@ module.exports = async function (t) {
     if (e.status === 0) {
       const app = boot(e.out);
       await wait(20);
-      const name = app.document.querySelector('.era .ename');
+      const name = app.document.querySelector('.era .bname');
       t.ok('markup in data renders as text (no <b> element created)', name && !name.querySelector('b'));
       t.ok('special characters survive intact in the DOM', name && name.textContent === ds.eras[0].name);
       t.ok('no injected element runs (no <img>, no handler fired)', !app.document.querySelector('#app img') && !app.window.__pwned);

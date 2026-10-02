@@ -52,7 +52,7 @@ node test/run.js identity      # one suite
   - Missing credits give a warning with a coverage %. `strictCredits` makes them fail: on for new builds, off for migrations.
 - **Per-series ordering** (taken from `verify.py`): in the order the app shows, issue numbers within one series, volume and subseries never go backwards. ALT and `SPECIAL_NUMBERING` rows are exempt.
 - **Content hash** stamps the build tag, the SW cache name (`<key>-<hash>`) and `data.js`. Nothing is bumped by hand.
-- **Storage namespace** is `<franchise.key>:v3:`. Old trackers' keys come in through `franchise.storage.legacyPrefix`.
+- **Storage namespace** is `<franchise.key>:v3:`. Old trackers' keys come in through `franchise.storage.legacy` ({prefix, format}).
 - **Tooling:** the app is served from the repo root; the build is Python (stdlib only); the harness is Node 22 + jsdom; ajv validates fixtures against `schema/`.
 - **`data.js` layout.** Issue rows keep v2's first nine positions (`key, title, arc, type, mandatory, core, flags, note, altKey`). Everything else lives in index-aligned parallel arrays: `ids`, `issueIds`, `issueEra`, `issuePeriod`, `issueMedium`, `issueTier`, `issueImportance`, `issueEvent`, `issueCompleteOnly`, `issuePresence`, `issueWriters`, `issueArtists`.
 
@@ -74,7 +74,7 @@ Read every S2 line in `FEATURE-INVENTORY.md`, then replace the `app.js` stub:
 3. **Whole-app delegation** (V-1). One click handler covers marks, bookmarks, notes, banners and the filter panel. Stay at or under 12 listeners; the guard already enforces it.
 4. **Marks.** Four states through **one** mark function for every surface (F-5, D-1, B-3), medium-aware labels (F-6), inert rows (F-7), and badges including `.b.rv` (F-8, D-4).
 5. **Filter panel structure** (FP-1…FP-10): five collapsible sections with summaries, removable chips, "Showing N of M", and the open state remembered. Plus filters and search including creator names (F-19, CR-9), the order chips (F-20, F-21), and empty-band hiding (F-13).
-6. **Storage.** The shim and save-flush are in place. Add the progress model keyed on `id`, settings in ONE store, and the `legacyPrefix` migration hook (V-16).
+6. **Storage.** The shim and save-flush are in place. Add the progress model keyed on `id`, settings in ONE store, and the `storage.legacy` migration hook (V-16).
 7. **Navigation:** `jumpToIssue` and next-unread (F-27, F-29, D-10).
 8. **Tests.** Port the S2 `T-*` assertions into new suites as each feature lands, and report the count after every change.
 
@@ -90,7 +90,7 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
    - Pace maths: time left from minutes per issue; finish-by from issues per week.
 2. **Storage.**
    - One store: `<key>:v3:progress` (keyed on `id`), `:settings` (filters, pace and the filter panel's open sections included), and `:reviews`.
-   - Legacy hook: v2-format progress is read from `franchise.storage.legacyPrefix` on first boot, matched to `id`, and the count reported in a toast.
+   - Legacy hook: v2-format progress is read from `franchise.storage.legacy` ({prefix, format}) on first boot, matched to `id`, and the count reported in a toast.
 3. **Rendering**, all string templates through `escapeHtml` / `escapeAttr`.
    - Progress header: bar, n/N, time left, finish-by, next unread.
    - Goal banners: name, years, read count, bar, time left, ✓ when complete, finish-by on top-level banners.

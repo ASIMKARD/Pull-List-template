@@ -33,8 +33,17 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "legacyPrefix": { "type": "string", "description": "Old tracker's localStorage prefix, e.g. 'spidey:v1:'. Migration hook." },
-            "legacyQrPrefix": { "type": "string", "description": "Old tracker's QR/sync code prefix." }
+            "legacy": {
+              "type": "object",
+              "required": ["prefix", "format"],
+              "additionalProperties": false,
+              "description": "Migration hook: where the tracker's previous version kept its progress. Read-only — the old keys are never modified (the -archive site shares this origin).",
+              "properties": {
+                "prefix": { "type": "string", "minLength": 1, "description": "Old localStorage key prefix, e.g. 'absolute:v1:'." },
+                "format": { "enum": ["v2"], "description": "Old storage layout. 'v2' = template v2 ({p:{key:state}, b:[keys]} + reviews keyed by issue). Add formats per tracker at its migration, after inspecting its real stored data." },
+                "qrPrefix": { "type": "string", "description": "Old QR / sync-code prefix (import arrives in session 3)." }
+              }
+            }
           }
         },
         "strictCredits": { "type": "boolean", "description": "Missing credits fail the build (on for new builds, off for migrations)." },

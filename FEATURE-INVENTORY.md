@@ -309,7 +309,7 @@ installed app once online.
 | V-13 | Era-ranked compound sort keys, derived; Alt Sort Key = publication order | S1 | present (20-build, 30-identity) |
 | V-14 | ALT continuity rows build, order, and are skipped by the per-series check (replaces v2's story band) | S1 data / S2 UI | present — data (30-identity: ALT order + per-series skip); UI S2 |
 | V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | todo |
-| V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacyPrefix`) | S2 | present — namespacing (70-shell); legacyPrefix migration S2/S3 |
+| V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacy: {prefix, format}`) | S2 | present — namespacing (70-shell); legacy migration S2 |
 | V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present — hash (20-build, 80-guards); icons/manifest polish S4 |
 | V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | todo |
 | V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | present (80-guards: sw.js run in a vm, install/activate/fetch exercised) |
@@ -385,7 +385,7 @@ installed app once online.
 | ID | Requirement | Session | Status |
 |---|---|---|---|
 | X-1 | Display mode "layout C": per-row arc labels with no arc headers (Archie's arrangement) | S3 | todo |
-| X-2 | Import old-tracker backups and QR codes via `storage.legacyPrefix` (and the old QR prefix) | S3 | todo |
+| X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | todo |
 | X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | todo |
 
 ## B — v2 bugs found while inventorying (don't port them)
