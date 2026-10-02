@@ -98,7 +98,7 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
    - An era's arcs and rows render on first expand only.
    - Arc heads: name, year and title, blurb, credits as text.
    - Rows: four-state mark, medium labels, subnote, badges (core, flashback/ALT note popover, bookmark, lookup link); inert rows carry no mark.
-4. **Delegation.** Five listeners this session: click, input, change, pagehide, visibilitychange. Budget for the whole app: S3 adds touch ×3, S4 adds keydown, online/offline and the install prompt, landing exactly on 12, so S4 may need one shared handler. A single `setMark(id, state)` path serves every surface (closes D-1 and B-3).
+4. **Delegation.** Listener budget per change 4 below (the whole app ends at 10). A single `setMark(id, state)` path serves every surface (closes D-1 and B-3).
 5. **Filter panel**, per the approved mockup.
    - A Filters bar at the top of the checklist, opening inline.
    - Five collapsible sections with summaries:
@@ -112,6 +112,17 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
    - Empty bands hide.
 6. **Navigation.** `jumpToIssue` opens collapsed ancestors and scrolls; next unread; a toast replaces `alert()`.
 7. **Tests.** Suites 90-render, 91-marks, 92-filters, 93-storage, 94-navigation and 95-pace, plus a 5,000-row stress check (landing renders zero rows). All S2 `T-*` lines get ported. Inventory and PROGRESS are updated after each step.
+
+**Changes from John's approval (2 Oct):**
+1. **Search and filters open their matches.** While a search or any narrowing filter is active, the bands, eras and arcs with visible matches render and expand automatically, and everything else stays hidden. Clearing returns to the collapsed landing. Still lazy: only eras with matches render.
+2. **Safe migration.**
+   - The format is declared as `storage.legacy: {prefix, format}`; `"v2"` is implemented now.
+   - The reader is strictly read-only: it never deletes or modifies old keys, because the `-archive` site shares this origin.
+   - It copies marks, bookmarks and reviews. Reviews are mapped to arcs; unmatched ones are reported and kept, never dropped.
+   - It runs once, recorded by a flag in the v3 store, and reports counts in a toast.
+   - Session 3 adds a Settings "Import from previous version" action that re-runs it, filling gaps without overwriting newer v3 marks.
+3. **Cumulative finish-by.** A top-level banner's date counts the unread (non-skipped) issues in that band plus every band before it in reading order, divided by issues per week. The header covers the whole tracker; completed bands show ✓.
+4. **No online/offline listeners.** `navigator.onLine` is checked when needed. Budget: S2 click, input, pagehide, visibilitychange (4); S3 touch ×3 + change (8); S4 keydown + install prompt (10). That leaves headroom under 12.
 
 **Moved to S3:**
 - The review button (T-53 / D-4), with the review editor, so no control ships that does nothing.
