@@ -82,7 +82,8 @@ function boot(dataDir, opts) {
         listeners.push(type);
         return orig.apply(this, arguments);
       };
-      w.Element.prototype.scrollIntoView = function () {};
+      w.Element.prototype.scrollIntoView = function () { w.__scrolledTo = this; };
+      if (opts.now) { const fixed = opts.now; w.Date.now = () => fixed; }
       w.scrollTo = function () {};
       if (opts.storage) for (const k of Object.keys(opts.storage)) w.localStorage.setItem(k, opts.storage[k]);
     }
@@ -92,5 +93,52 @@ function boot(dataDir, opts) {
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
+/* Type into a search box the way a person does: set the value, fire input,
+   wait out the 180 ms debounce. */
+async function typeInto(app, selector, value) {
+  const el = app.document.querySelector(selector);
+  el.value = value;
+  el.dispatchEvent(new app.window.Event('input', { bubbles: true }));
+  await wait(260);
+}
+
+/* A generated big dataset: nEras eras x perEra rows (5,000 rows by default). */
+let stressCache = null;
+function stress(nEras, perEra) {
+  nEras = nEras || 40; perEra = perEra || 125;
+  if (stressCache && stressCache.key === nEras + 'x' + perEra) return stressCache;
+  const dir = tmpdir('stress5k');
+  const eras = [], arcs = [], rows = [];
+  for (let e = 0; e < nEras; e++) {
+    eras.push({ id: 'era-' + e, name: 'Era ' + e, rank: 5000 + 10 * e, years: String(1960 + e) });
+    arcs.push({ id: 'arc-' + e, name: 'Arc ' + e, era: 'era-' + e, strands: ['Main'], type: 'MAIN', mo: 'M', tier: 'All',
+                credits: { writers: ['Writer Number' + e], artists: ['Artist Number' + e] } });
+    for (let n = 1; n <= perEra; n++) {
+      const series = 'Series' + e;
+      rows.push({ issueId: 'series' + e + '-' + (1960 + e) + '-' + n, series, vol: String(1960 + e), num: String(n),
+                  title: series + ' (' + (1960 + e) + ') #' + n, era: 'era-' + e, arc: 'arc-' + e,
+                  date: { cover: (1600 + e * 11 + Math.floor((n - 1) / 12)) + '-' + String(((n - 1) % 12) + 1).padStart(2, '0'), source: 'generated' } });
+    }
+  }
+  writeJSON(path.join(dir, 'dataset.json'), {
+    schemaVersion: 1, franchise: { key: 'big', wordmark: 'Big', title: 'Big', strapline: '', span: '', theme: '#000000' },
+    eras, strands: ['Main'], types: ['MAIN'], tiers: ['All'], media: ['comic'], arcs, rows });
+  const b = build(path.join(dir, 'dataset.json'), { label: 'stress5k-out' });
+  stressCache = { key: nEras + 'x' + perEra, out: b.out, status: b.status, stderr: b.stderr, rows: nEras * perEra, eras: nEras, perEra };
+  return stressCache;
+}
+
+/* Build the basic fixture once per process. */
+let basicCache = null;
+function basic() {
+  if (!basicCache) basicCache = build(path.join(FIX, 'basic', 'dataset.json'), { label: 'basic-shared' });
+  return basicCache;
+}
+let npCache = null;
+function noPeriods() {
+  if (!npCache) npCache = build(path.join(FIX, 'no-periods', 'dataset.json'), { label: 'np-shared' });
+  return npCache;
+}
+
 module.exports = { ROOT, FIX, BUILD, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
-                   validateIssueIds, boot, wait };
+                   validateIssueIds, boot, wait, typeInto, stress, basic, noPeriods };

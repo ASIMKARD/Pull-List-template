@@ -118,6 +118,14 @@ module.exports = async function (t) {
     t.ok(f + ': braces balance under the scanner', r.balanced);
     t.ok(f + ': no function is defined twice (the later copy silently wins)', r.dups.length === 0, r.dups.join(', '));
   }
+  // a var/let/const with a function's name silently replaces the function (hoisting)
+  for (const f of ['app.js']) {
+    const code = codeOnly(read(f));
+    const fns = new Set((code.match(/\bfunction\s+([A-Za-z_$][\w$]*)/g) || []).map(x => x.split(/\s+/)[1]));
+    const vars = (code.match(/\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)/g) || []).map(x => x.split(/\s+/)[1]);
+    const clash = [...new Set(vars.filter(v => fns.has(v)))];
+    t.ok(f + ': no variable shares a name with a function (it would replace it)', clash.length === 0, clash.join(', '));
+  }
   {
     const r = duplicateFunctions('(function(){ function a(){} function b(){ function a(){} } function a(){} })();');
     t.ok('the duplicate scanner itself catches a same-scope duplicate and ignores a nested one',

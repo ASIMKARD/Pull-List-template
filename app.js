@@ -52,9 +52,9 @@
     ID_I[D.ids[i0]] = i0;
     ERA_ROWS[D.issueEra[i0]].push(i0);
     if (r0[6] & FL.ALT) HAS_ALT = true;
-    var names = D.issueWriters[i0].concat(D.issueArtists[i0]).map(function (c) { return D.creators[c].n; }).join(' ');
-    CREATORS_HAY[i0] = names.toLowerCase();
-    HAY[i0] = (r0[1] + ' ' + arc0.n + ' ' + (r0[7] || '') + ' ' + names).toLowerCase();
+    var credited = D.issueWriters[i0].concat(D.issueArtists[i0]).map(function (c) { return D.creators[c].n; }).join(' ');
+    CREATORS_HAY[i0] = credited.toLowerCase();
+    HAY[i0] = (r0[1] + ' ' + arc0.n + ' ' + (r0[7] || '') + ' ' + credited).toLowerCase();
   }
   function isInert(i) { return !!(D.issues[i][6] & INERT); }
   function mediumOf(i) { return D.media[D.issueMedium[i]] || 'comic'; }
@@ -259,6 +259,7 @@
      ====================================================================== */
   var open = { b: {}, e: {} };          // session-only: never persisted
   var rendered = {};                     // era index -> body rendered
+  var wasNarrowing = false;              // leaving a search/filter returns to the collapsed landing
 
   function statsHtml(t, finish) {
     var g = goal(t), left = timeLeft(t), done = remaining(t) === 0 && t.total > 0;
@@ -372,6 +373,8 @@
   function renderList() {
     var S = computeStats(), fins = finishMap(S), filt = narrowing();
     rendered = {};
+    if (!filt && wasNarrowing) open = { b: {}, e: {} };
+    wasNarrowing = filt;
     var visEra = D.eras.map(function () { return !filt; }), any = false;
     if (filt) {
       for (var i = 0; i < N; i++) if (matches(i)) { visEra[D.issueEra[i]] = true; any = true; }

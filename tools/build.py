@@ -99,7 +99,7 @@ def num_value(num):
 
 def creator_norm(name):
     t = unicodedata.normalize('NFKD', name).encode('ascii', 'ignore').decode().lower()
-    return re.sub(r'[^a-z]', '', t)
+    return re.sub(r'[^a-z0-9]', '', t)
 
 
 # --------------------------------------------------------------------------
