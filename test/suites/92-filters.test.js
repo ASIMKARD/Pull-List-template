@@ -165,4 +165,21 @@ module.exports = async function (t) {
   await typeInto(big, '#q', '');
   t.ok('5,000 rows: clearing returns to zero rendered rows', d.querySelectorAll('.row').length === 0);
   big.window.close();
+
+  // ---- saved filters are stored by name, so a dataset change cannot shift them ----
+  {
+    const ds = boot(b.out, { storage: { [ns + 'settings']: JSON.stringify({ v: 3, filters: {
+      eras: ['echo', 'era-that-was-removed'], strands: ['Kestrel'], types: ['GAME'], media: ['game'], tier: 'Essential', mandatory: true } }) } });
+    await wait(20);
+    const dd = ds.document;
+    dd.querySelector('[data-act="panel"]').click();
+    const chipsTxt = [...dd.querySelectorAll('#fchips .chip')].map(c => c.textContent);
+    t.ok('stored filters are restored by name (era, strand, type, medium, tier)',
+         ['Echo', 'Kestrel', 'game', 'Games', 'Essential tier', 'Mandatory only'].every(x => chipsTxt.some(c => c.startsWith(x))), chipsTxt.join(' | '));
+    t.ok('a stored name that no longer exists is dropped, not mapped to another era', chipsTxt.filter(c => /^Echo|^Era/.test(c)).length === 1);
+    ds.window.dispatchEvent(new ds.window.Event('pagehide'));
+    const sf = JSON.parse(ds.window.localStorage.getItem(ns + 'settings')).filters;
+    t.ok('filters are written back as names, never indices', sf.eras.join() === 'echo' && sf.strands.join() === 'Kestrel' && sf.tier === 'Essential');
+    ds.window.close();
+  }
 };

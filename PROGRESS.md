@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 307 assertions, 0 failed, 9 suites. That count holds locally and in
-GitHub Actions run #1 on `claude/keen-euler-6qyl31` (commit `0670b5a`).
+**Harness:** 527 assertions, 0 failed, 15 suites (end of session 2).
+Session 1 ended at 307; CI green on every run.
 
 ---
 
@@ -127,3 +127,56 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
 **Moved to S3:**
 - The review button (T-53 / D-4), with the review editor, so no control ships that does nothing.
 - Presence grades, the creator picker and the Essential/Complete toggle.
+
+---
+
+## Transfer checkpoint — end of session 2 (core app), 2 Oct 2026
+
+### Done
+- **`app.js`** rewritten as the real core app; string templates only, 4 listeners (click, input, pagehide, visibilitychange).
+  - **Model:** indexes and counts come from data, never the DOM.
+  - **Lands collapsed.** Goal banners show name, years, read count, bar and time left; the header and top-level banners also show the **cumulative** finish-by (✓ when a band is complete).
+  - **Lazy:** an era's rows render only on first open.
+  - **One `setMark` path** updates the row, every banner and the header.
+  - Bookmarks and note popovers; four states with medium-aware labels; inert rows.
+- **Filter panel** per the approved mockup: five collapsible sections with summaries, removable chips, active count, Clear all and "Showing N of M"; open sections remembered.
+  - Search (title, arc, note, creators) and every narrowing filter **open the bands and eras with matches and hide the rest**; clearing returns to the collapsed landing. Still lazy: on 5,000 rows only matching eras render.
+  - Saved filters are stored **by name**, never by index.
+- **Storage:** one namespaced store (`progress`, `settings`, `reviews`).
+  - Read-only legacy migration via `storage.legacy: {prefix, format:"v2"}` copies marks, bookmarks and reviews (mapped to arcs; unmatched kept under `legacy-unmatched`).
+  - It runs once (`settings.migrated`) and toasts the counts.
+  - `window.PullList.importLegacy()` is the session 3 re-run; it fills gaps and never overwrites.
+- **Navigation:** `jumpToIssue` (opens collapsed ancestors, scrolls, flashes, focuses), next unread, and a toast with an action (no `alert()`).
+- **Schema:** `storage.legacy {prefix, format, qrPrefix?}` replaces `legacyPrefix`.
+- **Harness:** 6 new suites (90-render, 91-marks, 92-filters, 93-storage, 94-navigation, 95-pace).
+  - Two new guards: no variable may share a function's name, and every `[hidden]` element must compute to `display:none` against the real stylesheet.
+  - Both were checked by breaking the code on purpose.
+
+### Bugs found and fixed this session
+- Clearing the last filter left auto-opened eras open (now returns to the collapsed landing).
+- `var names` silently replaced `function names()` (the "later one wins" trap, variable form). Now guarded.
+- The idle toast showed as a black bar: `.toast{display:flex}` beat `[hidden]`, which only real-browser screenshots revealed. Fixed by moving layout to an inner wrapper; the jsdom cascade check now catches it.
+- Creator-name normalisation dropped digits ("Writer 1" = "Writer 2"). Now keeps them.
+
+### Decisions recorded this session
+- Pace: both models (see Open items above).
+- The review button moves to session 3 with its editor.
+- Banner counts are goals over the whole view; filters show in "Showing N of M".
+- Filter persistence is by name; search text is session-only.
+
+### Session 3 starts with: features
+Work through every S3 line in `FEATURE-INVENTORY.md`:
+- **Tabs:** Checklist / Reading (stepper + bookmarks) / Reviews / Settings.
+- **Settings sections**, including:
+  - pace controls (presets via `PullList.pacePresets`);
+  - "Import from previous version" (calls `PullList.importLegacy()`);
+  - Essential/Complete toggle;
+  - refresh reminder;
+  - per-medium progress.
+- **Presets** (Save as preset in the panel).
+- **Bulk mark** by band and range with undo that restores prior states (B-2).
+- **Touch:** swipe and long-press, through `setMark`.
+- **Reviews:** per arc (the migration already maps them), plus the review button `.b.rv` (T-53, D-4).
+- **QR sync and backup**, keyed on ids, versioned and tolerant of rows added since (X-3).
+- **Presence filters** with the cameo toggle (FP-5), the creator picker with counts (CR-7), and tappable creator names (CR-8).
+- **Listener budget:** touch ×3 + change brings the total to 8.

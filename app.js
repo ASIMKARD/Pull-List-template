@@ -107,14 +107,32 @@
   settings.events = settings.events || 'essential';
   settings.panelOpen = settings.panelOpen || [];
   var F = defaultFilters();
+  /* Multi-select filters are stored by id/name, never by index: a dataset
+     update that inserts an era or a strand must not shift saved filters onto
+     the wrong ones. Names that no longer exist are dropped. */
+  var FILTER_VOCAB = {
+    eras: D.eras.map(function (e) { return e.id; }), types: D.types, media: D.media, strands: D.strands,
+    tier: D.tiers
+  };
+  function toNames(k, list) { return list.map(function (i) { return FILTER_VOCAB[k][i]; }); }
+  function toIdx(k, list) {
+    return (Array.isArray(list) ? list : []).map(function (n) { return FILTER_VOCAB[k].indexOf(n); })
+      .filter(function (i) { return i !== -1; });
+  }
   (function () {
     var saved = settings.filters || {};
-    PERSISTED_FILTERS.forEach(function (k) { if (saved[k] !== undefined) F[k] = saved[k]; });
-    if (F.tier > D.tiers.length - 1) F.tier = D.tiers.length - 1;
+    PERSISTED_FILTERS.forEach(function (k) {
+      if (saved[k] === undefined) return;
+      if (k === 'tier') { var ti = D.tiers.indexOf(saved.tier); if (ti !== -1) F.tier = ti; }
+      else if (FILTER_VOCAB[k]) F[k] = toIdx(k, saved[k]);
+      else F[k] = !!saved[k];
+    });
   })();
   function saveSettings() {
     settings.filters = {};
-    PERSISTED_FILTERS.forEach(function (k) { settings.filters[k] = F[k]; });
+    PERSISTED_FILTERS.forEach(function (k) {
+      settings.filters[k] = k === 'tier' ? D.tiers[F.tier] : (FILTER_VOCAB[k] ? toNames(k, F[k]) : F[k]);
+    });
     save('settings', settings);
   }
   function saveProgress() { save('progress', progress); }

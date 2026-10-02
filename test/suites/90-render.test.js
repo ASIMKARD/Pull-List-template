@@ -112,6 +112,8 @@ module.exports = async function (t) {
     d4.querySelector('[data-act="expand-all"]').click();
     d4.querySelector('[data-act="collapse-all"]').click();
     t.ok('styles: every hidden element computes to display:none after interaction', leaks().length === 0, leaks().join(', '));
+    d4.querySelector('[data-act="expand-all"]').click();
+    t.ok('rendered markup carries no inline style attributes (B-6)', d4.querySelectorAll('[style]').length === 0);
     a4.window.close();
   }
 };
