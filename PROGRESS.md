@@ -8,7 +8,7 @@ and Master-Repo `starter/v3/V3-SPEC.md`.
 | Step | What | Status |
 |---|---|---|
 | 0 | `main` created and default; session branch; CLAUDE.md (read-only rule, John's standing rule, v2 traps) | done |
-| 1 | FEATURE-INVENTORY.md (parity gate) | — |
+| 1 | FEATURE-INVENTORY.md (parity gate): 60 F, 31 S, 123 T, 9 L, 13 D, 28 V, 10 CR, 12 FP, 20 XM, 3 X, 6 B lines | done |
 | 2 | Repo layout, vendored qrcode.js / fonts / icons | — |
 | 3 | dataset schema + `tools/build.py` | — |
 | 4 | Fixtures (basic, no-periods, broken) | — |
