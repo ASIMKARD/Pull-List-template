@@ -58,7 +58,10 @@ node test/run.js identity      # one suite
 
 ### Open items carried forward
 - **content-visibility (session 4).** Proposed resolution: render an era's rows only when it is first expanded. v3 lands collapsed, so the guard isn't needed and v2's iOS bugs can't occur. Recorded in CLAUDE.md and FEATURE-INVENTORY V-15.
-- **Pace model (session 2).** v2 counts issues per week; X-Men counts minutes per issue (XM-2). Pick one for the goal banners; ask John as a multiple-choice question.
+- **Pace model — DECIDED 2 Oct (John).** Both:
+  - *Minutes per issue* drives a **time left** figure on every banner. Presets are X-Men's: Quick 8, Average 15 (default), Deep dive 25.
+  - *Issues per week* drives a **finish-by** date. Presets are v2's: light 5, steady 12 (default), heavy 25, marathon 50.
+  - Both are settable in Settings. The finish-by date appears in the progress header and on each top-level banner (period bands, or eras when there are no bands); era banners inside a band show time left only.
 - **Franchise-string guard scope.** It covers the shipped template code: `index.html`, `app.js`, `styles.css` and the SW template. `tools/build.py` docstrings quote real `issueId` examples by design.
 - **Absolute pilot (session 5).** It goes into a **fresh repo John creates first**. Stop and ask before any edit outside this repo.
 - **Research-Repo** was attached read-only this session to read `toolkit/verify.py`. Nothing was written to it or to any repo other than this one.
@@ -74,3 +77,42 @@ Read every S2 line in `FEATURE-INVENTORY.md`, then replace the `app.js` stub:
 6. **Storage.** The shim and save-flush are in place. Add the progress model keyed on `id`, settings in ONE store, and the `legacyPrefix` migration hook (V-16).
 7. **Navigation:** `jumpToIssue` and next-unread (F-27, F-29, D-10).
 8. **Tests.** Port the S2 `T-*` assertions into new suites as each feature lands, and report the count after every change.
+
+---
+
+## Session 2 plan (agreed 2 Oct 2026): the core app
+
+Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
+
+1. **Model** (no DOM).
+   - Indexes by era, arc and band.
+   - Counts computed from the model, never the DOM.
+   - Pace maths: time left from minutes per issue; finish-by from issues per week.
+2. **Storage.**
+   - One store: `<key>:v3:progress` (keyed on `id`), `:settings` (filters, pace and the filter panel's open sections included), and `:reviews`.
+   - Legacy hook: v2-format progress is read from `franchise.storage.legacyPrefix` on first boot, matched to `id`, and the count reported in a toast.
+3. **Rendering**, all string templates through `escapeHtml` / `escapeAttr`.
+   - Progress header: bar, n/N, time left, finish-by, next unread.
+   - Goal banners: name, years, read count, bar, time left, ✓ when complete, finish-by on top-level banners.
+   - Lands collapsed; expand state is session-only.
+   - An era's arcs and rows render on first expand only.
+   - Arc heads: name, year and title, blurb, credits as text.
+   - Rows: four-state mark, medium labels, subnote, badges (core, flashback/ALT note popover, bookmark, lookup link); inert rows carry no mark.
+4. **Delegation.** Five listeners this session: click, input, change, pagehide, visibilitychange. Budget for the whole app: S3 adds touch ×3, S4 adds keydown, online/offline and the install prompt, landing exactly on 12, so S4 may need one shared handler. A single `setMark(id, state)` path serves every surface (closes D-1 and B-3).
+5. **Filter panel**, per the approved mockup.
+   - A Filters bar at the top of the checklist, opening inline.
+   - Five collapsible sections with summaries:
+     - Reading: tier, unread, hide skipped, mandatory.
+     - Story: era, type, ALT.
+     - Characters: strands.
+     - Creators: name search.
+     - Order and display: reading/publication (labelled from `dualOrder`) and arc order.
+   - Removable chips, active count, Clear all, "Showing N of M", open state remembered.
+   - Search covers title, arc, note and creators.
+   - Empty bands hide.
+6. **Navigation.** `jumpToIssue` opens collapsed ancestors and scrolls; next unread; a toast replaces `alert()`.
+7. **Tests.** Suites 90-render, 91-marks, 92-filters, 93-storage, 94-navigation and 95-pace, plus a 5,000-row stress check (landing renders zero rows). All S2 `T-*` lines get ported. Inventory and PROGRESS are updated after each step.
+
+**Moved to S3:**
+- The review button (T-53 / D-4), with the review editor, so no control ships that does nothing.
+- Presence grades, the creator picker and the Essential/Complete toggle.
