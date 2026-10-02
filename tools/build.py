@@ -578,8 +578,8 @@ def build(dataset_path, previous_datajs=None):
 
     payload = {
         'schemaVersion': SCHEMA_VERSION,
-        'franchise': {k: fr[k] for k in ('key', 'wordmark', 'title', 'strapline', 'span', 'theme',
-                                          'background', 'searchUrl', 'dualOrder', 'storage')
+        'franchise': {k: canon(fr[k]) for k in ('key', 'wordmark', 'title', 'strapline', 'span', 'theme',
+                                                'background', 'searchUrl', 'dualOrder', 'storage')
                       if k in fr},
         'eras': [{'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
                   'intro': e.get('intro', '')} for e in eras],
@@ -624,7 +624,7 @@ def build(dataset_path, previous_datajs=None):
             'creditsCoverage': coverage,
         },
         'timeline': sorted(range(len(rows)), key=lambda i: (ARC[rows[i]['arc']], rows[i]['_key'])),
-        'legend': ds.get('legend') or [],
+        'legend': [{'term': x.get('term', ''), 'meaning': x.get('meaning', '')} for x in ds.get('legend') or []],
         'maintenance': ds.get('maintenance') or [],
     }
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
@@ -636,6 +636,16 @@ def build(dataset_path, previous_datajs=None):
 # --------------------------------------------------------------------------
 # output
 # --------------------------------------------------------------------------
+def canon(v):
+    """Pass-through objects get sorted keys, so input field order never
+    changes the output (fields are read by name, never by position)."""
+    if isinstance(v, dict):
+        return {k: canon(v[k]) for k in sorted(v)}
+    if isinstance(v, list):
+        return [canon(x) for x in v]
+    return v
+
+
 def read_datajs(path):
     try:
         with open(path, encoding='utf-8') as f:
