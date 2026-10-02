@@ -62,8 +62,8 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-39 | Theme button (default ↔ newsprint), theme-color meta follows | S4 | re-express (skins are CSS-only token sets) |
 | F-40 | Franchise applied from data: document title, wordmark, strapline, theme-color, apple web-app title | S2 | todo |
 | F-41 | Storage shim: `window.storage` → localStorage → in-memory fallback | S2 | todo |
-| F-42 | Debounced 400 ms writes, flushed on `pagehide` / `visibilitychange` hidden | S2 | todo |
-| F-43 | Namespaced storage `<key>:v1:{progress,settings,filters,reviews}` | S2 | todo |
+| F-42 | Debounced 400 ms writes, flushed on `pagehide` / `visibilitychange` hidden | S2 | present (70-shell: debounce 400ms, pagehide + visibilitychange flush) |
+| F-43 | Namespaced storage `<key>:v1:{progress,settings,filters,reviews}` | S2 | present (70-shell: keys `<key>:v3:*`) |
 | F-44 | Keymap migration: `D.keymap` moves marks for re-keyed rows once, toasts the count | S2 | re-express (stable `id` + `retiredIds`; legacy import X-2) |
 | F-45 | Saved-filter migration when the strand roster grows (new strands default on) | S2 | todo |
 | F-46 | Layout-vocabulary migration (`lv`) | — | dropped: v3 has one layout |
@@ -80,7 +80,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-57 | Skin CSS beacon (`--skin-ok`) warns when styles.css is stale | S4 | todo |
 | F-58 | Sticky stack measured at runtime (`--tabs-h`, `--stack-h`) | S4 | todo |
 | F-59 | Full offline PWA: network-first shell, cache-first fonts/icons, skipWaiting + clients.claim | S4 | todo |
-| F-60 | Data: per-issue medium, legend, maintenance notes, counts (total/core/mandatory/essential/gapnotes/renumbers), timeline order, alt order | S1 | todo |
+| F-60 | Data: per-issue medium, legend, maintenance notes, counts (total/core/mandatory/essential/gapnotes/renumbers), timeline order, alt order | S1 | present — data (20-build: media, counts incl. gap notes/renumbers, timeline, altKey); UI later |
 
 ## S — v2 settings (control → store → default)
 
@@ -129,7 +129,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 
 | ID | v2 assertion | Session | Status |
 |---|---|---|---|
-| T-1 | no runtime errors at boot | S1 | todo (shell suite) |
+| T-1 | no runtime errors at boot | S1 | present (70-shell) |
 | T-2 | exactly one #tabs nav | S3 | todo |
 | T-3 | every issue rendered a row | S2 | re-express: rows render on first expand (lazy, V-15) — every row of an expanded era renders |
 | T-4 | mark buttons are delegation-tagged | S2 | todo |
@@ -165,7 +165,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-34 | eras nest inside periods | S2 | todo |
 | T-35 | all rows inside a period | S2 | todo |
 | T-36 | filters visible on Checklist in tabs | S2 | re-express (FP-1: panel opens where it does today) |
-| T-37 | build tag and sw cache version agree | S1 | re-express: both derived from one content hash (shell suite) |
+| T-37 | build tag and sw cache version agree | S1 | present (70-shell + 80-guards: build tag = sw.js cache hash) |
 | T-38 | signature ramp text clears WCAG AA on its dark surface | S4 | re-express: every skin's era text clears AA on its surface |
 | T-39 | signature era ramp is flat | S4 | re-express (per-skin token test) |
 | T-40 | signature filter chips have a visible border | S4 | todo |
@@ -176,7 +176,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-45 | title follows the text-size setting | S4 | todo |
 | T-46 | button size reads and writes the same store applyView uses | S2 | re-express: one settings store |
 | T-47 | pending writes flush when the app is hidden | S2 | todo |
-| T-48 | no function is defined twice | S1 | todo (guards suite, brace-depth scan) |
+| T-48 | no function is defined twice | S1 | present (80-guards: brace-depth scan, scanner self-tested) |
 | T-49 | bookmarks open a list, not a jump to the first one | S3 | todo |
 | T-50 | persistent banner toggle exists | S4 | todo |
 | T-51 | persistent banner is off by default | S4 | todo |
@@ -195,9 +195,9 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-64 | format row has one chip per medium | S2 | todo |
 | T-65 | no redundant Annuals chip | S2 | todo |
 | T-66 | media chips are labelled Comics/Games/Shows | S2 | todo (labels from data vocabulary) |
-| T-67 | every issue has a medium | S1 | todo (build suite) |
-| T-68 | media vocabulary is comic/game/screen | S1 | todo (build suite) |
-| T-69 | no hardcoded franchise chip leaks into Characters | S1/S2 | todo (guards suite + DOM) |
+| T-67 | every issue has a medium | S1 | present (20-build: every row has a medium) |
+| T-68 | media vocabulary is comic/game/screen | S1 | re-express → present (20-build: medium vocabulary comes from data; fixture uses comic/game/screen) |
+| T-69 | no hardcoded franchise chip leaks into Characters | S1/S2 | present — static (80-guards); DOM check S2 |
 | T-70 | character chips match the strand list | S2 | re-express (presence characters, V-11) |
 | T-71 | character chips match the strand names | S2 | re-express (V-11) |
 | T-72 | unticking Optional reduces rows | S2 | todo |
@@ -213,7 +213,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-82 | classic skin uses the tabbed shell | — | dropped: one shell |
 | T-83 | layout change lands on Checklist, not Settings | S4 | re-express: skin change keeps the current tab |
 | T-84 | classic skin shows filters | S4 | re-express (reachability guard, V-5) |
-| T-85 | classic skin has no hardcoded franchise chip | S1 | todo (guards suite) |
+| T-85 | classic skin has no hardcoded franchise chip | S1 | present (80-guards: no franchise or fixture strings in template code) |
 | T-86 | search box present in classic skin | S4 | re-express (V-5) |
 | T-87 | classic skin has depth chips | S4 | re-express (V-5) |
 | T-88 | classic skin has character chips | S4 | re-express (V-5) |
@@ -277,48 +277,48 @@ installed app once online.
 | ID | Defect | Fix at source | Session | Status |
 |---|---|---|---|---|
 | D-1 | Reading-tab mark doesn't update era counters | one mark path for every surface; assert counters move from a Reading-tab mark | S3 | todo |
-| D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | todo |
-| D-3 | hardcoded franchise chip + filter branch | no franchise strings in template code (guard) | S1 | todo |
+| D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present — SW precaches 12 fonts + 3 icons, every path exists (80-guards); live install S4 |
+| D-3 | hardcoded franchise chip + filter branch | no franchise strings in template code (guard) | S1 | present (80-guards) |
 | D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | todo |
-| D-5 | phantom "Elseworlds (ALT)" era appended | build never adds an era not in the data | S1 | todo |
-| D-6 | empty strand list blanks the app | build inserts one universal strand | S1 | todo |
+| D-5 | phantom "Elseworlds (ALT)" era appended | build never adds an era not in the data | S1 | present (20-build: output eras == dataset eras) |
+| D-6 | empty strand list blanks the app | build inserts one universal strand | S1 | present (20-build: 64-era stress with no strands → one universal strand) |
 | D-7 | sync placeholder hardcoded to another tracker's prefix | QR/sync prefix derived from `franchise.key` | S3 | todo |
-| D-8 | workbook columns read by position | named fields everywhere; build output independent of field order | S1 | todo |
-| D-9 | duplicate `switchTab` / `jumpToIssue` declarations | guard: no function defined twice | S1 | todo |
+| D-8 | workbook columns read by position | named fields everywhere; build output independent of field order | S1 | present (60-validation: shuffled field order → byte-identical data.js) |
+| D-9 | duplicate `switchTab` / `jumpToIssue` declarations | guard: no function defined twice | S1 | present (80-guards) |
 | D-10 | triple `jumpToIssue` breaks jumps into collapsed sections | one `jumpToIssue` that expands ancestors | S2 | todo |
-| D-11 | no save-flush when the app closes | flush on pagehide / visibilitychange | S2 | todo |
-| D-12 | era colour ramps cap at 26 | no cap; 64-era stress dataset builds and (S4) styles | S1/S4 | todo |
-| D-13 | template icons and manifest name leak into builds | manifest, icons, theme from config; guard | S4 | todo |
+| D-11 | no save-flush when the app closes | flush on pagehide / visibilitychange | S2 | present (70-shell: pagehide and visibilitychange flush) |
+| D-12 | era colour ramps cap at 26 | no cap; 64-era stress dataset builds and (S4) styles | S1/S4 | present — data (20-build: 64 eras); styling S4 |
+| D-13 | template icons and manifest name leak into builds | manifest, icons, theme from config; guard | S4 | present — manifest from config (20-build, 80-guards); franchise icons S4 |
 
 ## V — spec additions (v3 requirements v2 lacks)
 
 | ID | Requirement | Session | Status |
 |---|---|---|---|
-| V-1 | Whole-app event delegation: ≤12 listeners total (guard) | S1/S2 | todo |
+| V-1 | Whole-app event delegation: ≤12 listeners total (guard) | S1/S2 | present — guard (80-guards static ≤12, 70-shell runtime ≤12) |
 | V-2 | String templating with `escapeHtml` / `escapeAttr` everywhere | S2 | todo |
-| V-3 | Always collapsed on load, no setting; expand state session-only | S2 | todo |
-| V-4 | Every band has its own identity (era index + occurrence) | S2 | todo |
+| V-3 | Always collapsed on load, no setting; expand state session-only | S2 | present — stub (70-shell: lands collapsed, expand state never stored); S2 re-asserts with real rows |
+| V-4 | Every band has its own identity (era index + occurrence) | S2 | present — stub (70-shell: one click opens exactly one banner) |
 | V-5 | ONE layout; skins are pure CSS and never move or hide a control; reachability guard proves every control reachable in every skin | S4 | todo |
 | V-6 | Goal banners: name, years, read count, progress bar, "days left" pace | S2 | todo |
 | V-7 | Keyboard navigation and shortcuts | S4 | todo |
 | V-8 | Fast first paint: critical CSS inline, preloaded display font, non-blocking data | S4 | todo |
-| V-9 | One colour-token block (guard: exactly one); zero `!important` (guard) | S1/S4 | todo |
+| V-9 | One colour-token block (guard: exactly one); zero `!important` (guard) | S1/S4 | present — guards (80-guards: one :root colour block, zero !important) |
 | V-10 | Essential / Complete event toggle in Settings; progress and counts recompute; "Complete view adds N issues" on event headers | S1 data / S3 UI | todo |
 | V-11 | Presence tags (major/minor/cameo), character filter defaults to meaningful appearances, cameo toggle | S1 data / S3 UI | todo |
 | V-12 | Depth tier independent of M/O; optional Importance 1–5 | S1 data / S2 UI | todo |
-| V-13 | Era-ranked compound sort keys, derived; Alt Sort Key = publication order | S1 | todo |
-| V-14 | ALT continuity rows build, order, and are skipped by the per-series check (replaces v2's story band) | S1 data / S2 UI | todo |
+| V-13 | Era-ranked compound sort keys, derived; Alt Sort Key = publication order | S1 | present (20-build, 30-identity) |
+| V-14 | ALT continuity rows build, order, and are skipped by the per-series check (replaces v2's story band) | S1 data / S2 UI | present — data (30-identity: ALT order + per-series skip); UI S2 |
 | V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | todo |
-| V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacyPrefix`) | S2 | todo |
-| V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | todo |
+| V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacyPrefix`) | S2 | present — namespacing (70-shell); legacyPrefix migration S2/S3 |
+| V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present — hash (20-build, 80-guards); icons/manifest polish S4 |
 | V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | todo |
-| V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | todo |
-| V-20 | Harness in GitHub Actions on every push; fails on zero assertions | S1 | todo |
+| V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | present (80-guards: sw.js run in a vm, install/activate/fetch exercised) |
+| V-20 | Harness in GitHub Actions on every push; fails on zero assertions | S1 | present (.github/workflows/harness.yml + 00-runner) |
 | V-21 | Harness passes on fixture, fixture without periods, and one real dataset (Absolute pilot, in a fresh repo) | S1/S5 | todo |
 | V-22 | `verify.py` gate (Research-Repo toolkit) wired in | S5 | todo |
 | V-23 | `build_workbook.py` generates the workbook from `dataset.json`, reading by header name | S5 | todo |
-| V-24 | Stable `id` (progress) separate from canonical `issueId`; events dedupe on `issueId`; id-stability check with `retiredIds` | S1 | todo |
-| V-25 | Canonical events in `events/`, each stating its era in `dataset.json`; drift check by hash | S1 | todo |
+| V-24 | Stable `id` (progress) separate from canonical `issueId`; events dedupe on `issueId`; id-stability check with `retiredIds` | S1 | present (20-build id stability, 30-identity) |
+| V-25 | Canonical events in `events/`, each stating its era in `dataset.json`; drift check by hash | S1 | present (30-identity placement, 50-events hash drift) |
 | V-26 | Export and import (file backup) | S3 | todo |
 | V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | todo |
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
@@ -327,12 +327,12 @@ installed app once online.
 
 | ID | Requirement | Session | Status |
 |---|---|---|---|
-| CR-1 | Writer(s) + artist(s) on every arc/run; several names per role | S1 | todo |
-| CR-2 | Per-issue overrides (replace only the roles they name) | S1 | todo |
-| CR-3 | Mid-run splits by `fromId` (a row id) | S1 | todo |
-| CR-4 | Full canonical names; surname-only fails unless in `creatorMononyms`; conflicting spellings fail | S1 | todo |
-| CR-5 | Build-time creator index: name → writer / artist issue counts | S1 | todo |
-| CR-6 | Coverage % reported; missing credits warn; `strictCredits` makes them fail | S1 | todo |
+| CR-1 | Writer(s) + artist(s) on every arc/run; several names per role | S1 | present (40-credits) |
+| CR-2 | Per-issue overrides (replace only the roles they name) | S1 | present (40-credits) |
+| CR-3 | Mid-run splits by `fromId` (a row id) | S1 | present (40-credits) |
+| CR-4 | Full canonical names; surname-only fails unless in `creatorMononyms`; conflicting spellings fail | S1 | present (40-credits, 60-validation) |
+| CR-5 | Build-time creator index: name → writer / artist issue counts | S1 | present (40-credits: brute-force recount) |
+| CR-6 | Coverage % reported; missing credits warn; `strictCredits` makes them fail | S1 | present (40-credits: 98.3%, warn vs strict) |
 | CR-7 | Searchable creator picker with issue counts and a writers / artists switch | S3 | todo |
 | CR-8 | Tappable creator names on each run filter to that creator's work | S3 | todo |
 | CR-9 | Search matches creator names | S2 | todo |
@@ -392,9 +392,9 @@ installed app once online.
 
 | ID | Bug | v3 handling | Status |
 |---|---|---|---|
-| B-1 | `#paneReading` and `#paneReviews` are each declared **twice** in v2's HTML | guard: no duplicate ids in the shell | todo (S2) |
+| B-1 | `#paneReading` and `#paneReviews` are each declared **twice** in v2's HTML | guard: no duplicate ids in the shell | present — guard (80-guards: no duplicate ids in index.html) |
 | B-2 | Bulk-mark undo deletes every touched mark instead of restoring prior states (a `reading` row becomes `unread`) | undo snapshots previous states (V-27) | todo (S3) |
 | B-3 | Swipe marks write `state.progress` directly, bypassing the mark path (no Reading/banner refresh) | one mark function for every surface (D-1) | todo (S2) |
 | B-4 | QR import replaces progress wholesale; the code is rejected after any data change (`dataVersion`) | merge import keyed on ids (X-3, XM-6) | todo (S3) |
 | B-5 | `jumpBtn` falls back to `alert()` while everything else uses the toast | toast everywhere | todo (S2) |
-| B-6 | About box and others set inline `style` attributes | no inline styles in templates; tokens only | todo (S4) |
+| B-6 | About box and others set inline `style` attributes | no inline styles in templates; tokens only | present — guard for index.html (80-guards); app templates S2 |
