@@ -23,6 +23,9 @@
   --fs: 15px;
 }
 
+/* [hidden] must win: an element that toggles `hidden` never sets its own
+   display (put layout on an inner wrapper). The harness checks every hidden
+   element computes to display:none against this real stylesheet. */
 [hidden] { display: none; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: var(--fs); }
@@ -125,8 +128,9 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .notepop { margin: 0; padding: 6px 10px 8px 50px; background: var(--accent-wash); }
 
 /* ---- toast ---- */
-.toast {
-  position: fixed; left: 16px; right: 16px; bottom: 16px; display: flex; gap: 10px; align-items: center;
+.toast { position: fixed; left: 16px; right: 16px; bottom: 16px; }
+.toast-in {
+  display: flex; gap: 10px; align-items: center;
   padding: 10px 14px; border-radius: var(--radius); background: var(--ink); color: var(--paper); box-shadow: 0 4px 16px var(--shadow);
 }
 .toast-act { margin-left: auto; border: 0; background: none; color: var(--accent-wash); font-weight: 600; }

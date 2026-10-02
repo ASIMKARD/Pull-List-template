@@ -73,6 +73,10 @@ function boot(dataDir, opts) {
     const src = fs.readFileSync(p, 'utf8').split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
     return '<script>' + src + '</scr' + 'ipt>';
   });
+  if (opts.css) {
+    const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+    html = html.replace('<link rel="stylesheet" href="./styles.css">', '<style>' + css + '</style>');
+  }
   const listeners = [];
   const dom = new JSDOM(html, {
     url: 'https://tracker.local/', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,

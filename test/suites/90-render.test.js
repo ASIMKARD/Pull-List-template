@@ -98,4 +98,20 @@ module.exports = async function (t) {
   t.ok('5,000 rows: opening one era renders only its rows', d3.querySelectorAll('.row').length === s.perEra &&
        [...d3.querySelectorAll('.row')].every(r => r.closest('.era').dataset.e === '17'));
   a3.window.close();
+
+  // ---- [hidden] wins against the REAL stylesheet (a class's display must never override it) ----
+  {
+    const a4 = boot(b.out, { css: true });
+    await wait(20);
+    const d4 = a4.document;
+    const leaks = () => [...d4.querySelectorAll('[hidden]')].filter(el => a4.window.getComputedStyle(el).display !== 'none')
+      .map(el => el.id || el.className || el.tagName);
+    t.ok('styles: every hidden element computes to display:none at landing', leaks().length === 0, leaks().join(', '));
+    t.ok('styles: the idle toast is not displayed', a4.window.getComputedStyle(d4.querySelector('#toast')).display === 'none');
+    d4.querySelector('[data-act="panel"]').click();
+    d4.querySelector('[data-act="expand-all"]').click();
+    d4.querySelector('[data-act="collapse-all"]').click();
+    t.ok('styles: every hidden element computes to display:none after interaction', leaks().length === 0, leaks().join(', '));
+    a4.window.close();
+  }
 };

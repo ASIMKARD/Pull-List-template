@@ -42,8 +42,10 @@
 <main id="app" aria-busy="true"><p class="loading">Loading the checklist…</p></main>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden>
-  <span id="toastMsg"></span>
-  <button type="button" class="toast-act" id="toastAct" data-act="toast-act" hidden></button>
+  <div class="toast-in">
+    <span id="toastMsg"></span>
+    <button type="button" class="toast-act" id="toastAct" data-act="toast-act" hidden></button>
+  </div>
 </div>
 
 <script src="./data.js"></script>
