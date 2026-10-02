@@ -213,38 +213,57 @@
   /* ======================================================================
      FILTERS
      ====================================================================== */
-  function narrowing() {
-    return !!(F.q || F.creator || F.tier < D.tiers.length - 1 || F.unread || F.hideSkip || F.mandatory ||
-              F.eras.length || F.types.length || F.media.length || F.strands.length || !F.alt);
+  /* Three kinds of filter (decided 2 Oct):
+     - PLAN   (depth tier, mandatory only, hide skipped, ALT; Essential/Complete):
+              progress, time left and finish-by ALWAYS follow these.
+     - BROWSE (search, creator, era, type, format, character): while any is
+              active, banners and header count only that view, marked "filtered".
+     - DISPLAY-ONLY (unread only, order): never change any number. */
+  function browsing() {
+    return !!(F.q || F.creator || F.eras.length || F.types.length || F.media.length || F.strands.length);
   }
-  function matches(i) {
+  function narrowing() {
+    return !!(browsing() || F.tier < D.tiers.length - 1 || F.unread || F.hideSkip || F.mandatory || !F.alt);
+  }
+  function planOk(i) {
+    var r = D.issues[i];
     if (!inView(i)) return false;
+    if (!F.alt && (r[6] & FL.ALT)) return false;
+    if (isInert(i)) return true;
+    if (D.issueTier[i] > F.tier) return false;
+    if (F.mandatory && !r[4]) return false;
+    if (F.hideSkip && stateOf(i) === 'skip') return false;
+    return true;
+  }
+  function browseOk(i) {
     var r = D.issues[i];
     if (F.eras.length && F.eras.indexOf(D.issueEra[i]) === -1) return false;
-    if (!F.alt && (r[6] & FL.ALT)) return false;
     if (F.strands.length && !D.arcs[r[2]].s.some(function (s) { return F.strands.indexOf(s) !== -1; })) return false;
-    if (isInert(i)) return !narrowing();                       // notes never count as a match
+    if (isInert(i)) return true;
     if (F.q && HAY[i].indexOf(F.q.toLowerCase()) === -1) return false;
     if (F.creator && CREATORS_HAY[i].indexOf(F.creator.toLowerCase()) === -1) return false;
-    if (D.issueTier[i] > F.tier) return false;
     if (F.types.length && F.types.indexOf(r[3]) === -1) return false;
     if (F.media.length && F.media.indexOf(D.issueMedium[i]) === -1) return false;
-    if (F.mandatory && !r[4]) return false;
+    return true;
+  }
+  /* What the list shows: plan + browse + display-only. */
+  function matches(i) {
+    if (!planOk(i) || !browseOk(i)) return false;
+    if (isInert(i)) return !narrowing();                       // notes never count as a match
     var st = stateOf(i);
     if (F.unread && (st === 'read' || st === 'skip')) return false;
-    if (F.hideSkip && st === 'skip') return false;
     return true;
   }
 
   /* ======================================================================
-     STATS AND PACE — goal stats are over the current view (Essential or
-     Complete), unaffected by narrowing filters: a banner is a finishable goal.
+     STATS AND PACE — banners and header count the PLAN always and the
+     BROWSE view while one is active; display-only filters never count.
      ====================================================================== */
   function blank() { return { total: 0, read: 0, skip: 0 }; }
   function computeStats() {
-    var s = { all: blank(), era: D.eras.map(blank), band: D.periods.map(blank) };
+    var s = { all: blank(), era: D.eras.map(blank), band: D.periods.map(blank) }, br = browsing();
     for (var i = 0; i < N; i++) {
-      if (isInert(i) || !inView(i)) continue;
+      if (isInert(i) || !planOk(i) || (br && !browseOk(i))) continue;
       var st = stateOf(i), e = D.issueEra[i], b = BAND_OF_ERA[e];
       [s.all, s.era[e], b >= 0 ? s.band[b] : null].forEach(function (t) {
         if (!t) return;
@@ -278,11 +297,14 @@
   var open = { b: {}, e: {} };          // session-only: never persisted
   var rendered = {};                     // era index -> body rendered
   var wasNarrowing = false;              // leaving a search/filter returns to the collapsed landing
+  var expandMatches = false;             // only a change made during THIS visit auto-expands matches;
+                                         // every boot lands collapsed, whatever filters were saved
 
   function statsHtml(t, finish) {
     var g = goal(t), left = timeLeft(t), done = remaining(t) === 0 && t.total > 0;
     return '<span class="bstats">' +
       '<span class="bcount">' + t.read + ' / ' + g + ' read' + (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
+      (browsing() ? '<span class="bfiltered">filtered</span>' : '') +
       (done ? '<span class="bdone" aria-label="complete">✓</span>'
             : '<span class="bleft" data-left-min="' + left.mins + '">' + left.text + ' left</span>' +
               (finish ? '<span class="bfinish" data-finish="' + finish.iso + '">finish by ' + escapeHtml(finish.text) + '</span>' : '')) +
@@ -307,6 +329,7 @@
       '<progress class="bar pbar" max="' + (goal(t) || 1) + '" value="' + t.read + '" aria-label="Reading progress"></progress>' +
       '<p class="pstats"><span class="pcount">' + t.read + ' / ' + goal(t) + ' read' +
       (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
+      (browsing() ? '<span class="pfiltered" title="Counting only what your search or browse filters show">filtered view</span>' : '') +
       (done ? '<span class="pdone">All caught up ✓</span>'
             : '<span class="pleft" data-left-min="' + left.mins + '">' + left.text + ' left</span>' +
               '<span class="pfinish" data-finish="' + fin.iso + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>';
@@ -396,8 +419,10 @@
     var visEra = D.eras.map(function () { return !filt; }), any = false;
     if (filt) {
       for (var i = 0; i < N; i++) if (matches(i)) { visEra[D.issueEra[i]] = true; any = true; }
-      open = { b: {}, e: {} };
-      visEra.forEach(function (v, e) { if (v) { open.e[e] = true; if (BAND_OF_ERA[e] >= 0) open.b[BAND_OF_ERA[e]] = true; } });
+      if (expandMatches) {
+        open = { b: {}, e: {} };
+        visEra.forEach(function (v, e) { if (v) { open.e[e] = true; if (BAND_OF_ERA[e] >= 0) open.b[BAND_OF_ERA[e]] = true; } });
+      }
     }
     var html = '';
     if (HAS_BANDS) {
@@ -556,7 +581,7 @@
     $('#fshow').textContent = 'Showing ' + shown.toLocaleString('en-GB') + ' of ' + total.toLocaleString('en-GB') + ' issues';
   }
 
-  function refilter() { saveSettings(); renderPanel(); renderList(); }
+  function refilter() { expandMatches = true; saveSettings(); renderPanel(); renderList(); }
 
   function setFilter(k, v, on) {
     if (k === 'tier') F.tier = v === '' ? D.tiers.length - 1 : +v;

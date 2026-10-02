@@ -95,6 +95,9 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .band-head .bname { font-family: var(--font-display); font-weight: 400; font-size: 22px; letter-spacing: .02em; }
 .byears { color: var(--ink-soft); font-size: 13px; }
 .bfinish { color: var(--accent); }
+.bfiltered, .pfiltered {
+  padding: 0 8px; border: 1px dashed var(--accent); border-radius: 999px; color: var(--accent); font-size: 12px;
+}
 .band-intro, .era-intro { margin: 8px 4px; color: var(--ink-soft); font-size: 14px; }
 
 /* ---- arcs and rows ---- */

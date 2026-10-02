@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 527 assertions, 0 failed, 15 suites (end of session 2).
+**Harness:** 603 assertions, 0 failed, 16 suites (end of session 2, after John's two closing fixes).
 Session 1 ended at 307; CI green on every run.
 
 ---
@@ -148,7 +148,7 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
   - `window.PullList.importLegacy()` is the session 3 re-run; it fills gaps and never overwrites.
 - **Navigation:** `jumpToIssue` (opens collapsed ancestors, scrolls, flashes, focuses), next unread, and a toast with an action (no `alert()`).
 - **Schema:** `storage.legacy {prefix, format, qrPrefix?}` replaces `legacyPrefix`.
-- **Harness:** 6 new suites (90-render, 91-marks, 92-filters, 93-storage, 94-navigation, 95-pace).
+- **Harness:** 7 new suites (90-render, 91-marks, 92-filters, 93-storage, 94-navigation, 95-pace, 96-figures).
   - Two new guards: no variable may share a function's name, and every `[hidden]` element must compute to `display:none` against the real stylesheet.
   - Both were checked by breaking the code on purpose.
 
@@ -161,7 +161,13 @@ Work continues on `claude/keen-euler-6qyl31`, which already holds session 1.
 ### Decisions recorded this session
 - Pace: both models (see Open items above).
 - The review button moves to session 3 with its editor.
-- Banner counts are goals over the whole view; filters show in "Showing N of M".
+- **Always land collapsed (closing fix 1).** Saved filters persist, but every boot lands collapsed. Matches auto-expand only after a search or filter change made during the current visit.
+- **Banner maths: plan always, browsing when active (closing fix 2).** Filters come in three kinds:
+  - **Plan** (depth tier, mandatory only, hide skipped, ALT; later Essential/Complete): progress, time left and finish-by always follow them.
+  - **Browse** (search, creator, era, type, format, character): while any is active, banners and header count only that view, with a "filtered" marker, and revert when it is cleared. Format is classed as browse alongside type.
+  - **Display-only** (unread only, order): never change a number.
+  - Finish-by stays cumulative in reading order in every case. "Showing N of M" counts the list against the whole view.
+  - Tested in `96-figures`; each rule was checked by putting the old behaviour back (16 / 2 / 3 failures).
 - Filter persistence is by name; search text is session-only.
 
 ### Session 3 starts with: features
@@ -180,3 +186,4 @@ Work through every S3 line in `FEATURE-INVENTORY.md`:
 - **QR sync and backup**, keyed on ids, versioned and tolerant of rows added since (X-3).
 - **Presence filters** with the cameo toggle (FP-5), the creator picker with counts (CR-7), and tappable creator names (CR-8).
 - **Listener budget:** touch ×3 + change brings the total to 8.
+- **Essential/Complete** joins the PLAN filters: `inView()` already feeds `planOk()`.
