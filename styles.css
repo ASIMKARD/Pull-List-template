@@ -165,6 +165,17 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .legend dd { margin: 0; color: var(--ink-soft); }
 .maint { margin: 6px 0; padding-left: 1.2em; font-size: 13px; color: var(--ink-soft); }
 
+/* ---- display options ---- */
+.depthrow { display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+.depthrow .chip { flex: none; }
+.eranav-in { display: flex; gap: 6px; overflow-x: auto; margin: 0 16px var(--gap); }
+.eranav-in .chip { flex: none; margin: 0; white-space: nowrap; }
+.erasel { height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit; }
+.arclabel { display: block; font-size: 12px; color: var(--ink-soft); }
+:root[data-badges="0"] .badges { display: none; }
+/* combo badge: a row that is both bookmarked and read gets a filled star */
+:root[data-combo="1"] .row[data-s="read"] .bm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
 /* ---- per-format progress lines ---- */
 .pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .pmed { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; font-size: 13px; color: var(--ink-soft); }

@@ -24,7 +24,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-1 | Checklist tab: rows grouped period band → era → arc, ordered by sort key | S2 | present (90-render: band → era → arc → rows, reading order) |
 | F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | todo |
 | F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | todo |
-| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour + Data sections present, 98-tabs-settings; Display step 3, Touch + Bulk step 6, Backup step 8) |
+| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour, Display and Data sections present, 98-tabs-settings + 99-display; Touch + Bulk step 6, Backup step 8) |
 | F-5 | Four-state marks cycling unread → reading → read → skip; done = read or skip | S2 | present (91-marks: four-state cycle through one setMark path) |
 | F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten) |
 | F-7 | Inert rows (GAPNOTE, RENUM) render as notes with no mark and never count toward progress | S2 | present (90-render: inert rows render with no mark, never count) |
@@ -68,9 +68,9 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-45 | Saved-filter migration when the strand roster grows (new strands default on) | S2 | re-express → present: saved filters stored by name, unknown names dropped (92-filters) |
 | F-46 | Layout-vocabulary migration (`lv`) | — | dropped: v3 has one layout |
 | F-47 | Elsewhere/story band: alternate-continuity rows grouped by story name in a final band | S2 | re-express (ALT rows + eras; see V-14) |
-| F-48 | Newest era first (reverse order) | S3 | todo |
+| F-48 | Newest era first (reverse order) | S3 | present (99-display: bands and eras reversed, rows keep reading order, figures unchanged) |
 | F-49 | Table view (compact rows) | S4 | todo |
-| F-50 | Badges on/off; combo badge; tap-to-reveal notes; notes-only; hide skipped | S3 | todo |
+| F-50 | Badges on/off; combo badge; tap-to-reveal notes; notes-only; hide skipped | S3 | present (99-display: badges, combo, tap to reveal, notes only; hide skipped in 92-filters) |
 | F-51 | Dyslexia font | S4 | todo |
 | F-52 | Seven paper swatches (default, warm, grey, rose, mint, sky, lilac) | S4 | todo |
 | F-53 | Density (compact/normal/roomy), text size (S/M/L), mark style (box/dot/web) | S4 | todo |
@@ -96,15 +96,15 @@ store is listed only to record where the value lived.
 | S-5 | Marks `#segMark` | view.mark | box | S4 | todo |
 | S-6 | Era hues `#segEraScheme` | settings.eraScheme | split | S4 | re-express |
 | S-7 | Table view `#tableChip` | view.table | off | S4 | todo |
-| S-8 | Badges `#badgeChip` | view.badges | on | S3 | todo |
+| S-8 | Badges `#badgeChip` | view.badges | on | S3 | present (99-display) |
 | S-9 | Dyslexia font `#dysChip` | view.dys | off | S4 | todo |
 | S-10 | Mini progress bar `#miniChip` | view.mini | on | S4 | todo |
 | S-11 | Persistent banner `#bannerChip` | settings.banner | off | S4 | todo |
-| S-12 | Combo badge `#comboChip` | view.combo | off | S3 | todo |
-| S-13 | Newest era first `#revChip` | view.rev | off | S3 | todo |
+| S-12 | Combo badge `#comboChip` | view.combo | off | S3 | present (99-display) |
+| S-13 | Newest era first `#revChip` | view.rev | off | S3 | present (99-display) |
 | S-14 | Hide skipped `#skipChip` | view.hideSkip | off | S2 | present (92-filters: Reading section) |
-| S-15 | Notes only `#notesChip` | view.notesOnly | off | S3 | todo |
-| S-16 | Tap to reveal notes `#revealChip` | view.reveal | off | S3 | todo |
+| S-15 | Notes only `#notesChip` | view.notesOnly | off | S3 | present (99-display: a display-only filter chip in the panel's Reading section) |
+| S-16 | Tap to reveal notes `#revealChip` | view.reveal | off | S3 | present (99-display) |
 | S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | re-express (decided 3 Oct): no checklist jump, because the landing is always collapsed; the Reading tab resumes at the first unread (F-2) |
 | S-18 | Pace `#segPace` | view.pace | 12/week | S3 | present (98-tabs-settings) |
 | S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | present (98-tabs-settings) |
@@ -138,14 +138,14 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-7 | delegated bookmark toggles | S2 | present (91-marks) |
 | T-8 | delegated note badge opens a popover | S2 | present (91-marks) |
 | T-9 | delegated note badge closes again | S2 | present (91-marks) |
-| T-10 | six new settings chips exist | S3 | todo |
+| T-10 | six new settings chips exist | S3 | re-express → present (99-display: the Display section's toggles) |
 | T-11 | settings panel is sectioned (≥4 heads) | S3 | todo |
-| T-12 | notes-only narrows the list | S3 | todo |
-| T-13 | notes-only restores | S3 | todo |
-| T-14 | newest-era-first reverses the order | S3 | todo |
-| T-15 | reverse toggles back | S3 | todo |
-| T-16 | tap-to-reveal sets the root flag | S3 | todo |
-| T-17 | combo badge sets the root flag | S3 | todo |
+| T-12 | notes-only narrows the list | S3 | present (99-display) |
+| T-13 | notes-only restores | S3 | present (99-display) |
+| T-14 | newest-era-first reverses the order | S3 | present (99-display) |
+| T-15 | reverse toggles back | S3 | present (99-display) |
+| T-16 | tap-to-reveal sets the root flag | S3 | present (99-display) |
+| T-17 | combo badge sets the root flag | S3 | present (99-display) |
 | T-18 | bulk era selects are populated | S3 | todo |
 | T-19 | range selects default to full span | S3 | todo |
 | T-20 | touch chips exist | S3 | todo |
@@ -223,7 +223,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-92 | classic skin: no filters on Reviews | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express: `[hidden]` authoritative with **zero** `!important` |
 | T-94 | nothing sticky in tabbed mode either | S4 | re-express (one layout; sticky rules measured in browser, L-1..L-5) |
-| T-95 | depth control is a single nowrap row | S3 | todo |
+| T-95 | depth control is a single nowrap row | S3 | present (99-display) |
 | T-96 | nothing sticky in the classic skin | S4 | re-express (skins never change positioning) |
 | T-97 | layout seg has 3 buttons | S4 | re-express: skin seg has one option per configured skin |
 | T-98 | skin beacon present in styles.css | S4 | todo |
@@ -367,9 +367,9 @@ installed app once online.
 | XM-5 | File backup: export JSON download, import from file | S3 | todo (V-26) |
 | XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | todo |
 | XM-7 | "Check for updates" button (`reg.update()`) | S4 | todo |
-| XM-8 | Era navigation style: chips / dropdown / scroll | S3 | todo |
-| XM-9 | Landmarks-only filter; landmarks inline vs tap-to-reveal | S3 | todo |
-| XM-10 | Gap notes on/off | S3 | todo |
+| XM-8 | Era navigation style: chips / dropdown / scroll | S3 | present (99-display: a jump bar, chips or dropdown, that opens and scrolls to an era and never filters; plain scroll is the default) |
+| XM-9 | Landmarks-only filter; landmarks inline vs tap-to-reveal | S3 | re-express → present (99-display: landmarks are the row note, so landmarks-only = notes only and inline vs tap = tap to reveal) |
+| XM-10 | Gap notes on/off | S3 | present (99-display) |
 | XM-11 | Bulk mark an arc (read / unread) | S3 | todo |
 | XM-12 | Swipe with visual feedback (row slides, coloured backing shows the action) | S3 | todo |
 | XM-13 | Haptic tick on long-press (`navigator.vibrate`) | — | dropped: haptics declined in an earlier round, as the X-Men code notes (re-confirmed 3 Oct); a guard asserts `navigator.vibrate` is never called (S3 step 6) |
@@ -385,7 +385,7 @@ installed app once online.
 
 | ID | Requirement | Session | Status |
 |---|---|---|---|
-| X-1 | Display mode "layout C": per-row arc labels with no arc headers (Archie's arrangement) | S3 | todo |
+| X-1 | Display mode "layout C": per-row arc labels with no arc headers (Archie's arrangement) | S3 | present (99-display: "Label on each row" arc headings) |
 | X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | todo (partial: Settings "Import from previous version" present, 98-tabs-settings; old QR codes and backups step 8) |
 | X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | todo |
 

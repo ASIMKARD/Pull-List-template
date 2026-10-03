@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 830 assertions, 0 failed, 18 suites (session 3, step 2 of 9 done).
+**Harness:** 880 assertions, 0 failed, 19 suites (session 3, step 3 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -370,13 +370,49 @@ Then push, and tell John.
   segmented controls became wrapping pills after the first screenshot showed them breaking
   awkwardly.
 
-### Step 3 begins with
-Display options in a new **Display** Settings section (`renderSettings` in `app.js`), as `PREFS`
-toggles read by `applyPrefs()`, plus the root flags.
-- Badges on/off (S-8), combo badge (S-12), newest era first (S-13), notes only (S-15, which
-  covers landmarks), tap to reveal (S-16), gap notes (XM-10), era navigation style (XM-8) and
-  layout C (X-1).
-- The first test to write, in `99-display`: notes only narrows the list and restores it
-  (T-12/13); newest era first reverses the order and toggles back (T-14/15).
-- Then extend `96-figures`: every display option leaves every figure unchanged.
-- The `change` listener arrives with the first `<select>` (the era navigation dropdown).
+## Session 3 checkpoint — step 3 done (display options), 3 Oct 2026
+
+### Done
+- **A Display section in Settings**, with the `PREFS` toggles. CSS-only ones become root flags in
+  `applyPrefs()` (`data-badges`, `data-combo`, `data-reveal`, `data-layout`); the others
+  re-render the list. The options:
+  - Badges on/off and the combo badge (read + bookmarked → filled star).
+  - Tap to reveal: a "note" button opens the subnote.
+  - Gap notes on/off.
+  - Newest era first: bands and eras are reversed, rows keep reading order, finish-by stays
+    cumulative in reading order, and bookmarks sort as displayed.
+  - Arc headings, "Headings" or "Label on each row" (layout C, X-1).
+  - Era navigation (XM-8).
+- **Notes only** is a display-only filter chip in the panel's Reading section: persisted by
+  name, shown as an active chip and in the summary. X-Men's landmarks-only folds into it, and
+  its inline vs tap-to-reveal folds into tap to reveal.
+- **Era navigation (XM-8) — my call, open to veto.** X-Men's version is an era *filter*. v3
+  already has the era filter in the Story section, so XM-8 became a **jump bar**: chips or a
+  dropdown open and scroll to an era, and nothing is filtered. Plain scroll (no bar) is the
+  default, because the collapsed banners already list every era.
+- The depth chips sit in one row that never wraps (T-95).
+- **Listeners:** `change` added for the era dropdown (5 of 12). Bulk ranges and file import will
+  reuse it.
+- **Tests:** `99-display` (50 assertions). Every option is checked to leave every figure
+  unchanged. Mutation-checked:
+  - notes only ignored → 2 failures;
+  - newest-first ignored → 3 failures;
+  - finish-by following display order → caught.
+- **The franchise-string guard caught "X-Men" in two comments.** They now say "the
+  feel-reference build", as session 2 did.
+- **Real Chromium** (basic fixture, 390 px): era chips, layout C labels and the note button
+  render, with no errors and no overflow.
+- **Screenshot-script lesson:** writing localStorage while the page is open and then reloading
+  is overwritten by the `pagehide` flush. That is the app working as designed, so seed settings
+  with `addInitScript` before load.
+
+### Step 4 begins with
+The **Reading tab**.
+- In `index.html`, add `#tab-reading` and `#pane-reading`. In `app.js`, add `'reading'` to
+  `TABS` (keep the order Checklist, Reading, Reviews, Settings) and a `renderReading()` stepper
+  over the current view (plan + browse filters).
+- Resume at the first unread until the user steps (store the stepped-to id in session state only).
+- Mark through `setMark`, with the verb following the medium (`labelOf`).
+- The first test to write, in `9a-reading`: the stepper shows a title (T-118); Mark persists and
+  the era/band counters move (T-119, D-1); labels vary by medium (T-52); filters survive a round
+  trip through Reading (T-41); the checklist still lands collapsed (S-17 re-expressed).

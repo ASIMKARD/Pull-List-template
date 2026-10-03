@@ -3,7 +3,7 @@
    - every franchise string comes from window.TRACKER_DATA, never from code;
    - all markup is built with string templates through escapeHtml/escapeAttr;
    - events are delegated: the whole app stays at or under 12 listeners
-     (session 2 uses 4: click, input, pagehide, visibilitychange);
+     (5 so far: click, input, change, pagehide, visibilitychange);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
 (function () {
@@ -104,13 +104,14 @@
 
   function defaultFilters() {
     return { q: '', creator: '', tier: D.tiers.length - 1, unread: false, hideSkip: false, mandatory: false,
-             eras: [], types: [], media: [], strands: [], alt: true };
+             eras: [], types: [], media: [], strands: [], alt: true, notesOnly: false };
   }
-  var PERSISTED_FILTERS = ['tier', 'unread', 'hideSkip', 'mandatory', 'eras', 'types', 'media', 'strands', 'alt'];
+  var PERSISTED_FILTERS = ['tier', 'unread', 'hideSkip', 'mandatory', 'eras', 'types', 'media', 'strands', 'alt', 'notesOnly'];
   var progress = load('progress', null) || { marks: {}, bookmarks: [] };
   progress.marks = progress.marks || {};
   progress.bookmarks = progress.bookmarks || [];
   var reviews = load('reviews', null) || {};
+  var ERA_NAV = ['scroll', 'chips', 'dropdown'];        // era navigation style (XM-8)
   /* ONE settings store. Defaults are filled in here and nowhere else, so a
      restored snapshot or an imported backup gets exactly the same treatment. */
   function withDefaults(s) {
@@ -123,7 +124,11 @@
     s.tab = s.tab || 'list';
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
-    if (s.showJump === undefined) s.showJump = true;
+    [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true]].forEach(function (d) {
+      if (typeof s[d[0]] !== 'boolean') s[d[0]] = d[1];
+    });
+    s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
+    s.layout = s.layout === 'rows' ? 'rows' : 'arcs';
     return s;
   }
   var settings = withDefaults(load('settings', null));
@@ -241,12 +246,14 @@
               progress, time left and finish-by ALWAYS follow these.
      - BROWSE (search, creator, era, type, character): while any is
               active, banners and header count only that view, marked "filtered".
-     - DISPLAY-ONLY (unread only, order): never change any number. */
+     - DISPLAY-ONLY (unread only, notes only, order): never change any number.
+       Notes only is the feel-reference build's "landmarks only": its landmark notes are the row note. */
   function browsing() {
     return !!(F.q || F.creator || F.eras.length || F.types.length || F.strands.length);
   }
   function narrowing() {
-    return !!(browsing() || F.tier < D.tiers.length - 1 || F.media.length || F.unread || F.hideSkip || F.mandatory || !F.alt);
+    return !!(browsing() || F.tier < D.tiers.length - 1 || F.media.length || F.unread || F.hideSkip || F.mandatory || !F.alt ||
+              F.notesOnly);
   }
   function planOk(i) {
     var r = D.issues[i];
@@ -275,6 +282,7 @@
     if (isInert(i)) return !narrowing();                       // notes never count as a match
     var st = stateOf(i);
     if (F.unread && (st === 'read' || st === 'skip')) return false;
+    if (F.notesOnly && !D.issues[i][7]) return false;
     return true;
   }
 
@@ -423,17 +431,29 @@
       escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
     if (D.franchise.searchUrl) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
       encodeURIComponent(r[1])) + '" target="_blank" rel="noopener">look up ↗</a>';
-    var sub = r[7] && !(flags & (FL.FB | FL.ALT)) ? '<p class="subnote">' + escapeHtml(r[7]) + '</p>' : '';
+    var hasSub = r[7] && !(flags & (FL.FB | FL.ALT));
+    /* tap to reveal (S-16; the feel-reference build's landmark notes): the note waits behind a button */
+    if (hasSub && settings.reveal) badges += '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>';
+    var sub = hasSub ? '<p class="subnote"' + (settings.reveal ? ' hidden' : '') + '>' + escapeHtml(r[7]) + '</p>' : '';
+    var label = settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '';
     return '<div class="row" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
-      GLYPH[st] + '</button><span class="title">' + escapeHtml(r[1]) + '</span>' +
+      GLYPH[st] + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
       '<span class="badges">' + badges + '</span>' + sub + '</div>';
   }
 
   function eraBodyHtml(e) {
     var filt = narrowing(), html = '', curArc = -1, seen = {};
+    if (settings.layout === 'rows') {                         // layout C (X-1): per-row arc labels, no arc heads
+      orderedEraRows(e).forEach(function (i) {
+        if ((filt ? !matches(i) : !inView(i)) || (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE))) return;
+        html += rowHtml(i);
+      });
+      return (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
+    }
     orderedEraRows(e).forEach(function (i) {
       if (filt ? !matches(i) : !inView(i)) return;
+      if (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE)) return;   // gap notes off (XM-10)
       var a = D.issues[i][2];
       if (a !== curArc) {
         if (curArc !== -1) html += '</div>';
@@ -477,10 +497,12 @@
         visEra.forEach(function (v, e) { if (v) { open.e[e] = true; if (BAND_OF_ERA[e] >= 0) open.b[BAND_OF_ERA[e]] = true; } });
       }
     }
-    var html = '';
+    /* newest era first (S-13) reverses bands and eras, never the rows inside
+       an era; finish-by stays cumulative in READING order (fins by unit). */
+    var html = '', rev = function (list) { return settings.rev ? list.slice().reverse() : list; };
     if (HAS_BANDS) {
-      D.periods.forEach(function (p, b) {
-        var shown = p.eras.some(function (e) { return visEra[e]; }), isOpen = !!open.b[b];
+      rev(D.periods.map(function (p, b) { return b; })).forEach(function (b) {
+        var p = D.periods[b], shown = p.eras.some(function (e) { return visEra[e]; }), isOpen = !!open.b[b];
         html += '<section class="band" data-b="' + b + '"' + (shown ? '' : ' hidden') + '>' +
           '<button type="button" class="band-head" data-act="band" aria-expanded="' + isOpen + '" aria-controls="band-body-' + b + '">' +
           '<span class="bhead"><span class="bname">' + escapeHtml(p.name) + '</span>' +
@@ -488,10 +510,10 @@
           statsHtml(S.band[b], fins[b]) + '</button>' +
           '<div class="band-body" id="band-body-' + b + '"' + (isOpen ? '' : ' hidden') + '>' +
           (p.blurb ? '<p class="band-intro">' + escapeHtml(p.blurb) + '</p>' : '') +
-          p.eras.map(function (e) { return eraHtml(e, S, null, !visEra[e]); }).join('') + '</div></section>';
+          rev(p.eras).map(function (e) { return eraHtml(e, S, null, !visEra[e]); }).join('') + '</div></section>';
       });
     } else {
-      D.eras.forEach(function (era, e) { html += eraHtml(e, S, fins[e], !visEra[e]); });
+      rev(D.eras.map(function (era, e) { return e; })).forEach(function (e) { html += eraHtml(e, S, fins[e], !visEra[e]); });
     }
     if (filt && !any) html += '<p class="empty">Nothing matches these filters.</p>';
     var app = $('#app');
@@ -500,6 +522,7 @@
     D.eras.forEach(function (e, idx) { if (open.e[idx]) rendered[idx] = true; });
     renderHeader(S);
     renderPinbar();                       // sorted as displayed, so it follows the order setting
+    renderEraNav(visEra);
   }
 
   /* Repaint numbers only (after a mark): banners and header, no list rebuild. */
@@ -542,6 +565,7 @@
     if (k === 'reading') {
       if (F.tier < D.tiers.length - 1) bits.push(D.tiers[F.tier] + ' tier');
       if (F.unread) bits.push('unread only');
+      if (F.notesOnly) bits.push('notes only');
       if (F.hideSkip) bits.push('skipped hidden');
       if (F.mandatory) bits.push('mandatory only');
       return bits.length ? bits.join(' · ') : '';
@@ -565,6 +589,7 @@
     if (F.creator) c.push(['creator', '', 'Creator: “' + F.creator + '”']);
     if (F.tier < D.tiers.length - 1) c.push(['tier', '', D.tiers[F.tier] + ' tier']);
     if (F.unread) c.push(['unread', '', 'Unread only']);
+    if (F.notesOnly) c.push(['notesOnly', '', 'Notes only']);
     if (F.hideSkip) c.push(['hideSkip', '', 'Skipped hidden']);
     if (F.mandatory) c.push(['mandatory', '', 'Mandatory only']);
     F.eras.forEach(function (e) { c.push(['eras', e, D.eras[e].name]); });
@@ -587,11 +612,12 @@
   function sectionBody(k) {
     var h = '';
     if (k === 'reading') {
-      h += '<div class="flabel">Depth</div>';
+      h += '<div class="flabel">Depth</div><div class="depthrow">';      // one row that never wraps (T-95)
       D.tiers.forEach(function (t, ti) {
         h += chip('tier', ti, t + ' · ' + countWhere(function (i) { return D.issueTier[i] <= ti; }), F.tier === ti);
       });
-      h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) +
+      h += '</div>';
+      h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) + chip('notesOnly', '', 'Notes only', F.notesOnly) +
         chip('hideSkip', '', 'Hide skipped', F.hideSkip) + chip('mandatory', '', 'Mandatory only', F.mandatory);
     } else if (k === 'story') {
       h += '<div class="flabel">Era</div>';
@@ -763,7 +789,7 @@
      both sorted as the checklist displays them ---- */
   function displayOrder(a, b) {
     var ea = D.issueEra[a], eb = D.issueEra[b];
-    if (ea !== eb) return ea - eb;
+    if (ea !== eb) return settings.rev ? eb - ea : ea - eb;
     if (settings.order === 'publication') return D.issues[a][8] - D.issues[b][8];
     if (settings.order === 'arc') return (D.issues[a][2] - D.issues[b][2]) || (a - b);
     return a - b;
@@ -861,10 +887,47 @@
     return res;
   }
 
-  /* ---- preferences: on/off settings, each read by applyPrefs ---- */
-  var PREFS = { showJump: 1 };
+  /* ---- preferences: on/off settings. CSS-only ones become root flags in
+     applyPrefs; the ones that change what is rendered re-render the list. ---- */
+  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list' };
   function applyPrefs() {
+    var root = document.documentElement;
     $('.ptools [data-act="next"]').hidden = !settings.showJump;
+    root.setAttribute('data-badges', settings.badges ? '1' : '0');
+    root.setAttribute('data-combo', settings.combo ? '1' : '0');
+    root.setAttribute('data-reveal', settings.reveal ? '1' : '0');
+    root.setAttribute('data-layout', settings.layout);
+  }
+  function togglePref(k) {
+    if (!PREFS[k]) return;
+    settings[k] = !settings[k];
+    saveSettings(); applyPrefs();
+    if (PREFS[k] === 'list') renderList();
+    renderSettings();
+  }
+
+  /* ---- era navigation (XM-8): a jump bar above the checklist — chips, a
+     dropdown, or none (plain scroll, the default). It jumps, it never filters:
+     the Story section's era chips are the filter. ---- */
+  function renderEraNav(visEra) {
+    var bar = $('#eranav'), eras = D.eras.map(function (e, i) { return i; }).filter(function (e) { return visEra[e]; });
+    if (settings.rev) eras.reverse();
+    bar.hidden = settings.eraNav === 'scroll' || !eras.length;
+    if (bar.hidden) { $('#eranavIn').innerHTML = ''; return; }
+    $('#eranavIn').innerHTML = settings.eraNav === 'chips'
+      ? eras.map(function (e) { return '<button type="button" class="chip" data-act="era-jump" data-e="' + e + '">' + escapeHtml(D.eras[e].name) + '</button>'; }).join('')
+      : '<select class="erasel" id="eraJump" aria-label="Jump to an era"><option value="">Jump to an era…</option>' +
+        eras.map(function (e) { return '<option value="' + e + '">' + escapeHtml(D.eras[e].name) + '</option>'; }).join('') + '</select>';
+  }
+  function jumpToEra(e) {
+    if (activeTab !== 'list') showTab('list');
+    var sec = $('.era[data-e="' + e + '"]');
+    if (!sec || sec.hidden) return false;
+    if (BAND_OF_ERA[e] >= 0) setBandOpen(BAND_OF_ERA[e], true);
+    setEraOpen(e, true);
+    sec.scrollIntoView({ block: 'start' });
+    sec.querySelector('.era-head').focus({ preventScroll: true });
+    return true;
   }
 
   /* ======================================================================
@@ -916,6 +979,11 @@
       '<p class="pace" id="paceOut" aria-live="polite">' + paceReadout(S) + '</p>' +
       (MEDIA_USED.length > 1 ? srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
       srow('Next unread button', pref('showJump', 'Show it')));
+    h += sset('display', 'Display',
+      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + pref('reveal', 'Tap to reveal notes') + pref('gapNotes', 'Gap notes')) +
+      srow('Order', pref('rev', 'Newest era first')) +
+      srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
+      srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)));
     h += sset('data', 'Data',
       srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +
       '<h3 class="ssub">Bookmarks</h3>' + bookmarksHtml() +
@@ -997,9 +1065,19 @@
         settings.refreshEvery = b.dataset.v; settings.refreshSeen = Date.now();   // a new interval restarts the clock
         saveSettings(); renderSettings();
         break;
-      case 'pref':
-        if (PREFS[b.dataset.k]) { settings[b.dataset.k] = !settings[b.dataset.k]; saveSettings(); applyPrefs(); renderSettings(); }
+      case 'pref': togglePref(b.dataset.k); break;
+      case 'layout': settings.layout = b.dataset.v === 'rows' ? 'rows' : 'arcs'; saveSettings(); applyPrefs(); renderList(); renderSettings(); break;
+      case 'eranav':
+        settings.eraNav = ERA_NAV.indexOf(b.dataset.v) === -1 ? 'scroll' : b.dataset.v;
+        saveSettings(); renderList(); renderSettings();
         break;
+      case 'era-jump': jumpToEra(+b.dataset.e); break;
+      case 'reveal': {
+        var note = b.closest('.row').querySelector('.subnote'), shown = b.getAttribute('aria-expanded') === 'true';
+        b.setAttribute('aria-expanded', shown ? 'false' : 'true');
+        if (note) note.hidden = shown;
+        break;
+      }
       case 'bm-jump': jumpToIssue(b.dataset.id); break;
       case 'bm-remove': removeBookmark(b.dataset.id); break;
       case 'clear-ask': confirming = 'clear'; renderSettings(); break;
@@ -1007,6 +1085,11 @@
       case 'clear-yes': clearProgress(); break;
       case 'import-legacy': runImportLegacy(); break;
     }
+  }
+  /* change: the one listener for <select> controls (era dropdown now; bulk
+     ranges and file import later). */
+  function onChange(ev) {
+    if (ev.target.id === 'eraJump' && ev.target.value !== '') { jumpToEra(+ev.target.value); ev.target.value = ''; }
   }
   var inputTimer = null;
   function onInput(ev) {
@@ -1036,6 +1119,7 @@
 
   document.addEventListener('click', onClick);
   document.addEventListener('input', onInput);
+  document.addEventListener('change', onChange);
   window.addEventListener('pagehide', flushNow);
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') flushNow();
