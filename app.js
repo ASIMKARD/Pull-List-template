@@ -54,9 +54,12 @@
   var BAND_OF_ERA = D.eras.map(function () { return -1; });
   D.periods.forEach(function (p, b) { p.eras.forEach(function (e) { BAND_OF_ERA[e] = b; }); });
   var HAS_ALT = false;
+  var ARC_I = {}, ARC_FIRST = D.arcs.map(function () { return -1; });
+  D.arcs.forEach(function (a, ai) { ARC_I[a.id] = ai; });
   for (var i0 = 0; i0 < N; i0++) {
     var r0 = D.issues[i0], arc0 = D.arcs[r0[2]];
     ID_I[D.ids[i0]] = i0;
+    if (ARC_FIRST[r0[2]] === -1) ARC_FIRST[r0[2]] = i0;
     ERA_ROWS[D.issueEra[i0]].push(i0);
     if (r0[6] & FL.ALT) HAS_ALT = true;
     var credited = D.issueWriters[i0].concat(D.issueArtists[i0]).map(function (c) { return D.creators[c].n; }).join(' ');
@@ -412,7 +415,7 @@
     return bits.join(' · ');
   }
 
-  function rowHtml(i) {
+  function rowHtml(i, rvArc) {
     var r = D.issues[i], flags = r[6], id = D.ids[i];
     if (flags & INERT) {
       return '<div class="row inert" data-i="' + i + '" data-id="' + escapeAttr(id) + '">' +
@@ -439,7 +442,7 @@
     return '<div class="row" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
       GLYPH[st] + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
-      '<span class="badges">' + badges + '</span>' + sub + '</div>';
+      '<span class="badges">' + badges + (rvArc >= 0 ? rvButton(rvArc) : '') + '</span>' + sub + '</div>';
   }
 
   function eraBodyHtml(e) {
@@ -447,7 +450,9 @@
     if (settings.layout === 'rows') {                         // layout C (X-1): per-row arc labels, no arc heads
       orderedEraRows(e).forEach(function (i) {
         if ((filt ? !matches(i) : !inView(i)) || (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE))) return;
-        html += rowHtml(i);
+        var a = D.issues[i][2], first = a !== curArc && !isInert(i);
+        if (first) curArc = a;
+        html += rowHtml(i, first ? a : -1);                    // no arc heads: the ✎ rides on the run's first row
       });
       return (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
     }
@@ -462,7 +467,7 @@
         var meta = [arc.y].filter(Boolean).join(' · ');
         var cred = again ? '' : creditsLine(i);
         html += '<div class="arc" data-a="' + a + '"><div class="arc-head"><h3>' + escapeHtml(arc.n) +
-          (again ? ' · cont.' : '') + '</h3>' + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') +
+          (again ? ' · cont.' : '') + '</h3>' + rvButton(a) + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') +
           (cred ? '<p class="credits">' + escapeHtml(cred) + '</p>' : '') +
           (arc.b && !again && arc.b !== D.eras[e].intro ? '<p class="blurb">' + escapeHtml(arc.b) + '</p>' : '') + '</div>';
       }
@@ -770,7 +775,7 @@
      shows on Checklist only. The active tab is remembered (S-29); the
      checklist itself still lands collapsed.
      ====================================================================== */
-  var TABS = ['list', 'reading', 'settings'];
+  var TABS = ['list', 'reading', 'reviews', 'settings'];
   var activeTab = 'list';
   function showTab(name) {
     if (TABS.indexOf(name) === -1) name = 'list';
@@ -784,6 +789,85 @@
     if (settings.tab !== name) { settings.tab = name; saveSettings(); }
     if (name === 'settings') renderSettings();
     if (name === 'reading') renderReading();
+    if (name === 'reviews') renderReviews();
+  }
+
+  /* ======================================================================
+     REVIEWS — one per arc (the session-2 migration maps old per-issue
+     reviews onto arcs): 1–5 stars and text. The ✎ button (.b.rv, D-4) sits
+     on the arc head; in layout C, on the first row of the arc's run.
+     ====================================================================== */
+  function stars(n) { return '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n); }
+  function rvTag(rv) { return rv ? (rv.r ? ' ' + '★'.repeat(rv.r) : ' noted') : ' review'; }
+  function rvLabel(a) {
+    var rv = reviews[D.arcs[a].id];
+    return 'Review ' + D.arcs[a].n + (rv ? (rv.r ? ' (' + rv.r + ' of 5 stars)' : ' (notes)') : '');
+  }
+  function rvButton(a) {
+    return '<button type="button" class="b rv" data-act="rv" data-a="' + a + '" aria-expanded="false" aria-label="' +
+      escapeAttr(rvLabel(a)) + '">✎' + rvTag(reviews[D.arcs[a].id]) + '</button>';
+  }
+  function reviewEditorHtml(a) {
+    var arc = D.arcs[a], cur = reviews[arc.id] || { r: 0, t: '' }, h = '';
+    for (var n = 1; n <= 5; n++) {
+      h += '<button type="button" class="star" data-act="rv-star" data-a="' + a + '" data-n="' + n + '" aria-pressed="' + (n <= cur.r) +
+        '" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>';
+    }
+    return '<div class="review" data-a="' + a + '"><div class="stars" role="group" aria-label="Rating for ' + escapeAttr(arc.n) + '">' + h +
+      '</div><textarea class="rvtext" data-a="' + a + '" rows="3" placeholder="Notes on ' + escapeAttr(arc.n) + '" aria-label="Notes on ' +
+      escapeAttr(arc.n) + '">' + escapeHtml(cur.t || '') + '</textarea></div>';
+  }
+  function toggleReview(btn) {
+    var host = btn.closest('.arc-head') || btn.closest('.row'), next = host.nextElementSibling;
+    if (next && next.classList.contains('review')) { next.remove(); btn.setAttribute('aria-expanded', 'false'); return; }
+    host.insertAdjacentHTML('afterend', reviewEditorHtml(+btn.dataset.a));
+    btn.setAttribute('aria-expanded', 'true');
+    host.nextElementSibling.querySelector('textarea').focus();
+  }
+  /* Stars or text (undefined = leave as is). Clearing both deletes the review. */
+  function commitReview(a, r, t) {
+    var id = D.arcs[a].id, cur = reviews[id] || { r: 0, t: '' };
+    if (r !== undefined) cur.r = r;
+    if (t !== undefined) cur.t = t;
+    if (!cur.r && !cur.t) delete reviews[id]; else reviews[id] = cur;
+    save('reviews', reviews);
+    $$('.b.rv[data-a="' + a + '"]').forEach(function (b) {
+      b.textContent = '✎' + rvTag(reviews[id]);
+      b.setAttribute('aria-label', rvLabel(a));
+    });
+    $$('.review[data-a="' + a + '"] .star').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.n <= cur.r ? 'true' : 'false'); });
+  }
+  /* The Reviews tab (F-3): sorted by each arc's first key, tap to jump. Old
+     reviews the migration could not match are listed, never dropped. */
+  function firstInView(a) {
+    for (var i = ARC_FIRST[a]; i >= 0 && i < N; i++) if (D.issues[i][2] === a && !isInert(i) && inView(i)) return i;
+    return -1;
+  }
+  function renderReviews() {
+    var known = Object.keys(reviews).filter(function (id) { return ARC_I[id] !== undefined; })
+      .sort(function (x, y) { return ARC_FIRST[ARC_I[x]] - ARC_FIRST[ARC_I[y]]; });
+    var orphans = Object.keys(reviews).filter(function (id) { return ARC_I[id] === undefined; });
+    var legacy = (load('legacy-unmatched', null) || { reviews: {} }).reviews || {};
+    var item = function (name, rv, extra) {
+      return '<li class="rev-item"><div class="rev-top">' + name +
+        (rv.r ? '<span class="rev-stars" aria-label="' + rv.r + ' of 5 stars">' + stars(rv.r) + '</span>' : '') + (extra || '') + '</div>' +
+        (rv.t ? '<p class="rev-t">' + escapeHtml(rv.t) + '</p>' : '') + '</li>';
+    };
+    var h = '<h2 class="pane-h">Reviews' + (known.length ? ' · ' + known.length : '') + '</h2>';
+    h += known.length ? '<ol class="revlist">' + known.map(function (id) {
+      var a = ARC_I[id], first = ARC_FIRST[a];
+      return item('<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-a="' + a + '">' + escapeHtml(D.arcs[a].n) + '</button>',
+        reviews[id], first >= 0 ? '<span class="rev-era">' + escapeHtml(D.eras[D.issueEra[first]].name) + '</span>' : '');
+    }).join('') + '</ol>' : '<p class="muted">No reviews yet. Tap ✎ on any arc to rate it.</p>';
+    var kept = orphans.map(function (id) { return [id, reviews[id]]; })
+      .concat(Object.keys(legacy).map(function (k) { return [k, legacy[k] || {}]; }));
+    if (kept.length) {
+      h += '<h3 class="ssub">Kept from the previous version</h3><p class="muted">These could not be matched to an arc in this list. ' +
+        'They are kept, never dropped.</p><ul class="revlist kept">' + kept.map(function (k) {
+          return item('<span class="rev-name">' + escapeHtml(k[0]) + '</span>', { r: +k[1].r || 0, t: k[1].t || '' });
+        }).join('') + '</ul>';
+    }
+    $('#reviews').innerHTML = h;
   }
 
   /* ======================================================================
@@ -1146,6 +1230,13 @@
         saveSettings(); renderList(); renderSettings();
         break;
       case 'era-jump': jumpToEra(+b.dataset.e); break;
+      case 'rv': toggleReview(b); break;
+      case 'rv-star': {
+        var ra = +b.dataset.a, rn = +b.dataset.n, rcur = reviews[D.arcs[ra].id];
+        commitReview(ra, rcur && rcur.r === rn ? 0 : rn);
+        break;
+      }
+      case 'rv-jump': { var fi = firstInView(+b.dataset.a); if (fi >= 0) jumpToIssue(D.ids[fi]); break; }
       case 'rd-done': readerMark('read'); break;
       case 'rd-skip': readerMark('skip'); break;
       case 'rd-prev': readerStep(-1); break;
@@ -1183,6 +1274,7 @@
   var inputTimer = null;
   function onInput(ev) {
     var id = ev.target.id;
+    if (ev.target.classList.contains('rvtext')) { commitReview(+ev.target.dataset.a, undefined, ev.target.value); return; }
     if (id !== 'q' && id !== 'cq') return;
     clearTimeout(inputTimer);
     inputTimer = setTimeout(function () {

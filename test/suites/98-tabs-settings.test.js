@@ -21,7 +21,7 @@ module.exports = async function (t) {
   const $ = q => d.querySelector(q), $$ = q => [...d.querySelectorAll(q)];
   await wait(20);
   t.ok('exactly one #tabs nav (T-2)', $$('#tabs').length === 1 && $$('nav').length === 1 && $('#tabs').getAttribute('role') === 'tablist');
-  t.eq('tabs in order (each arrives with its content; Reviews in step 5)', $$('#tabs [role="tab"]').map(b => b.textContent), ['Checklist', 'Reading', 'Settings']);
+  t.eq('tabs in order', $$('#tabs [role="tab"]').map(b => b.textContent), ['Checklist', 'Reading', 'Reviews', 'Settings']);
   t.ok('Checklist is the default tab: its pane shows, Settings is hidden', visible($('#app')) && $('#pane-settings').hidden &&
        $('#tab-list').getAttribute('aria-selected') === 'true');
   t.ok('the filter panel shows on Checklist', visible($('#fpanel')));

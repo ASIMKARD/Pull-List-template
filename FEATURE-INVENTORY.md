@@ -23,12 +23,12 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 |---|---|---|---|
 | F-1 | Checklist tab: rows grouped period band → era → arc, ordered by sort key | S2 | present (90-render: band → era → arc → rows, reading order) |
 | F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | present (9a-reading: n of N, era + format pills, title, arc · type, state, note, blurb, Skip / Mark <verb>, Previous / Pin / Next, resumes at the first entry not done until you step) |
-| F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | todo |
+| F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | re-express → present (9b-reviews: per arc, as the session-2 migration maps them; 1–5 stars + text, listed by each arc's first key, tap to jump; unmatched old reviews kept and listed) |
 | F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour, Display and Data sections present, 98-tabs-settings + 99-display; Touch + Bulk step 6, Backup step 8) |
 | F-5 | Four-state marks cycling unread → reading → read → skip; done = read or skip | S2 | present (91-marks: four-state cycle through one setMark path) |
 | F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten; 9a-reading: Reading-tab verbs Mark Read / Beaten / Watched) |
 | F-7 | Inert rows (GAPNOTE, RENUM) render as notes with no mark and never count toward progress | S2 | present (90-render: inert rows render with no mark, never count) |
-| F-8 | Row badges: ★ core, ↺ flashback (popover note), alt (popover note), bookmark ☆, review ✎ (`.b.rv`), external "read ↗" lookup link (franchise `searchUrl`, falls back to a web search) | S2 | present — core, flashback/ALT note, bookmark, lookup link (90-render); review button moved to S3 with its editor |
+| F-8 | Row badges: ★ core, ↺ flashback (popover note), alt (popover note), bookmark ☆, review ✎ (`.b.rv`), external "read ↗" lookup link (franchise `searchUrl`, falls back to a web search) | S2 | present — core, flashback/ALT note, bookmark, lookup link (90-render); review ✎ `.b.rv` on arc heads, and on the first row of each run in layout C (9b-reviews) |
 | F-9 | Row subnote shown under the title when a note exists and isn't a FB/ALT popover | S2 | present (90-render) |
 | F-10 | Period band heads: name, years label, blurb intro, done/total count | S2 | present (90-render: name, years label, intro, read count) |
 | F-11 | Era heads: name, "cont." when an era recurs, intro once, done/total count; arc heads: name ("· cont."), year · title meta, blurb (suppressed when equal to era intro) | S2 | present (90-render: cont., credits, intro once) |
@@ -181,7 +181,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-50 | persistent banner toggle exists | S4 | todo |
 | T-51 | persistent banner is off by default | S4 | todo |
 | T-52 | reading tab labels vary by medium | S3 | present (9a-reading) |
-| T-53 | review button is targetable by class | S2 | moved to S3 with the review editor (no dead control) |
+| T-53 | review button is targetable by class | S2 | present (9b-reviews: `.b.rv` on every arc head) |
 | T-54 | button size seg has 3 options | S4 | todo |
 | T-55 | button size defaults to standard | S4 | todo |
 | T-56 | compact size restores the original 26px mark | S4 | todo |
@@ -248,7 +248,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-117 | tabs: gear hidden again | — | dropped |
 | T-118 | Reading tab shows stepper title | S3 | present (9a-reading) |
 | T-119 | the done button persists a mark (label varies by medium) | S3 | present (9a-reading: Mark Beaten persists; D-1 regression) |
-| T-120 | Reviews pane visible | S3 | todo |
+| T-120 | Reviews pane visible | S3 | present (9b-reviews) |
 | T-121 | Settings pane visible | S3 | present (98-tabs-settings) |
 | T-122 | Checklist pane visible again | S3 | present (98-tabs-settings) |
 | T-123 | no runtime errors after interaction | S2 | present (90-render, 91-marks) |
@@ -279,7 +279,7 @@ installed app once online.
 | D-1 | Reading-tab mark doesn't update era counters | one mark path for every surface; assert counters move from a Reading-tab mark | S3 | present (9a-reading: a Reading-tab mark moves the header, band and era counters and the time left; mutation: bypassing setMark fails it) |
 | D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present — SW precaches 12 fonts + 3 icons, every path exists (80-guards); live install S4 |
 | D-3 | hardcoded franchise chip + filter branch | no franchise strings in template code (guard) | S1 | present (80-guards) |
-| D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | moved to S3 with the review editor |
+| D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | present (9b-reviews: `.b.rv` targetable, opens the arc's review editor) |
 | D-5 | phantom "Elseworlds (ALT)" era appended | build never adds an era not in the data | S1 | present (20-build: output eras == dataset eras) |
 | D-6 | empty strand list blanks the app | build inserts one universal strand | S1 | present (20-build: 64-era stress with no strands → one universal strand) |
 | D-7 | sync placeholder hardcoded to another tracker's prefix | QR/sync prefix derived from `franchise.key` | S3 | todo |

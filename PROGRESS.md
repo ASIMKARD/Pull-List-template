@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 912 assertions, 0 failed, 20 suites (session 3, step 4 of 9 done).
+**Harness:** 936 assertions, 0 failed, 21 suites (session 3, step 5 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -424,15 +424,40 @@ Then push, and tell John.
   - A boot on the Reading tab resumes at the first unread while the checklist stays collapsed.
 - Real Chromium screenshot of the Reading card: no errors, no overflow.
 
-### Step 5 begins with
-**Reviews, per arc.**
-- In `index.html`, add `#tab-reviews` + `#pane-reviews` between Reading and Settings; in
-  `app.js`, add `'reviews'` to `TABS`.
-- The `.b.rv` ✎ button goes on arc heads (in layout C, on the first row of each arc run). It
-  opens an inline editor: 1–5 stars plus text, saved to `reviews[arcId]`, and clearing both
-  deletes it.
-- The Reviews tab lists the reviews in order of each arc's first key; tapping one jumps to the
-  arc's first row. `legacy-unmatched` reviews are listed as "kept from the previous version".
-- The first test to write, in `9b-reviews`: `.b.rv` is targetable on an arc head (T-53, D-4);
-  saving stores stars + text under the arc id; the Reviews pane is visible (T-120); tapping
-  jumps; the migrated review appears.
+## Session 3 checkpoint — step 5 done (Reviews), 3 Oct 2026
+
+### Done
+- **Per-arc reviews** in `reviews[arcId] = {r, t}`.
+  - **The ✎ button.** `.b.rv` (D-4, T-53) sits on every arc head; in layout C it goes on the
+    first row of each arc run. Its label shows the rating ("✎ ★★★★", "✎ noted", "✎ review").
+  - **The editor.** An inline editor has 5 star buttons (tap the same star again to clear it)
+    and a notes box.
+  - **Saving.** Text commits to the store on every input; the 400 ms save debounce and the
+    `pagehide` flush cover it, so a review typed and closed at once is not lost. Clearing both
+    the stars and the text deletes the review.
+- **The Reviews tab** (between Reading and Settings):
+  - It lists reviews by each arc's first key, with stars, era and text; tapping one jumps to the
+    arc's first in-view row.
+  - "Kept from the previous version" lists `legacy-unmatched` reviews and reviews whose arc is no
+    longer in the data. They are never dropped.
+- **Tests:** `9b-reviews` (24 assertions). Mutation-checked:
+  - text not committed on input → 2 failures;
+  - the kept list removed → 1 failure.
+- **Found by real Chromium, invisible to jsdom:** the fourth tab pushed the nav past 390 px
+  (horizontal overflow). The tabs now share the width (`flex: 1 0 auto`) and the nav scrolls as
+  a fallback. Checked clean at 320, 360 and 390 px.
+  - **Session 4:** add a Chromium overflow check at 320 px to the layout suite (L-checks).
+
+### Step 6 begins with
+**Bulk marking and touch.**
+- In `app.js`, split `setMark` into `applyMark(i, st)` (the state plus any rendered row) and one
+  `refreshStats()` per batch. Add `bulkMark(list, st)`, which snapshots the previous states for
+  Undo (B-2, V-27).
+- Settings gets a **Bulk actions** section:
+  - era selects (mark an era read / unread);
+  - a range from–to defaulting to the full span (T-18, T-19), using the `change` listener;
+  - Expand all / Collapse all.
+- Settings gets a **Touch** section: swipe (S-22) and long-press (S-23), both off by default.
+  Swipe and long-press need `touchstart`, `touchmove` and `touchend` (→ 8 listeners).
+- The first test to write, in `9c-bulk-touch`: bulk mark an era read, then Undo restores a
+  `reading` row as `reading` (B-2). Then the static and runtime "no `navigator.vibrate`" guard.

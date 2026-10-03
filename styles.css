@@ -133,9 +133,10 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .notepop { margin: 0; padding: 6px 10px 8px 50px; background: var(--accent-wash); }
 
 /* ---- tabs and panes ---- */
-.tabs { display: flex; gap: 4px; margin: 0 16px var(--gap); border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: 2px; margin: 0 16px var(--gap); border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tab {
-  padding: 10px 14px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--ink-soft); font-weight: 600;
+  flex: 1 0 auto; padding: 10px 6px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--ink-soft);
+  font-weight: 600; white-space: nowrap;
 }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 
@@ -192,6 +193,25 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .rbtn.solid { background: var(--accent); color: var(--accent-ink); }
 .rnav { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 0; }
 .rnav .linkbtn[disabled] { color: var(--ink-soft); cursor: default; }
+
+/* ---- reviews ---- */
+.arc-head h3 { display: inline; margin-right: 8px; }
+.b.rv { min-height: 26px; vertical-align: middle; }
+.review { margin: 4px 0 10px; padding: 10px 12px; background: var(--accent-wash); border-radius: var(--radius-sm); }
+.stars { display: flex; gap: 2px; }
+.star { width: 36px; height: 36px; border: 0; background: none; font-size: 22px; color: var(--line); }
+.star[aria-pressed="true"] { color: var(--accent); }
+.rvtext { display: block; width: 100%; margin-top: 6px; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--ink); font: inherit; resize: vertical; }
+.reviews { margin: 0 16px; }
+.pane-h { margin: 6px 0 10px; font-size: 20px; }
+.revlist { margin: 0; padding: 0; list-style: none; }
+.rev-item { padding: 10px 12px; margin-bottom: 8px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.rev-top { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.rev-name { font-weight: 600; padding: 0; }
+.rev-era { font-size: 13px; color: var(--ink-soft); }
+.rev-stars { color: var(--accent); letter-spacing: .05em; }
+.rev-t { margin: 6px 0 0; font-size: 14px; white-space: pre-wrap; }
 
 /* ---- per-format progress lines ---- */
 .pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }

@@ -23,7 +23,7 @@ module.exports = async function (t) {
   const cur = () => card() && card().dataset.id;
   const btn = act => $(`#reader [data-act="${act}"]`);
 
-  t.eq('tabs in order: Checklist, Reading, Settings', $$('#tabs [role="tab"]').map(b => b.textContent), ['Checklist', 'Reading', 'Settings']);
+  t.eq('tabs in order: Checklist, Reading, Reviews, Settings', $$('#tabs [role="tab"]').map(b => b.textContent), ['Checklist', 'Reading', 'Reviews', 'Settings']);
   $('#tab-reading').click();
   t.ok('Reading tab opens its pane; no filter panel there (T-91 re-expressed)', visible($('#reader')) && !visible($('#fpanel')));
   t.ok('the stepper shows a title (T-118)', $('#reader .rtitle').textContent === 'Mixed Quest (1990)');
