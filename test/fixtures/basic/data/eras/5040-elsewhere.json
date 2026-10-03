@@ -1,0 +1,72 @@
+{
+ "$schema": "../../../../../schema/era-file.schema.json",
+ "era": "elsewhere",
+ "rows": [
+  {
+   "issueId": "mirror-hero-1990-1",
+   "series": "Mirror Hero",
+   "vol": "1990",
+   "num": "1",
+   "title": "Mirror Hero (1990) #1",
+   "arc": "mirror",
+   "date": {
+    "cover": "1990-02",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "ALT"
+   ],
+   "type": "ALT",
+   "note": "Another world."
+  },
+  {
+   "issueId": "mirror-hero-1990-2",
+   "series": "Mirror Hero",
+   "vol": "1990",
+   "num": "2",
+   "title": "Mirror Hero (1990) #2",
+   "arc": "mirror",
+   "date": {
+    "cover": "1990-03",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "ALT"
+   ],
+   "type": "ALT"
+  },
+  {
+   "issueId": "mirror-hero-1990-3",
+   "series": "Mirror Hero",
+   "vol": "1990",
+   "num": "3",
+   "title": "Mirror Hero (1990) #3",
+   "arc": "mirror",
+   "date": {
+    "cover": "1990-04",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "ALT"
+   ],
+   "type": "ALT",
+   "sortDate": "1990-01"
+  },
+  {
+   "issueId": "mirror-hero-1990-4",
+   "series": "Mirror Hero",
+   "vol": "1990",
+   "num": "4",
+   "title": "Mirror Hero (1990) #4",
+   "arc": "mirror",
+   "date": {
+    "cover": "1990-05",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "ALT"
+   ],
+   "type": "ALT"
+  }
+ ]
+}

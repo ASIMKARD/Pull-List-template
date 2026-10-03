@@ -1,0 +1,37 @@
+{
+  "$schema": "./schema/dataset.schema.json",
+  "schemaVersion": 1,
+  "franchise": {
+    "key": "starter",
+    "wordmark": "Starter",
+    "title": "Starter Tracker — Reading Order",
+    "strapline": "template demo · replace this dataset with your franchise",
+    "span": "2001–2002",
+    "theme": "#1B1D24",
+    "background": "#F4F2EC",
+    "strictCredits": true
+  },
+  "eras": [
+    { "id": "first-light", "name": "First Light", "rank": 5000, "years": "2001", "intro": "A placeholder era. Replace it." },
+    { "id": "second-wind", "name": "Second Wind", "rank": 5010, "years": "2002", "intro": "Another placeholder era." }
+  ],
+  "strands": ["Main"],
+  "types": ["MAIN", "MINI"],
+  "tiers": ["Barebones", "Essential", "Everything"],
+  "media": ["comic"],
+  "arcs": [
+    { "id": "opening", "name": "Opening", "era": "first-light", "strands": ["Main"], "type": "MAIN", "mo": "M", "tier": "Barebones",
+      "credits": { "writers": ["Placeholder Writer"], "artists": ["Placeholder Artist"] } },
+    { "id": "aside", "name": "Aside", "era": "second-wind", "strands": ["Main"], "type": "MINI", "mo": "O", "tier": "Everything",
+      "credits": { "writers": ["Placeholder Writer"], "artists": ["Second Artist"] } }
+  ],
+  "rows": [
+    { "issueId": "starter-2001-1", "series": "Starter", "vol": "2001", "num": "1", "title": "Starter (2001) #1", "era": "first-light", "arc": "opening", "date": { "cover": "2001-01", "source": "template placeholder" } },
+    { "issueId": "starter-2001-2", "series": "Starter", "vol": "2001", "num": "2", "title": "Starter (2001) #2", "era": "first-light", "arc": "opening", "date": { "cover": "2001-02", "source": "template placeholder" } },
+    { "issueId": "starter-2001-3", "series": "Starter", "vol": "2001", "num": "3", "title": "Starter (2001) #3", "era": "first-light", "arc": "opening", "core": true, "date": { "cover": "2001-03", "source": "template placeholder" } },
+    { "issueId": "starter-aside-2002-1", "series": "Starter Aside", "vol": "2002", "num": "1", "title": "Starter Aside (2002) #1", "era": "second-wind", "arc": "aside", "date": { "cover": "2002-01", "source": "template placeholder" } },
+    { "issueId": "starter-aside-2002-2", "series": "Starter Aside", "vol": "2002", "num": "2", "title": "Starter Aside (2002) #2", "era": "second-wind", "arc": "aside", "date": { "cover": "2002-02", "source": "template placeholder" } }
+  ],
+  "legend": [{ "term": "★ core", "meaning": "Barebones path" }],
+  "maintenance": ["Template demo dataset. Replace dataset.json with your franchise."]
+}

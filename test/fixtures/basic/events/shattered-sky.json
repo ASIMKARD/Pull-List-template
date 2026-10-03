@@ -1,0 +1,131 @@
+{
+ "$schema": "../../../../schema/event.schema.json",
+ "id": "shattered-sky",
+ "name": "Shattered Sky",
+ "chapters": [
+  {
+   "issueId": "shattered-sky-1987-1",
+   "series": "Shattered Sky",
+   "vol": "1987",
+   "num": "1",
+   "title": "Shattered Sky (1987) #1",
+   "date": {
+    "cover": "1987-05",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 1,
+   "role": "core",
+   "relevant": [
+    "fixture",
+    "other-line"
+   ],
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  },
+  {
+   "issueId": "other-guy-1985-22",
+   "series": "Other Guy",
+   "vol": "1985",
+   "num": "22",
+   "title": "Other Guy (1985) #22",
+   "date": {
+    "cover": "1987-05",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 2,
+   "role": "tie-in",
+   "relevant": [
+    "other-line"
+   ],
+   "credits": {
+    "writers": [
+     "Hollis Marrow"
+    ],
+    "artists": [
+     "Ines Okafor"
+    ]
+   }
+  },
+  {
+   "issueId": "kestrel-1986-7",
+   "title": "Kestrel (1986) #7",
+   "date": {
+    "cover": "1987-06",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 3,
+   "role": "tie-in",
+   "relevant": [
+    "fixture"
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-30",
+   "title": "Fixture Hero (1980) #30",
+   "date": {
+    "cover": "1987-06",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 4,
+   "role": "tie-in",
+   "relevant": [
+    "fixture"
+   ]
+  },
+  {
+   "issueId": "bystander-1987-1",
+   "series": "Bystander",
+   "vol": "1987",
+   "num": "1",
+   "title": "Bystander (1987) #1",
+   "date": {
+    "cover": "1987-06",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 5,
+   "role": "tie-in",
+   "relevant": [
+    "other-line"
+   ],
+   "credits": {
+    "writers": [
+     "Hollis Marrow"
+    ],
+    "artists": [
+     "Ines Okafor"
+    ]
+   }
+  },
+  {
+   "issueId": "shattered-sky-1987-2",
+   "series": "Shattered Sky",
+   "vol": "1987",
+   "num": "2",
+   "title": "Shattered Sky (1987) #2",
+   "date": {
+    "cover": "1987-07",
+    "source": "fixture ledger (invented)"
+   },
+   "order": 6,
+   "role": "core",
+   "relevant": [
+    "fixture",
+    "other-line"
+   ],
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  }
+ ]
+}

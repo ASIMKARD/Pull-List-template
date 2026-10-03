@@ -1,0 +1,245 @@
+{
+ "$schema": "../../../../../schema/era-file.schema.json",
+ "era": "rising",
+ "rows": [
+  {
+   "issueId": "vela-year-zero-1984-1",
+   "series": "Vela: Year Zero",
+   "vol": "1984",
+   "num": "1",
+   "title": "Vela: Year Zero (1984) #1",
+   "arc": "year-zero",
+   "date": {
+    "cover": "1984-05",
+    "source": "fixture ledger (invented)"
+   },
+   "sortDate": "1980-01",
+   "flags": [
+    "FB"
+   ],
+   "note": "Published in 1984; set before the first issue.",
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "id": "gap-1983-hiatus",
+   "title": "Publication hiatus",
+   "arc": "hero-rising",
+   "flags": [
+    "GAPNOTE"
+   ],
+   "note": "The main title skipped two months here.",
+   "date": {
+    "cover": "1983-02"
+   }
+  },
+  {
+   "issueId": "orrin-1983-1",
+   "series": "Orrin",
+   "vol": "1983",
+   "num": "1",
+   "title": "Orrin (1983) #1",
+   "arc": "orrin-mini",
+   "date": {
+    "cover": "1983-04",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "orrin",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "orrin-1983-2",
+   "series": "Orrin",
+   "vol": "1983",
+   "num": "2",
+   "title": "Orrin (1983) #2",
+   "arc": "orrin-mini",
+   "date": {
+    "cover": "1983-05",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "orrin",
+     "grade": "major"
+    }
+   ],
+   "seq": 1
+  },
+  {
+   "issueId": "orrin-1983-3",
+   "series": "Orrin",
+   "vol": "1983",
+   "num": "3",
+   "title": "Orrin (1983) #3",
+   "arc": "orrin-mini",
+   "date": {
+    "cover": "1983-06",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "orrin",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "orrin-1983-4",
+   "series": "Orrin",
+   "vol": "1983",
+   "num": "4",
+   "title": "Orrin (1983) #4",
+   "arc": "orrin-mini",
+   "date": {
+    "cover": "1983-07",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "orrin",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "vela-and-orrin-1984-1",
+   "series": "Vela & Orrin",
+   "vol": "1984",
+   "num": "1",
+   "title": "Vela & Orrin: The \"Long\" Night's <End> (1984) #1",
+   "arc": "vela-orrin",
+   "date": {
+    "cover": "1983-05",
+    "source": "fixture ledger (invented)"
+   },
+   "seq": 1,
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "orrin",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-15",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "15",
+   "title": "Fixture Hero (1980) #15",
+   "arc": "hero-rising",
+   "date": {
+    "cover": "1983-06",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-16",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "16",
+   "title": "Fixture Hero (1980) #16",
+   "arc": "hero-rising",
+   "date": {
+    "cover": "1983-07",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-17",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "17",
+   "title": "Fixture Hero (1980) #17",
+   "arc": "hero-rising",
+   "date": {
+    "cover": "1983-08",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-18",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "18",
+   "title": "Fixture Hero (1980) #18",
+   "arc": "hero-rising",
+   "date": {
+    "cover": "1983-09",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-19",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "19",
+   "title": "Fixture Hero (1980) #19",
+   "arc": "hero-rising",
+   "date": {
+    "cover": "1983-10",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-20",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "20",
+   "title": "Fixture Hero (1980) #20",
+   "arc": "hero-rising",
+   "date": {
+    "cover": "1983-11",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  }
+ ]
+}

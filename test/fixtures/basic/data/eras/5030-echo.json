@@ -1,0 +1,83 @@
+{
+ "$schema": "../../../../../schema/era-file.schema.json",
+ "era": "echo",
+ "rows": [
+  {
+   "id": "renum-1995",
+   "title": "Fixture Hero relaunches with a new #1",
+   "arc": "relaunch",
+   "flags": [
+    "RENUM"
+   ],
+   "date": {
+    "cover": "1995-01"
+   }
+  },
+  {
+   "issueId": "fixture-hero-1995-1",
+   "series": "Fixture Hero",
+   "vol": "1995",
+   "num": "1",
+   "title": "Fixture Hero (1995) #1",
+   "arc": "relaunch",
+   "date": {
+    "cover": "1995-02",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1995-2",
+   "series": "Fixture Hero",
+   "vol": "1995",
+   "num": "2",
+   "title": "Fixture Hero (1995) #2",
+   "arc": "relaunch",
+   "date": {
+    "cover": "1995-03",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1995-minus-1",
+   "series": "Fixture Hero",
+   "vol": "1995",
+   "num": "-1",
+   "title": "Fixture Hero (1995) #-1",
+   "arc": "relaunch",
+   "date": {
+    "cover": "1995-07",
+    "source": "fixture ledger (invented)"
+   },
+   "flags": [
+    "SPECIAL_NUMBERING"
+   ],
+   "note": "Flashback month."
+  },
+  {
+   "issueId": "fixture-toons-1988-s1e3",
+   "series": "Fixture Toons",
+   "vol": "1988",
+   "num": "S1E3",
+   "title": "Fixture Toons (1988) S1E3 \"The Missing Page\"",
+   "arc": "toons",
+   "date": {
+    "cover": "1988-09",
+    "source": "fixture ledger (invented)"
+   },
+   "type": "SHOW",
+   "medium": "screen"
+  }
+ ]
+}

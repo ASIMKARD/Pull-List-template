@@ -1,0 +1,325 @@
+{
+ "$schema": "../../../../../schema/era-file.schema.json",
+ "era": "storm",
+ "rows": [
+  {
+   "issueId": "fixture-hero-1980-21",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "21",
+   "title": "Fixture Hero (1980) #21",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-01",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-22",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "22",
+   "title": "Fixture Hero (1980) #22",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-02",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-23",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "23",
+   "title": "Fixture Hero (1980) #23",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-03",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-24",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "24",
+   "title": "Fixture Hero (1980) #24",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-04",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-25",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "25",
+   "title": "Fixture Hero (1980) #25",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-05",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-26",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "26",
+   "title": "Fixture Hero (1980) #26",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-06",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-27",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "27",
+   "title": "Fixture Hero (1980) #27",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-07",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-28",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "28",
+   "title": "Fixture Hero (1980) #28",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-08",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-29",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "29",
+   "title": "Fixture Hero (1980) #29",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1986-09",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-1980-30",
+   "series": "Fixture Hero",
+   "vol": "1980",
+   "num": "30",
+   "title": "Fixture Hero (1980) #30",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1987-06",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    },
+    {
+     "who": "kestrel",
+     "grade": "minor"
+    }
+   ]
+  },
+  {
+   "issueId": "kestrel-1986-6",
+   "series": "Kestrel",
+   "vol": "1986",
+   "num": "6",
+   "title": "Kestrel (1986) #6",
+   "arc": "kestrel-run",
+   "date": {
+    "cover": "1987-05",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "kestrel",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "id": "198706004",
+   "issueId": "kestrel-1986-7",
+   "series": "Kestrel",
+   "vol": "1986",
+   "num": "7",
+   "title": "Kestrel (1986) #7",
+   "arc": "kestrel-run",
+   "date": {
+    "cover": "1987-06",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "kestrel",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "kestrel-1986-8",
+   "series": "Kestrel",
+   "vol": "1986",
+   "num": "8",
+   "title": "Kestrel (1986) #8",
+   "arc": "kestrel-run",
+   "date": {
+    "cover": "1987-07",
+    "source": "fixture ledger (invented)"
+   },
+   "presence": [
+    {
+     "who": "kestrel",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-hero-quiet-storm-1986",
+   "series": "Fixture Hero: Quiet Storm",
+   "vol": "1986",
+   "title": "Fixture Hero: Quiet Storm (1986)",
+   "arc": "quiet-storm",
+   "date": {
+    "cover": "1986-11",
+    "source": "fixture ledger (invented)"
+   },
+   "type": "ONE-SHOT",
+   "core": true,
+   "presence": [
+    {
+     "who": "vela",
+     "grade": "major"
+    }
+   ]
+  },
+  {
+   "issueId": "fixture-quest-1987",
+   "series": "Fixture Quest",
+   "vol": "1987",
+   "title": "Fixture Quest (1987)",
+   "arc": "fixture-quest",
+   "date": {
+    "cover": "1987-03",
+    "source": "fixture ledger (invented)"
+   },
+   "type": "GAME",
+   "medium": "game"
+  },
+  {
+   "issueId": "fixture-hero-presents-1988-1",
+   "series": "Fixture Hero Presents",
+   "vol": "1988",
+   "num": "1",
+   "title": "Fixture Hero Presents: The Extraordinarily Long-Winded Saga of Everything That Happened Before, During and After the Shattered Sky, Told in Full for the First Time, Part One of Seven (1988) #1",
+   "arc": "storm-arc",
+   "date": {
+    "cover": "1988-01",
+    "source": "fixture ledger (invented)"
+   }
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pull-list/schema/era-file.schema.json",
+  "title": "Pull List per-era source file (data/eras/*.json)",
+  "description": "Rows for one era. Rows inherit the file's era; a row may not name a different one.",
+  "type": "object",
+  "required": ["era", "rows"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "era": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "rows": { "type": "array", "items": { "$ref": "dataset.schema.json#/$defs/row" } }
+  }
+}

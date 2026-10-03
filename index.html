@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading Order</title>
+<meta name="description" content="A comics reading-order tracker.">
+<meta name="theme-color" content="#1b1d24">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header class="phead" id="phead">
+  <h1 class="ptitle" id="wordmark"></h1>
+  <p class="pmeta"><span id="strapline"></span> · <b id="buildtag"></b></p>
+  <div class="pprog" id="pprog"></div>
+  <div class="ptools">
+    <button type="button" class="tool" data-act="next">Next unread</button>
+    <button type="button" class="tool" data-act="expand-all">Expand all</button>
+    <button type="button" class="tool" data-act="collapse-all">Collapse all</button>
+  </div>
+</header>
+
+<section class="fpanel" id="fpanel" aria-label="Filters">
+  <div class="fbar">
+    <button type="button" class="ftoggle" data-act="panel" aria-expanded="false" aria-controls="fbody">Filters <span class="fcount" id="fcount"></span></button>
+    <input class="search" id="q" type="search" placeholder="Search titles, arcs, notes, creators…" aria-label="Search titles, arcs, notes and creators" autocomplete="off">
+  </div>
+  <p class="fshow" id="fshow" aria-live="polite"></p>
+  <div class="fbody" id="fbody" hidden>
+    <div class="fhead"><span class="fhead-t">Active filters</span><button type="button" class="linkbtn" data-act="clear">Clear all</button></div>
+    <div class="fchips" id="fchips"></div>
+    <div class="fsecs" id="fsecs"></div>
+  </div>
+</section>
+
+<main id="app" aria-busy="true"><p class="loading">Loading the checklist…</p></main>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <div class="toast-in">
+    <span id="toastMsg"></span>
+    <button type="button" class="toast-act" id="toastAct" data-act="toast-act" hidden></button>
+  </div>
+</div>
+
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+{
+ "$schema": "../../../schema/dataset.schema.json",
+ "schemaVersion": 1,
+ "franchise": {
+  "key": "fixture-np",
+  "wordmark": "Fixture NP",
+  "title": "Fixture Line — Reading Order",
+  "strapline": "harness fixture · an invented franchise",
+  "span": "1980–1995",
+  "theme": "#22303F",
+  "background": "#F2EFE8",
+  "searchUrl": "https://example.invalid/search?q=",
+  "dualOrder": {
+   "label": "Order",
+   "a": "Story",
+   "b": "Published"
+  },
+  "storage": {
+   "legacy": {
+    "prefix": "fixture-old:v1:",
+    "format": "v2",
+    "qrPrefix": "FIXT1:"
+   }
+  },
+  "strictCredits": false,
+  "eventRelevance": "fixture"
+ },
+ "eras": [
+  {
+   "id": "dawn",
+   "name": "Dawn",
+   "rank": 5000,
+   "years": "1980–1982",
+   "intro": "Where it starts."
+  },
+  {
+   "id": "rising",
+   "name": "Rising",
+   "rank": 5010,
+   "years": "1983–1985",
+   "intro": "The cast grows."
+  },
+  {
+   "id": "storm",
+   "name": "Storm",
+   "rank": 5020,
+   "years": "1986–1988",
+   "intro": "The event years."
+  },
+  {
+   "id": "echo",
+   "name": "Echo",
+   "rank": 5030,
+   "years": "1988–1995",
+   "intro": "Relaunch."
+  },
+  {
+   "id": "elsewhere",
+   "name": "Elsewhere",
+   "rank": 5040,
+   "years": "other worlds",
+   "intro": "A separate continuity."
+  }
+ ],
+ "strands": [
+  "Vela",
+  "Orrin",
+  "Kestrel",
+  "Line-wide"
+ ],
+ "types": [
+  "MAIN",
+  "MINI",
+  "EVENT",
+  "ONE-SHOT",
+  "GAME",
+  "SHOW",
+  "ALT"
+ ],
+ "tiers": [
+  "Barebones",
+  "Essential",
+  "Everything"
+ ],
+ "media": [
+  "comic",
+  "game",
+  "screen"
+ ],
+ "characters": [
+  {
+   "id": "vela",
+   "name": "Vela"
+  },
+  {
+   "id": "orrin",
+   "name": "Orrin"
+  },
+  {
+   "id": "kestrel",
+   "name": "Kestrel"
+  }
+ ],
+ "arcs": [
+  {
+   "id": "origins",
+   "name": "Origins",
+   "era": "dawn",
+   "strands": [
+    "Vela"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Barebones",
+   "importance": 5,
+   "year": "1980",
+   "blurb": "The first year.",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   },
+   "creditSplits": [
+    {
+     "fromId": "fixture-hero-1980-7",
+     "writers": [
+      "Bram Ostrow"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "year-zero",
+   "name": "Year Zero",
+   "era": "rising",
+   "strands": [
+    "Vela"
+   ],
+   "type": "ONE-SHOT",
+   "mo": "O",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Dorian Vale"
+    ]
+   }
+  },
+  {
+   "id": "orrin-mini",
+   "name": "Orrin Alone",
+   "era": "rising",
+   "strands": [
+    "Orrin"
+   ],
+   "type": "MINI",
+   "mo": "O",
+   "tier": "Essential",
+   "credits": {
+    "writers": [
+     "Emeka Stroud"
+    ],
+    "artists": [
+     "Fen Larkspur"
+    ]
+   }
+  },
+  {
+   "id": "vela-orrin",
+   "name": "Night Shift",
+   "era": "rising",
+   "strands": [
+    "Vela",
+    "Orrin"
+   ],
+   "type": "ONE-SHOT",
+   "mo": "O",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Emeka Stroud",
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  },
+  {
+   "id": "hero-rising",
+   "name": "Rising Tide",
+   "era": "rising",
+   "strands": [
+    "Vela"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Essential",
+   "credits": {
+    "writers": [
+     "Bram Ostrow"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  },
+  {
+   "id": "storm-arc",
+   "name": "Stormfront",
+   "era": "storm",
+   "strands": [
+    "Vela",
+    "Kestrel"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Essential",
+   "credits": {
+    "writers": [
+     "Bram Ostrow"
+    ],
+    "artists": [
+     "Gale Ferreira"
+    ]
+   }
+  },
+  {
+   "id": "kestrel-run",
+   "name": "Kestrel Flies",
+   "era": "storm",
+   "strands": [
+    "Kestrel"
+   ],
+   "type": "MAIN",
+   "mo": "O",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Emeka Stroud"
+    ],
+    "artists": [
+     "Quillon"
+    ]
+   }
+  },
+  {
+   "id": "quiet-storm",
+   "name": "Quiet Storm",
+   "era": "storm",
+   "strands": [
+    "Vela"
+   ],
+   "type": "ONE-SHOT",
+   "mo": "M",
+   "tier": "Barebones",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Gale Ferreira"
+    ]
+   }
+  },
+  {
+   "id": "fixture-quest",
+   "name": "Fixture Quest",
+   "era": "storm",
+   "strands": [
+    "Line-wide"
+   ],
+   "type": "GAME",
+   "mo": "O",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Bram Ostrow"
+    ],
+    "artists": [
+     "Quillon"
+    ]
+   }
+  },
+  {
+   "id": "shattered-sky",
+   "name": "Shattered Sky",
+   "era": "storm",
+   "strands": [
+    "Line-wide"
+   ],
+   "type": "EVENT",
+   "mo": "M",
+   "tier": "Essential",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  },
+  {
+   "id": "relaunch",
+   "name": "Relaunch",
+   "era": "echo",
+   "strands": [
+    "Vela"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Essential",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Gale Ferreira"
+    ]
+   }
+  },
+  {
+   "id": "toons",
+   "name": "Fixture Toons",
+   "era": "echo",
+   "strands": [
+    "Line-wide"
+   ],
+   "type": "SHOW",
+   "mo": "O",
+   "tier": "Everything",
+   "credits": {
+    "artists": [
+     "Fen Larkspur"
+    ]
+   }
+  },
+  {
+   "id": "mirror",
+   "name": "Mirror World",
+   "era": "elsewhere",
+   "strands": [
+    "Vela"
+   ],
+   "type": "ALT",
+   "mo": "O",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Dorian Vale"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  }
+ ],
+ "sources": [
+  "../basic/data/eras/5000-dawn.json",
+  "../basic/data/eras/5010-rising.json",
+  "../basic/data/eras/5020-storm.json",
+  "../basic/data/eras/5030-echo.json",
+  "../basic/data/eras/5040-elsewhere.json"
+ ],
+ "events": [
+  {
+   "id": "shattered-sky",
+   "era": "storm",
+   "arc": "shattered-sky"
+  }
+ ],
+ "retiredIds": [],
+ "creatorMononyms": [
+  "Quillon"
+ ],
+ "legend": [
+  {
+   "term": "★ core",
+   "meaning": "Barebones path"
+  },
+  {
+   "term": "↺",
+   "meaning": "Flashback"
+  }
+ ],
+ "maintenance": [
+  "Invented data for the test harness. Never real."
+ ],
+ "eventsDir": "../basic/events"
+}
