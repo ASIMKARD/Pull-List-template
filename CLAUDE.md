@@ -74,6 +74,31 @@ only at a cut-over swap John approves. (Full text: Master-Repo
   in v2's key order, rebuilt from legacy ids **plus `retiredIds`**: keep retired
   ids listed, or every later position shifts.
 
+## UI rules (v3)
+- **Data-driven visibility: a rule, not a one-off (decided 4 Oct).** A control or
+  section renders only when the dataset gives it something to do. The data
+  decides this, never a setting or a skin; skins never hide a control.
+  - **One medium:** no per-format header lines, no format filter, no progress-mode
+    setting, no duration copy and no "+N untimed". Verbs are that medium's own; for
+    comics that is plain "Read".
+  - **The rest:**
+    - no Characters section without presence data;
+    - no Creators section without credits;
+    - no Essential/Complete toggle without events;
+    - no ALT toggle without ALT rows;
+    - no order switch without a second order;
+    - no bands without periods;
+    - no era jump bar with only one era.
+  - **How:** one capability map, built once at boot from the data, decides every
+    case. A missing capability means the control is **not rendered**; don't hide it
+    with CSS. That keeps the reachability guard and the visibility tests in
+    agreement.
+  - **Every new control** is added through that map, and it gets a row in the
+    visibility suite.
+    - The suite boots a bare fixture (comics only, one era, no extras), where none
+      of these controls appear, and the full fixture, where all of them do.
+    - A self-test forces each capability on in turn and must catch it.
+
 ---
 
 ## Traps carried over from v2 (each one cost real time)

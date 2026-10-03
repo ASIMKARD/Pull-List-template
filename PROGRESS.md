@@ -599,20 +599,42 @@ Then push, and tell John.
   - one toast, one Undo;
   - `dataVersion` and `retiredIds`.
 
-### My calls this session — open to veto (everything else followed a decision)
+### My calls this session (1–5 accepted 4 Oct; 6–8 still open to veto)
 1. **Era navigation (XM-8) is a jump bar, not a filter.** Plain scroll is the default, because
-   the Story section's era chips already filter.
+   the Story section's era chips already filter. **Accepted 4 Oct.**
 2. **Bulk marks respect the view.** Era, range, arc and long-press mark the rows the banners
-   count, so "mandatory only" or Essential view limits them.
+   count, so "mandatory only" or Essential view limits them. **Accepted 4 Oct.**
 3. **The QR holds a `#sync=` link** to the compact code, so a camera scan opens the tracker and
-   merges (XM-6).
+   merges (XM-6). **Accepted 4 Oct.**
 4. **The Reading stepper ignores "newest era first"** and always steps in reading order.
+   **Accepted 4 Oct.**
 5. **The sync prefix is the whole franchise key**, uppercase alphanumerics (`FIXTURE:`). v2 used
-   the first 4 letters, which could collide between trackers.
+   the first 4 letters, which could collide between trackers. **Accepted 4 Oct.**
 6. **Merge keeps settings and fills only missing reviews.** Replace (full code) restores
    settings too. A QR's Replace touches progress only.
 7. **Essential/Complete shows as an active chip,** so Clear all returns it to Essential.
 8. **Review ✎ and "Mark arc read / unread"** share an action row under each arc heading.
+
+### Decided 4 Oct (John) — do not reopen
+- **Session 3's calls 1–5 are accepted** as shipped:
+  1. The era jump bar is off by default.
+  2. Bulk marking touches only the rows the figures count.
+  3. The QR holds a `#sync=` link.
+  4. The Reading tab steps in reading order.
+  5. The sync prefix is the full franchise key.
+- **Time left keeps the X-Men style:** `45m`, `3h`, `1.2d left` (days to one decimal). This is
+  `timeLeft()` as shipped, so nothing changes.
+- **Two additions to session 4's scope.** They are steps 1 and 2 of the plan below.
+  1. **Collapsible Settings.**
+     - Settings sections collapse like the filter panel: icon, name and a one-line summary on
+       each header.
+     - All collapsed by default, with the open state remembered in namespaced storage.
+     - Same animation and tokens as the filter panel.
+  2. **Data-driven visibility (a rule, not a one-off).** A control or section only renders when
+     the dataset gives it something to do. The rule is in CLAUDE.md → UI rules.
+     - Tests: a comics-only, single-era, no-extras fixture where none of these controls
+       appear; the full fixture where all of them do; and a mutation check that forcing one on
+       is caught.
 
 ### Open items for session 4
 - **A Chromium layout suite in the harness or CI.**
@@ -649,3 +671,247 @@ Work through every S4 line in `FEATURE-INVENTORY.md` (51):
 5. **Accessibility and performance** (V-7, XM-3, V-8, V-18, FP-11): keyboard shortcuts,
    critical CSS inline, a preloaded display font, reduced motion and smooth panel animation.
 6. **The content-visibility decision** (V-15), then this file's checkpoint.
+
+---
+
+## Session 4 plan (proposed 4 Oct 2026): look and PWA — awaiting John's OK
+
+Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–3 merged).
+
+**Scope:**
+- the 51 S4 lines in `FEATURE-INVENTORY.md`;
+- John's two additions (steps 1 and 2);
+- the open items above.
+
+**Method (as in session 3):**
+- Each step lands with its tests, one mutation check (the old or wrong behaviour put back once),
+  updated inventory statuses and a checkpoint here.
+- Anything visual is measured in real Chromium, never reasoned about.
+- The session length rule holds: stop only at the end of a finished step, and record where the
+  next one begins.
+
+1. **Data-driven visibility** (John, 4 Oct; the rule is in CLAUDE.md → UI rules). This comes
+   first because every later control is added through it.
+   - **The capability map.**
+     - One map, `HAS`, built once at boot from the data (never from settings or the skin).
+     - A read-only copy is exposed as `PullList.has` for the harness.
+     - Every conditional control reads it. A missing capability means the control is not
+       rendered, rather than hidden with CSS.
+   - **John's list:**
+     - One medium: no per-format lines, format filter, progress mode, duration copy or
+       "+N untimed". Verbs are that medium's own; for comics, plain "Read".
+     - Characters needs presence data.
+     - Creators needs credits. That also covers the tappable names and the word "creators" in
+       the search hint.
+     - Essential/Complete needs events.
+     - The ALT toggle needs ALT rows.
+     - The order switch needs a second order.
+     - Bands need periods.
+     - The era jump bar needs two or more eras.
+   - **A second order is measured, not declared.**
+     - Publication order counts only if some era's rows are out of publication order.
+     - Arc order counts only if some era's arcs interleave.
+     - Today `mixed` offers a publication chip that changes nothing.
+   - **The same rule applied further** (my reading of "a rule, not a one-off"; open to veto).
+     Each control needs:
+     - depth chips: two tiers in use;
+     - type chips: two types;
+     - strand chips: two strands;
+     - "Include cameos": a cameo grade;
+     - "Mandatory only": both mandatory and optional rows;
+     - "Notes only" and tap to reveal: a note;
+     - "Gap notes": a gap note;
+     - the era filter, Mark range and "Newest era first": two eras;
+     - the look-up link: `searchUrl`;
+     - help copy that names bands: periods.
+   - **Saved state:** a saved filter or setting for a control that isn't offered is ignored, so
+     nothing can filter through a control you can't see.
+   - **New fixture `test/fixtures/minimal`.**
+     - Comics only, one era.
+     - None of: periods, presence, credits, events, ALT rows, notes, `searchUrl`, or a second
+       order.
+     - Exactly one type, one tier and one strand.
+   - **New suite `9f-visibility`.** One table pairs each control with its capability.
+     - On `minimal`, none of these controls appear on any tab, with every panel and Settings
+       section opened. The controls every tracker has (search, marks, bookmarks, pace, hide
+       skipped, skins, backup and so on) still do.
+     - On the full fixture, all of them appear. The full fixture is `basic` plus one untimed game
+       added at test time, because `basic` is fully timed by design.
+     - `mixed` checks the measured-order case.
+   - **A permanent mutation self-test.**
+     - `boot()` gains an `appSrc` option.
+     - The suite forces each capability on in turn in a copy of `app.js`, and every one must be
+       caught on `minimal`.
+
+2. **Collapsible Settings, with one section component for both panels** (John, 4 Oct; FP-11).
+   - **Sections collapse like the filter panel.**
+     - Each header shows an icon, the name, a live one-line summary and a chevron.
+     - All sections start collapsed.
+     - The open ones are kept in `settings.settingsOpen`, next to `panelOpen` in the one
+       namespaced store.
+   - **One helper renders the section heads** of both the filter panel and Settings, so the
+     two can't drift.
+   - **The animation (FP-11), shared by both.**
+     - Bodies stay in the DOM and collapse with `grid-template-rows: 0fr → 1fr`, so nothing is
+       measured.
+     - A closed body is `inert`, so the keyboard and screen readers skip it.
+     - The chevron rotates. Colours come from tokens only, and nothing moves under
+       `prefers-reduced-motion`.
+   - **Summary examples:**
+     - Reading behaviour: "Average 15 min · Steady 12 a week".
+     - Display: "Badges · Headings · Plain scroll".
+     - Touch: "Gestures off".
+     - Data: "Quarterly reminder · 3 bookmarks".
+     - Backup: "Sync code and backup file".
+     - The new Look and Offline sections get theirs in steps 4 and 7.
+   - **An import preview opens Backup on its own,** so a pasted code or a file never waits
+     inside a closed section.
+   - **Tests in `98-tabs-settings`:**
+     - sections start collapsed;
+     - the open state survives a reload, read after the 400 ms debounce;
+     - summaries follow the settings;
+     - a closed body is inert.
+   - **Earlier suites** open the sections they use through one helper. No assertion is removed or
+     weakened.
+   - **Mutations:** an open state that isn't saved, and a summary that isn't refreshed.
+
+3. **A Chromium layout harness**, built before the visual steps so that they are measured.
+   - **Setup:** `test/layout/` with Playwright (`executablePath: '/opt/pw-browsers/chromium'`),
+     served over `http://localhost`, because `cssRules` throws on `file://`.
+   - **Checks:**
+     - no page errors (L-9);
+     - every tab at 320, 360 and 390 px, with no horizontal overflow (`scrollWidth`) and all four
+       tabs fully visible;
+     - a helper that asks the browser which rules match an element, for multi-line selectors.
+   - **Fonts:** `@font-face` for Plex Sans, Plex Mono and Anton, with `font-display: swap`, so
+     every later measurement uses the real fonts. Then re-measure the tabs at 320 px.
+   - **CI:** see question 3.
+
+4. **One token system and the skins.** Inventory lines: V-5, F-39, F-52…F-57, S-1…S-6, S-9, S-20,
+   S-25, T-38…T-45, T-54…T-57, T-81…T-116, T-98, T-103, XM-17, XM-18, and D-12 styling.
+   - **Colour stays in the one `:root` block.**
+     - Colours become formulas over a few numeric inputs: the hue, saturation and lightness of
+       the paper, ink and accent.
+     - A skin or a paper swatch sets only those inputs, with no colour written outside
+       `:root`, so skins and swatches combine freely.
+   - **Era ramps are derived from each era's index.**
+     - The hue is stepped by the golden angle, so there is no cap.
+     - The 64-era stress set gets styled, and era tints stay pale washes.
+   - **The colour guard is narrowed, not weakened.**
+     - Outside `:root`, a colour function is allowed only when every argument is a token
+       (`var()` or `calc()` of tokens).
+     - A self-test proves that a literal outside `:root` (`#fff`, `hsl(200 50% 50%)`) is still
+       caught.
+   - **Skins set `data-skin` and tokens only** (fonts, corner radius and letter case included).
+     A guard asserts that no skin rule touches position, display, visibility, size or order.
+   - **The reachability guard (V-5).** In every skin, every control the visibility table
+     expects must be:
+     - rendered and displayed;
+     - inside the viewport once its section is open;
+     - the topmost element at its centre (`elementFromPoint`).
+
+     jsdom checks presence; Chromium does the hit-testing.
+   - **Contrast is measured.** For every skin × paper swatch, these must clear WCAG AA in
+     Chromium:
+     - body text, soft text and chips;
+     - era text on its tint, for eras 0–63;
+     - chip borders, at the 3:1 non-text ratio (T-40).
+   - **Settings → Look:**
+     - skin: one option per configured skin, with the default from config;
+     - paper: 7 swatches;
+     - era hues: split or mono;
+     - text size, as a scale multiplier that the title follows (XM-18, T-45);
+     - density;
+     - button size: compact restores the 26 px mark, standard, and large at 44 px or more;
+     - mark style: box, dot or tick (XM-17);
+     - dyslexia font.
+
+     Changing skin keeps the current tab and round-trips (T-83, T-103, T-116).
+   - **Skin beacon (F-57, T-98):** a `--skin-ok` token is read at boot, and a stale
+     `styles.css` shows a warning.
+
+5. **Banners and table view.** Inventory lines: F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51,
+   L-7, L-8.
+   - **Mini progress bar:** on by default.
+   - **Persistent banner:** off by default. It is one compact line, split per format only when
+     the data mixes formats (step 1's rule).
+   - **Table view:** compact rows at least halve the row height, and no row is wider than the
+     screen. Both are measured in Chromium.
+
+6. **The sticky stack, measured at runtime.** Inventory lines: F-58, L-1…L-6.
+   - **The stack.**
+     - The tabs stick to the top.
+     - The mini bar or banner sits directly under them.
+     - `--stack-h` comes from a `ResizeObserver`, which is not an event listener, and never
+       from a hard-coded height.
+   - **Proved in Chromium after scrolling:**
+     - the tabs stay pinned and the banner sits directly under them;
+     - no band is shifted onto its own intro;
+     - there are no more than 16 px between bands;
+     - skins never change positioning (the `position: relative` trap).
+   - **Swipe clip:** `overflow: hidden` on `.arc`, if focus rings survive it (open item from
+     session 3).
+
+7. **PWA.** Inventory lines: F-35…F-38, F-59, XM-7, the live install of D-2, the icons of D-13,
+   and V-17.
+   - **Settings → Offline.** The service worker is registered, and the section shows:
+     - ready, not ready or unsupported, with "N of M files cached";
+     - the build tag.
+   - **Online and offline.** Per the 2 Oct decision there are no online/offline listeners.
+     - `navigator.onLine` is read at boot, on `visibilitychange` and before network actions.
+     - The `.offline` class and a toast follow any change.
+   - **Install prompt:** `beforeinstallprompt` is listener 10. "Installed." comes from the
+     prompt's result.
+   - **Update flow.**
+     - Two pieces: "A new version is ready → Reload", and a "Check for updates" button
+       (`reg.update()`).
+     - It is checked at boot, on `visibilitychange` and from the button. One-off waits go
+       through `once()`.
+   - **A real-Chromium offline check** over `http://localhost`.
+     - Install, go offline and reload: the app boots from the cache, and the QR still draws.
+     - Every fetch path ends in a real `Response`, because of the iOS trap.
+   - **Icons from config.**
+     - `franchise.icons` is optional, and the build checks the PNG sizes (stdlib only).
+     - The build warns when a franchise other than the starter ships the template's
+       placeholder icons, matched by hash.
+
+8. **Accessibility and first paint.** Inventory lines: V-7, XM-3, V-8, V-18.
+   - **Keyboard** (`keydown`, listener 11):
+     - on the Reading tab, ← and → step, R reads and X skips;
+     - "/" focuses search;
+     - keys are ignored in inputs and with modifier keys.
+   - **An aria audit in the harness:**
+     - every button and input has an accessible name;
+     - the tabs, the panel and the Settings sections carry `aria-expanded` and
+       `aria-controls`;
+     - reduced motion stops every transition.
+   - **First paint:**
+     - preload the display font;
+     - `data.js` and `app.js` don't block the first paint;
+     - critical CSS follows the answer to question 2.
+
+     First paint is measured in Chromium before and after.
+
+9. **Close-out.**
+   - Record the V-15 decision: lazy rendering replaces `content-visibility`, as shipped since
+     session 2. Say if you want otherwise.
+   - Update the inventory statuses.
+   - Run the full Chromium sweep: 320, 360 and 390 px × every tab × every skin.
+   - Write this file's checkpoint.
+   - Update CLAUDE.md's repo map with `minimal` and `test/layout/`.
+
+**Listener budget:**
+- 9 today, 11 of 12 after this session: `keydown` and `beforeinstallprompt`.
+- The `ResizeObserver` and the one-off service-worker waits add none.
+
+**New suites:**
+- jsdom: `9f-visibility` (step 1), `9g-look` (step 4), `9h-pwa` (step 7) and `9i-a11y` (step 8);
+- Chromium: `test/layout/` (steps 3–9).
+
+**Questions for John (asked 4 Oct):**
+1. Which skins ship?
+2. How should critical CSS work (V-8)?
+3. Does the Chromium suite run in CI?
+4. Is there a Characters section when the data has strands but no presence data?
+
+The answers get recorded here.
