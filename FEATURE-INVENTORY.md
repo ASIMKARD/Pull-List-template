@@ -24,7 +24,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-1 | Checklist tab: rows grouped period band → era → arc, ordered by sort key | S2 | present (90-render: band → era → arc → rows, reading order) |
 | F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | todo |
 | F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | todo |
-| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo |
+| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour + Data sections present, 98-tabs-settings; Display step 3, Touch + Bulk step 6, Backup step 8) |
 | F-5 | Four-state marks cycling unread → reading → read → skip; done = read or skip | S2 | present (91-marks: four-state cycle through one setMark path) |
 | F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten) |
 | F-7 | Inert rows (GAPNOTE, RENUM) render as notes with no mark and never count toward progress | S2 | present (90-render: inert rows render with no mark, never count) |
@@ -34,11 +34,11 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-11 | Era heads: name, "cont." when an era recurs, intro once, done/total count; arc heads: name ("· cont."), year · title meta, blurb (suppressed when equal to era intro) | S2 | present (90-render: cont., credits, intro once) |
 | F-12 | Counts reflect the current filters (tallyEras counts only visible rows) | S2 | re-express → present: plan filters (tier, mandatory, hide skipped, ALT, format) always count; browse filters (search, creator, era, type, character) count while active, marked "filtered"; display-only (unread, order) never (96-figures) |
 | F-13 | Empty bands/eras/arcs hide under a filter; "Nothing matches these filters." empty state | S2 | present (92-filters: empty bands/eras hide, empty state) |
-| F-14 | Global progress: count, %, bar, `aria-valuenow`; progress mode combined vs per medium | S2 | present — combined progress (90-render, 95-pace); per-medium mode S3 |
+| F-14 | Global progress: count, %, bar, `aria-valuenow`; progress mode combined vs per medium | S2 | present — combined (90-render, 95-pace) and per format with each format's own time left (98-tabs-settings) |
 | F-15 | Progress header (phead): title, offline-edition line, strapline + build tag, bar, "n / N read", days remaining | S2 | present (90-render: title, strapline, build, bar, n/N, time left, finish-by) |
 | F-16 | Persistent banner (off by default): one compact progress line per medium, sticky under the tabs | S4 | todo |
 | F-17 | Mini progress bar (on by default) | S4 | todo |
-| F-18 | Pace estimate: issues/week (light 5, steady 12, heavy 25, marathon 50) → "N left · W weeks · done Mon YYYY" | S3 | todo |
+| F-18 | Pace estimate: issues/week (light 5, steady 12, heavy 25, marathon 50) → "N left · W weeks · done Mon YYYY" | S3 | present (98-tabs-settings: "N left · W weeks at P a week · done Mon YYYY", same minutes maths and date as the header) |
 | F-19 | Filters: depth (Barebones/Essential/Everything with counts; Barebones is comics-only), type chips, priority M/O, format (one chip per medium), characters (strands) + all/none, era select, search (title, arc, note; debounced 180 ms), unread only, ALT tracks toggle, reset | S2 | present — tier, type, mandatory, format, characters, era, search incl. creators, unread, ALT (92-filters) |
 | F-20 | Order chip: reading order vs Arc Master timeline order | S2 | present (92-filters: arc order) |
 | F-21 | Dual-order chip (franchise `dualOrder` config; hidden when unset) using the alternate sort key | S2 | present (92-filters: reading/publication labelled from dualOrder) |
@@ -47,14 +47,14 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-24 | Swipe to mark (right = read, left = skip), opt-in | S3 | todo |
 | F-25 | Long-press a band/era/arc head to bulk-mark it read, opt-in | S3 | todo |
 | F-26 | Collapse all / expand all (Settings → Bulk actions) | S2 | present (90-render: expand all / collapse all) |
-| F-27 | Jump to next unread (button) and "jump to first unread" on load (setting) | S2 | present — next unread (94-navigation); jump-on-load setting S3 |
-| F-28 | Bookmarks: toggle per row, list in Settings sorted as displayed, jump, remove | S3 | todo |
-| F-29 | `jumpToIssue`: switches to Checklist, expands collapsed ancestors outermost-first, scrolls, flashes the row; toast when filtered out | S2 | present (94-navigation: opens collapsed ancestors, scrolls, flashes, focuses) |
+| F-27 | Jump to next unread (button) and "jump to first unread" on load (setting) | S2 | present — next unread (94-navigation); jump-on-load re-expressed (S-17) |
+| F-28 | Bookmarks: toggle per row, list in Settings sorted as displayed, jump, remove | S3 | present (98-tabs-settings: list sorted as displayed, jump, remove) |
+| F-29 | `jumpToIssue`: switches to Checklist, expands collapsed ancestors outermost-first, scrolls, flashes the row; toast when filtered out | S2 | present (94-navigation; 98-tabs-settings: switches to Checklist) |
 | F-30 | QR sync: 2-bit packed progress + bookmarks + settings + filters + reviews, franchise-prefixed code, QR when it fits, copy-code fallback, paste-to-import with confirm | S3 | todo |
-| F-31 | About & legend box (legend + maintenance notes from data) | S3 | todo |
-| F-32 | Clear all progress (confirm; keeps reviews and bookmarks) | S3 | todo |
+| F-31 | About & legend box (legend + maintenance notes from data) | S3 | present (98-tabs-settings: title, counts, build, legend and maintenance from data) |
+| F-32 | Clear all progress (confirm; keeps reviews and bookmarks) | S3 | present (98-tabs-settings: in-page confirm, keeps reviews + bookmarks, snapshot undo restores exactly) |
 | F-33 | Toast with optional action button | S2 | present (94-navigation: toast with action) |
-| F-34 | Refresh reminder (monthly/quarterly/yearly/off), first run starts the clock, dismiss resets | S3 | todo |
+| F-34 | Refresh reminder (monthly/quarterly/yearly/off), first run starts the clock, dismiss resets | S3 | present (98-tabs-settings: consumed at boot, first run starts the clock, Dismiss and a new interval reset it) |
 | F-35 | Offline readiness readout (Settings → Offline: ready / not ready / unsupported, files cached) | S4 | todo |
 | F-36 | Online/offline toasts and body `.offline` class | S4 | todo |
 | F-37 | Install prompt toast (`beforeinstallprompt`) and "Installed." | S4 | todo |
@@ -106,10 +106,10 @@ store is listed only to record where the value lived.
 | S-15 | Notes only `#notesChip` | view.notesOnly | off | S3 | todo |
 | S-16 | Tap to reveal notes `#revealChip` | view.reveal | off | S3 | todo |
 | S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | re-express (decided 3 Oct): no checklist jump, because the landing is always collapsed; the Reading tab resumes at the first unread (F-2) |
-| S-18 | Pace `#segPace` | view.pace | 12/week | S3 | todo |
-| S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | todo |
+| S-18 | Pace `#segPace` | view.pace | 12/week | S3 | present (98-tabs-settings) |
+| S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | present (98-tabs-settings) |
 | S-20 | Button size `#segTap` | view.tap | standard | S4 | todo |
-| S-21 | Refresh reminder `#segRefresh` | settings.refreshEvery | quarterly | S3 | todo |
+| S-21 | Refresh reminder `#segRefresh` | settings.refreshEvery | quarterly | S3 | present (98-tabs-settings) |
 | S-22 | Swipe to mark `#swipeChip` | view.swipe | off | S3 | todo |
 | S-23 | Long-press bulk-mark `#pressChip` | view.press | off | S3 | todo |
 | S-24 | Presets `#presetRow` | view.presets | [] | S3 | todo |
@@ -117,9 +117,9 @@ store is listed only to record where the value lived.
 | S-26 | Reading/timeline order `#orderChip` | settings.viewOrder | reading | S2 | present (92-filters) |
 | S-27 | Dual order `#cloneChip` | settings.cloneOrder | epic (A) | S2 | present (92-filters) |
 | S-28 | Collapsed eras / bands | settings.collapsed / pcollapsed | persisted | S2 | re-express → present: always collapsed, expand state session-only (90-render, 70-shell) |
-| S-29 | Active tab | settings.tab | app | S2 | todo |
+| S-29 | Active tab | settings.tab | app | S2 | present (98-tabs-settings) |
 | S-30 | Filter state (depth, types, strands, mo, media, era, q, unreadOnly, alt) | filters | everything / all on | S2 | present — persisted by name, search session-only (92-filters) |
-| S-31 | Refresh-seen timestamp | settings.refreshSeen | first run | S3 | todo |
+| S-31 | Refresh-seen timestamp | settings.refreshSeen | first run | S3 | present (98-tabs-settings) |
 
 ## T — v2 `test.js` assertions (all 123)
 
@@ -130,7 +130,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | ID | v2 assertion | Session | Status |
 |---|---|---|---|
 | T-1 | no runtime errors at boot | S1 | present (70-shell) |
-| T-2 | exactly one #tabs nav | S3 | todo |
+| T-2 | exactly one #tabs nav | S3 | present (98-tabs-settings) |
 | T-3 | every issue rendered a row | S2 | re-express → present (90-render: lazy, every in-view row of an opened era renders once) |
 | T-4 | mark buttons are delegation-tagged | S2 | present (90-render) |
 | T-5 | delegated mark click cycles state | S2 | present (91-marks) |
@@ -169,15 +169,15 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-38 | signature ramp text clears WCAG AA on its dark surface | S4 | re-express: every skin's era text clears AA on its surface |
 | T-39 | signature era ramp is flat | S4 | re-express (per-skin token test) |
 | T-40 | signature filter chips have a visible border | S4 | todo |
-| T-41 | filters survive a round trip through Reading | S3 | todo |
+| T-41 | filters survive a round trip through Reading | S3 | present (98-tabs-settings: round trip through Settings; Reading tab added to it in step 4) |
 | T-42 | isTabbed covers every non-classic layout | — | dropped: one layout (spec §1) |
 | T-43 | paper + era-hue controls hidden on the signature skin | S4 | re-express: no control is ever hidden by a skin (reachability guard V-5) |
-| T-44 | refresh interval is actually consumed, not just stored | S3 | todo |
+| T-44 | refresh interval is actually consumed, not just stored | S3 | present (98-tabs-settings) |
 | T-45 | title follows the text-size setting | S4 | todo |
 | T-46 | button size reads and writes the same store applyView uses | S2 | re-express → present (93-storage: one settings object) |
 | T-47 | pending writes flush when the app is hidden | S2 | present (70-shell) |
 | T-48 | no function is defined twice | S1 | present (80-guards: brace-depth scan, scanner self-tested) |
-| T-49 | bookmarks open a list, not a jump to the first one | S3 | todo |
+| T-49 | bookmarks open a list, not a jump to the first one | S3 | present (98-tabs-settings) |
 | T-50 | persistent banner toggle exists | S4 | todo |
 | T-51 | persistent banner is off by default | S4 | todo |
 | T-52 | reading tab labels vary by medium | S3 | todo |
@@ -187,9 +187,9 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-56 | compact size restores the original 26px mark | S4 | todo |
 | T-57 | glyph buttons usable at standard, 44px at large | S4 | todo |
 | T-58 | depth chips built | S2 | present (92-filters) |
-| T-59 | progress mode seg has 2 options | S3 | todo |
-| T-60 | refresh reminder seg has 4 options incl. off | S3 | todo |
-| T-61 | refresh reminder offers an off switch | S3 | todo |
+| T-59 | progress mode seg has 2 options | S3 | present (98-tabs-settings) |
+| T-60 | refresh reminder seg has 4 options incl. off | S3 | present (98-tabs-settings) |
+| T-61 | refresh reminder offers an off switch | S3 | present (98-tabs-settings) |
 | T-62 | type chips built | S2 | present (92-filters) |
 | T-63 | mandatory/optional chips | S2 | re-express → present (92-filters: mandatory only) |
 | T-64 | format row has one chip per medium | S2 | present (92-filters) |
@@ -217,10 +217,10 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-86 | search box present in classic skin | S4 | re-express (V-5) |
 | T-87 | classic skin has depth chips | S4 | re-express (V-5) |
 | T-88 | classic skin has character chips | S4 | re-express (V-5) |
-| T-89 | classic skin hides filters off-checklist | S3 | re-express: filter panel only on Checklist, every skin |
-| T-90 | classic skin restores filters on checklist | S3 | re-express (as T-89) |
-| T-91 | classic skin: no filters on Reading | S3 | re-express (as T-89) |
-| T-92 | classic skin: no filters on Reviews | S3 | re-express (as T-89) |
+| T-89 | classic skin hides filters off-checklist | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
+| T-90 | classic skin restores filters on checklist | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
+| T-91 | classic skin: no filters on Reading | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
+| T-92 | classic skin: no filters on Reviews | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express: `[hidden]` authoritative with **zero** `!important` |
 | T-94 | nothing sticky in tabbed mode either | S4 | re-express (one layout; sticky rules measured in browser, L-1..L-5) |
 | T-95 | depth control is a single nowrap row | S3 | todo |
@@ -242,15 +242,15 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-111 | signature skin keeps the progress header | S4 | re-express (V-5) |
 | T-112 | signature skin: checklist visible | S4 | re-express (V-5) |
 | T-113 | signature skin hides the gear | — | dropped: no gear (Settings tab) |
-| T-114 | signature skin: Settings tab opens the pane | S3 | todo |
+| T-114 | signature skin: Settings tab opens the pane | S3 | present (98-tabs-settings) |
 | T-115 | signature skin keeps the tab nav visible | S4 | re-express (V-5) |
 | T-116 | signature -> tabbed via seg works | S4 | re-express: switching skins round-trips |
 | T-117 | tabs: gear hidden again | — | dropped |
 | T-118 | Reading tab shows stepper title | S3 | todo |
 | T-119 | the done button persists a mark (label varies by medium) | S3 | todo (D-1 regression) |
 | T-120 | Reviews pane visible | S3 | todo |
-| T-121 | Settings pane visible | S3 | todo |
-| T-122 | Checklist pane visible again | S3 | todo |
+| T-121 | Settings pane visible | S3 | present (98-tabs-settings) |
+| T-122 | Checklist pane visible again | S3 | present (98-tabs-settings) |
 | T-123 | no runtime errors after interaction | S2 | present (90-render, 91-marks) |
 
 ## L — v2 `layout-check.py` assertions (all 9, real Chromium)
@@ -363,7 +363,7 @@ installed app once online.
 | XM-1 | Era divider banners: name, years, read/total, skipped count, progress track, time left, ✓ when complete (the goal banner, V-6) | S2 | present (90-render, 95-pace) |
 | XM-2 | Pace as minutes per issue (quick 8 / average 15 / deep 25) driving "time left" per banner | S2/S3 | present — both, decided 2 Oct (95-pace); shows and games use their own durations (V-29, 97-durations) |
 | XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | todo |
-| XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | todo |
+| XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | present (98-tabs-settings) |
 | XM-5 | File backup: export JSON download, import from file | S3 | todo (V-26) |
 | XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | todo |
 | XM-7 | "Check for updates" button (`reg.update()`) | S4 | todo |
@@ -378,7 +378,7 @@ installed app once online.
 | XM-16 | `escapeHtml` / `escapeAttr` string templating (V-2) | S2 | present (80-guards) |
 | XM-17 | Read-mark style tick / cross | S4 | todo (folds into S-5) |
 | XM-18 | Font size as a scale multiplier | S4 | todo (folds into S-3) |
-| XM-19 | Show/hide the jump button | S3 | todo |
+| XM-19 | Show/hide the jump button | S3 | present (98-tabs-settings) |
 | XM-20 | Remembered expanded eras | — | dropped: spec §1 — always collapsed on load, expand state session-only |
 
 ## X — extra lines (John, 1 Oct)
@@ -386,7 +386,7 @@ installed app once online.
 | ID | Requirement | Session | Status |
 |---|---|---|---|
 | X-1 | Display mode "layout C": per-row arc labels with no arc headers (Archie's arrangement) | S3 | todo |
-| X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | todo |
+| X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | todo (partial: Settings "Import from previous version" present, 98-tabs-settings; old QR codes and backups step 8) |
 | X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | todo |
 
 ## B — v2 bugs found while inventorying (don't port them)

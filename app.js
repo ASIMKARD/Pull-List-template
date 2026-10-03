@@ -63,6 +63,10 @@
     CREATORS_HAY[i0] = credited.toLowerCase();
     HAY[i0] = (r0[1] + ' ' + arc0.n + ' ' + (r0[7] || '') + ' ' + credited).toLowerCase();
   }
+  var MEDIA_USED = D.media.map(function (m, mi) { return mi; }).filter(function (mi) {
+    for (var i = 0; i < N; i++) if (D.issueMedium[i] === mi && !(D.issues[i][6] & INERT)) return true;
+    return false;
+  });
   function isInert(i) { return !!(D.issues[i][6] & INERT); }
   function mediumOf(i) { return D.media[D.issueMedium[i]] || 'comic'; }
   function labelOf(i, st) { return (LABELS[mediumOf(i)] || LABELS.comic)[st]; }
@@ -107,12 +111,22 @@
   progress.marks = progress.marks || {};
   progress.bookmarks = progress.bookmarks || [];
   var reviews = load('reviews', null) || {};
-  var settings = load('settings', null) || {};
-  settings.v = 3;
-  settings.pace = settings.pace || { minutes: 15, weekly: 12 };
-  settings.order = settings.order || 'reading';
-  settings.events = settings.events || 'essential';
-  settings.panelOpen = settings.panelOpen || [];
+  /* ONE settings store. Defaults are filled in here and nowhere else, so a
+     restored snapshot or an imported backup gets exactly the same treatment. */
+  function withDefaults(s) {
+    s = s && typeof s === 'object' ? s : {};
+    s.v = 3;
+    s.pace = s.pace || { minutes: 15, weekly: 12 };
+    s.order = s.order || 'reading';
+    s.events = s.events || 'essential';
+    s.panelOpen = s.panelOpen || [];
+    s.tab = s.tab || 'list';
+    s.progressMode = s.progressMode || 'combined';
+    s.refreshEvery = s.refreshEvery || 'quarter';
+    if (s.showJump === undefined) s.showJump = true;
+    return s;
+  }
+  var settings = withDefaults(load('settings', null));
   var F = defaultFilters();
   /* Multi-select filters are stored by id/name, never by index: a dataset
      update that inserts an era or a strand must not shift saved filters onto
@@ -126,15 +140,17 @@
     return (Array.isArray(list) ? list : []).map(function (n) { return FILTER_VOCAB[k].indexOf(n); })
       .filter(function (i) { return i !== -1; });
   }
-  (function () {
+  function filtersFromSettings() {
     var saved = settings.filters || {};
+    F = defaultFilters();
     PERSISTED_FILTERS.forEach(function (k) {
       if (saved[k] === undefined) return;
       if (k === 'tier') { var ti = D.tiers.indexOf(saved.tier); if (ti !== -1) F.tier = ti; }
       else if (FILTER_VOCAB[k]) F[k] = toIdx(k, saved[k]);
       else F[k] = !!saved[k];
     });
-  })();
+  }
+  filtersFromSettings();
   function saveSettings() {
     settings.filters = {};
     PERSISTED_FILTERS.forEach(function (k) {
@@ -270,11 +286,11 @@
      minutes of remaining shows and games; ut: remaining rows with no duration. */
   function blank() { return { total: 0, read: 0, skip: 0, cl: 0, fm: 0, ut: 0 }; }
   function computeStats() {
-    var s = { all: blank(), era: D.eras.map(blank), band: D.periods.map(blank) }, br = browsing();
+    var s = { all: blank(), era: D.eras.map(blank), band: D.periods.map(blank), med: D.media.map(blank) }, br = browsing();
     for (var i = 0; i < N; i++) {
       if (isInert(i) || !planOk(i) || (br && !browseOk(i))) continue;
       var st = stateOf(i), e = D.issueEra[i], b = BAND_OF_ERA[e], du = D.issueDuration[i];
-      [s.all, s.era[e], b >= 0 ? s.band[b] : null].forEach(function (t) {
+      [s.all, s.era[e], b >= 0 ? s.band[b] : null, s.med[D.issueMedium[i]]].forEach(function (t) {
         if (!t) return;
         t.total++;
         if (st === 'read') t.read++;
@@ -358,8 +374,19 @@
       (browsing() ? '<span class="pfiltered" title="Counting only what your search or browse filters show">filtered view</span>' : '') +
       (done ? '<span class="pdone">All caught up ✓</span>'
             : leftHtml(t, 'pleft') + untimedHtml(t, 'puntimed') +
-              '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>';
+              '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>' +
+      (perFormat() ? '<ul class="pmedia">' + MEDIA_USED.map(function (m) {
+        var x = S.med[m];
+        return '<li class="pmed" data-m="' + m + '"><span class="pmed-name">' + escapeHtml(mediumLabel(m)) + '</span>' +
+          '<span class="pmed-count">' + x.read + ' / ' + goal(x) + '</span>' +
+          (remaining(x) === 0 ? (x.total ? '<span class="pdone">✓</span>' : '') : leftHtml(x, 'pmed-left') + untimedHtml(x, 'puntimed')) +
+          '<progress class="bar" max="' + (goal(x) || 1) + '" value="' + x.read + '" aria-label="' + escapeAttr(mediumLabel(m)) + ' progress"></progress></li>';
+      }).join('') + '</ul>' : '');
+    if (activeTab === 'settings') { var po = $('#paceOut'); if (po) po.innerHTML = paceReadout(S); }
   }
+  /* Progress mode (S-19): one combined line, or one line per format as well.
+     Offered only when the data really mixes formats. */
+  function perFormat() { return settings.progressMode === 'medium' && MEDIA_USED.length > 1; }
 
   function orderedEraRows(e) {
     var rows = ERA_ROWS[e].slice();
@@ -472,6 +499,7 @@
     app.setAttribute('aria-busy', 'false');
     D.eras.forEach(function (e, idx) { if (open.e[idx]) rendered[idx] = true; });
     renderHeader(S);
+    renderPinbar();                       // sorted as displayed, so it follows the order setting
   }
 
   /* Repaint numbers only (after a mark): banners and header, no list rebuild. */
@@ -654,6 +682,7 @@
     btn.setAttribute('aria-pressed', at === -1 ? 'true' : 'false');
     btn.textContent = at === -1 ? '★' : '☆';
     saveProgress();
+    renderPinbar();
   }
 
   /* ======================================================================
@@ -683,6 +712,7 @@
   function jumpToIssue(id) {
     var i = ID_I[id];
     if (i === undefined) return false;
+    if (activeTab !== 'list') showTab('list');
     if (narrowing() && !matches(i)) {
       toast('That issue is hidden by your filters.', 'Clear filters', function () { clearFilters(); jumpToIssue(id); });
       return false;
@@ -707,6 +737,198 @@
     }
     toast(filt ? 'Nothing unread matches these filters.' : 'Nothing unread — all caught up.');
     return false;
+  }
+
+  /* ======================================================================
+     TABS — one nav. The filter panel lives inside the Checklist pane, so it
+     shows on Checklist only. The active tab is remembered (S-29); the
+     checklist itself still lands collapsed.
+     ====================================================================== */
+  var TABS = ['list', 'settings'];
+  var activeTab = 'list';
+  function showTab(name) {
+    if (TABS.indexOf(name) === -1) name = 'list';
+    activeTab = name;
+    TABS.forEach(function (t) {
+      var on = t === name, b = $('#tab-' + t);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+      $('#pane-' + t).hidden = !on;
+    });
+    if (settings.tab !== name) { settings.tab = name; saveSettings(); }
+    if (name === 'settings') renderSettings();
+  }
+
+  /* ---- bookmarks: the pinned bar (XM-4) and the Settings list (F-28),
+     both sorted as the checklist displays them ---- */
+  function displayOrder(a, b) {
+    var ea = D.issueEra[a], eb = D.issueEra[b];
+    if (ea !== eb) return ea - eb;
+    if (settings.order === 'publication') return D.issues[a][8] - D.issues[b][8];
+    if (settings.order === 'arc') return (D.issues[a][2] - D.issues[b][2]) || (a - b);
+    return a - b;
+  }
+  function bookmarked() {
+    return progress.bookmarks.map(function (id) { return ID_I[id]; })
+      .filter(function (i) { return i !== undefined; }).sort(displayOrder);
+  }
+  function renderPinbar() {
+    var list = bookmarked();
+    $('#pinbar').hidden = !list.length;
+    $('#pinchips').innerHTML = list.map(function (i) {
+      return '<button type="button" class="chip pin" data-act="bm-jump" data-id="' + escapeAttr(D.ids[i]) + '">★ ' +
+        escapeHtml(D.issues[i][1]) + '</button>';
+    }).join('');
+  }
+  function removeBookmark(id) {
+    var at = progress.bookmarks.indexOf(id);
+    if (at === -1) return;
+    progress.bookmarks.splice(at, 1);
+    saveProgress();
+    $$('.row[data-i="' + ID_I[id] + '"] .bm').forEach(function (btn) { btn.setAttribute('aria-pressed', 'false'); btn.textContent = '☆'; });
+    renderPinbar();
+    if (activeTab === 'settings') renderSettings();
+  }
+
+  /* ---- pace readout (F-18): "N left · W weeks · done Mon YYYY", from the
+     same minutes maths as the header, so the two never disagree ---- */
+  function paceReadout(S) {
+    var t = (S || computeStats()).all;
+    if (remaining(t) === 0) return 'All caught up ✓';
+    var fin = finishBy(minutesLeft(t)), wk = Math.ceil(fin.weeks);
+    return '<b>' + remaining(t).toLocaleString('en-GB') + '</b> left · ' + wk + (wk === 1 ? ' week' : ' weeks') + ' at ' +
+      settings.pace.weekly + ' a week · done <span data-finish="' + fin.iso + '">' + escapeHtml(fin.text) + '</span>' +
+      (t.ut ? ' · <span class="pace-untimed" data-untimed="' + t.ut + '">+' + t.ut + ' untimed</span>' : '');
+  }
+  function setPace(minutes, weekly) {
+    // whole numbers only: integer minutes keep the comics-only figures exact
+    if (minutes) settings.pace.minutes = Math.max(1, Math.round(minutes));
+    if (weekly) settings.pace.weekly = Math.max(1, Math.round(weekly));
+    saveSettings(); refreshStats();
+    if (activeTab === 'settings') renderSettings();
+  }
+
+  /* ---- refresh reminder (F-34): the interval is consumed at boot, not just
+     stored. The first run starts the clock; Dismiss resets it. ---- */
+  var REFRESH = [['month', 'Monthly', 30], ['quarter', 'Quarterly', 91], ['year', 'Yearly', 365], ['off', 'Off', 0]];
+  function refreshDays() {
+    for (var k = 0; k < REFRESH.length; k++) if (REFRESH[k][0] === settings.refreshEvery) return REFRESH[k][2];
+    return 0;
+  }
+  function checkRefresh() {
+    var days = refreshDays(), last = +(settings.refreshSeen || 0);
+    if (!days) return false;
+    if (!last) { settings.refreshSeen = Date.now(); saveSettings(); return false; }
+    if (Date.now() - last <= days * DAY) return false;
+    toast('This list was last checked ' + Math.round((Date.now() - last) / DAY) + ' days ago. New issues may have shipped — reload to pick them up.',
+      'Dismiss', function () { settings.refreshSeen = Date.now(); saveSettings(); });
+    return true;
+  }
+
+  /* ---- safety snapshot: the full state, taken before anything that wipes
+     it (Clear all progress; Replace on import), restored exactly by Undo ---- */
+  function takeSnapshot() { return JSON.stringify({ progress: progress, reviews: reviews, settings: settings }); }
+  function restoreSnapshot(snap) {
+    var s = JSON.parse(snap), q = F.q, cr = F.creator;
+    progress = s.progress;
+    reviews = s.reviews;
+    settings = withDefaults(s.settings);
+    filtersFromSettings();
+    F.q = q; F.creator = cr;                                   // search text is session-only
+    saveProgress(); save('reviews', reviews); saveSettings();
+    rerenderAll();
+  }
+  function rerenderAll() {
+    renderPanel(); renderList(); applyPrefs();
+    if (activeTab === 'settings') renderSettings();
+  }
+  var confirming = '';                    // which in-page confirm is open; never window.confirm
+  function clearProgress() {
+    var snap = takeSnapshot();
+    progress.marks = {};
+    confirming = '';
+    saveProgress();
+    rerenderAll();
+    toast('All progress cleared. Reviews and bookmarks kept.', 'Undo', function () {
+      restoreSnapshot(snap);
+      toast('Progress restored.');
+    });
+  }
+  function runImportLegacy() {
+    var res = importLegacy();
+    rerenderAll();
+    toast(legacySummary(res) || 'Nothing new to bring over from the previous version.');
+    return res;
+  }
+
+  /* ---- preferences: on/off settings, each read by applyPrefs ---- */
+  var PREFS = { showJump: 1 };
+  function applyPrefs() {
+    $('.ptools [data-act="next"]').hidden = !settings.showJump;
+  }
+
+  /* ======================================================================
+     SETTINGS — sectioned (F-4); string templates like everything else
+     ====================================================================== */
+  function seg(act, label, opts, cur) {
+    return '<div class="seg" role="group" aria-label="' + escapeAttr(label) + '">' + opts.map(function (o) {
+      return '<button type="button" class="segbtn" data-act="' + act + '" data-v="' + escapeAttr(o[0]) + '" aria-pressed="' +
+        (String(o[0]) === String(cur)) + '">' + escapeHtml(o[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function srow(label, control) { return '<div class="srow"><span class="slabel">' + escapeHtml(label) + '</span>' + control + '</div>'; }
+  function sset(id, title, body) {
+    return '<section class="sset" id="set-' + id + '" aria-labelledby="seth-' + id + '"><h2 class="seth" id="seth-' + id + '">' +
+      escapeHtml(title) + '</h2>' + body + '</section>';
+  }
+  function pref(k, label) {
+    return '<button type="button" class="chip" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '">' + escapeHtml(label) + '</button>';
+  }
+  function bookmarksHtml() {
+    var list = bookmarked();
+    if (!list.length) return '<p class="muted">No bookmarks yet. Tap ☆ on any row.</p>';
+    return '<ol class="bmlist">' + list.map(function (i) {
+      var id = escapeAttr(D.ids[i]), title = D.issues[i][1];
+      return '<li><button type="button" class="linkbtn" data-act="bm-jump" data-id="' + id + '">' + escapeHtml(title) + '</button>' +
+        '<button type="button" class="linkbtn" data-act="bm-remove" data-id="' + id + '" aria-label="Remove bookmark: ' + escapeAttr(title) + '">Remove</button></li>';
+    }).join('') + '</ol>';
+  }
+  function clearHtml() {
+    if (confirming !== 'clear') return srow('Progress', '<button type="button" class="tool" data-act="clear-ask">Clear all progress…</button>');
+    return '<div class="confirm" role="group" aria-labelledby="clear-q"><p id="clear-q">Clear every mark? Reviews and bookmarks stay, ' +
+      'and you can undo straight after.</p><button type="button" class="tool danger" data-act="clear-yes">Clear all progress</button>' +
+      '<button type="button" class="tool" data-act="clear-no">Cancel</button></div>';
+  }
+  function aboutHtml() {
+    var c = D.counts;
+    return '<h3 class="ssub">About this list</h3><p class="about">' + escapeHtml(D.franchise.title) + ' · ' +
+      c.total.toLocaleString('en-GB') + ' entries · ' + c.core + ' core · ' + c.mandatory + ' mandatory · build ' + escapeHtml(D.build) + '</p>' +
+      (D.legend.length ? '<dl class="legend">' + D.legend.map(function (l) {
+        return '<dt>' + escapeHtml(l.term) + '</dt><dd>' + escapeHtml(l.meaning) + '</dd>';
+      }).join('') + '</dl>' : '') +
+      (D.maintenance.length ? '<ul class="maint">' + D.maintenance.map(function (m) { return '<li>' + escapeHtml(m) + '</li>'; }).join('') + '</ul>' : '');
+  }
+  function renderSettings() {
+    var S = computeStats(), ae = document.activeElement, keep = ae && ae.dataset ? [ae.dataset.act, ae.dataset.v, ae.dataset.k] : null;
+    var h = sset('reading', 'Reading behaviour',
+      srow('Minutes per issue', seg('pace-min', 'Minutes per issue', PACE_MINUTES.map(function (p) { return [p[2], p[1] + ' · ' + p[2] + ' min']; }), settings.pace.minutes)) +
+      srow('Issues per week', seg('pace-week', 'Issues per week', PACE_WEEKLY.map(function (p) { return [p[2], p[1] + ' · ' + p[2]]; }), settings.pace.weekly)) +
+      '<p class="pace" id="paceOut" aria-live="polite">' + paceReadout(S) + '</p>' +
+      (MEDIA_USED.length > 1 ? srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
+      srow('Next unread button', pref('showJump', 'Show it')));
+    h += sset('data', 'Data',
+      srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +
+      '<h3 class="ssub">Bookmarks</h3>' + bookmarksHtml() +
+      (D.franchise.storage && D.franchise.storage.legacy
+        ? srow('Previous version', '<button type="button" class="tool" data-act="import-legacy">Import from previous version</button>') : '') +
+      clearHtml() + aboutHtml());
+    $('#settings').innerHTML = h;
+    if (keep && keep[0]) {                                     // keep keyboard focus across the re-render
+      var again = $$('#settings [data-act="' + keep[0] + '"]').filter(function (el) {
+        return el.dataset.v === keep[1] && el.dataset.k === keep[2];
+      })[0];
+      if (again) again.focus();
+    }
   }
 
   /* ======================================================================
@@ -767,6 +989,23 @@
       case 'expand-all': setAll(true); break;
       case 'collapse-all': setAll(false); break;
       case 'toast-act': { $('#toast').hidden = true; var fn = toastAction; toastAction = null; if (fn) fn(); break; }
+      case 'tab': showTab(b.dataset.tab); break;
+      case 'pace-min': setPace(+b.dataset.v, 0); break;
+      case 'pace-week': setPace(0, +b.dataset.v); break;
+      case 'pmode': settings.progressMode = b.dataset.v === 'medium' ? 'medium' : 'combined'; saveSettings(); refreshStats(); renderSettings(); break;
+      case 'refresh':
+        settings.refreshEvery = b.dataset.v; settings.refreshSeen = Date.now();   // a new interval restarts the clock
+        saveSettings(); renderSettings();
+        break;
+      case 'pref':
+        if (PREFS[b.dataset.k]) { settings[b.dataset.k] = !settings[b.dataset.k]; saveSettings(); applyPrefs(); renderSettings(); }
+        break;
+      case 'bm-jump': jumpToIssue(b.dataset.id); break;
+      case 'bm-remove': removeBookmark(b.dataset.id); break;
+      case 'clear-ask': confirming = 'clear'; renderSettings(); break;
+      case 'clear-no': confirming = ''; renderSettings(); break;
+      case 'clear-yes': clearProgress(); break;
+      case 'import-legacy': runImportLegacy(); break;
     }
   }
   var inputTimer = null;
@@ -811,23 +1050,17 @@
   saveSettings();
   renderPanel();
   renderList();
+  applyPrefs();
+  showTab(settings.tab);
   if (migration && legacySummary(migration)) toast(legacySummary(migration));
+  else checkRefresh();
 
   /* Small public surface for session 3's Settings actions (and the harness). */
   window.PullList = {
-    importLegacy: function () {
-      var res = importLegacy();
-      renderPanel(); renderList();
-      if (legacySummary(res)) toast(legacySummary(res));
-      return res;
-    },
+    importLegacy: runImportLegacy,
     jumpToIssue: jumpToIssue,
+    showTab: showTab,
     pacePresets: { minutes: PACE_MINUTES, weekly: PACE_WEEKLY },
-    setPace: function (minutes, weekly) {
-      // whole numbers only: integer minutes keep the comics-only figures exact
-      if (minutes) settings.pace.minutes = Math.max(1, Math.round(minutes));
-      if (weekly) settings.pace.weekly = Math.max(1, Math.round(weekly));
-      saveSettings(); refreshStats();
-    }
+    setPace: setPace
   };
 })();

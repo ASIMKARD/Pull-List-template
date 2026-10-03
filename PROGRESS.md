@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 753 assertions, 0 failed, 17 suites (session 3, step 1 of 9 done).
+**Harness:** 830 assertions, 0 failed, 18 suites (session 3, step 2 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -330,7 +330,53 @@ Then push, and tell John.
   - The inventory adds V-29 (present) and updates XM-2. XM-13 is dropped (no haptics) and S-17 is
     re-expressed.
 
-### Step 2 begins with
-`index.html`: add the one `#tabs` nav (Checklist / Reading / Reviews / Settings) and four panes.
-Move the filter panel and `#app` into the Checklist pane. The first test to write is
-`98-tabs-settings`: exactly one `#tabs` (T-2), and each tab shows its pane (T-114, T-120–T-122).
+## Session 3 checkpoint — step 2 done (tabs and the Settings shell), 3 Oct 2026
+
+### Done
+- **Shell:**
+  - One `#tabs` nav with Checklist and Settings. Reading and Reviews get their tabs in steps 4
+    and 5, with their content, so no tab ships empty.
+  - Panes inside `<main>`. `#app` is now a `div` in the Checklist pane, next to the filter panel,
+    so the panel shows on Checklist only.
+  - A pinned bookmark bar sits atop the checklist.
+- **`app.js`:**
+  - `withDefaults()` is the one place settings defaults are filled (boot, snapshot restore,
+    later imports). `filtersFromSettings()` re-reads saved filters by name.
+  - `showTab()` uses aria-selected and a roving tabindex. The active tab persists (S-29), and the
+    checklist still lands collapsed.
+  - **Settings, Reading behaviour section:**
+    - pace pills from the presets;
+    - the F-18 readout "N left · W weeks at P a week · done Mon YYYY", using the same minutes
+      maths and date as the header;
+    - progress mode, Combined or Per format. Each format's own count, time left and "+N untimed"
+      shows in the header. The control is offered only when the data mixes formats;
+    - Next unread button show/hide.
+  - **Settings, Data section:**
+    - the refresh reminder (Monthly / Quarterly / Yearly / Off), consumed at boot. The first run
+      starts the clock, and Dismiss or a new interval resets it;
+    - the bookmarks list (sorted as displayed, Jump, Remove);
+    - Import from previous version (only when the data declares one);
+    - Clear all progress, with an in-page confirm and a **full-state snapshot + Undo**
+      (`takeSnapshot` / `restoreSnapshot`, reused by Replace in step 8);
+    - About & legend.
+  - `jumpToIssue` switches to the Checklist first. Settings re-renders keep keyboard focus.
+  - No new listeners: still 4 in app code (jsdom adds its own `mouseover`, `mouseout` and `load`
+    at boot).
+- **Tests:** `98-tabs-settings` (77 assertions). Mutation-checked:
+  - a reminder that is stored but never consumed → 4 failures;
+  - an Undo that does not restore → 2 failures.
+- **Real Chromium** (390 px, mixed fixture): Checklist with the pinned bar and the untimed
+  marker; Settings with per-format lines. No page errors and no horizontal overflow. The
+  segmented controls became wrapping pills after the first screenshot showed them breaking
+  awkwardly.
+
+### Step 3 begins with
+Display options in a new **Display** Settings section (`renderSettings` in `app.js`), as `PREFS`
+toggles read by `applyPrefs()`, plus the root flags.
+- Badges on/off (S-8), combo badge (S-12), newest era first (S-13), notes only (S-15, which
+  covers landmarks), tap to reveal (S-16), gap notes (XM-10), era navigation style (XM-8) and
+  layout C (X-1).
+- The first test to write, in `99-display`: notes only narrows the list and restores it
+  (T-12/13); newest era first reverses the order and toggles back (T-14/15).
+- Then extend `96-figures`: every display option leaves every figure unchanged.
+- The `change` listener arrives with the first `<select>` (the era navigation dropdown).

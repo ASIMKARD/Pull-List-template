@@ -26,6 +26,15 @@
   </div>
 </header>
 
+<nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+  <button type="button" class="tab" role="tab" id="tab-list" data-act="tab" data-tab="list" aria-controls="pane-list" aria-selected="true">Checklist</button>
+  <button type="button" class="tab" role="tab" id="tab-settings" data-act="tab" data-tab="settings" aria-controls="pane-settings" aria-selected="false" tabindex="-1">Settings</button>
+</nav>
+
+<main id="main">
+<section class="pane" id="pane-list" role="tabpanel" aria-labelledby="tab-list">
+<div class="pinbar" id="pinbar" aria-label="Bookmarks" hidden><div class="pinbar-in" id="pinchips"></div></div>
+
 <section class="fpanel" id="fpanel" aria-label="Filters">
   <div class="fbar">
     <button type="button" class="ftoggle" data-act="panel" aria-expanded="false" aria-controls="fbody">Filters <span class="fcount" id="fcount"></span></button>
@@ -39,7 +48,13 @@
   </div>
 </section>
 
-<main id="app" aria-busy="true"><p class="loading">Loading the checklist…</p></main>
+<div id="app" aria-busy="true"><p class="loading">Loading the checklist…</p></div>
+</section>
+
+<section class="pane" id="pane-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+  <div class="settings" id="settings"></div>
+</section>
+</main>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden>
   <div class="toast-in">
