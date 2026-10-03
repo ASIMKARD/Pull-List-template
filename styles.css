@@ -12,6 +12,8 @@
   --accent-ink: #ffffff;
   --accent-wash: #e3ecf8;
   --good: #2e7d4f;
+  --danger: #a3352a;
+  --qr-paper: #ffffff;   /* a QR scans reliably only on white, whatever the skin */
   --track: #e6e2d8;
   --shadow: rgba(27, 29, 36, 0.12);
   --radius: 10px;
@@ -98,6 +100,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .bfiltered, .pfiltered {
   padding: 0 8px; border: 1px dashed var(--accent); border-radius: 999px; color: var(--accent); font-size: 12px;
 }
+.buntimed, .puntimed { font-style: italic; }
 .band-intro, .era-intro { margin: 8px 4px; color: var(--ink-soft); font-size: 14px; }
 
 /* ---- arcs and rows ---- */
@@ -129,6 +132,125 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .b.bm[aria-pressed="true"] { color: var(--accent); }
 .subnote, .notepop { flex-basis: 100%; margin: 0 0 0 44px; font-size: 13px; color: var(--ink-soft); }
 .notepop { margin: 0; padding: 6px 10px 8px 50px; background: var(--accent-wash); }
+
+/* ---- tabs and panes ---- */
+.tabs { display: flex; gap: 0; margin: 0 16px var(--gap); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab {
+  flex: 1 0 auto; padding: 10px 2px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--ink-soft);
+  font-weight: 600; white-space: nowrap; font-size: clamp(13px, 4.2vw, 15px);   /* four tabs fit at 320 px */
+}
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* ---- pinned bookmarks bar (layout on the inner wrapper, so [hidden] wins) ---- */
+.pinbar-in { display: flex; gap: 6px; overflow-x: auto; margin: 0 16px var(--gap); padding-bottom: 2px; }
+.chip.pin { flex: none; margin: 0; color: var(--accent); border-color: var(--accent); white-space: nowrap; }
+
+/* ---- settings ---- */
+.settings { margin: 0 16px; }
+.sset { margin: 0 0 var(--gap); padding: 4px 14px 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.seth { margin: 10px 0 6px; font-size: 17px; }
+.ssub { margin: 14px 0 6px; font-size: 14px; color: var(--ink-soft); }
+.srow { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 6px 0; }
+.slabel { min-width: 9em; font-size: 14px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.segbtn { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: none; font-size: 13px; color: var(--ink-soft); }
+.segbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.pace { margin: 4px 0 6px; font-size: 14px; }
+.bmlist { margin: 0; padding-left: 1.4em; }
+.bmlist li { padding: 2px 0; }
+.confirm { margin: 8px 0; padding: 10px 12px; border: 1px solid var(--danger); border-radius: var(--radius-sm); }
+.confirm p { margin: 0 0 8px; }
+.confirm .tool { margin-right: 8px; }
+.tool.danger { border-color: var(--danger); color: var(--danger); }
+.about { margin: 4px 0; font-size: 14px; }
+.legend { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0; font-size: 14px; }
+.legend dd { margin: 0; color: var(--ink-soft); }
+.maint { margin: 6px 0; padding-left: 1.2em; font-size: 13px; color: var(--ink-soft); }
+
+/* ---- display options ---- */
+.depthrow { display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+.depthrow .chip { flex: none; }
+.eranav-in { display: flex; gap: 6px; overflow-x: auto; margin: 0 16px var(--gap); }
+.eranav-in .chip { flex: none; margin: 0; white-space: nowrap; }
+.erasel { height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit; }
+.arclabel { display: block; font-size: 12px; color: var(--ink-soft); }
+:root[data-badges="0"] .badges { display: none; }
+/* combo badge: a row that is both bookmarked and read gets a filled star */
+:root[data-combo="1"] .row[data-s="read"] .bm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* ---- reading tab ---- */
+.reader { margin: 0 16px; }
+.rcard { padding: 14px 16px 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.rcount { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.rpills { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.rpill { padding: 2px 10px; border-radius: 999px; background: var(--accent-wash); color: var(--accent); font-size: 12px; }
+.rtitle { margin: 10px 0 4px; font-size: 22px; line-height: 1.25; overflow-wrap: anywhere; }
+.rmeta, .rstate { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.rnote { margin: 10px 0 0; font-size: 15px; }
+.rblurb { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-soft); }
+.racts { display: flex; gap: 10px; margin: 16px 0 0; }
+.rbtn { flex: 1; min-height: 44px; border-radius: var(--radius-sm); border: 1px solid var(--accent); font-weight: 600; }
+.rbtn.ghost { background: none; color: var(--accent); }
+.rbtn.solid { background: var(--accent); color: var(--accent-ink); }
+.rnav { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 0; }
+.rnav .linkbtn[disabled] { color: var(--ink-soft); cursor: default; }
+
+/* ---- reviews ---- */
+.arc-head h3 { display: inline; margin-right: 8px; }
+.b.rv { min-height: 26px; vertical-align: middle; }
+.review { margin: 4px 0 10px; padding: 10px 12px; background: var(--accent-wash); border-radius: var(--radius-sm); }
+.stars { display: flex; gap: 2px; }
+.star { width: 36px; height: 36px; border: 0; background: none; font-size: 22px; color: var(--line); }
+.star[aria-pressed="true"] { color: var(--accent); }
+.rvtext { display: block; width: 100%; margin-top: 6px; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--ink); font: inherit; resize: vertical; }
+.reviews { margin: 0 16px; }
+.pane-h { margin: 6px 0 10px; font-size: 20px; }
+.revlist { margin: 0; padding: 0; list-style: none; }
+.rev-item { padding: 10px 12px; margin-bottom: 8px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.rev-top { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.rev-name { font-weight: 600; padding: 0; }
+.rev-era { font-size: 13px; color: var(--ink-soft); }
+.rev-stars { color: var(--accent); letter-spacing: .05em; }
+.rev-t { margin: 6px 0 0; font-size: 14px; white-space: pre-wrap; }
+
+/* ---- bulk marking and touch ---- */
+.arc-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.shelp { margin: 2px 0 6px; font-size: 13px; }
+.row { transition: transform .15s ease; }
+.row[data-swipe="read"], .row[data-swipe="read-go"] { transform: translateX(28px); box-shadow: inset 6px 0 var(--accent); }
+.row[data-swipe="skip"], .row[data-swipe="skip-go"] { transform: translateX(-28px); box-shadow: inset -6px 0 var(--ink-soft); }
+.row[data-swipe="read-go"] { background: var(--accent-wash); }
+.row[data-swipe="skip-go"] { background: var(--track); }
+
+/* ---- creators, events, presets ---- */
+.cname { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.cpick { margin-top: 8px; }
+.cnt { font-size: 11px; color: var(--ink-soft); }
+.evnote { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); }
+.evnote .linkbtn { padding: 0; }
+.fpresets { padding: 4px 12px 12px; border-top: 1px solid var(--line); }
+.presetrow { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.preset { display: inline-flex; align-items: center; }
+.preset .chip { margin: 0; }
+.preset-form { display: flex; gap: 8px; }
+
+/* ---- sync and backup ---- */
+.syncbox { margin: 6px 0 10px; }
+.qrbox { width: min(260px, 100%); margin: 6px 0; padding: 8px; background: var(--qr-paper); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.qrbox svg { display: block; width: 100%; height: auto; }
+.synctext { display: block; width: 100%; margin: 6px 0; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--paper); color: var(--ink); font: 12px/1.4 var(--font-mono); word-break: break-all; resize: vertical; }
+.syncbox .tool, .syncpend .tool, #set-backup > .tool { margin: 0 8px 6px 0; }
+.syncerr { margin: 6px 0; color: var(--danger); font-size: 14px; }
+.filelabel { display: inline-block; position: relative; }
+.vh { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+
+/* ---- per-format progress lines ---- */
+.pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.pmed { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; font-size: 13px; color: var(--ink-soft); }
+.pmed-name { font-weight: 600; color: var(--ink); min-width: 5em; }
+.pmed progress.bar { flex-basis: 100%; height: 4px; }
 
 /* ---- toast ---- */
 .toast { position: fixed; left: 16px; right: 16px; bottom: 16px; }

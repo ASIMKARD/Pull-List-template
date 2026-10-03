@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 617 assertions, 0 failed, 16 suites (end of session 2, after John's closing fixes and the format decision).
-Session 1 ended at 307; CI green on every run.
+**Harness:** 1105 assertions, 0 failed, 24 suites (end of session 3; CI green on every push).
+Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
 
@@ -187,3 +187,465 @@ Work through every S3 line in `FEATURE-INVENTORY.md`:
 - **Presence filters** with the cameo toggle (FP-5), the creator picker with counts (CR-7), and tappable creator names (CR-8).
 - **Listener budget:** touch ×3 + change brings the total to 8.
 - **Essential/Complete** joins the PLAN filters: `inView()` already feeds `planOk()`.
+
+---
+
+## Session 3 plan (agreed 3 Oct 2026): features + per-format durations
+
+Branch `claude/compassionate-galileo-6g2vnh`, cut from `main` at `3e480f3` (sessions 1 and 2 merged).
+The full plan, with tests per step, was agreed in plan mode. The steps, in order:
+
+1. **Per-format durations** (John's addition, 1 Oct) — done, see the checkpoint below.
+2. **Tabs and the Settings shell.**
+   - Checklist / Reading / Reviews / Settings, with the active tab persisted; the filter panel shows
+     on Checklist only.
+   - Settings sections: Display, Reading behaviour, Touch, Bulk actions, Data, Backup.
+   - Pace controls, plus the F-18 readout "N left · W weeks · done Mon YYYY".
+   - Progress mode, combined or per medium.
+   - Refresh reminder (consumed at boot), About & legend, Clear all progress (snapshot + undo
+     toast), Import from previous version.
+   - Bookmarks list and the pinned bookmark bar; show/hide the jump button.
+   - Listeners: + `change` = 5.
+3. **Display options** (display-only):
+   - badges, combo badge, newest era first, notes only, tap to reveal;
+   - gap notes, era navigation style, layout C.
+4. **Reading tab** stepper. It resumes at the first unread, and marks go through `setMark` (D-1).
+5. **Reviews** per arc. The `.b.rv` ✎ sits on the arc head; the Reviews tab lists them and jumps;
+   `legacy-unmatched` reviews are listed, never dropped.
+6. **Bulk marking and touch.**
+   - `applyMark` + one refresh, so there is still one mark path.
+   - Era, range and arc bulk marks, with an undo that restores the previous states.
+   - Swipe and long-press (opt-in).
+   - Listeners: + 3 touch = 8.
+7. **Story, character and creator filters; presets.**
+   - Essential/Complete (a plan filter, with "Complete view adds N issues").
+   - Presence + cameos (browse).
+   - Creator picker with counts, tappable names, and chips.
+   - Presets by name.
+   - Importance on arc heads.
+8. **Sync and backup** (two formats; see the decisions below).
+9. **Close-out.** Inventory statuses, this checkpoint, and a real Chromium check with screenshots.
+
+New suites: `97-durations`, `98-tabs-settings`, `99-display`, `9a-reading`, `9b-reviews`, `9c-bulk-touch`,
+`9d-story-filters`, `9e-sync`.
+
+**Session length rule (John, 3 Oct):** never start a step that can't be finished. If the session
+runs long, stop at the end of a completed step and record here exactly where step N+1 begins.
+Then push, and tell John.
+
+### Decisions recorded 3 Oct (do not re-ask)
+- **Per-format durations** (asked 1 Oct; settled 3 Oct):
+  - **Every comic counts as one issue**, timed by the minutes-per-issue setting. There are no comic
+    durations and no length multipliers, so `duration` on a comic row or `durations.comic` fails
+    the build.
+  - **Shows** use the dataset default `durations: {screen: N}`; a row's `duration` overrides it.
+  - **Games** each carry their own `duration`. **One unit everywhere: whole minutes.**
+  - A missing duration warns with a coverage % (like credits). It never fails; there is no
+    strict flag.
+  - **An untimed row adds nothing** to time left or finish-by. Banners and the header show
+    "+N untimed"; when a unit's only remaining rows are untimed, the marker shows and there is no
+    "0m left".
+  - **Finish-by** = minutes left ÷ (issues per week × minutes per issue). For comics-only data
+    the result is bit-identical to session 2.
+- **S-17 "Jump to first unread on load" is re-expressed.** The landing stays collapsed with no
+  exceptions, and the Reading tab resumes at the first unread instead.
+- **Swipe and long-press stay off by default (opt-in).**
+- **No haptics.** XM-13 is dropped, and a guard (step 6) asserts `navigator.vibrate` is never
+  called.
+- **XM-9 landmarks fold into notes only / tap to reveal.** X-Men's "landmark notes" are the row's
+  short `note`, so no new data field is needed.
+- **Reviews are per arc.** The ✎ button sits on the arc head.
+- **Two sync formats:**
+  - **QR (compact).** It holds a version, the franchise prefix, a dataVersion hash (sha256 of ids
+    in row order, emitted by the build), the marks as 2-bit states in the current row order, and
+    the bookmarks as positions. Reviews, settings and filters stay out.
+    - It is **compressed**: RLE of the marks plus delta-varint bookmarks, keeping RLE or raw 2-bit
+      packing, whichever is smaller, then base64url.
+    - If the code would exceed QR capacity, the app shows a message and the copy-code instead.
+    - On import, a matching dataVersion is decoded by position. A different one is refused, with a
+      pointer to the copy-code or the file.
+  - **Copy-code, `#sync=` links and the backup file** carry the full id-keyed, change-tolerant JSON
+    with everything.
+- **Import is Merge or Replace.**
+  - Merge is the default and never downgrades a read mark.
+  - Replace restores the backup exactly, after an in-page confirm (never `window.confirm`).
+  - Before a Replace and before "Clear all progress", the full state is snapshotted, and an undo
+    toast restores it.
+- **Old (v2) QR codes.** The old position order is rebuilt from every legacy-style id **plus
+  `retiredIds`**, sorted by old key, so a retired issue can't shift every later position.
+
+---
+
+## Session 3 checkpoint — step 1 done (per-format durations), 3 Oct 2026
+
+### Done
+- **Schema:**
+  - `durations` (top level, minutes ≥1; `comic` refused by `propertyNames`);
+  - row `duration`;
+  - event chapter `duration`;
+  - a shared `$defs/minutes`.
+- **`tools/build.py`:**
+  - Resolution, read by name: row `duration` → `durations[medium]` → comic: 0 (use the setting)
+    → missing: -1. Inert rows are 0.
+  - Rules: comic `duration` and `durations.comic` fail; a non-integer or a value <1 fails; an
+    unknown medium in `durations` fails.
+  - A per-medium coverage warning, plus `counts.durationsCoverage`, the report field, and the
+    build summary line.
+  - Chapters carry `duration` into placed rows.
+  - `data.js` gains the index-aligned `issueDuration` array.
+- **`app.js`:**
+  - Stats accumulate `cl` (comics), `fm` (fixed minutes) and `ut` (untimed) over remaining rows.
+  - `minutesLeft = cl × minutes + fm`.
+  - Finish-by is cumulative **minutes** ÷ (weekly × minutes), and finish spans carry the
+    full-precision `data-weeks` (it feeds step 2's "W weeks" readout).
+  - "+N untimed" markers (`.buntimed` / `.puntimed`, `data-untimed`).
+  - `setPace` rounds to whole numbers.
+- **Fixtures:**
+  - `basic` is now fully timed: its game has `duration: 1200`, plus `durations: {screen: 22}`.
+  - New **`mixed`** fixture: 2 bands, comics, 3 episodes (22 default, 44 override), a timed game
+    (1500) and an untimed game, an ALT row and a gap note.
+  - New broken cases: `duration-on-comic`, `durations-comic-default`, `duration-not-integer`.
+- **Tests:**
+  - **`97-durations`** (107 assertions): build values, coverage warning and summary; the event
+    chapter duration; time left honouring each duration (reading still counts; read −1500;
+    skip −22); pace changes only the comics part; finish-by from minutes; the untimed marker,
+    including the only-untimed case; format-as-plan totals (Games / Shows / Comics / cleared);
+    comics-only exactness.
+  - **Comics-only exactness** is proved two ways. First, exhaustive arithmetic (r 0…5000 × all 12
+    preset pairs). Second, the real DOM against the session-2 formula kept verbatim as the oracle,
+    on 4 comics-only datasets (basic without its game and show, the no-periods equivalent, the
+    5,000-row stress set and the root starter) × 12 pace pairs, with read / skip / reading marks.
+    `data-weeks` is compared as the full double, so the match is bit-identical, not just the same
+    day.
+  - Mutation checks, each with the old behaviour put back:
+    - count-based time left → fails;
+    - untimed counted as a comic → fails;
+    - dividing twice (`/ w / m`, a sub-day rounding change) → 12 failures, once `data-weeks` was
+      compared.
+  - `95-pace` and `96-figures` now use an own-minutes oracle. `20-build` checks `issueDuration`
+    alignment and the comic/non-comic values on 4 datasets, including `mixed`. `10-schema`
+    validates `mixed`.
+- **Docs:**
+  - CLAUDE.md data rules gain the durations rule.
+  - The inventory adds V-29 (present) and updates XM-2. XM-13 is dropped (no haptics) and S-17 is
+    re-expressed.
+
+## Session 3 checkpoint — step 2 done (tabs and the Settings shell), 3 Oct 2026
+
+### Done
+- **Shell:**
+  - One `#tabs` nav with Checklist and Settings. Reading and Reviews get their tabs in steps 4
+    and 5, with their content, so no tab ships empty.
+  - Panes inside `<main>`. `#app` is now a `div` in the Checklist pane, next to the filter panel,
+    so the panel shows on Checklist only.
+  - A pinned bookmark bar sits atop the checklist.
+- **`app.js`:**
+  - `withDefaults()` is the one place settings defaults are filled (boot, snapshot restore,
+    later imports). `filtersFromSettings()` re-reads saved filters by name.
+  - `showTab()` uses aria-selected and a roving tabindex. The active tab persists (S-29), and the
+    checklist still lands collapsed.
+  - **Settings, Reading behaviour section:**
+    - pace pills from the presets;
+    - the F-18 readout "N left · W weeks at P a week · done Mon YYYY", using the same minutes
+      maths and date as the header;
+    - progress mode, Combined or Per format. Each format's own count, time left and "+N untimed"
+      shows in the header. The control is offered only when the data mixes formats;
+    - Next unread button show/hide.
+  - **Settings, Data section:**
+    - the refresh reminder (Monthly / Quarterly / Yearly / Off), consumed at boot. The first run
+      starts the clock, and Dismiss or a new interval resets it;
+    - the bookmarks list (sorted as displayed, Jump, Remove);
+    - Import from previous version (only when the data declares one);
+    - Clear all progress, with an in-page confirm and a **full-state snapshot + Undo**
+      (`takeSnapshot` / `restoreSnapshot`, reused by Replace in step 8);
+    - About & legend.
+  - `jumpToIssue` switches to the Checklist first. Settings re-renders keep keyboard focus.
+  - No new listeners: still 4 in app code (jsdom adds its own `mouseover`, `mouseout` and `load`
+    at boot).
+- **Tests:** `98-tabs-settings` (77 assertions). Mutation-checked:
+  - a reminder that is stored but never consumed → 4 failures;
+  - an Undo that does not restore → 2 failures.
+- **Real Chromium** (390 px, mixed fixture): Checklist with the pinned bar and the untimed
+  marker; Settings with per-format lines. No page errors and no horizontal overflow. The
+  segmented controls became wrapping pills after the first screenshot showed them breaking
+  awkwardly.
+
+## Session 3 checkpoint — step 3 done (display options), 3 Oct 2026
+
+### Done
+- **A Display section in Settings**, with the `PREFS` toggles. CSS-only ones become root flags in
+  `applyPrefs()` (`data-badges`, `data-combo`, `data-reveal`, `data-layout`); the others
+  re-render the list. The options:
+  - Badges on/off and the combo badge (read + bookmarked → filled star).
+  - Tap to reveal: a "note" button opens the subnote.
+  - Gap notes on/off.
+  - Newest era first: bands and eras are reversed, rows keep reading order, finish-by stays
+    cumulative in reading order, and bookmarks sort as displayed.
+  - Arc headings, "Headings" or "Label on each row" (layout C, X-1).
+  - Era navigation (XM-8).
+- **Notes only** is a display-only filter chip in the panel's Reading section: persisted by
+  name, shown as an active chip and in the summary. X-Men's landmarks-only folds into it, and
+  its inline vs tap-to-reveal folds into tap to reveal.
+- **Era navigation (XM-8) — my call, open to veto.** X-Men's version is an era *filter*. v3
+  already has the era filter in the Story section, so XM-8 became a **jump bar**: chips or a
+  dropdown open and scroll to an era, and nothing is filtered. Plain scroll (no bar) is the
+  default, because the collapsed banners already list every era.
+- The depth chips sit in one row that never wraps (T-95).
+- **Listeners:** `change` added for the era dropdown (5 of 12). Bulk ranges and file import will
+  reuse it.
+- **Tests:** `99-display` (50 assertions). Every option is checked to leave every figure
+  unchanged. Mutation-checked:
+  - notes only ignored → 2 failures;
+  - newest-first ignored → 3 failures;
+  - finish-by following display order → caught.
+- **The franchise-string guard caught "X-Men" in two comments.** They now say "the
+  feel-reference build", as session 2 did.
+- **Real Chromium** (basic fixture, 390 px): era chips, layout C labels and the note button
+  render, with no errors and no overflow.
+- **Screenshot-script lesson:** writing localStorage while the page is open and then reloading
+  is overwritten by the `pagehide` flush. That is the app working as designed, so seed settings
+  with `addInitScript` before load.
+
+## Session 3 checkpoint — step 4 done (Reading tab), 3 Oct 2026
+
+### Done
+- **The Reading tab** sits between Checklist and Settings. `renderReading()` is a one-entry
+  stepper over the current view: plan, browse and display-only filters; reading order within the
+  chosen order; **never reversed** (newest-era-first is a checklist browsing aid).
+- **Resume:** it starts at the first entry that is neither read nor skipped, until the user
+  steps. The stepped-to id is session-only (`reader`). This is also the re-expressed S-17.
+- **Marking:** Skip / Mark <verb> go through `setMark`, with verbs following the medium (Mark
+  Read / Beaten / Watched; "Beaten ✓" when done). Setting a state steps on; tapping it again
+  clears it and stays. Previous / Next are disabled at the ends. Pin toggles the bookmark, and
+  the pinned bar and checklist star follow.
+- **Tests:** `9a-reading` (32 assertions).
+  - A mutation that writes the Reading-tab mark straight to storage (v2's bug) fails the D-1
+    counters and the time-left check.
+  - A boot on the Reading tab resumes at the first unread while the checklist stays collapsed.
+- Real Chromium screenshot of the Reading card: no errors, no overflow.
+
+## Session 3 checkpoint — step 5 done (Reviews), 3 Oct 2026
+
+### Done
+- **Per-arc reviews** in `reviews[arcId] = {r, t}`.
+  - **The ✎ button.** `.b.rv` (D-4, T-53) sits on every arc head; in layout C it goes on the
+    first row of each arc run. Its label shows the rating ("✎ ★★★★", "✎ noted", "✎ review").
+  - **The editor.** An inline editor has 5 star buttons (tap the same star again to clear it)
+    and a notes box.
+  - **Saving.** Text commits to the store on every input; the 400 ms save debounce and the
+    `pagehide` flush cover it, so a review typed and closed at once is not lost. Clearing both
+    the stars and the text deletes the review.
+- **The Reviews tab** (between Reading and Settings):
+  - It lists reviews by each arc's first key, with stars, era and text; tapping one jumps to the
+    arc's first in-view row.
+  - "Kept from the previous version" lists `legacy-unmatched` reviews and reviews whose arc is no
+    longer in the data. They are never dropped.
+- **Tests:** `9b-reviews` (24 assertions). Mutation-checked:
+  - text not committed on input → 2 failures;
+  - the kept list removed → 1 failure.
+- **Found by real Chromium, invisible to jsdom:** the fourth tab pushed the nav past 390 px
+  (horizontal overflow). The tabs now share the width (`flex: 1 0 auto`) and the nav scrolls as
+  a fallback. Checked clean at 320, 360 and 390 px.
+  - **Session 4:** add a Chromium overflow check at 320 px to the layout suite (L-checks).
+
+## Session 3 checkpoint — step 6 done (bulk marking and touch), 3 Oct 2026
+
+### Done
+- **One mark path, two speeds.**
+  - `applyMark(i, st)` changes a row's state and any rendered row.
+  - `setMark` = one `applyMark` + `afterMarks()` (save, refresh, panel).
+  - `bulkMark(list, st, what)` = many `applyMark`s + one `afterMarks()`. It snapshots every
+    touched row's **previous** state, so Undo restores a `reading` row as reading and a skip as a
+    skip (B-2, V-27).
+- **Bulk marks the rows the current view counts** (plan filters plus active browse filters), so
+  "mark this era read" turns that banner ✓. This is my call: it respects "mandatory only",
+  Essential view and similar filters.
+  - Era read / unread and an era range (selects default to the full span and are kept across
+    Settings re-renders through the `change` listener).
+  - Arc read / unread from new **Mark arc read / unread** buttons in an `.arc-acts` row on each
+    arc head, next to the ✎ (XM-11).
+- **Touch** (Settings → Touch, both **off by default**):
+  - **Swipe:** right = read, left = skip, ≥60 px and mostly horizontal. The row slides over a
+    coloured backing (`data-swipe` read / read-go / skip / skip-go).
+  - **Long-press** (600 ms) on a band, era or arc head marks it all read with Undo. Moving
+    cancels it, and the click that follows the lift is swallowed so the head doesn't also toggle.
+  - Listeners: `touchstart`, `touchmove` and `touchend` are passive and delegated, for **8 of 12**
+    in total.
+- **No haptics:**
+  - `80-guards` checks the template code for `vibrate` with comments stripped but strings kept;
+  - `9c-bulk-touch` stubs `navigator.vibrate` and asserts zero calls across every gesture;
+  - putting a haptic tick back fails both.
+- **Settings** has 5 sections now (T-11). Expand all / Collapse all also sit in Bulk actions.
+- **Tests:** `9c-bulk-touch` (53 assertions), including 5,000 rows marked in one action in about
+  0.1 s. Mutation-checked:
+  - v2's delete-all undo → 6 failures;
+  - a haptic tick → 2 failures;
+  - no click swallow → 1 failure.
+- **Real Chromium** at 360 px: a mid-swipe row translates 28 px over the accent backing; the Bulk
+  and Touch sections lay out cleanly with no overflow. During a swipe the row pokes past the card
+  edge; **session 4** may clip that with `overflow: hidden` on `.arc` if focus rings allow.
+
+## Session 3 checkpoint — step 7 done (story, character and creator filters; presets), 3 Oct 2026
+
+### Done
+- **Essential / Complete (V-10)**, a PLAN setting kept in `settings.events`.
+  - Controls: Story section chips plus a Settings seg; it shows as an active chip when Complete,
+    and Clear all returns it to Essential.
+  - **The build now emits each event's own `arc`** (`D.events[k].arc`). Only that heading carries
+    "Complete view adds N issues" (a button that switches views), or "Complete view: N more than
+    Essential" in Complete view. Chapters merged into the tracker's own arcs keep those arcs and
+    get no note; mutation-checked.
+- **Appearances (V-11, FP-5)**, a BROWSE filter.
+  - Each character chip shows their major and minor appearances; **Include cameos** adds the
+    cameo appearances.
+  - `chars` and `cameos` persist by name, and unknown names are dropped.
+- **Creators (CR-7/8/10)**, session-only like search.
+  - The picker lists the creator index by count for the chosen role (Writers and artists /
+    Writers / Artists), narrowed by typing.
+  - **Picked or tapped names match exactly** through the creator index; typed text stays a
+    substring search. This was proved on the stress set, where "Writer Number1" sits inside
+    "…10–19" (1,375 typed vs 125 picked).
+  - Credited names on arc heads are buttons (CR-8). The chip reads "Creator: “X” as artist".
+- **Presets (F-22, S-24, FP-9).** "Save as preset" sits at the bottom of the panel, with an
+  in-page name field.
+  - What is saved: the persisted filters (by name), the order and Essential/Complete.
+  - Apply keeps the session's search text. Saving a name that exists updates it, and delete has
+    Undo.
+- **Importance** shows on arc headings ("importance 5/5", V-12).
+- **Tests:** `9d-story-filters` (52 assertions). Mutation-checked:
+  - cameos always counted → fails;
+  - picks matched by substring → fails;
+  - the note on every arc holding a chapter → fails.
+- **Real Chromium** at 360 px: the Characters, Creators and Presets areas render, with no
+  overflow and no errors.
+
+## Session 3 checkpoint — step 8 done (sync and backup), 3 Oct 2026
+
+### Done
+- **Build:** `data.js` carries `dataVersion` (sha256 of the ids in row order, 12 hex) and
+  `retiredIds`.
+- **Compact QR.** The prefix is `<KEY>:` (franchise key, uppercase alphanumerics), then
+  `q3.<dataVersion>.<payload>`. The payload is base64url bytes:
+  - a mode byte, then a varint row count;
+  - the marks as RLE (one varint per run, `length × 4 + state`) or raw 2-bit, whichever is
+    smaller;
+  - the bookmark positions as delta varints.
+  - **5,000 rows of realistic progress give a version-5 QR (88 characters, limit 15); mixed
+    marks fit too (raw packing, version 30).** With RLE only, the mixed case overflows, so the
+    choice of encoding matters.
+- **10,000 alternating marks overflow a QR**: the app shows "Too much progress for a QR code:
+  use the copy-code below instead", with the copy-code ready. That branch is tested, and the
+  copy-code round-trips.
+- **The QR holds a `#sync=` link — my call, open to veto.** XM-6 wants a camera scan to open the
+  tracker and import, so the QR's text is `<page URL>#sync=<compact code>`. The payload is still
+  the compact format. `#sync=` accepts either format, merges on open, reports counts and clears
+  the link.
+- **`qrcode.js` loads on demand** (only when Show sync code is tapped). In real Chromium the
+  rendered QR, decoded with jsQR from a screenshot (installed in the scratchpad only), gives back
+  exactly the expected link.
+- **The full format** (copy-code `<KEY>:s3.<base64url JSON>`, copy-link, backup file
+  `<key>-backup-YYYY-MM-DD.json`) is id-keyed and carries marks, bookmarks, reviews and settings.
+  Unknown ids are ignored and reported; rows added since stay unread.
+- **Import** shows a preview first, then:
+  - **Merge** (the default): never downgrades a read mark, adds bookmarks, fills in missing
+    reviews, and reports "Kept N read marks you already had".
+  - **Replace**: an in-page confirm, then an exact restore (a full code replaces settings too; a
+    QR replaces progress only), with a full-state snapshot and Undo.
+  - A QR from another list version, or a code from another tracker, is refused with a pointer
+    and nothing changes.
+- **Old v2 codes** via `storage.legacy.qrPrefix`: the order is rebuilt from legacy numeric ids
+  plus `retiredIds`, and v2's `count-first-last` check is honoured. The test puts a retired id
+  in the middle, and every later position lands on the right row.
+- **The franchise-string guard is narrowed for one false positive.** `position: absolute` (CSS)
+  matched "absolute" (the Absolute line). The CSS declaration is now ignored, and a self-test
+  proves "Absolute Batman" is still caught.
+- The QR's white backing is a `:root` token (`--qr-paper`).
+- **Listeners:** a `once()` helper registers the lazy script's and the file reader's load/error
+  events. The static count is 9 of 12; S4 plans keydown + install prompt (11).
+- **Tests:** `9e-sync` (59 assertions). Mutation-checked:
+  - the v2 order without `retiredIds` → fails;
+  - Merge downgrading read → 4 failures;
+  - always RLE → 2 failures;
+  - Replace without snapshot Undo → 4 failures;
+  - no dataVersion check → fails.
+
+---
+
+## Transfer checkpoint — end of session 3 (features), 3 Oct 2026
+
+### Done (all 9 steps; details in the step checkpoints above)
+- **All 89 S3 lines in `FEATURE-INVENTORY.md` are present (80) or re-expressed (9), each naming
+  its suite.**
+  - Nothing in S3 is left todo. 55 lines remain: 51 for S4, 4 for S5.
+- **The harness** went from 617 to **1,105 assertions** (+488) across 8 new suites:
+  `97-durations`, `98-tabs-settings`, `99-display`, `9a-reading`, `9b-reviews`, `9c-bulk-touch`,
+  `9d-story-filters` and `9e-sync`.
+  - Every new rule was checked by putting the old or wrong behaviour back once.
+  - 22 mutations were caught in all.
+- **Per-format durations** (the 1 Oct addition) shipped first. For comics-only data, the
+  figures are bit-identical to session 2.
+- **Listeners:** 9 of 12 in app code (click, input, change, touchstart, touchmove, touchend,
+  pagehide, visibilitychange, and the `once()` helper for one-off load/error events).
+- **Final real-Chromium sweep** at 320 and 390 px over Checklist (panel open, era open), Reading,
+  Reviews and Settings (sync code open): no page overflow, no page errors, and all four tabs
+  fully visible.
+  - The sweep caught the tabs being cut off at 320 px; the tab labels now scale with
+    `clamp(13px, 4.2vw, 15px)`.
+- **CLAUDE.md** gains the session's lessons:
+  - Chromium sweeps at 320 px;
+  - seeding storage before load;
+  - the guard word that is also a CSS keyword;
+  - comparing maps by content;
+  - one toast, one Undo;
+  - `dataVersion` and `retiredIds`.
+
+### My calls this session — open to veto (everything else followed a decision)
+1. **Era navigation (XM-8) is a jump bar, not a filter.** Plain scroll is the default, because
+   the Story section's era chips already filter.
+2. **Bulk marks respect the view.** Era, range, arc and long-press mark the rows the banners
+   count, so "mandatory only" or Essential view limits them.
+3. **The QR holds a `#sync=` link** to the compact code, so a camera scan opens the tracker and
+   merges (XM-6).
+4. **The Reading stepper ignores "newest era first"** and always steps in reading order.
+5. **The sync prefix is the whole franchise key**, uppercase alphanumerics (`FIXTURE:`). v2 used
+   the first 4 letters, which could collide between trackers.
+6. **Merge keeps settings and fills only missing reviews.** Replace (full code) restores
+   settings too. A QR's Replace touches progress only.
+7. **Essential/Complete shows as an active chip,** so Clear all returns it to Essential.
+8. **Review ✎ and "Mark arc read / unread"** share an action row under each arc heading.
+
+### Open items for session 4
+- **A Chromium layout suite in the harness or CI.**
+  - The L-1…L-9 checks, plus the session-3 sweep: every tab at 320 px, no overflow, all tabs
+    fully visible.
+  - That sweep lives only in this session's scratchpad. Rebuild it under `test/layout/` with
+    Playwright (`executablePath: '/opt/pw-browsers/chromium'`).
+- **Fonts:** `@font-face` isn't wired up yet, so every measurement this session used fallback
+  fonts. Re-measure the tabs at 320 px once Plex/Anton load.
+- **Swipe:** a swiped row pokes past the card edge (`translateX(28px)`). Clip it with
+  `overflow: hidden` on `.arc` if focus rings survive.
+- **Real-device check:** swipe and long-press on iOS (passive listeners; the lift's click is
+  swallowed after a long-press).
+- **Offline QR:** `sw.js` already precaches `qrcode.js`. Verify the QR draws offline once the
+  service worker work lands.
+- **Listener budget:** 9 used. S4 adds keydown (V-7, XM-3) and the install prompt (F-37), for 11
+  of 12.
+- **content-visibility (V-15)** is still the "decide in S4" item. The proposed resolution
+  (render an era only on first open) is what v3 already does.
+
+### Session 4 starts with: look and PWA (spec §7.4)
+Work through every S4 line in `FEATURE-INVENTORY.md` (51):
+1. **The token system and skins** (V-5, F-52…F-54, F-51, S-2…S-5, S-9, S-20, T-40, T-45, T-54…T-57,
+   T-98, T-103, XM-17, XM-18):
+   - one `:root` token block;
+   - skins as pure CSS that never move or hide a control;
+   - the reachability guard;
+   - density, text size, mark style, button size, dyslexia font, the paper swatches and the
+     skin beacon.
+2. **Banners and table view** (F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51, L-7, L-8).
+3. **The sticky stack measured at runtime** (F-58, L-1…L-6), proved in real Chromium.
+4. **PWA** (F-35…F-38, F-59, XM-7): offline readiness, the online/offline class, the install
+   prompt, the update flow and "Check for updates". Remember the iOS traps in CLAUDE.md.
+5. **Accessibility and performance** (V-7, XM-3, V-8, V-18, FP-11): keyboard shortcuts,
+   critical CSS inline, a preloaded display font, reduced motion and smooth panel animation.
+6. **The content-visibility decision** (V-15), then this file's checkpoint.

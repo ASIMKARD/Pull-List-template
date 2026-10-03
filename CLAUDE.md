@@ -36,7 +36,7 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 | `data.js`, `sw.js` cache name, build tag | **generated** by `tools/build.py` — never hand-edit |
 | `schema/*.json` | JSON Schema for the data files; the harness validates fixtures against it |
 | `tools/build.py` | stitch + derive keys + validate + emit `data.js` (stdlib only) |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `broken/*`) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)
@@ -58,8 +58,21 @@ only at a cut-over swap John approves. (Full text: Master-Repo
   the tracker doesn't have are placed inside that era by date then event order.
 - **Credits**: full canonical names, never surnames alone. Missing credits warn
   (coverage %), and fail only under `strictCredits`.
+- **Durations (per format), whole minutes.**
+  - **Comics:** every comic counts as one issue, timed by the minutes-per-issue setting.
+    A comic `duration` or `durations.comic` fails the build.
+  - **Shows:** `durations: {screen: 22}` gives the default, and a row's `duration` overrides it.
+  - **Games:** each game needs its own `duration`. A missing one warns (coverage %), adds
+    nothing to time left, and shows as "+N untimed".
+  - **Finish-by** = minutes left ÷ (issues per week × minutes per issue).
 - **Read fields by name, never by position.** v2's generator read columns by
   index and a missing column shifted every downstream field into garbage.
+- **`dataVersion` ties a compact QR code to one list.** It hashes the ids in row
+  order, and the compact QR stores marks by position. Any change to the ids or
+  their order changes it, which by design invalidates old QR codes. The full
+  code and the backup file are keyed on id and survive. Old v2 codes are decoded
+  in v2's key order, rebuilt from legacy ids **plus `retiredIds`**: keep retired
+  ids listed, or every later position shifts.
 
 ---
 
@@ -81,6 +94,9 @@ Three layout "fixes" shipped without changing anything visible because they
 were reasoned about, not measured. Use real Chromium (Playwright,
 `executablePath: '/opt/pw-browsers/chromium'` in cloud sessions) for anything
 visual. If no browser is available, say so rather than guessing.
+Session 3: the fourth tab pushed the page wider than 390 px, and at 320 px it was
+cut off inside the tab bar. Both were invisible to jsdom. Sweep every tab at
+320 px and check `scrollWidth`.
 
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:
@@ -109,6 +125,27 @@ A change made just before close never reaches storage unless flushed. Flush on
 `pagehide` and `visibilitychange` (hidden). When testing persistence, **wait for
 the debounce** — reading 30 ms early looks exactly like a broken save and has
 produced two false bug reports.
+In a real browser, seed storage with `addInitScript` **before** load. If you write
+localStorage while the page is open and then reload, the `pagehide` flush correctly
+saves the app's in-memory state over what you wrote, which looks like the app
+ignoring your seed.
+
+### One guard word is also a CSS keyword — [applies]
+The franchise-string guard matches "absolute" (the Absolute line), and CSS
+needs `position: absolute`. The guard exempts that one declaration, with a
+self-test that "Absolute Batman" is still caught. If a guard fires on
+legitimate code, narrow it with a self-test. Never rename real code to dodge
+it, and never weaken it wholesale.
+
+### Maps compared as JSON depend on key order — [applies]
+`t.eq` compares `JSON.stringify` output, and decoders return maps in row order.
+Compare canonicalised (keys sorted) when the order is not the point, or a
+correct round-trip reads as a failure.
+
+### One toast, one Undo — [applies]
+Bulk marks, Clear all, Replace and preset deletes each offer Undo on the
+toast. A newer toast replaces it, so only the latest action is undoable.
+Write tests (and expectations) one action at a time.
 
 ### Colour lived in five places — [superseded §1: one token block]
 v2: base `:root`, seven `data-bg` swatches, the signature-skin palette, the

@@ -307,7 +307,8 @@
     "source": "fixture ledger (invented)"
    },
    "type": "GAME",
-   "medium": "game"
+   "medium": "game",
+   "duration": 1200
   },
   {
    "issueId": "fixture-hero-presents-1988-1",

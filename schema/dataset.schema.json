@@ -86,6 +86,12 @@
     "tiers": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
     "media": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
     "defaultMedium": { "type": "string" },
+    "durations": {
+      "type": "object",
+      "description": "Default minutes per item for a non-comic medium, e.g. {\"screen\": 22}. Comics always use the minutes-per-issue setting, so \"comic\" is not allowed here.",
+      "propertyNames": { "not": { "const": "comic" } },
+      "additionalProperties": { "$ref": "#/$defs/minutes" }
+    },
     "characters": {
       "type": "array",
       "items": {
@@ -170,6 +176,7 @@
     },
     "colour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
     "oneToFive": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "minutes": { "type": "integer", "minimum": 1, "description": "Whole minutes. One unit everywhere: a 40-hour game is 2400." },
     "date": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?$" },
     "names": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "credits": {
@@ -210,6 +217,7 @@
         },
         "note": { "type": "string" },
         "medium": { "type": "string" },
+        "duration": { "$ref": "#/$defs/minutes", "description": "This row's own length, overriding durations[medium]. Not allowed on comic rows (every comic counts as one issue)." },
         "date": {
           "type": "object",
           "required": ["cover"],

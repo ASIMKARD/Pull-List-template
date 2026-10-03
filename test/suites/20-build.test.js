@@ -9,7 +9,8 @@ const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmp
 const DATASETS = {
   root: path.join(ROOT, 'dataset.json'),
   basic: path.join(FIX, 'basic', 'dataset.json'),
-  'no-periods': path.join(FIX, 'no-periods', 'dataset.json')
+  'no-periods': path.join(FIX, 'no-periods', 'dataset.json'),
+  mixed: path.join(FIX, 'mixed', 'dataset.json')
 };
 
 module.exports = async function (t) {
@@ -31,13 +32,15 @@ module.exports = async function (t) {
     const alts = D.issues.map(r => r[8]);
     t.ok(name + ': altKeys are 9-digit YYYYMMNNN, unique', alts.every(k => String(k).length === 9) && new Set(alts).size === alts.length);
     t.ok(name + ': parallel arrays align with issues',
-         ['ids', 'issueIds', 'issueEra', 'issueMedium', 'issueTier', 'issueEvent', 'issueCompleteOnly',
+         ['ids', 'issueIds', 'issueEra', 'issueMedium', 'issueDuration', 'issueTier', 'issueEvent', 'issueCompleteOnly',
           'issuePresence', 'issueWriters', 'issueArtists'].every(k => D[k].length === D.issues.length));
     t.ok(name + ': ids unique', new Set(D.ids).size === D.ids.length);
     t.ok(name + ': no phantom era (output eras == dataset eras)',
          JSON.stringify(D.eras.map(e => e.id)) === JSON.stringify(built[name].src.eras.map(e => e.id)));
     t.ok(name + ': every era index used by a row exists', D.issueEra.every(e => e >= 0 && e < D.eras.length));
     t.ok(name + ': every row has a medium from the vocabulary', D.issueMedium.every(m => m >= 0 && m < D.media.length));
+    t.ok(name + ': every comic is one issue (duration 0 = minutes per issue); other formats carry minutes or -1',
+         D.issueDuration.every((x, i) => D.media[D.issueMedium[i]] === 'comic' ? x === 0 : (x === -1 || (Number.isInteger(x) && x >= 0))));
     t.ok(name + ': build id stamped', /^[0-9a-f]{12}$/.test(D.build));
     const sw = fs.readFileSync(path.join(b.out, 'sw.js'), 'utf8');
     t.ok(name + ': sw.js cache name = key + build id', sw.includes("const CACHE = '" + D.franchise.key + '-' + D.build + "'"));

@@ -110,6 +110,9 @@
   "game",
   "screen"
  ],
+ "durations": {
+  "screen": 22
+ },
  "characters": [
   {
    "id": "vela",

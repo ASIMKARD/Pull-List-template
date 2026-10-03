@@ -32,6 +32,7 @@
           "credits": { "$ref": "dataset.schema.json#/$defs/credits" },
           "presence": { "$ref": "dataset.schema.json#/$defs/presence" },
           "medium": { "type": "string" },
+          "duration": { "$ref": "dataset.schema.json#/$defs/minutes" },
           "type": { "type": "string" },
           "note": { "type": "string" },
           "flags": { "$ref": "dataset.schema.json#/$defs/row/properties/flags" }
