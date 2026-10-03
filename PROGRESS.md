@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 880 assertions, 0 failed, 19 suites (session 3, step 3 of 9 done).
+**Harness:** 912 assertions, 0 failed, 20 suites (session 3, step 4 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -406,13 +406,33 @@ Then push, and tell John.
   is overwritten by the `pagehide` flush. That is the app working as designed, so seed settings
   with `addInitScript` before load.
 
-### Step 4 begins with
-The **Reading tab**.
-- In `index.html`, add `#tab-reading` and `#pane-reading`. In `app.js`, add `'reading'` to
-  `TABS` (keep the order Checklist, Reading, Reviews, Settings) and a `renderReading()` stepper
-  over the current view (plan + browse filters).
-- Resume at the first unread until the user steps (store the stepped-to id in session state only).
-- Mark through `setMark`, with the verb following the medium (`labelOf`).
-- The first test to write, in `9a-reading`: the stepper shows a title (T-118); Mark persists and
-  the era/band counters move (T-119, D-1); labels vary by medium (T-52); filters survive a round
-  trip through Reading (T-41); the checklist still lands collapsed (S-17 re-expressed).
+## Session 3 checkpoint — step 4 done (Reading tab), 3 Oct 2026
+
+### Done
+- **The Reading tab** sits between Checklist and Settings. `renderReading()` is a one-entry
+  stepper over the current view: plan, browse and display-only filters; reading order within the
+  chosen order; **never reversed** (newest-era-first is a checklist browsing aid).
+- **Resume:** it starts at the first entry that is neither read nor skipped, until the user
+  steps. The stepped-to id is session-only (`reader`). This is also the re-expressed S-17.
+- **Marking:** Skip / Mark <verb> go through `setMark`, with verbs following the medium (Mark
+  Read / Beaten / Watched; "Beaten ✓" when done). Setting a state steps on; tapping it again
+  clears it and stays. Previous / Next are disabled at the ends. Pin toggles the bookmark, and
+  the pinned bar and checklist star follow.
+- **Tests:** `9a-reading` (32 assertions).
+  - A mutation that writes the Reading-tab mark straight to storage (v2's bug) fails the D-1
+    counters and the time-left check.
+  - A boot on the Reading tab resumes at the first unread while the checklist stays collapsed.
+- Real Chromium screenshot of the Reading card: no errors, no overflow.
+
+### Step 5 begins with
+**Reviews, per arc.**
+- In `index.html`, add `#tab-reviews` + `#pane-reviews` between Reading and Settings; in
+  `app.js`, add `'reviews'` to `TABS`.
+- The `.b.rv` ✎ button goes on arc heads (in layout C, on the first row of each arc run). It
+  opens an inline editor: 1–5 stars plus text, saved to `reviews[arcId]`, and clearing both
+  deletes it.
+- The Reviews tab lists the reviews in order of each arc's first key; tapping one jumps to the
+  arc's first row. `legacy-unmatched` reviews are listed as "kept from the previous version".
+- The first test to write, in `9b-reviews`: `.b.rv` is targetable on an arc head (T-53, D-4);
+  saving stores stars + text under the arc id; the Reviews pane is visible (T-120); tapping
+  jumps; the migrated review appears.

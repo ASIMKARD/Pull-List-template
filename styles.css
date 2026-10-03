@@ -176,6 +176,23 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 /* combo badge: a row that is both bookmarked and read gets a filled star */
 :root[data-combo="1"] .row[data-s="read"] .bm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
+/* ---- reading tab ---- */
+.reader { margin: 0 16px; }
+.rcard { padding: 14px 16px 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.rcount { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.rpills { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
+.rpill { padding: 2px 10px; border-radius: 999px; background: var(--accent-wash); color: var(--accent); font-size: 12px; }
+.rtitle { margin: 10px 0 4px; font-size: 22px; line-height: 1.25; overflow-wrap: anywhere; }
+.rmeta, .rstate { margin: 0; font-size: 14px; color: var(--ink-soft); }
+.rnote { margin: 10px 0 0; font-size: 15px; }
+.rblurb { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-soft); }
+.racts { display: flex; gap: 10px; margin: 16px 0 0; }
+.rbtn { flex: 1; min-height: 44px; border-radius: var(--radius-sm); border: 1px solid var(--accent); font-weight: 600; }
+.rbtn.ghost { background: none; color: var(--accent); }
+.rbtn.solid { background: var(--accent); color: var(--accent-ink); }
+.rnav { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 0; }
+.rnav .linkbtn[disabled] { color: var(--ink-soft); cursor: default; }
+
 /* ---- per-format progress lines ---- */
 .pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .pmed { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; font-size: 13px; color: var(--ink-soft); }

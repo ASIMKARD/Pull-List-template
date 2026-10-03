@@ -770,7 +770,7 @@
      shows on Checklist only. The active tab is remembered (S-29); the
      checklist itself still lands collapsed.
      ====================================================================== */
-  var TABS = ['list', 'settings'];
+  var TABS = ['list', 'reading', 'settings'];
   var activeTab = 'list';
   function showTab(name) {
     if (TABS.indexOf(name) === -1) name = 'list';
@@ -783,6 +783,80 @@
     });
     if (settings.tab !== name) { settings.tab = name; saveSettings(); }
     if (name === 'settings') renderSettings();
+    if (name === 'reading') renderReading();
+  }
+
+  /* ======================================================================
+     READING TAB (F-2) — one entry at a time over the current view (plan and
+     browse filters, and the display-only ones), in reading order within the
+     chosen order, never reversed. It resumes at the first entry not yet done
+     until the user steps; the position is session-only. Marks go through
+     setMark, so every banner and the header move with them (D-1).
+     ====================================================================== */
+  var reader = { id: null, touched: false };
+  function readerList() {
+    var filt = narrowing(), out = [];
+    D.eras.forEach(function (era, e) {
+      orderedEraRows(e).forEach(function (i) {
+        if (!isInert(i) && (filt ? matches(i) : inView(i))) out.push(i);
+      });
+    });
+    return out;
+  }
+  function doneLabel(i) { return (LABELS[mediumOf(i)] || LABELS.comic).read; }
+  function renderReading() {
+    var list = readerList(), host = $('#reader');
+    if (!list.length) {
+      host.innerHTML = '<p class="empty">Nothing matches the current filters.</p>';
+      return;
+    }
+    var at = reader.id == null ? -1 : list.indexOf(ID_I[reader.id]);
+    if (!reader.touched || at === -1) {
+      at = 0;
+      for (var k = 0; k < list.length; k++) {
+        var s0 = stateOf(list[k]);
+        if (s0 !== 'read' && s0 !== 'skip') { at = k; break; }
+      }
+    }
+    var i = list[at], r = D.issues[i], arc = D.arcs[r[2]], st = stateOf(i), id = D.ids[i];
+    var pinned = progress.bookmarks.indexOf(id) !== -1, done = doneLabel(i);
+    reader.id = id;
+    host.innerHTML = '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
+      '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + list.length.toLocaleString('en-GB') + '</p>' +
+      '<p class="rpills"><span class="rpill">' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>' +
+      (MEDIA_USED.length > 1 ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
+      '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
+      '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]].toLowerCase()) + '</p>' +
+      '<p class="rstate">' + escapeHtml(labelOf(i, st)) + '</p>' +
+      (r[7] ? '<p class="rnote">' + escapeHtml(r[7]) + '</p>' : '') +
+      (arc.b ? '<p class="rblurb">' + escapeHtml(arc.b) + '</p>' : '') +
+      '<div class="racts">' +
+      '<button type="button" class="rbtn ghost" data-act="rd-skip" aria-pressed="' + (st === 'skip') + '">' + (st === 'skip' ? 'Skipped' : 'Skip') + '</button>' +
+      '<button type="button" class="rbtn solid" data-act="rd-done" aria-pressed="' + (st === 'read') + '">' +
+      escapeHtml(st === 'read' ? done + ' ✓' : 'Mark ' + done) + '</button></div>' +
+      '<div class="rnav">' +
+      '<button type="button" class="linkbtn" data-act="rd-prev"' + (at === 0 ? ' disabled' : '') + '>← Previous</button>' +
+      '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
+      '<button type="button" class="linkbtn" data-act="rd-next"' + (at === list.length - 1 ? ' disabled' : '') + '>Next →</button>' +
+      '</div></div>';
+  }
+  function readerStep(delta) {
+    var list = readerList(), at = list.indexOf(ID_I[reader.id]);
+    if (at === -1) return;
+    var to = Math.max(0, Math.min(list.length - 1, at + delta));
+    reader.touched = true;
+    reader.id = D.ids[list[to]];
+    renderReading();
+  }
+  /* Mark from the Reading tab: the same setMark every surface uses. Setting a
+     state steps on to the next entry; tapping it again clears it and stays. */
+  function readerMark(want) {
+    var i = ID_I[reader.id];
+    if (i === undefined) return;
+    var list = readerList(), at = list.indexOf(i), next = stateOf(i) === want ? 'unread' : want;
+    setMark(i, next);
+    if (next !== 'unread' && at !== -1 && at < list.length - 1) { reader.touched = true; reader.id = D.ids[list[at + 1]]; }
+    renderReading();
   }
 
   /* ---- bookmarks: the pinned bar (XM-4) and the Settings list (F-28),
@@ -1072,6 +1146,21 @@
         saveSettings(); renderList(); renderSettings();
         break;
       case 'era-jump': jumpToEra(+b.dataset.e); break;
+      case 'rd-done': readerMark('read'); break;
+      case 'rd-skip': readerMark('skip'); break;
+      case 'rd-prev': readerStep(-1); break;
+      case 'rd-next': readerStep(1); break;
+      case 'rd-pin': {
+        var ri = ID_I[reader.id], rb = $('.row[data-i="' + ri + '"] .bm');
+        if (rb) toggleBookmark(ri, rb);
+        else {
+          var pat = progress.bookmarks.indexOf(reader.id);
+          if (pat === -1) progress.bookmarks.push(reader.id); else progress.bookmarks.splice(pat, 1);
+          saveProgress(); renderPinbar();
+        }
+        renderReading();
+        break;
+      }
       case 'reveal': {
         var note = b.closest('.row').querySelector('.subnote'), shown = b.getAttribute('aria-expanded') === 'true';
         b.setAttribute('aria-expanded', shown ? 'false' : 'true');

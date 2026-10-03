@@ -22,11 +22,11 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | ID | Feature (v2 behaviour) | Session | Status |
 |---|---|---|---|
 | F-1 | Checklist tab: rows grouped period band → era → arc, ordered by sort key | S2 | present (90-render: band → era → arc → rows, reading order) |
-| F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | todo |
+| F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | present (9a-reading: n of N, era + format pills, title, arc · type, state, note, blurb, Skip / Mark <verb>, Previous / Pin / Next, resumes at the first entry not done until you step) |
 | F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | todo |
 | F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour, Display and Data sections present, 98-tabs-settings + 99-display; Touch + Bulk step 6, Backup step 8) |
 | F-5 | Four-state marks cycling unread → reading → read → skip; done = read or skip | S2 | present (91-marks: four-state cycle through one setMark path) |
-| F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten) |
+| F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten; 9a-reading: Reading-tab verbs Mark Read / Beaten / Watched) |
 | F-7 | Inert rows (GAPNOTE, RENUM) render as notes with no mark and never count toward progress | S2 | present (90-render: inert rows render with no mark, never count) |
 | F-8 | Row badges: ★ core, ↺ flashback (popover note), alt (popover note), bookmark ☆, review ✎ (`.b.rv`), external "read ↗" lookup link (franchise `searchUrl`, falls back to a web search) | S2 | present — core, flashback/ALT note, bookmark, lookup link (90-render); review button moved to S3 with its editor |
 | F-9 | Row subnote shown under the title when a note exists and isn't a FB/ALT popover | S2 | present (90-render) |
@@ -169,7 +169,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-38 | signature ramp text clears WCAG AA on its dark surface | S4 | re-express: every skin's era text clears AA on its surface |
 | T-39 | signature era ramp is flat | S4 | re-express (per-skin token test) |
 | T-40 | signature filter chips have a visible border | S4 | todo |
-| T-41 | filters survive a round trip through Reading | S3 | present (98-tabs-settings: round trip through Settings; Reading tab added to it in step 4) |
+| T-41 | filters survive a round trip through Reading | S3 | present (98-tabs-settings round trip through Settings; 9a-reading through Reading) |
 | T-42 | isTabbed covers every non-classic layout | — | dropped: one layout (spec §1) |
 | T-43 | paper + era-hue controls hidden on the signature skin | S4 | re-express: no control is ever hidden by a skin (reachability guard V-5) |
 | T-44 | refresh interval is actually consumed, not just stored | S3 | present (98-tabs-settings) |
@@ -180,7 +180,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-49 | bookmarks open a list, not a jump to the first one | S3 | present (98-tabs-settings) |
 | T-50 | persistent banner toggle exists | S4 | todo |
 | T-51 | persistent banner is off by default | S4 | todo |
-| T-52 | reading tab labels vary by medium | S3 | todo |
+| T-52 | reading tab labels vary by medium | S3 | present (9a-reading) |
 | T-53 | review button is targetable by class | S2 | moved to S3 with the review editor (no dead control) |
 | T-54 | button size seg has 3 options | S4 | todo |
 | T-55 | button size defaults to standard | S4 | todo |
@@ -219,7 +219,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-88 | classic skin has character chips | S4 | re-express (V-5) |
 | T-89 | classic skin hides filters off-checklist | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-90 | classic skin restores filters on checklist | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
-| T-91 | classic skin: no filters on Reading | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
+| T-91 | classic skin: no filters on Reading | S3 | re-express → present (98-tabs-settings, 9a-reading: no filter panel on Reading) |
 | T-92 | classic skin: no filters on Reviews | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express: `[hidden]` authoritative with **zero** `!important` |
 | T-94 | nothing sticky in tabbed mode either | S4 | re-express (one layout; sticky rules measured in browser, L-1..L-5) |
@@ -246,8 +246,8 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-115 | signature skin keeps the tab nav visible | S4 | re-express (V-5) |
 | T-116 | signature -> tabbed via seg works | S4 | re-express: switching skins round-trips |
 | T-117 | tabs: gear hidden again | — | dropped |
-| T-118 | Reading tab shows stepper title | S3 | todo |
-| T-119 | the done button persists a mark (label varies by medium) | S3 | todo (D-1 regression) |
+| T-118 | Reading tab shows stepper title | S3 | present (9a-reading) |
+| T-119 | the done button persists a mark (label varies by medium) | S3 | present (9a-reading: Mark Beaten persists; D-1 regression) |
 | T-120 | Reviews pane visible | S3 | todo |
 | T-121 | Settings pane visible | S3 | present (98-tabs-settings) |
 | T-122 | Checklist pane visible again | S3 | present (98-tabs-settings) |
@@ -276,7 +276,7 @@ installed app once online.
 
 | ID | Defect | Fix at source | Session | Status |
 |---|---|---|---|---|
-| D-1 | Reading-tab mark doesn't update era counters | one mark path for every surface; assert counters move from a Reading-tab mark | S3 | todo |
+| D-1 | Reading-tab mark doesn't update era counters | one mark path for every surface; assert counters move from a Reading-tab mark | S3 | present (9a-reading: a Reading-tab mark moves the header, band and era counters and the time left; mutation: bypassing setMark fails it) |
 | D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present — SW precaches 12 fonts + 3 icons, every path exists (80-guards); live install S4 |
 | D-3 | hardcoded franchise chip + filter branch | no franchise strings in template code (guard) | S1 | present (80-guards) |
 | D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | moved to S3 with the review editor |
