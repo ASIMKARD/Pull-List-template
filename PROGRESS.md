@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 936 assertions, 0 failed, 21 suites (session 3, step 5 of 9 done).
+**Harness:** 993 assertions, 0 failed, 22 suites (session 3, step 6 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -448,16 +448,53 @@ Then push, and tell John.
   a fallback. Checked clean at 320, 360 and 390 px.
   - **Session 4:** add a Chromium overflow check at 320 px to the layout suite (L-checks).
 
-### Step 6 begins with
-**Bulk marking and touch.**
-- In `app.js`, split `setMark` into `applyMark(i, st)` (the state plus any rendered row) and one
-  `refreshStats()` per batch. Add `bulkMark(list, st)`, which snapshots the previous states for
-  Undo (B-2, V-27).
-- Settings gets a **Bulk actions** section:
-  - era selects (mark an era read / unread);
-  - a range from–to defaulting to the full span (T-18, T-19), using the `change` listener;
-  - Expand all / Collapse all.
-- Settings gets a **Touch** section: swipe (S-22) and long-press (S-23), both off by default.
-  Swipe and long-press need `touchstart`, `touchmove` and `touchend` (→ 8 listeners).
-- The first test to write, in `9c-bulk-touch`: bulk mark an era read, then Undo restores a
-  `reading` row as `reading` (B-2). Then the static and runtime "no `navigator.vibrate`" guard.
+## Session 3 checkpoint — step 6 done (bulk marking and touch), 3 Oct 2026
+
+### Done
+- **One mark path, two speeds.**
+  - `applyMark(i, st)` changes a row's state and any rendered row.
+  - `setMark` = one `applyMark` + `afterMarks()` (save, refresh, panel).
+  - `bulkMark(list, st, what)` = many `applyMark`s + one `afterMarks()`. It snapshots every
+    touched row's **previous** state, so Undo restores a `reading` row as reading and a skip as a
+    skip (B-2, V-27).
+- **Bulk marks the rows the current view counts** (plan filters plus active browse filters), so
+  "mark this era read" turns that banner ✓. This is my call: it respects "mandatory only",
+  Essential view and similar filters.
+  - Era read / unread and an era range (selects default to the full span and are kept across
+    Settings re-renders through the `change` listener).
+  - Arc read / unread from new **Mark arc read / unread** buttons in an `.arc-acts` row on each
+    arc head, next to the ✎ (XM-11).
+- **Touch** (Settings → Touch, both **off by default**):
+  - **Swipe:** right = read, left = skip, ≥60 px and mostly horizontal. The row slides over a
+    coloured backing (`data-swipe` read / read-go / skip / skip-go).
+  - **Long-press** (600 ms) on a band, era or arc head marks it all read with Undo. Moving
+    cancels it, and the click that follows the lift is swallowed so the head doesn't also toggle.
+  - Listeners: `touchstart`, `touchmove` and `touchend` are passive and delegated, for **8 of 12**
+    in total.
+- **No haptics:**
+  - `80-guards` checks the template code for `vibrate` with comments stripped but strings kept;
+  - `9c-bulk-touch` stubs `navigator.vibrate` and asserts zero calls across every gesture;
+  - putting a haptic tick back fails both.
+- **Settings** has 5 sections now (T-11). Expand all / Collapse all also sit in Bulk actions.
+- **Tests:** `9c-bulk-touch` (53 assertions), including 5,000 rows marked in one action in about
+  0.1 s. Mutation-checked:
+  - v2's delete-all undo → 6 failures;
+  - a haptic tick → 2 failures;
+  - no click swallow → 1 failure.
+- **Real Chromium** at 360 px: a mid-swipe row translates 28 px over the accent backing; the Bulk
+  and Touch sections lay out cleanly with no overflow. During a swipe the row pokes past the card
+  edge; **session 4** may clip that with `overflow: hidden` on `.arc` if focus rings allow.
+
+### Step 7 begins with
+**Story, character and creator filters; presets.**
+- **Essential/Complete.** A `settings.events` toggle in the Story section and Settings. It is a
+  PLAN filter, and `inView()` already reads it. Event arc heads (`D.events[k]`; rows carry
+  `issueEvent`) say "Complete view adds N issues" in Essential view.
+- **Presence filters (FP-5, V-11):** chips per `D.characters`, matching major + minor by default,
+  with an include-cameos toggle (BROWSE).
+- **The Creators section (CR-7):** a searchable picker built from `D.creators` with
+  writer / artist counts and a writers / artists switch. Tappable names in arc credits (CR-8).
+- **Presets (F-22, FP-9):** "Save as preset" at the bottom of the panel, stored by name in
+  `settings.presets`; apply and delete.
+- The first test to write, in `9d-story-filters`: Complete view adds the complete-only rows to
+  figures and "Complete view adds N" shows in Essential view.

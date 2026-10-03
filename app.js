@@ -3,7 +3,8 @@
    - every franchise string comes from window.TRACKER_DATA, never from code;
    - all markup is built with string templates through escapeHtml/escapeAttr;
    - events are delegated: the whole app stays at or under 12 listeners
-     (5 so far: click, input, change, pagehide, visibilitychange);
+     (8: click, input, change, touchstart, touchmove, touchend, pagehide,
+     visibilitychange);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
 (function () {
@@ -127,7 +128,8 @@
     s.tab = s.tab || 'list';
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
-    [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true]].forEach(function (d) {
+    [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true],
+     ['swipe', false], ['press', false]].forEach(function (d) {          // touch gestures: off by default (decided 3 Oct)
       if (typeof s[d[0]] !== 'boolean') s[d[0]] = d[1];
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
@@ -467,9 +469,12 @@
         var meta = [arc.y].filter(Boolean).join(' · ');
         var cred = again ? '' : creditsLine(i);
         html += '<div class="arc" data-a="' + a + '"><div class="arc-head"><h3>' + escapeHtml(arc.n) +
-          (again ? ' · cont.' : '') + '</h3>' + rvButton(a) + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') +
+          (again ? ' · cont.' : '') + '</h3>' + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') +
           (cred ? '<p class="credits">' + escapeHtml(cred) + '</p>' : '') +
-          (arc.b && !again && arc.b !== D.eras[e].intro ? '<p class="blurb">' + escapeHtml(arc.b) + '</p>' : '') + '</div>';
+          (arc.b && !again && arc.b !== D.eras[e].intro ? '<p class="blurb">' + escapeHtml(arc.b) + '</p>' : '') +
+          '<div class="arc-acts">' + rvButton(a) +
+          '<button type="button" class="b" data-act="arc-mark" data-a="' + a + '" data-st="read">Mark arc read</button>' +
+          '<button type="button" class="b" data-act="arc-mark" data-a="' + a + '" data-st="unread">Mark arc unread</button></div></div>';
       }
       html += rowHtml(i);
     });
@@ -694,19 +699,62 @@
      MARKS — ONE path for every surface (Checklist now; Reading tab, swipe and
      bulk marking in session 3 call the same function)
      ====================================================================== */
-  function setMark(i, st) {
+  /* applyMark changes one row's state and its rendered row; every mark goes
+     through it. setMark is one mark + one refresh; bulkMark is many marks +
+     ONE save and ONE refresh. */
+  function applyMark(i, st) {
     var id = D.ids[i];
     if (st === 'unread') delete progress.marks[id]; else progress.marks[id] = st;
-    saveProgress();
     $$('.row[data-i="' + i + '"]').forEach(function (row) {
       row.dataset.s = st;
       var m = row.querySelector('.mark');
       m.textContent = GLYPH[st];
       m.setAttribute('aria-label', D.issues[i][1] + ' — ' + labelOf(i, st));
     });
+  }
+  function afterMarks() {
+    saveProgress();
     refreshStats();
     if (narrowing()) renderPanel();
   }
+  function setMark(i, st) {
+    applyMark(i, st);
+    afterMarks();
+  }
+  /* Bulk marking (F-23, XM-11, long-press): the rows the current view counts —
+     the same rows a banner counts, so "mark this era read" turns its banner ✓.
+     Every touched row's PREVIOUS state is snapshotted, so Undo restores a
+     "reading" row as "reading", not "unread" (B-2, V-27). */
+  function counted(i) { return !isInert(i) && planOk(i) && (!browsing() || browseOk(i)); }
+  function rowsWhere(pred) { var out = []; for (var i = 0; i < N; i++) if (counted(i) && pred(i)) out.push(i); return out; }
+  function bulkMark(list, st, what) {
+    var prev = {}, changed = 0;
+    list.forEach(function (i) {
+      var before = stateOf(i);
+      if (before === st) return;
+      prev[D.ids[i]] = before;
+      applyMark(i, st);
+      changed++;
+    });
+    var verb = st === 'unread' ? 'cleared' : 'marked ' + st;
+    if (!changed) { toast('Nothing to change in ' + what + '.'); return 0; }
+    afterMarks();
+    if (activeTab === 'reading') renderReading();
+    toast(changed.toLocaleString('en-GB') + ' ' + verb + ' in ' + what + '.', 'Undo', function () {
+      Object.keys(prev).forEach(function (id) { if (ID_I[id] !== undefined) applyMark(ID_I[id], prev[id]); });
+      afterMarks();
+      if (activeTab === 'reading') renderReading();
+      toast('Undone: ' + changed.toLocaleString('en-GB') + ' restored.');
+    });
+    return changed;
+  }
+  function bulkEra(lo, hi, st) {
+    var a = Math.min(lo, hi), b = Math.max(lo, hi);
+    return bulkMark(rowsWhere(function (i) { return D.issueEra[i] >= a && D.issueEra[i] <= b; }), st,
+      a === b ? D.eras[a].name : D.eras[a].name + ' – ' + D.eras[b].name);
+  }
+  function bulkArc(a, st) { return bulkMark(rowsWhere(function (i) { return D.issues[i][2] === a; }), st, D.arcs[a].n); }
+  function bulkBand(b, st) { return bulkMark(rowsWhere(function (i) { return BAND_OF_ERA[D.issueEra[i]] === b; }), st, D.periods[b].name); }
   function toggleBookmark(i, btn) {
     var id = D.ids[i], at = progress.bookmarks.indexOf(id);
     if (at === -1) progress.bookmarks.push(id); else progress.bookmarks.splice(at, 1);
@@ -1027,6 +1075,7 @@
     if (activeTab === 'settings') renderSettings();
   }
   var confirming = '';                    // which in-page confirm is open; never window.confirm
+  var bulkSel = { era: 0, from: 0, to: D.eras.length - 1 };   // range defaults to the full span (T-19)
   function clearProgress() {
     var snap = takeSnapshot();
     progress.marks = {};
@@ -1047,7 +1096,7 @@
 
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
-  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list' };
+  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css' };
   function applyPrefs() {
     var root = document.documentElement;
     $('.ptools [data-act="next"]').hidden = !settings.showJump;
@@ -1142,6 +1191,22 @@
       srow('Order', pref('rev', 'Newest era first')) +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
       srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)));
+    h += sset('touch', 'Touch',
+      srow('Gestures', pref('swipe', 'Swipe to mark') + pref('press', 'Long-press to mark all read')) +
+      '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold a band, era or arc heading to mark everything in it read; ' +
+      'Undo puts every row back.</p>');
+    var eraOpts = function (cur) {
+      return D.eras.map(function (e, ei) { return '<option value="' + ei + '"' + (ei === cur ? ' selected' : '') + '>' + escapeHtml(e.name) + '</option>'; }).join('');
+    };
+    h += sset('bulk', 'Bulk actions',
+      srow('Sections', '<button type="button" class="tool" data-act="expand-all">Expand all</button>' +
+        '<button type="button" class="tool" data-act="collapse-all">Collapse all</button>') +
+      srow('Mark era', '<select class="erasel" id="bulkEra" aria-label="Era to mark">' + eraOpts(bulkSel.era) + '</select>' +
+        '<button type="button" class="tool" data-act="bulk-era" data-st="read">Mark read</button>' +
+        '<button type="button" class="tool" data-act="bulk-era" data-st="unread">Mark unread</button>') +
+      srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
+        '<span class="muted">through</span><select class="erasel" id="bulkTo" aria-label="Range end">' + eraOpts(bulkSel.to) + '</select>' +
+        '<button type="button" class="tool" data-act="bulk-range">Mark read</button>'));
     h += sset('data', 'Data',
       srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +
       '<h3 class="ssub">Bookmarks</h3>' + bookmarksHtml() +
@@ -1177,6 +1242,7 @@
      ====================================================================== */
   function rowIndex(el) { var row = el.closest('.row'); return row ? +row.dataset.i : -1; }
   function onClick(ev) {
+    if (swallowClick) { swallowClick = false; if (ev.target.closest('.band-head, .era-head, .arc-head')) return; }
     var b = ev.target.closest('[data-act]');
     if (!b) return;
     var act = b.dataset.act, i;
@@ -1231,6 +1297,9 @@
         break;
       case 'era-jump': jumpToEra(+b.dataset.e); break;
       case 'rv': toggleReview(b); break;
+      case 'arc-mark': bulkArc(+b.dataset.a, b.dataset.st === 'unread' ? 'unread' : 'read'); break;
+      case 'bulk-era': bulkEra(bulkSel.era, bulkSel.era, b.dataset.st === 'unread' ? 'unread' : 'read'); break;
+      case 'bulk-range': bulkEra(bulkSel.from, bulkSel.to, 'read'); break;
       case 'rv-star': {
         var ra = +b.dataset.a, rn = +b.dataset.n, rcur = reviews[D.arcs[ra].id];
         commitReview(ra, rcur && rcur.r === rn ? 0 : rn);
@@ -1268,8 +1337,53 @@
   }
   /* change: the one listener for <select> controls (era dropdown now; bulk
      ranges and file import later). */
+  var BULK_SELECTS = { bulkEra: 'era', bulkFrom: 'from', bulkTo: 'to' };
   function onChange(ev) {
-    if (ev.target.id === 'eraJump' && ev.target.value !== '') { jumpToEra(+ev.target.value); ev.target.value = ''; }
+    var id = ev.target.id;
+    if (id === 'eraJump' && ev.target.value !== '') { jumpToEra(+ev.target.value); ev.target.value = ''; }
+    if (BULK_SELECTS[id]) bulkSel[BULK_SELECTS[id]] = +ev.target.value;   // kept across Settings re-renders
+  }
+
+  /* ======================================================================
+     TOUCH (opt-in, both off by default): swipe a row right = read, left =
+     skip, with the row sliding over a coloured backing (XM-12); long-press a
+     band / era / arc head to mark it all read, with Undo. Three passive,
+     delegated listeners. No haptics: navigator.vibrate is never called
+     (declined; a guard enforces it).
+     ====================================================================== */
+  var SWIPE = 60, PRESS_MS = 600;
+  var touch = null, pressTimer = null, swallowClick = false;
+  function onTouchStart(ev) {
+    var p = ev.touches && ev.touches[0];
+    if (!p) return;
+    touch = { x: p.clientX, y: p.clientY, row: settings.swipe ? ev.target.closest('.row:not(.inert)') : null };
+    var head = settings.press ? ev.target.closest('.band-head, .era-head, .arc-head') : null;
+    clearTimeout(pressTimer);
+    if (head) pressTimer = setTimeout(function () {
+      pressTimer = null;
+      swallowClick = true;                                     // the lift that follows must not also toggle the head
+      if (head.classList.contains('band-head')) bulkBand(+head.closest('.band').dataset.b, 'read');
+      else if (head.classList.contains('era-head')) bulkEra(+head.closest('.era').dataset.e, +head.closest('.era').dataset.e, 'read');
+      else bulkArc(+head.closest('.arc').dataset.a, 'read');
+    }, PRESS_MS);
+  }
+  function onTouchMove(ev) {
+    var p = ev.touches && ev.touches[0];
+    if (!p || !touch) return;
+    var dx = p.clientX - touch.x, dy = p.clientY - touch.y;
+    if (pressTimer && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) { clearTimeout(pressTimer); pressTimer = null; }
+    if (touch.row) touch.row.dataset.swipe = Math.abs(dy) > 40 || Math.abs(dx) < 16 ? '' :
+      (dx > 0 ? 'read' : 'skip') + (Math.abs(dx) >= SWIPE ? '-go' : '');
+  }
+  function onTouchEnd(ev) {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    var p = ev.changedTouches && ev.changedTouches[0], t = touch;
+    touch = null;
+    if (!t || !t.row || !p) return;
+    t.row.dataset.swipe = '';
+    var dx = p.clientX - t.x, dy = p.clientY - t.y;
+    if (Math.abs(dx) < SWIPE || Math.abs(dy) > 40) return;
+    setMark(+t.row.dataset.i, dx > 0 ? 'read' : 'skip');
   }
   var inputTimer = null;
   function onInput(ev) {
@@ -1301,6 +1415,9 @@
   document.addEventListener('click', onClick);
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
+  document.addEventListener('touchstart', onTouchStart, { passive: true });
+  document.addEventListener('touchmove', onTouchMove, { passive: true });
+  document.addEventListener('touchend', onTouchEnd, { passive: true });
   window.addEventListener('pagehide', flushNow);
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') flushNow();

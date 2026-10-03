@@ -24,7 +24,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-1 | Checklist tab: rows grouped period band → era → arc, ordered by sort key | S2 | present (90-render: band → era → arc → rows, reading order) |
 | F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | present (9a-reading: n of N, era + format pills, title, arc · type, state, note, blurb, Skip / Mark <verb>, Previous / Pin / Next, resumes at the first entry not done until you step) |
 | F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | re-express → present (9b-reviews: per arc, as the session-2 migration maps them; 1–5 stars + text, listed by each arc's first key, tap to jump; unmatched old reviews kept and listed) |
-| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour, Display and Data sections present, 98-tabs-settings + 99-display; Touch + Bulk step 6, Backup step 8) |
+| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour, Display, Touch, Bulk actions, Data present — 98/99/9c; Backup step 8) |
 | F-5 | Four-state marks cycling unread → reading → read → skip; done = read or skip | S2 | present (91-marks: four-state cycle through one setMark path) |
 | F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten; 9a-reading: Reading-tab verbs Mark Read / Beaten / Watched) |
 | F-7 | Inert rows (GAPNOTE, RENUM) render as notes with no mark and never count toward progress | S2 | present (90-render: inert rows render with no mark, never count) |
@@ -43,10 +43,10 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-20 | Order chip: reading order vs Arc Master timeline order | S2 | present (92-filters: arc order) |
 | F-21 | Dual-order chip (franchise `dualOrder` config; hidden when unset) using the alternate sort key | S2 | present (92-filters: reading/publication labelled from dualOrder) |
 | F-22 | Filter presets: save current filters by name, apply, delete | S3 | todo |
-| F-23 | Bulk mark era read / unread; mark era range read; toast with undo | S3 | todo |
-| F-24 | Swipe to mark (right = read, left = skip), opt-in | S3 | todo |
-| F-25 | Long-press a band/era/arc head to bulk-mark it read, opt-in | S3 | todo |
-| F-26 | Collapse all / expand all (Settings → Bulk actions) | S2 | present (90-render: expand all / collapse all) |
+| F-23 | Bulk mark era read / unread; mark era range read; toast with undo | S3 | present (9c-bulk-touch: era read / unread, range, arc; the rows the view counts; toast with Undo; 5,000 rows in one refresh) |
+| F-24 | Swipe to mark (right = read, left = skip), opt-in | S3 | present (9c-bulk-touch: opt-in, right = read, left = skip, short or vertical drags ignored) |
+| F-25 | Long-press a band/era/arc head to bulk-mark it read, opt-in | S3 | present (9c-bulk-touch: opt-in, band / era / arc head, Undo; the lift never also toggles the head; moving cancels) |
+| F-26 | Collapse all / expand all (Settings → Bulk actions) | S2 | present (90-render: expand all / collapse all; also in Settings → Bulk actions) |
 | F-27 | Jump to next unread (button) and "jump to first unread" on load (setting) | S2 | present — next unread (94-navigation); jump-on-load re-expressed (S-17) |
 | F-28 | Bookmarks: toggle per row, list in Settings sorted as displayed, jump, remove | S3 | present (98-tabs-settings: list sorted as displayed, jump, remove) |
 | F-29 | `jumpToIssue`: switches to Checklist, expands collapsed ancestors outermost-first, scrolls, flashes the row; toast when filtered out | S2 | present (94-navigation; 98-tabs-settings: switches to Checklist) |
@@ -110,8 +110,8 @@ store is listed only to record where the value lived.
 | S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | present (98-tabs-settings) |
 | S-20 | Button size `#segTap` | view.tap | standard | S4 | todo |
 | S-21 | Refresh reminder `#segRefresh` | settings.refreshEvery | quarterly | S3 | present (98-tabs-settings) |
-| S-22 | Swipe to mark `#swipeChip` | view.swipe | off | S3 | todo |
-| S-23 | Long-press bulk-mark `#pressChip` | view.press | off | S3 | todo |
+| S-22 | Swipe to mark `#swipeChip` | view.swipe | off | S3 | present (9c-bulk-touch: off by default, decided 3 Oct) |
+| S-23 | Long-press bulk-mark `#pressChip` | view.press | off | S3 | present (9c-bulk-touch: off by default, decided 3 Oct) |
 | S-24 | Presets `#presetRow` | view.presets | [] | S3 | todo |
 | S-25 | Theme `#themeBtn` | settings.theme | default | S4 | re-express |
 | S-26 | Reading/timeline order `#orderChip` | settings.viewOrder | reading | S2 | present (92-filters) |
@@ -139,21 +139,21 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-8 | delegated note badge opens a popover | S2 | present (91-marks) |
 | T-9 | delegated note badge closes again | S2 | present (91-marks) |
 | T-10 | six new settings chips exist | S3 | re-express → present (99-display: the Display section's toggles) |
-| T-11 | settings panel is sectioned (≥4 heads) | S3 | todo |
+| T-11 | settings panel is sectioned (≥4 heads) | S3 | present (98-tabs-settings: 5 section heads) |
 | T-12 | notes-only narrows the list | S3 | present (99-display) |
 | T-13 | notes-only restores | S3 | present (99-display) |
 | T-14 | newest-era-first reverses the order | S3 | present (99-display) |
 | T-15 | reverse toggles back | S3 | present (99-display) |
 | T-16 | tap-to-reveal sets the root flag | S3 | present (99-display) |
 | T-17 | combo badge sets the root flag | S3 | present (99-display) |
-| T-18 | bulk era selects are populated | S3 | todo |
-| T-19 | range selects default to full span | S3 | todo |
-| T-20 | touch chips exist | S3 | todo |
-| T-21 | bulk mark era marks rows read | S3 | todo |
-| T-22 | bulk unmark era clears them | S3 | todo |
-| T-23 | bulk mark range covers more than one era | S3 | todo |
-| T-24 | swipe toggle flips | S3 | todo |
-| T-25 | long-press toggle flips | S3 | todo |
+| T-18 | bulk era selects are populated | S3 | present (9c-bulk-touch) |
+| T-19 | range selects default to full span | S3 | present (9c-bulk-touch) |
+| T-20 | touch chips exist | S3 | present (9c-bulk-touch) |
+| T-21 | bulk mark era marks rows read | S3 | present (9c-bulk-touch) |
+| T-22 | bulk unmark era clears them | S3 | present (9c-bulk-touch) |
+| T-23 | bulk mark range covers more than one era | S3 | present (9c-bulk-touch) |
+| T-24 | swipe toggle flips | S3 | present (9c-bulk-touch) |
+| T-25 | long-press toggle flips | S3 | present (9c-bulk-touch) |
 | T-26 | period bands rendered | S2 | present (90-render) |
 | T-27 | no period bands (franchise has none) | S2 | present (90-render) |
 | T-28 | story band renders once | S2 | re-express (ALT track, V-14) |
@@ -320,7 +320,7 @@ installed app once online.
 | V-24 | Stable `id` (progress) separate from canonical `issueId`; events dedupe on `issueId`; id-stability check with `retiredIds` | S1 | present (20-build id stability, 30-identity) |
 | V-25 | Canonical events in `events/`, each stating its era in `dataset.json`; drift check by hash | S1 | present (30-identity placement, 50-events hash drift) |
 | V-26 | Export and import (file backup) | S3 | todo |
-| V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | todo |
+| V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | present (9c-bulk-touch: Undo restores every touched row's previous state) |
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
 | V-29 | Per-format durations (decided 1 Oct, untimed 3 Oct). Comics are one issue each at minutes per issue. Shows use `durations: {screen: N}`, which a row can override. Games carry their own `duration`, and a missing one warns with a coverage %, adds nothing and shows `+N untimed`. Time left sums each row's own minutes. Finish-by = minutes left ÷ (issues/week × minutes/issue), and comics-only results are bit-identical to session 2 | S3 | present (97-durations: build + coverage warning, own-minutes figures, untimed marker, format-as-plan totals, comics-only exactness on 4 datasets × 12 pace pairs + exhaustive arithmetic) |
 
@@ -370,8 +370,8 @@ installed app once online.
 | XM-8 | Era navigation style: chips / dropdown / scroll | S3 | present (99-display: a jump bar, chips or dropdown, that opens and scrolls to an era and never filters; plain scroll is the default) |
 | XM-9 | Landmarks-only filter; landmarks inline vs tap-to-reveal | S3 | re-express → present (99-display: landmarks are the row note, so landmarks-only = notes only and inline vs tap = tap to reveal) |
 | XM-10 | Gap notes on/off | S3 | present (99-display) |
-| XM-11 | Bulk mark an arc (read / unread) | S3 | todo |
-| XM-12 | Swipe with visual feedback (row slides, coloured backing shows the action) | S3 | todo |
+| XM-11 | Bulk mark an arc (read / unread) | S3 | present (9c-bulk-touch: Mark arc read / unread on the arc head, whole arc) |
+| XM-12 | Swipe with visual feedback (row slides, coloured backing shows the action) | S3 | present (9c-bulk-touch: row slides over a coloured backing, data-swipe read / read-go; real Chromium: 28 px translate) |
 | XM-13 | Haptic tick on long-press (`navigator.vibrate`) | — | dropped: haptics declined in an earlier round, as the X-Men code notes (re-confirmed 3 Oct); a guard asserts `navigator.vibrate` is never called (S3 step 6) |
 | XM-14 | Incremental count refresh (ancestor stats update without a full re-render) | S2 | present (91-marks: refreshStats) |
 | XM-15 | Arc issue list rendered on expand (lazy) — basis of V-15 | S2 | present (90-render) |
@@ -394,7 +394,7 @@ installed app once online.
 | ID | Bug | v3 handling | Status |
 |---|---|---|---|
 | B-1 | `#paneReading` and `#paneReviews` are each declared **twice** in v2's HTML | guard: no duplicate ids in the shell | present — guard (80-guards: no duplicate ids in index.html) |
-| B-2 | Bulk-mark undo deletes every touched mark instead of restoring prior states (a `reading` row becomes `unread`) | undo snapshots previous states (V-27) | todo (S3) |
+| B-2 | Bulk-mark undo deletes every touched mark instead of restoring prior states (a `reading` row becomes `unread`) | undo snapshots previous states (V-27) | present (9c-bulk-touch: "reading" comes back as reading, "skip" as skipped; v2's delete-all undo fails 6 assertions) |
 | B-3 | Swipe marks write `state.progress` directly, bypassing the mark path (no Reading/banner refresh) | one mark function for every surface (D-1) | present (one setMark path; 91-marks) |
 | B-4 | QR import replaces progress wholesale; the code is rejected after any data change (`dataVersion`) | merge import keyed on ids (X-3, XM-6) | todo (S3) |
 | B-5 | `jumpBtn` falls back to `alert()` while everything else uses the toast | toast everywhere | present (94-navigation) |

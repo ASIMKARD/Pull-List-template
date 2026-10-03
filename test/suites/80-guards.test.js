@@ -168,6 +168,13 @@ module.exports = async function (t) {
     t.ok(f + ': no franchise or fixture strings', !hit, 'found: ' + hit);
   }
 
+  // ---- no haptics (declined in an earlier round, re-confirmed 3 Oct) ----
+  // Comments are stripped but strings are KEPT, so navigator['vibrate'] is caught too.
+  const noComments = src => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/.*$/gm, '$1').replace(/<!--[\s\S]*?-->/g, '');
+  for (const f of TEMPLATE_CODE) {
+    t.ok(f + ': never calls navigator.vibrate (no haptics)', !/vibrate/i.test(noComments(read(f))));
+  }
+
   // ---- service worker: EVALUATED, not just parsed ----
   const D = loadData(ROOT);
   const sw = read('sw.js');

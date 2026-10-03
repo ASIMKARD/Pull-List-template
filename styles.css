@@ -213,6 +213,15 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .rev-stars { color: var(--accent); letter-spacing: .05em; }
 .rev-t { margin: 6px 0 0; font-size: 14px; white-space: pre-wrap; }
 
+/* ---- bulk marking and touch ---- */
+.arc-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.shelp { margin: 2px 0 6px; font-size: 13px; }
+.row { transition: transform .15s ease; }
+.row[data-swipe="read"], .row[data-swipe="read-go"] { transform: translateX(28px); box-shadow: inset 6px 0 var(--accent); }
+.row[data-swipe="skip"], .row[data-swipe="skip-go"] { transform: translateX(-28px); box-shadow: inset -6px 0 var(--ink-soft); }
+.row[data-swipe="read-go"] { background: var(--accent-wash); }
+.row[data-swipe="skip-go"] { background: var(--track); }
+
 /* ---- per-format progress lines ---- */
 .pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .pmed { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; font-size: 13px; color: var(--ink-soft); }
