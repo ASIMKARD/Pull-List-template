@@ -144,5 +144,12 @@ function noPeriods() {
   return npCache;
 }
 
+/* The mixed-format fixture (comics, a show, a timed and an untimed game). */
+let mixedCache = null;
+function mixed() {
+  if (!mixedCache) mixedCache = build(path.join(FIX, 'mixed', 'dataset.json'), { label: 'mixed-shared' });
+  return mixedCache;
+}
+
 module.exports = { ROOT, FIX, BUILD, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
-                   validateIssueIds, boot, wait, typeInto, stress, basic, noPeriods };
+                   validateIssueIds, boot, wait, typeInto, stress, basic, noPeriods, mixed };

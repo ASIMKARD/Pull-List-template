@@ -38,18 +38,23 @@ module.exports = async function (t) {
   const bandOf = e => D.periods.findIndex(p => p.eras.includes(e));
   const hay = i => (D.issues[i][1] + ' ' + D.arcs[D.issues[i][2]].n + ' ' + (D.issues[i][7] || '') + ' ' +
     D.issueWriters[i].concat(D.issueArtists[i]).map(c => D.creators[c].n).join(' ')).toLowerCase();
+  // minutes left: comics at 15 min each, shows and games at their own duration;
+  // finish-by = minutes / (12 a week x 15 min)
   function fig(pred, marks) {
-    const one = () => ({ total: 0, read: 0, skip: 0 });
+    const one = () => ({ total: 0, read: 0, skip: 0, mins: 0 });
     const all = one(), band = D.periods.map(one);
     D.ids.forEach((id, i) => {
       if (D.issueCompleteOnly[i] || (D.issues[i][6] & INERT) || !pred(i)) return;
-      const m = (marks || {})[id];
-      [all, band[bandOf(D.issueEra[i])]].forEach(x => { x.total++; if (m === 'read') x.read++; else if (m === 'skip') x.skip++; });
+      const m = (marks || {})[id], du = D.issueDuration[i];
+      [all, band[bandOf(D.issueEra[i])]].forEach(x => {
+        x.total++;
+        if (m === 'read') x.read++; else if (m === 'skip') x.skip++; else x.mins += du === 0 ? 15 : Math.max(du, 0);
+      });
     });
     const left = x => x.total - x.read - x.skip;
     let cum = 0;
-    const fins = band.map(x => { cum += left(x); return left(x) ? iso(cum / 12) : null; });
-    return { count: all.read + ' / ' + (all.total - all.skip) + ' read', finish: left(all) ? iso(left(all) / 12) : null, fins, all, band };
+    const fins = band.map(x => { cum += x.mins; return left(x) ? iso(cum / 180) : null; });
+    return { count: all.read + ' / ' + (all.total - all.skip) + ' read', finish: left(all) ? iso(all.mins / 180) : null, fins, all, band };
   }
   const marks = { 'fixture-hero-1980-1': 'read', 'fixture-hero-1980-2': 'read', 'fixture-hero-1980-3': 'skip', '198706004': 'read' };
   const app = boot(b.out, { now: NOW, storage: { [D.franchise.key + ':v3:progress']: JSON.stringify({ marks, bookmarks: [] }) } });

@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 617 assertions, 0 failed, 16 suites (end of session 2, after John's closing fixes and the format decision).
-Session 1 ended at 307; CI green on every run.
+**Harness:** 753 assertions, 0 failed, 17 suites (session 3, step 1 of 9 done).
+Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
 
@@ -187,3 +187,150 @@ Work through every S3 line in `FEATURE-INVENTORY.md`:
 - **Presence filters** with the cameo toggle (FP-5), the creator picker with counts (CR-7), and tappable creator names (CR-8).
 - **Listener budget:** touch ×3 + change brings the total to 8.
 - **Essential/Complete** joins the PLAN filters: `inView()` already feeds `planOk()`.
+
+---
+
+## Session 3 plan (agreed 3 Oct 2026): features + per-format durations
+
+Branch `claude/compassionate-galileo-6g2vnh`, cut from `main` at `3e480f3` (sessions 1 and 2 merged).
+The full plan, with tests per step, was agreed in plan mode. The steps, in order:
+
+1. **Per-format durations** (John's addition, 1 Oct) — done, see the checkpoint below.
+2. **Tabs and the Settings shell.**
+   - Checklist / Reading / Reviews / Settings, with the active tab persisted; the filter panel shows
+     on Checklist only.
+   - Settings sections: Display, Reading behaviour, Touch, Bulk actions, Data, Backup.
+   - Pace controls, plus the F-18 readout "N left · W weeks · done Mon YYYY".
+   - Progress mode, combined or per medium.
+   - Refresh reminder (consumed at boot), About & legend, Clear all progress (snapshot + undo
+     toast), Import from previous version.
+   - Bookmarks list and the pinned bookmark bar; show/hide the jump button.
+   - Listeners: + `change` = 5.
+3. **Display options** (display-only):
+   - badges, combo badge, newest era first, notes only, tap to reveal;
+   - gap notes, era navigation style, layout C.
+4. **Reading tab** stepper. It resumes at the first unread, and marks go through `setMark` (D-1).
+5. **Reviews** per arc. The `.b.rv` ✎ sits on the arc head; the Reviews tab lists them and jumps;
+   `legacy-unmatched` reviews are listed, never dropped.
+6. **Bulk marking and touch.**
+   - `applyMark` + one refresh, so there is still one mark path.
+   - Era, range and arc bulk marks, with an undo that restores the previous states.
+   - Swipe and long-press (opt-in).
+   - Listeners: + 3 touch = 8.
+7. **Story, character and creator filters; presets.**
+   - Essential/Complete (a plan filter, with "Complete view adds N issues").
+   - Presence + cameos (browse).
+   - Creator picker with counts, tappable names, and chips.
+   - Presets by name.
+   - Importance on arc heads.
+8. **Sync and backup** (two formats; see the decisions below).
+9. **Close-out.** Inventory statuses, this checkpoint, and a real Chromium check with screenshots.
+
+New suites: `97-durations`, `98-tabs-settings`, `99-display`, `9a-reading`, `9b-reviews`, `9c-bulk-touch`,
+`9d-story-filters`, `9e-sync`.
+
+**Session length rule (John, 3 Oct):** never start a step that can't be finished. If the session
+runs long, stop at the end of a completed step and record here exactly where step N+1 begins.
+Then push, and tell John.
+
+### Decisions recorded 3 Oct (do not re-ask)
+- **Per-format durations** (asked 1 Oct; settled 3 Oct):
+  - **Every comic counts as one issue**, timed by the minutes-per-issue setting. There are no comic
+    durations and no length multipliers, so `duration` on a comic row or `durations.comic` fails
+    the build.
+  - **Shows** use the dataset default `durations: {screen: N}`; a row's `duration` overrides it.
+  - **Games** each carry their own `duration`. **One unit everywhere: whole minutes.**
+  - A missing duration warns with a coverage % (like credits). It never fails; there is no
+    strict flag.
+  - **An untimed row adds nothing** to time left or finish-by. Banners and the header show
+    "+N untimed"; when a unit's only remaining rows are untimed, the marker shows and there is no
+    "0m left".
+  - **Finish-by** = minutes left ÷ (issues per week × minutes per issue). For comics-only data
+    the result is bit-identical to session 2.
+- **S-17 "Jump to first unread on load" is re-expressed.** The landing stays collapsed with no
+  exceptions, and the Reading tab resumes at the first unread instead.
+- **Swipe and long-press stay off by default (opt-in).**
+- **No haptics.** XM-13 is dropped, and a guard (step 6) asserts `navigator.vibrate` is never
+  called.
+- **XM-9 landmarks fold into notes only / tap to reveal.** X-Men's "landmark notes" are the row's
+  short `note`, so no new data field is needed.
+- **Reviews are per arc.** The ✎ button sits on the arc head.
+- **Two sync formats:**
+  - **QR (compact).** It holds a version, the franchise prefix, a dataVersion hash (sha256 of ids
+    in row order, emitted by the build), the marks as 2-bit states in the current row order, and
+    the bookmarks as positions. Reviews, settings and filters stay out.
+    - It is **compressed**: RLE of the marks plus delta-varint bookmarks, keeping RLE or raw 2-bit
+      packing, whichever is smaller, then base64url.
+    - If the code would exceed QR capacity, the app shows a message and the copy-code instead.
+    - On import, a matching dataVersion is decoded by position. A different one is refused, with a
+      pointer to the copy-code or the file.
+  - **Copy-code, `#sync=` links and the backup file** carry the full id-keyed, change-tolerant JSON
+    with everything.
+- **Import is Merge or Replace.**
+  - Merge is the default and never downgrades a read mark.
+  - Replace restores the backup exactly, after an in-page confirm (never `window.confirm`).
+  - Before a Replace and before "Clear all progress", the full state is snapshotted, and an undo
+    toast restores it.
+- **Old (v2) QR codes.** The old position order is rebuilt from every legacy-style id **plus
+  `retiredIds`**, sorted by old key, so a retired issue can't shift every later position.
+
+---
+
+## Session 3 checkpoint — step 1 done (per-format durations), 3 Oct 2026
+
+### Done
+- **Schema:**
+  - `durations` (top level, minutes ≥1; `comic` refused by `propertyNames`);
+  - row `duration`;
+  - event chapter `duration`;
+  - a shared `$defs/minutes`.
+- **`tools/build.py`:**
+  - Resolution, read by name: row `duration` → `durations[medium]` → comic: 0 (use the setting)
+    → missing: -1. Inert rows are 0.
+  - Rules: comic `duration` and `durations.comic` fail; a non-integer or a value <1 fails; an
+    unknown medium in `durations` fails.
+  - A per-medium coverage warning, plus `counts.durationsCoverage`, the report field, and the
+    build summary line.
+  - Chapters carry `duration` into placed rows.
+  - `data.js` gains the index-aligned `issueDuration` array.
+- **`app.js`:**
+  - Stats accumulate `cl` (comics), `fm` (fixed minutes) and `ut` (untimed) over remaining rows.
+  - `minutesLeft = cl × minutes + fm`.
+  - Finish-by is cumulative **minutes** ÷ (weekly × minutes), and finish spans carry the
+    full-precision `data-weeks` (it feeds step 2's "W weeks" readout).
+  - "+N untimed" markers (`.buntimed` / `.puntimed`, `data-untimed`).
+  - `setPace` rounds to whole numbers.
+- **Fixtures:**
+  - `basic` is now fully timed: its game has `duration: 1200`, plus `durations: {screen: 22}`.
+  - New **`mixed`** fixture: 2 bands, comics, 3 episodes (22 default, 44 override), a timed game
+    (1500) and an untimed game, an ALT row and a gap note.
+  - New broken cases: `duration-on-comic`, `durations-comic-default`, `duration-not-integer`.
+- **Tests:**
+  - **`97-durations`** (107 assertions): build values, coverage warning and summary; the event
+    chapter duration; time left honouring each duration (reading still counts; read −1500;
+    skip −22); pace changes only the comics part; finish-by from minutes; the untimed marker,
+    including the only-untimed case; format-as-plan totals (Games / Shows / Comics / cleared);
+    comics-only exactness.
+  - **Comics-only exactness** is proved two ways. First, exhaustive arithmetic (r 0…5000 × all 12
+    preset pairs). Second, the real DOM against the session-2 formula kept verbatim as the oracle,
+    on 4 comics-only datasets (basic without its game and show, the no-periods equivalent, the
+    5,000-row stress set and the root starter) × 12 pace pairs, with read / skip / reading marks.
+    `data-weeks` is compared as the full double, so the match is bit-identical, not just the same
+    day.
+  - Mutation checks, each with the old behaviour put back:
+    - count-based time left → fails;
+    - untimed counted as a comic → fails;
+    - dividing twice (`/ w / m`, a sub-day rounding change) → 12 failures, once `data-weeks` was
+      compared.
+  - `95-pace` and `96-figures` now use an own-minutes oracle. `20-build` checks `issueDuration`
+    alignment and the comic/non-comic values on 4 datasets, including `mixed`. `10-schema`
+    validates `mixed`.
+- **Docs:**
+  - CLAUDE.md data rules gain the durations rule.
+  - The inventory adds V-29 (present) and updates XM-2. XM-13 is dropped (no haptics) and S-17 is
+    re-expressed.
+
+### Step 2 begins with
+`index.html`: add the one `#tabs` nav (Checklist / Reading / Reviews / Settings) and four panes.
+Move the filter panel and `#app` into the Checklist pane. The first test to write is
+`98-tabs-settings`: exactly one `#tabs` (T-2), and each tab shows its pane (T-114, T-120–T-122).

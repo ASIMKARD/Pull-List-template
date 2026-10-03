@@ -58,6 +58,13 @@ only at a cut-over swap John approves. (Full text: Master-Repo
   the tracker doesn't have are placed inside that era by date then event order.
 - **Credits**: full canonical names, never surnames alone. Missing credits warn
   (coverage %), and fail only under `strictCredits`.
+- **Durations (per format), whole minutes.**
+  - **Comics:** every comic counts as one issue, timed by the minutes-per-issue setting.
+    A comic `duration` or `durations.comic` fails the build.
+  - **Shows:** `durations: {screen: 22}` gives the default, and a row's `duration` overrides it.
+  - **Games:** each game needs its own `duration`. A missing one warns (coverage %), adds
+    nothing to time left, and shows as "+N untimed".
+  - **Finish-by** = minutes left ÷ (issues per week × minutes per issue).
 - **Read fields by name, never by position.** v2's generator read columns by
   index and a missing column shifted every downstream field into garbage.
 

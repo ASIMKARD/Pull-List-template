@@ -24,6 +24,7 @@ SCHEMA_VERSION = 1
 FLAG_BITS = {'FB': 1, 'SKIP': 2, 'ALT': 4, 'GAPNOTE': 8, 'RENUM': 16, 'SPECIAL_NUMBERING': 32}
 INERT_FLAGS = {'GAPNOTE', 'RENUM'}
 GRADES = ['major', 'minor', 'cameo']
+COMIC = 'comic'          # every comic counts as one issue, timed by the minutes-per-issue setting
 ROLES = ['core', 'tie-in']
 UNIVERSAL_STRAND = 'All'
 
@@ -105,6 +106,11 @@ def creator_norm(name):
 # --------------------------------------------------------------------------
 # loading
 # --------------------------------------------------------------------------
+def is_minutes(v):
+    """Durations are whole minutes, 1 or more (bool is an int in Python: refuse it)."""
+    return isinstance(v, int) and not isinstance(v, bool) and v >= 1
+
+
 def load_json(path, errs):
     try:
         with open(path, encoding='utf-8') as f:
@@ -195,6 +201,19 @@ def build(dataset_path, previous_datajs=None):
     tiers = need(ds, 'tiers', 'dataset', list) or []
     media = ds.get('media') or ['comic']
     default_medium = ds.get('defaultMedium', media[0])
+    # per-format durations (decided 1 Oct): a default length per item for a non-comic medium
+    durations = ds.get('durations') or {}
+    if not isinstance(durations, dict):
+        errs.append('durations must be an object of {medium: minutes}')
+        durations = {}
+    for m in sorted(durations):
+        if m == COMIC:
+            errs.append('durations.comic is not allowed: every comic counts as one issue and is timed '
+                        'by the minutes-per-issue setting')
+        elif m not in media:
+            errs.append('durations: unknown medium %r' % m)
+        if not is_minutes(durations[m]):
+            errs.append('durations.%s must be a whole number of minutes (1 or more)' % m)
     strands = list(ds.get('strands') or [])
     universal = False
     if not strands:                         # defect 6: an empty list blanks the app
@@ -322,7 +341,7 @@ def build(dataset_path, previous_datajs=None):
             else:
                 new = {k: ch[k] for k in ('issueId', 'series', 'vol', 'num', 'title', 'date',
                                           'sortDate', 'seq', 'credits', 'presence', 'medium',
-                                          'type', 'note', 'flags') if k in ch}
+                                          'duration', 'type', 'note', 'flags') if k in ch}
                 new.update(id=cid, era=eera, arc=arc_id, _src='events/%s.json' % eid,
                            _order=len(rows), _event=ei, _eorder=order, _essential=essential)
                 rows.append(new)
@@ -387,6 +406,12 @@ def build(dataset_path, previous_datajs=None):
             errs.append('%s: unknown type %r' % (w, r['type']))
         if r['medium'] not in media:
             errs.append('%s: unknown medium %r' % (w, r['medium']))
+        if 'duration' in r:
+            if not is_minutes(r['duration']):
+                errs.append('%s: duration must be a whole number of minutes (1 or more)' % w)
+            elif r['medium'] == COMIC:
+                errs.append('%s: duration on a comic row is not allowed (every comic counts as one issue, '
+                            'timed by the minutes-per-issue setting)' % w)
         if r['tier'] not in tiers:
             errs.append('%s: unknown tier %r' % (w, r['tier']))
         d = r.get('date') or {}
@@ -538,6 +563,27 @@ def build(dataset_path, previous_datajs=None):
     if errs:
         raise BuildError(errs)
 
+    # ---- durations: comics use the minutes-per-issue setting (0); every other
+    #      format carries its own minutes (row duration, else durations[medium]);
+    #      none at all is -1, which time left leaves out and the app marks "untimed" ----
+    need_dur = {}
+    for r in rows:
+        if r['_inert'] or r['medium'] == COMIC:
+            r['_dur'] = 0
+            continue
+        own = r.get('duration', durations.get(r['medium']))
+        r['_dur'] = own if is_minutes(own) else -1
+        tot, miss = need_dur.get(r['medium'], (0, 0))
+        need_dur[r['medium']] = (tot + 1, miss + (1 if r['_dur'] < 0 else 0))
+    timed_total = sum(v[0] for v in need_dur.values())
+    timed_missing = sum(v[1] for v in need_dur.values())
+    dur_coverage = round(100.0 * (timed_total - timed_missing) / timed_total, 1) if timed_total else 100.0
+    for m in media:                          # vocabulary order, so warnings are deterministic
+        tot, miss = need_dur.get(m, (0, 0))
+        if miss:
+            warns.append('durations: %d of %d %s rows have no duration (coverage %.1f%%) — time left '
+                         'leaves them out' % (miss, tot, m, round(100.0 * (tot - miss) / tot, 1)))
+
     # ---- id stability: an id that disappears orphans someone's saved progress ----
     retired = set(ds.get('retiredIds') or [])
     if previous_datajs:
@@ -603,6 +649,7 @@ def build(dataset_path, previous_datajs=None):
         'issueEra': [ERA[r['era']] for r in rows],
         'issuePeriod': [PERIOD_OF[r['era']] for r in rows] if periods else [],
         'issueMedium': [MED[r['medium']] for r in rows],
+        'issueDuration': [r['_dur'] for r in rows],
         'issueTier': [TIER[r['tier']] for r in rows],
         'issueImportance': [r.get('importance', 0) for r in rows],
         'issueEvent': [r.get('_event', -1) for r in rows],
@@ -622,6 +669,7 @@ def build(dataset_path, previous_datajs=None):
             'gapnotes': sum(1 for r in rows if 'GAPNOTE' in (r.get('flags') or [])),
             'renumbers': sum(1 for r in rows if 'RENUM' in (r.get('flags') or [])),
             'creditsCoverage': coverage,
+            'durationsCoverage': dur_coverage,
         },
         'timeline': sorted(range(len(rows)), key=lambda i: (ARC[rows[i]['arc']], rows[i]['_key'])),
         'legend': [{'term': x.get('term', ''), 'meaning': x.get('meaning', '')} for x in ds.get('legend') or []],
@@ -629,7 +677,7 @@ def build(dataset_path, previous_datajs=None):
     }
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
-              'creators': len(creator_names)}
+              'durationsCoverage': dur_coverage, 'creators': len(creator_names)}
     return payload, report
 
 
@@ -752,9 +800,9 @@ def main(argv):
     for name, content in files.items():
         with open(os.path.join(out, name), 'w', encoding='utf-8') as f:
             f.write(content)
-    print('built %s: %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%'
+    print('built %s: %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%'
           % (build_id, report['rows'], report['checkable'], report['eras'], len(report['events']),
-             report['creators'], report['creditsCoverage']))
+             report['creators'], report['creditsCoverage'], report['durationsCoverage']))
     return 0
 
 

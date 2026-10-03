@@ -98,6 +98,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .bfiltered, .pfiltered {
   padding: 0 8px; border: 1px dashed var(--accent); border-radius: 999px; color: var(--accent); font-size: 12px;
 }
+.buntimed, .puntimed { font-style: italic; }
 .band-intro, .era-intro { margin: 8px 4px; color: var(--ink-soft); font-size: 14px; }
 
 /* ---- arcs and rows ---- */

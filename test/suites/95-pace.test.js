@@ -1,5 +1,7 @@
-/* Pace (decided 2 Oct): minutes per issue -> time left on every banner;
-   issues per week -> cumulative finish-by on the header and top-level banners. */
+/* Pace (decided 2 Oct; per-format durations 1 Oct): time left sums each
+   remaining row's own minutes (comics at minutes per issue, shows and games at
+   their own duration); finish-by = minutes left / (issues per week x minutes
+   per issue), cumulative on the header and top-level banners. */
 'use strict';
 const { loadData, boot, wait, basic, noPeriods } = require('../lib/helpers');
 
@@ -9,14 +11,15 @@ const iso = weeksFloat => new Date(NOW + weeksFloat * 7 * DAY).toISOString().sli
 const timeText = mins => mins < 60 ? mins + 'm' : (mins / 60 < 24 ? Math.round(mins / 60) + 'h' : (Math.round(mins / 60 / 24 * 10) / 10) + 'd');
 
 function goalStats(D, pred, marks) {
-  let total = 0, read = 0, skip = 0;
+  let total = 0, read = 0, skip = 0, comics = 0, fixed = 0;
   D.ids.forEach((id, i) => {
     if (D.issueCompleteOnly[i] || (D.issues[i][6] & (D.flagBits.GAPNOTE | D.flagBits.RENUM)) || !pred(i)) return;
     total++;
     const s = (marks || {})[id];
     if (s === 'read') read++; else if (s === 'skip') skip++;
+    else if (D.issueDuration[i] === 0) comics++; else if (D.issueDuration[i] > 0) fixed += D.issueDuration[i];
   });
-  return { total, read, skip, left: total - read - skip };
+  return { total, read, skip, left: total - read - skip, mins: m => comics * m + fixed };
 }
 
 module.exports = async function (t) {
@@ -35,26 +38,27 @@ module.exports = async function (t) {
 
   const all = goalStats(D, () => true);
   const hLeft = d.querySelector('#pprog .pleft'), hFin = d.querySelector('#pprog .pfinish');
-  t.ok('header time left = remaining x 15 min', +hLeft.dataset.leftMin === all.left * 15, hLeft.dataset.leftMin + ' vs ' + all.left * 15);
-  t.ok('header time left text', hLeft.textContent === timeText(all.left * 15) + ' left', hLeft.textContent);
-  t.ok('header finish-by = remaining / 12 per week', hFin.dataset.finish === iso(all.left / 12), hFin.dataset.finish + ' vs ' + iso(all.left / 12));
+  t.ok('basic is fully timed: a game and a show carry their own minutes', D.issueDuration.some(x => x > 0) && !D.issueDuration.includes(-1));
+  t.ok('header time left = each remaining row\'s own minutes (comics x 15)', +hLeft.dataset.leftMin === all.mins(15), hLeft.dataset.leftMin + ' vs ' + all.mins(15));
+  t.ok('header time left text', hLeft.textContent === timeText(all.mins(15)) + ' left', hLeft.textContent);
+  t.ok('header finish-by = minutes left / (12 x 15) per week', hFin.dataset.finish === iso(all.mins(15) / 180), hFin.dataset.finish + ' vs ' + iso(all.mins(15) / 180));
   t.ok('finish-by reads as a month and year', /^finish by [A-Z][a-z]{2} \d{4}$/.test(hFin.textContent), hFin.textContent);
 
   // per band, cumulative in reading order
-  const bandLeft = D.periods.map((p, bi) => goalStats(D, i => bandOf(D.issueEra[i]) === bi).left);
+  const bandLeft = D.periods.map((p, bi) => goalStats(D, i => bandOf(D.issueEra[i]) === bi).mins(15));
   let cum = 0;
   D.periods.forEach((p, bi) => {
     cum += bandLeft[bi];
     const f = d.querySelector(`.band[data-b="${bi}"] > .band-head .bfinish`);
-    t.ok(`band ${bi}: finish-by counts this band plus every band before it`, f && f.dataset.finish === iso(cum / 12),
-         (f && f.dataset.finish) + ' vs ' + iso(cum / 12));
+    t.ok(`band ${bi}: finish-by counts this band plus every band before it`, f && f.dataset.finish === iso(cum / 180),
+         (f && f.dataset.finish) + ' vs ' + iso(cum / 180));
     const l = d.querySelector(`.band[data-b="${bi}"] > .band-head .bleft`);
-    t.ok(`band ${bi}: time left is this band only`, +l.dataset.leftMin === bandLeft[bi] * 15);
+    t.ok(`band ${bi}: time left is this band only`, +l.dataset.leftMin === bandLeft[bi]);
   });
   t.ok('the last band\'s finish-by equals the header\'s', d.querySelector(`.band[data-b="${D.periods.length - 1}"] .bfinish`).dataset.finish === hFin.dataset.finish);
   D.eras.forEach((e, ei) => {
     const l = d.querySelector(`.era[data-e="${ei}"] > .era-head .bleft`);
-    t.ok(`era ${e.id}: time left on its banner`, +l.dataset.leftMin === goalStats(D, i => D.issueEra[i] === ei).left * 15);
+    t.ok(`era ${e.id}: time left on its banner`, +l.dataset.leftMin === goalStats(D, i => D.issueEra[i] === ei).mins(15));
   });
   app.window.close();
 
@@ -69,14 +73,14 @@ module.exports = async function (t) {
        !d.querySelector('.band[data-b="0"] > .band-head .bfinish'));
   const b1 = goalStats(D, i => bandOf(D.issueEra[i]) === 1, marks);
   t.ok('a skipped issue is not counted as remaining', b1.skip === 1);
-  t.ok('next band\'s finish-by counts only unread, non-skipped issues', d.querySelector('.band[data-b="1"] .bfinish').dataset.finish === iso(b1.left / 12));
+  t.ok('next band\'s finish-by counts only unread, non-skipped issues', d.querySelector('.band[data-b="1"] .bfinish').dataset.finish === iso(b1.mins(15) / 180));
   t.ok('band shows "n skipped" and a goal without them', new RegExp('0 / ' + (b1.total - 1) + ' read · 1 skipped').test(d.querySelector('.band[data-b="1"] .bcount').textContent));
 
   // ---- changing the pace moves both figures ----
   app.window.PullList.setPace(25, 5);
   const all2 = goalStats(D, () => true, marks);
-  t.ok('Deep dive (25 min) changes time left', +d.querySelector('#pprog .pleft').dataset.leftMin === all2.left * 25);
-  t.ok('5 per week changes finish-by', d.querySelector('#pprog .pfinish').dataset.finish === iso(all2.left / 5));
+  t.ok('Deep dive (25 min) changes time left (the comics part only)', +d.querySelector('#pprog .pleft').dataset.leftMin === all2.mins(25));
+  t.ok('5 per week changes finish-by (weekly minutes = 5 x 25)', d.querySelector('#pprog .pfinish').dataset.finish === iso(all2.mins(25) / 125));
   app.window.dispatchEvent(new app.window.Event('pagehide'));
   const st = JSON.parse(app.window.localStorage.getItem(ns + 'settings'));
   t.ok('pace is stored in the one settings store', st.pace.minutes === 25 && st.pace.weekly === 5);
@@ -99,9 +103,9 @@ module.exports = async function (t) {
   await wait(20);
   let c2 = 0, ok = true;
   Dn.eras.forEach((e, ei) => {
-    c2 += goalStats(Dn, i => Dn.issueEra[i] === ei).left;
+    c2 += goalStats(Dn, i => Dn.issueEra[i] === ei).mins(15);
     const f = app.document.querySelector(`#app > .era[data-e="${ei}"] .bfinish`);
-    if (!f || f.dataset.finish !== iso(c2 / 12)) ok = false;
+    if (!f || f.dataset.finish !== iso(c2 / 180)) ok = false;
   });
   t.ok('no bands: each era banner\'s finish-by is cumulative', ok);
 

@@ -19,7 +19,7 @@ module.exports = async function (t) {
   };
 
   for (const ds of ['dataset.json', 'test/fixtures/basic/dataset.json', 'test/fixtures/no-periods/dataset.json',
-                    'test/fixtures/broken/_valid/dataset.json']) {
+                    'test/fixtures/mixed/dataset.json', 'test/fixtures/broken/_valid/dataset.json']) {
     const r = check('dataset.schema.json', path.join(ROOT, ds));
     t.ok('schema accepts ' + ds, r.ok, r.why);
   }

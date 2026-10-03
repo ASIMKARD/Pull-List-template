@@ -105,7 +105,7 @@ store is listed only to record where the value lived.
 | S-14 | Hide skipped `#skipChip` | view.hideSkip | off | S2 | present (92-filters: Reading section) |
 | S-15 | Notes only `#notesChip` | view.notesOnly | off | S3 | todo |
 | S-16 | Tap to reveal notes `#revealChip` | view.reveal | off | S3 | todo |
-| S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | todo |
+| S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | re-express (decided 3 Oct): no checklist jump, because the landing is always collapsed; the Reading tab resumes at the first unread (F-2) |
 | S-18 | Pace `#segPace` | view.pace | 12/week | S3 | todo |
 | S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | todo |
 | S-20 | Button size `#segTap` | view.tap | standard | S4 | todo |
@@ -322,6 +322,7 @@ installed app once online.
 | V-26 | Export and import (file backup) | S3 | todo |
 | V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | todo |
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
+| V-29 | Per-format durations (decided 1 Oct, untimed 3 Oct). Comics are one issue each at minutes per issue. Shows use `durations: {screen: N}`, which a row can override. Games carry their own `duration`, and a missing one warns with a coverage %, adds nothing and shows `+N untimed`. Time left sums each row's own minutes. Finish-by = minutes left ÷ (issues/week × minutes/issue), and comics-only results are bit-identical to session 2 | S3 | present (97-durations: build + coverage warning, own-minutes figures, untimed marker, format-as-plan totals, comics-only exactness on 4 datasets × 12 pace pairs + exhaustive arithmetic) |
 
 ## CR — creator credits (decided 1 Oct)
 
@@ -360,7 +361,7 @@ installed app once online.
 | ID | X-Men feature | Session | Status |
 |---|---|---|---|
 | XM-1 | Era divider banners: name, years, read/total, skipped count, progress track, time left, ✓ when complete (the goal banner, V-6) | S2 | present (90-render, 95-pace) |
-| XM-2 | Pace as minutes per issue (quick 8 / average 15 / deep 25) driving "time left" per banner | S2/S3 | present — both, decided 2 Oct (95-pace) |
+| XM-2 | Pace as minutes per issue (quick 8 / average 15 / deep 25) driving "time left" per banner | S2/S3 | present — both, decided 2 Oct (95-pace); shows and games use their own durations (V-29, 97-durations) |
 | XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | todo |
 | XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | todo |
 | XM-5 | File backup: export JSON download, import from file | S3 | todo (V-26) |
@@ -371,7 +372,7 @@ installed app once online.
 | XM-10 | Gap notes on/off | S3 | todo |
 | XM-11 | Bulk mark an arc (read / unread) | S3 | todo |
 | XM-12 | Swipe with visual feedback (row slides, coloured backing shows the action) | S3 | todo |
-| XM-13 | Haptic tick on long-press (`navigator.vibrate`) | S3 | todo |
+| XM-13 | Haptic tick on long-press (`navigator.vibrate`) | — | dropped: haptics declined in an earlier round, as the X-Men code notes (re-confirmed 3 Oct); a guard asserts `navigator.vibrate` is never called (S3 step 6) |
 | XM-14 | Incremental count refresh (ancestor stats update without a full re-render) | S2 | present (91-marks: refreshStats) |
 | XM-15 | Arc issue list rendered on expand (lazy) — basis of V-15 | S2 | present (90-render) |
 | XM-16 | `escapeHtml` / `escapeAttr` string templating (V-2) | S2 | present (80-guards) |

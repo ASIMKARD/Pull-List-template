@@ -20,9 +20,16 @@
     screen: { unread: 'Unwatched', reading: 'Watching', read: 'Watched', skip: 'Skipped' }
   };
   var MEDIUM_NAME = { comic: 'Comics', game: 'Games', screen: 'Shows' };
-  /* Pace (decided 2 Oct): minutes per issue drives "time left" on every banner
-     (presets from the feel-reference build); issues per week drives the cumulative finish-by date (v2
-     presets). Both live in the one settings store; Settings controls: session 3. */
+  /* Pace (decided 2 Oct; per-format durations 1 Oct):
+     - time left sums each remaining row's OWN minutes: a comic is one issue at
+       the minutes-per-issue setting (presets from the feel-reference build); a
+       show or game carries its own minutes (D.issueDuration, built from the row's
+       duration or the dataset's per-medium default); a row with none is "untimed"
+       and adds nothing, shown as "+N untimed";
+     - finish-by works from reading time: weekly minutes = issues per week x
+       minutes per issue (v2 presets), weeks left = minutes left / weekly minutes.
+       For comics-only data that is (r*m)/(w*m), bit-identical to r/w.
+     Both live in the one settings store. */
   var PACE_MINUTES = [['quick', 'Quick', 8], ['average', 'Average', 15], ['deep', 'Deep dive', 25]];
   var PACE_WEEKLY = [['light', 'Light', 5], ['steady', 'Steady', 12], ['heavy', 'Heavy', 25], ['marathon', 'Marathon', 50]];
   var DAY = 864e5;
@@ -259,35 +266,43 @@
      STATS AND PACE — banners and header count the PLAN always and the
      BROWSE view while one is active; display-only filters never count.
      ====================================================================== */
-  function blank() { return { total: 0, read: 0, skip: 0 }; }
+  /* cl: remaining rows timed by minutes per issue (comics); fm: the fixed
+     minutes of remaining shows and games; ut: remaining rows with no duration. */
+  function blank() { return { total: 0, read: 0, skip: 0, cl: 0, fm: 0, ut: 0 }; }
   function computeStats() {
     var s = { all: blank(), era: D.eras.map(blank), band: D.periods.map(blank) }, br = browsing();
     for (var i = 0; i < N; i++) {
       if (isInert(i) || !planOk(i) || (br && !browseOk(i))) continue;
-      var st = stateOf(i), e = D.issueEra[i], b = BAND_OF_ERA[e];
+      var st = stateOf(i), e = D.issueEra[i], b = BAND_OF_ERA[e], du = D.issueDuration[i];
       [s.all, s.era[e], b >= 0 ? s.band[b] : null].forEach(function (t) {
         if (!t) return;
         t.total++;
-        if (st === 'read') t.read++; else if (st === 'skip') t.skip++;
+        if (st === 'read') t.read++;
+        else if (st === 'skip') t.skip++;
+        else if (du === 0) t.cl++;
+        else if (du > 0) t.fm += du;
+        else t.ut++;
       });
     }
     return s;
   }
   function remaining(t) { return t.total - t.read - t.skip; }       // unread + reading, never skipped
   function goal(t) { return t.total - t.skip; }
+  function paceMinutes() { return settings.pace.minutes || 15; }
+  function minutesLeft(t) { return t.cl * paceMinutes() + t.fm; }  // untimed rows add nothing
   function timeLeft(t) {
-    var mins = remaining(t) * (settings.pace.minutes || 15);
+    var mins = minutesLeft(t);
     if (mins < 60) return { mins: mins, text: mins + 'm' };
     var hrs = mins / 60;
     if (hrs < 24) return { mins: mins, text: Math.round(hrs) + 'h' };
     return { mins: mins, text: (Math.round(hrs / 24 * 10) / 10) + 'd' };
   }
   /* Cumulative: "if you keep reading in order, you'll finish this band by…" —
-     the unread issues in this unit plus every unit before it in reading order. */
-  function finishBy(cumRemaining) {
-    var weeks = cumRemaining / (settings.pace.weekly || 12);
+     the minutes left in this unit plus every unit before it in reading order. */
+  function finishBy(cumMinutes) {
+    var weeks = cumMinutes / ((settings.pace.weekly || 12) * paceMinutes());
     var d = new Date(Date.now() + weeks * 7 * DAY);
-    return { iso: d.toISOString().slice(0, 10),
+    return { iso: d.toISOString().slice(0, 10), weeks: weeks,
              text: d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }) };
   }
 
@@ -300,14 +315,25 @@
   var expandMatches = false;             // only a change made during THIS visit auto-expands matches;
                                          // every boot lands collapsed, whatever filters were saved
 
+  /* "+N untimed": remaining rows with no duration add nothing to the figures,
+     so the gap is shown instead of an invented number. */
+  function untimedHtml(t, cls) {
+    return t.ut ? '<span class="' + cls + '" data-untimed="' + t.ut + '" title="' + t.ut + ' left with no length in the data, so not in the time left">+' +
+      t.ut + ' untimed</span>' : '';
+  }
+  function leftHtml(t, cls) {
+    if (remaining(t) === t.ut) return '';                            // only untimed rows left: no "0m left"
+    var left = timeLeft(t);
+    return '<span class="' + cls + '" data-left-min="' + left.mins + '">' + left.text + ' left</span>';
+  }
   function statsHtml(t, finish) {
-    var g = goal(t), left = timeLeft(t), done = remaining(t) === 0 && t.total > 0;
+    var g = goal(t), done = remaining(t) === 0 && t.total > 0;
     return '<span class="bstats">' +
       '<span class="bcount">' + t.read + ' / ' + g + ' read' + (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
       (browsing() ? '<span class="bfiltered">filtered</span>' : '') +
       (done ? '<span class="bdone" aria-label="complete">✓</span>'
-            : '<span class="bleft" data-left-min="' + left.mins + '">' + left.text + ' left</span>' +
-              (finish ? '<span class="bfinish" data-finish="' + finish.iso + '">finish by ' + escapeHtml(finish.text) + '</span>' : '')) +
+            : leftHtml(t, 'bleft') + untimedHtml(t, 'buntimed') +
+              (finish ? '<span class="bfinish" data-finish="' + finish.iso + '" data-weeks="' + finish.weeks + '">finish by ' + escapeHtml(finish.text) + '</span>' : '')) +
       '</span><progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>';
   }
 
@@ -316,7 +342,7 @@
     var out = {}, cum = 0;
     topUnits().forEach(function (u) {
       var t = HAS_BANDS ? S.band[u] : S.era[u];
-      cum += remaining(t);
+      cum += minutesLeft(t);
       out[u] = remaining(t) === 0 ? null : finishBy(cum);
     });
     return out;
@@ -324,15 +350,15 @@
 
   function renderHeader(S) {
     var t = S.all, done = remaining(t) === 0;
-    var fin = done ? null : finishBy(remaining(t)), left = timeLeft(t);
+    var fin = done ? null : finishBy(minutesLeft(t));
     $('#pprog').innerHTML =
       '<progress class="bar pbar" max="' + (goal(t) || 1) + '" value="' + t.read + '" aria-label="Reading progress"></progress>' +
       '<p class="pstats"><span class="pcount">' + t.read + ' / ' + goal(t) + ' read' +
       (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
       (browsing() ? '<span class="pfiltered" title="Counting only what your search or browse filters show">filtered view</span>' : '') +
       (done ? '<span class="pdone">All caught up ✓</span>'
-            : '<span class="pleft" data-left-min="' + left.mins + '">' + left.text + ' left</span>' +
-              '<span class="pfinish" data-finish="' + fin.iso + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>';
+            : leftHtml(t, 'pleft') + untimedHtml(t, 'puntimed') +
+              '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>';
   }
 
   function orderedEraRows(e) {
@@ -798,8 +824,9 @@
     jumpToIssue: jumpToIssue,
     pacePresets: { minutes: PACE_MINUTES, weekly: PACE_WEEKLY },
     setPace: function (minutes, weekly) {
-      if (minutes) settings.pace.minutes = minutes;
-      if (weekly) settings.pace.weekly = weekly;
+      // whole numbers only: integer minutes keep the comics-only figures exact
+      if (minutes) settings.pace.minutes = Math.max(1, Math.round(minutes));
+      if (weekly) settings.pace.weekly = Math.max(1, Math.round(weekly));
       saveSettings(); refreshStats();
     }
   };
