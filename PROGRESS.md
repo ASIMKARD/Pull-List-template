@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1105 assertions, 0 failed, 24 suites (session 3, step 8 of 9 done).
+**Harness:** 1105 assertions, 0 failed, 24 suites (end of session 3; CI green on every push).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -569,7 +569,83 @@ Then push, and tell John.
   - Replace without snapshot Undo → 4 failures;
   - no dataVersion check → fails.
 
-### Step 9 begins with
-**Close-out:** inventory statuses for every S3 line (anything not done gets a reason or moves to
-S4), this file's transfer checkpoint and "Session 4 starts with", a CLAUDE.md lessons check, and
-the real-Chromium screenshot pass.
+---
+
+## Transfer checkpoint — end of session 3 (features), 3 Oct 2026
+
+### Done (all 9 steps; details in the step checkpoints above)
+- **All 89 S3 lines in `FEATURE-INVENTORY.md` are present (80) or re-expressed (9), each naming
+  its suite.**
+  - Nothing in S3 is left todo. 55 lines remain: 51 for S4, 4 for S5.
+- **The harness** went from 617 to **1,105 assertions** (+488) across 8 new suites:
+  `97-durations`, `98-tabs-settings`, `99-display`, `9a-reading`, `9b-reviews`, `9c-bulk-touch`,
+  `9d-story-filters` and `9e-sync`.
+  - Every new rule was checked by putting the old or wrong behaviour back once.
+  - 22 mutations were caught in all.
+- **Per-format durations** (the 1 Oct addition) shipped first. For comics-only data, the
+  figures are bit-identical to session 2.
+- **Listeners:** 9 of 12 in app code (click, input, change, touchstart, touchmove, touchend,
+  pagehide, visibilitychange, and the `once()` helper for one-off load/error events).
+- **Final real-Chromium sweep** at 320 and 390 px over Checklist (panel open, era open), Reading,
+  Reviews and Settings (sync code open): no page overflow, no page errors, and all four tabs
+  fully visible.
+  - The sweep caught the tabs being cut off at 320 px; the tab labels now scale with
+    `clamp(13px, 4.2vw, 15px)`.
+- **CLAUDE.md** gains the session's lessons:
+  - Chromium sweeps at 320 px;
+  - seeding storage before load;
+  - the guard word that is also a CSS keyword;
+  - comparing maps by content;
+  - one toast, one Undo;
+  - `dataVersion` and `retiredIds`.
+
+### My calls this session — open to veto (everything else followed a decision)
+1. **Era navigation (XM-8) is a jump bar, not a filter.** Plain scroll is the default, because
+   the Story section's era chips already filter.
+2. **Bulk marks respect the view.** Era, range, arc and long-press mark the rows the banners
+   count, so "mandatory only" or Essential view limits them.
+3. **The QR holds a `#sync=` link** to the compact code, so a camera scan opens the tracker and
+   merges (XM-6).
+4. **The Reading stepper ignores "newest era first"** and always steps in reading order.
+5. **The sync prefix is the whole franchise key**, uppercase alphanumerics (`FIXTURE:`). v2 used
+   the first 4 letters, which could collide between trackers.
+6. **Merge keeps settings and fills only missing reviews.** Replace (full code) restores
+   settings too. A QR's Replace touches progress only.
+7. **Essential/Complete shows as an active chip,** so Clear all returns it to Essential.
+8. **Review ✎ and "Mark arc read / unread"** share an action row under each arc heading.
+
+### Open items for session 4
+- **A Chromium layout suite in the harness or CI.**
+  - The L-1…L-9 checks, plus the session-3 sweep: every tab at 320 px, no overflow, all tabs
+    fully visible.
+  - That sweep lives only in this session's scratchpad. Rebuild it under `test/layout/` with
+    Playwright (`executablePath: '/opt/pw-browsers/chromium'`).
+- **Fonts:** `@font-face` isn't wired up yet, so every measurement this session used fallback
+  fonts. Re-measure the tabs at 320 px once Plex/Anton load.
+- **Swipe:** a swiped row pokes past the card edge (`translateX(28px)`). Clip it with
+  `overflow: hidden` on `.arc` if focus rings survive.
+- **Real-device check:** swipe and long-press on iOS (passive listeners; the lift's click is
+  swallowed after a long-press).
+- **Offline QR:** `sw.js` already precaches `qrcode.js`. Verify the QR draws offline once the
+  service worker work lands.
+- **Listener budget:** 9 used. S4 adds keydown (V-7, XM-3) and the install prompt (F-37), for 11
+  of 12.
+- **content-visibility (V-15)** is still the "decide in S4" item. The proposed resolution
+  (render an era only on first open) is what v3 already does.
+
+### Session 4 starts with: look and PWA (spec §7.4)
+Work through every S4 line in `FEATURE-INVENTORY.md` (51):
+1. **The token system and skins** (V-5, F-52…F-54, F-51, S-2…S-5, S-9, S-20, T-40, T-45, T-54…T-57,
+   T-98, T-103, XM-17, XM-18):
+   - one `:root` token block;
+   - skins as pure CSS that never move or hide a control;
+   - the reachability guard;
+   - density, text size, mark style, button size, dyslexia font, the paper swatches and the
+     skin beacon.
+2. **Banners and table view** (F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51, L-7, L-8).
+3. **The sticky stack measured at runtime** (F-58, L-1…L-6), proved in real Chromium.
+4. **PWA** (F-35…F-38, F-59, XM-7): offline readiness, the online/offline class, the install
+   prompt, the update flow and "Check for updates". Remember the iOS traps in CLAUDE.md.
+5. **Accessibility and performance** (V-7, XM-3, V-8, V-18, FP-11): keyboard shortcuts,
+   critical CSS inline, a preloaded display font, reduced motion and smooth panel animation.
+6. **The content-visibility decision** (V-15), then this file's checkpoint.

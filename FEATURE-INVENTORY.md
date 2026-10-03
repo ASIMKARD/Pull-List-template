@@ -105,7 +105,7 @@ store is listed only to record where the value lived.
 | S-14 | Hide skipped `#skipChip` | view.hideSkip | off | S2 | present (92-filters: Reading section) |
 | S-15 | Notes only `#notesChip` | view.notesOnly | off | S3 | present (99-display: a display-only filter chip in the panel's Reading section) |
 | S-16 | Tap to reveal notes `#revealChip` | view.reveal | off | S3 | present (99-display) |
-| S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | re-express (decided 3 Oct): no checklist jump, because the landing is always collapsed; the Reading tab resumes at the first unread (F-2) |
+| S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | re-express → present (decided 3 Oct): no checklist jump, because the landing is always collapsed; the Reading tab resumes at the first unread (9a-reading: boot on Reading resumes, checklist stays collapsed) |
 | S-18 | Pace `#segPace` | view.pace | 12/week | S3 | present (98-tabs-settings) |
 | S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | present (98-tabs-settings) |
 | S-20 | Button size `#segTap` | view.tap | standard | S4 | todo |

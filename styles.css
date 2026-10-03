@@ -134,10 +134,10 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .notepop { margin: 0; padding: 6px 10px 8px 50px; background: var(--accent-wash); }
 
 /* ---- tabs and panes ---- */
-.tabs { display: flex; gap: 2px; margin: 0 16px var(--gap); border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs { display: flex; gap: 0; margin: 0 16px var(--gap); border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tab {
-  flex: 1 0 auto; padding: 10px 6px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--ink-soft);
-  font-weight: 600; white-space: nowrap;
+  flex: 1 0 auto; padding: 10px 2px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--ink-soft);
+  font-weight: 600; white-space: nowrap; font-size: clamp(13px, 4.2vw, 15px);   /* four tabs fit at 320 px */
 }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 
