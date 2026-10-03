@@ -162,8 +162,13 @@ module.exports = async function (t) {
   // ---- no franchise strings in template code ----
   const REAL = /spider|spidey|\bultimate\b|sonic|x-?men|batman|superman|wonder woman|absolute|archie|\bidw\b|hulk|lantern|spawn|dark nights|fantastic four|new 52|SPDY|xmen/i;
   const FIXTURE = /fixture|vela|orrin|kestrel|shattered|mirror hero|quill|delune|starter|placeholder writer/i;
+  // "absolute" is a franchise (the Absolute line) AND a CSS keyword: the CSS
+  // declaration is ignored, the word anywhere else is still caught.
+  const noCssKeywords = src => src.replace(/position\s*:\s*absolute/gi, 'position: X');
+  t.ok('franchise scan: "position: absolute" is not a franchise string, "Absolute Batman" still is',
+       !REAL.test(noCssKeywords('.a { position: absolute; }')) && REAL.test(noCssKeywords('Absolute Batman')));
   for (const f of TEMPLATE_CODE) {
-    const src = read(f);
+    const src = noCssKeywords(read(f));
     const hit = (src.match(REAL) || src.match(FIXTURE) || [])[0];
     t.ok(f + ': no franchise or fixture strings', !hit, 'found: ' + hit);
   }

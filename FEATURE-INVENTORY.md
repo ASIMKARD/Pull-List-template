@@ -24,7 +24,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-1 | Checklist tab: rows grouped period band → era → arc, ordered by sort key | S2 | present (90-render: band → era → arc → rows, reading order) |
 | F-2 | Reading tab: one-issue stepper (n of N, era pill, title, arc · type, note, arc blurb, Skip / Mark Read, Prev / Pin / Next); resumes at first unread until the user steps | S3 | present (9a-reading: n of N, era + format pills, title, arc · type, state, note, blurb, Skip / Mark <verb>, Previous / Pin / Next, resumes at the first entry not done until you step) |
 | F-3 | Reviews tab: 1–5 stars + text per issue, list sorted by key, tap to jump to the issue | S3 | re-express → present (9b-reviews: per arc, as the session-2 migration maps them; 1–5 stars + text, listed by each arc's first key, tap to jump; unmatched old reviews kept and listed) |
-| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | todo (partial: Reading behaviour, Display, Touch, Bulk actions, Data present — 98/99/9c; Backup step 8) |
+| F-4 | Settings tab, sectioned: Display, Reading behaviour, Touch controls, Bulk actions, Data | S3 | present (98-tabs-settings: 6 sections — Reading behaviour, Display, Touch, Bulk actions, Data, Backup) |
 | F-5 | Four-state marks cycling unread → reading → read → skip; done = read or skip | S2 | present (91-marks: four-state cycle through one setMark path) |
 | F-6 | Medium-aware labels: comic Read/Reading, game Not started/Playing/Beaten, screen Unwatched/Watching/Watched; Reading-tab button verb follows | S2 | present (90-render, 91-marks: game Not started → Beaten; 9a-reading: Reading-tab verbs Mark Read / Beaten / Watched) |
 | F-7 | Inert rows (GAPNOTE, RENUM) render as notes with no mark and never count toward progress | S2 | present (90-render: inert rows render with no mark, never count) |
@@ -50,7 +50,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-27 | Jump to next unread (button) and "jump to first unread" on load (setting) | S2 | present — next unread (94-navigation); jump-on-load re-expressed (S-17) |
 | F-28 | Bookmarks: toggle per row, list in Settings sorted as displayed, jump, remove | S3 | present (98-tabs-settings: list sorted as displayed, jump, remove) |
 | F-29 | `jumpToIssue`: switches to Checklist, expands collapsed ancestors outermost-first, scrolls, flashes the row; toast when filtered out | S2 | present (94-navigation; 98-tabs-settings: switches to Checklist) |
-| F-30 | QR sync: 2-bit packed progress + bookmarks + settings + filters + reviews, franchise-prefixed code, QR when it fits, copy-code fallback, paste-to-import with confirm | S3 | todo |
+| F-30 | QR sync: 2-bit packed progress + bookmarks + settings + filters + reviews, franchise-prefixed code, QR when it fits, copy-code fallback, paste-to-import with confirm | S3 | re-express → present (9e-sync: compact QR (RLE or raw, whichever is smaller) holding a #sync= link; full copy-code; paste with preview; Merge or Replace with confirm; over-capacity falls back to the copy-code; a real-Chromium QR decodes back exactly) |
 | F-31 | About & legend box (legend + maintenance notes from data) | S3 | present (98-tabs-settings: title, counts, build, legend and maintenance from data) |
 | F-32 | Clear all progress (confirm; keeps reviews and bookmarks) | S3 | present (98-tabs-settings: in-page confirm, keeps reviews + bookmarks, snapshot undo restores exactly) |
 | F-33 | Toast with optional action button | S2 | present (94-navigation: toast with action) |
@@ -282,7 +282,7 @@ installed app once online.
 | D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | present (9b-reviews: `.b.rv` targetable, opens the arc's review editor) |
 | D-5 | phantom "Elseworlds (ALT)" era appended | build never adds an era not in the data | S1 | present (20-build: output eras == dataset eras) |
 | D-6 | empty strand list blanks the app | build inserts one universal strand | S1 | present (20-build: 64-era stress with no strands → one universal strand) |
-| D-7 | sync placeholder hardcoded to another tracker's prefix | QR/sync prefix derived from `franchise.key` | S3 | todo |
+| D-7 | sync placeholder hardcoded to another tracker's prefix | QR/sync prefix derived from `franchise.key` | S3 | present (9e-sync: prefix from franchise.key, e.g. FIXTURE: / BIG:; another tracker's code is refused) |
 | D-8 | workbook columns read by position | named fields everywhere; build output independent of field order | S1 | present (60-validation: shuffled field order → byte-identical data.js) |
 | D-9 | duplicate `switchTab` / `jumpToIssue` declarations | guard: no function defined twice | S1 | present (80-guards) |
 | D-10 | triple `jumpToIssue` breaks jumps into collapsed sections | one `jumpToIssue` that expands ancestors | S2 | present (94-navigation) |
@@ -319,7 +319,7 @@ installed app once online.
 | V-23 | `build_workbook.py` generates the workbook from `dataset.json`, reading by header name | S5 | todo |
 | V-24 | Stable `id` (progress) separate from canonical `issueId`; events dedupe on `issueId`; id-stability check with `retiredIds` | S1 | present (20-build id stability, 30-identity) |
 | V-25 | Canonical events in `events/`, each stating its era in `dataset.json`; drift check by hash | S1 | present (30-identity placement, 50-events hash drift) |
-| V-26 | Export and import (file backup) | S3 | todo |
+| V-26 | Export and import (file backup) | S3 | present (9e-sync) |
 | V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | present (9c-bulk-touch: Undo restores every touched row's previous state) |
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
 | V-29 | Per-format durations (decided 1 Oct, untimed 3 Oct). Comics are one issue each at minutes per issue. Shows use `durations: {screen: N}`, which a row can override. Games carry their own `duration`, and a missing one warns with a coverage %, adds nothing and shows `+N untimed`. Time left sums each row's own minutes. Finish-by = minutes left ÷ (issues/week × minutes/issue), and comics-only results are bit-identical to session 2 | S3 | present (97-durations: build + coverage warning, own-minutes figures, untimed marker, format-as-plan totals, comics-only exactness on 4 datasets × 12 pace pairs + exhaustive arithmetic) |
@@ -364,8 +364,8 @@ installed app once online.
 | XM-2 | Pace as minutes per issue (quick 8 / average 15 / deep 25) driving "time left" per banner | S2/S3 | present — both, decided 2 Oct (95-pace); shows and games use their own durations (V-29, 97-durations) |
 | XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | todo |
 | XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | present (98-tabs-settings) |
-| XM-5 | File backup: export JSON download, import from file | S3 | todo (V-26) |
-| XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | todo |
+| XM-5 | File backup: export JSON download, import from file | S3 | present (9e-sync: export `<key>-backup-YYYY-MM-DD.json`, import from file) |
+| XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | present (9e-sync: #sync= imports on open, merges, never downgrades read, reports counts, clears the link) |
 | XM-7 | "Check for updates" button (`reg.update()`) | S4 | todo |
 | XM-8 | Era navigation style: chips / dropdown / scroll | S3 | present (99-display: a jump bar, chips or dropdown, that opens and scrolls to an era and never filters; plain scroll is the default) |
 | XM-9 | Landmarks-only filter; landmarks inline vs tap-to-reveal | S3 | re-express → present (99-display: landmarks are the row note, so landmarks-only = notes only and inline vs tap = tap to reveal) |
@@ -386,8 +386,8 @@ installed app once online.
 | ID | Requirement | Session | Status |
 |---|---|---|---|
 | X-1 | Display mode "layout C": per-row arc labels with no arc headers (Archie's arrangement) | S3 | present (99-display: "Label on each row" arc headings) |
-| X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | todo (partial: Settings "Import from previous version" present, 98-tabs-settings; old QR codes and backups step 8) |
-| X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | todo |
+| X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | present (98-tabs-settings: Import from previous version; 9e-sync: old v2 codes via `qrPrefix`, positions rebuilt with retiredIds) |
+| X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | present (9e-sync: full format keyed on id, versioned, unknown ids ignored and reported, new rows unread) |
 
 ## B — v2 bugs found while inventorying (don't port them)
 
@@ -396,6 +396,6 @@ installed app once online.
 | B-1 | `#paneReading` and `#paneReviews` are each declared **twice** in v2's HTML | guard: no duplicate ids in the shell | present — guard (80-guards: no duplicate ids in index.html) |
 | B-2 | Bulk-mark undo deletes every touched mark instead of restoring prior states (a `reading` row becomes `unread`) | undo snapshots previous states (V-27) | present (9c-bulk-touch: "reading" comes back as reading, "skip" as skipped; v2's delete-all undo fails 6 assertions) |
 | B-3 | Swipe marks write `state.progress` directly, bypassing the mark path (no Reading/banner refresh) | one mark function for every surface (D-1) | present (one setMark path; 91-marks) |
-| B-4 | QR import replaces progress wholesale; the code is rejected after any data change (`dataVersion`) | merge import keyed on ids (X-3, XM-6) | todo (S3) |
+| B-4 | QR import replaces progress wholesale; the code is rejected after any data change (`dataVersion`) | merge import keyed on ids (X-3, XM-6) | present (9e-sync: Merge keyed on ids; the full code survives list changes; only the compact QR is tied to the dataVersion) |
 | B-5 | `jumpBtn` falls back to `alert()` while everything else uses the toast | toast everywhere | present (94-navigation) |
 | B-6 | About box and others set inline `style` attributes | no inline styles in templates; tokens only | present (80-guards, 90-render: no [style] in rendered markup) |

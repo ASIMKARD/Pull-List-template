@@ -674,6 +674,12 @@ def build(dataset_path, previous_datajs=None):
         'timeline': sorted(range(len(rows)), key=lambda i: (ARC[rows[i]['arc']], rows[i]['_key'])),
         'legend': [{'term': x.get('term', ''), 'meaning': x.get('meaning', '')} for x in ds.get('legend') or []],
         'maintenance': ds.get('maintenance') or [],
+        # sync: a compact QR code stores marks by POSITION, so it is only valid
+        # for the same rows in the same order; this hash says which list it was.
+        'dataVersion': hashlib.sha256('\n'.join(r['id'] for r in rows).encode('utf-8')).hexdigest()[:12],
+        # the old (v2) QR order is rebuilt from legacy ids PLUS retired ones,
+        # so a retired issue keeps its slot and later positions don't shift
+        'retiredIds': sorted(retired),
     }
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,

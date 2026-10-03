@@ -1283,6 +1283,305 @@
   }
 
   /* ======================================================================
+     SYNC AND BACKUP (decided 3 Oct). Two formats, both prefixed from
+     franchise.key, so one tracker never accepts another's code (D-7):
+     - QR (compact): a version, the dataVersion hash, every row's mark as a
+       2-bit state in the CURRENT row order (run-length or raw packing,
+       whichever is smaller) and the bookmarks as positions, base64url. Only
+       valid for the same list: a different dataVersion is refused. The QR
+       holds it as a #sync= link, so scanning opens the tracker and merges.
+     - Full (copy-code, #sync= link, backup file): id-keyed JSON with marks,
+       bookmarks, reviews and settings. Tolerant: unknown ids are ignored and
+       rows added since stay unread (X-3).
+     Import is Merge (the default; never downgrades a read mark) or Replace
+     (exact, after an in-page confirm, with a full-state snapshot and Undo).
+     ====================================================================== */
+  var TAG = D.franchise.key.toUpperCase().replace(/[^A-Z0-9]/g, '') + ':';
+  var SBIT = { unread: 0, read: 1, reading: 2, skip: 3 }, SNAME = ['unread', 'read', 'reading', 'skip'];
+  var STALE_QR = 'That QR code was made from a different version of this list, so its positions would not line up. ' +
+    'Use the copy-code or a backup file instead: they survive list updates.';
+  function toB64url(bin) { return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function fromB64url(str) {
+    var b = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    return atob(b);
+  }
+  function utf8ToB64url(str) { return toB64url(unescape(encodeURIComponent(str))); }
+  function b64urlToUtf8(str) { return decodeURIComponent(escape(fromB64url(str))); }
+  function pushVarint(out, n) { while (n > 127) { out.push((n % 128) + 128); n = Math.floor(n / 128); } out.push(n); }
+  function readVarint(bin, at) {
+    var n = 0, mul = 1, c;
+    do {
+      if (at.i >= bin.length) throw new Error(STALE_QR);
+      c = bin.charCodeAt(at.i++);
+      n += (c % 128) * mul; mul *= 128;
+    } while (c >= 128);
+    return n;
+  }
+  function bytesToBin(arr) { var bin = ''; for (var k = 0; k < arr.length; k++) bin += String.fromCharCode(arr[k]); return bin; }
+
+  /* ---- the compact QR code ---- */
+  function packQR() {
+    var states = [], rle = [], raw = [], body = [], i, j;
+    for (i = 0; i < N; i++) states.push(isInert(i) ? 0 : SBIT[stateOf(i)]);
+    for (i = 0; i < N; i = j) {                                // runs: one varint each, length x 4 + state
+      for (j = i; j < N && states[j] === states[i]; j++) { /* extend the run */ }
+      pushVarint(rle, (j - i) * 4 + states[i]);
+    }
+    for (i = 0; i < N; i += 4) raw.push(states[i] | (states[i + 1] || 0) << 2 | (states[i + 2] || 0) << 4 | (states[i + 3] || 0) << 6);
+    var useRle = rle.length <= raw.length;
+    body.push(useRle ? 1 : 2);
+    pushVarint(body, N);
+    body = body.concat(useRle ? rle : raw);
+    var marks = bookmarked().slice().sort(function (a, b) { return a - b; }), prev = 0;
+    pushVarint(body, marks.length);
+    marks.forEach(function (p) { pushVarint(body, p - prev); prev = p; });
+    return TAG + 'q3.' + D.dataVersion + '.' + toB64url(bytesToBin(body));
+  }
+  function unpackQR(rest) {
+    var dot = rest.indexOf('.');
+    if (rest.slice(0, dot) !== D.dataVersion) throw new Error(STALE_QR);
+    var bin = fromB64url(rest.slice(dot + 1)), at = { i: 1 }, mode = bin.charCodeAt(0), n = readVarint(bin, at);
+    if (n !== N || (mode !== 1 && mode !== 2)) throw new Error(STALE_QR);
+    var states = [], i;
+    if (mode === 1) {
+      while (states.length < n) {
+        var v = readVarint(bin, at), len = Math.floor(v / 4);
+        if (!len || states.length + len > n) throw new Error(STALE_QR);
+        for (i = 0; i < len; i++) states.push(v % 4);
+      }
+    } else {
+      for (i = 0; i < n; i++) states.push((bin.charCodeAt(at.i + (i >> 2)) >> ((i & 3) * 2)) & 3);
+      at.i += Math.ceil(n / 4);
+    }
+    var out = { marks: {}, bookmarks: [] }, nb = readVarint(bin, at), pos = 0;
+    states.forEach(function (st, k) { if (st && !isInert(k)) out.marks[D.ids[k]] = SNAME[st]; });
+    for (i = 0; i < nb; i++) { pos += readVarint(bin, at); if (pos < N) out.bookmarks.push(D.ids[pos]); }
+    return out;
+  }
+  function qrText() { return location.href.split('#')[0] + '#sync=' + packQR(); }
+
+  /* ---- the full, id-keyed format ---- */
+  function fullBody() {
+    return { v: 3, key: D.franchise.key, dataVersion: D.dataVersion, at: Date.now(),
+             marks: progress.marks, bookmarks: progress.bookmarks, reviews: reviews, settings: settings };
+  }
+  function fullCode() { return TAG + 's3.' + utf8ToB64url(JSON.stringify(fullBody())); }
+  function bodyData(body) {
+    if (!body || typeof body !== 'object' || body.v !== 3) throw new Error('That is not a backup from this version of the tracker.');
+    if (body.key !== D.franchise.key) throw new Error('That backup is from a different tracker.');
+    var marks = {};
+    Object.keys(body.marks || {}).forEach(function (id) { if (CYCLE.indexOf(body.marks[id]) > 0) marks[id] = body.marks[id]; });
+    return { marks: marks, bookmarks: (Array.isArray(body.bookmarks) ? body.bookmarks : []).map(String),
+             reviews: body.reviews && typeof body.reviews === 'object' ? body.reviews : {}, settings: body.settings || null };
+  }
+
+  /* ---- old (v2) codes: positions in v2's key order. Migrated rows keep
+     their old numeric key as id; retiredIds keep their slots, so a retired
+     issue cannot shift every later position (X-2). ---- */
+  function legacyOrder() {
+    var seen = {}, out = [];
+    D.ids.concat(D.retiredIds || []).forEach(function (id) { if (/^\d+$/.test(id) && !seen[id]) { seen[id] = 1; out.push(id); } });
+    return out.sort(function (a, b) { return +a - +b; });
+  }
+  function readV2Code(rest) {
+    var body;
+    try { body = JSON.parse(decodeURIComponent(escape(atob(rest)))); } catch (e) { throw new Error('That old code could not be read.'); }
+    var order = legacyOrder();
+    var d = order.length ? order.length + '-' + order[0] + '-' + order[order.length - 1] : '';
+    if (body.d !== d) throw new Error('That old code was made from a different version of the old list, so its positions would not line up.');
+    var bin = atob(body.p || ''), out = { marks: {}, bookmarks: [], reviews: {} };
+    order.forEach(function (id, k) {
+      var v = (bin.charCodeAt(k >> 2) >> (6 - (k & 3) * 2)) & 3;     // v2 packed the first row in the high bits
+      if (v && ID_I[id] !== undefined && !isInert(ID_I[id])) out.marks[id] = SNAME[v];
+    });
+    (body.b || []).forEach(function (k) { if (ID_I[String(k)] !== undefined) out.bookmarks.push(String(k)); });
+    Object.keys(body.r || {}).forEach(function (k) {                 // per-issue reviews map onto arcs, as the migration does
+      var i = ID_I[String(k)], r = body.r[k] || {};
+      if (i === undefined) return;
+      var arcId = D.arcs[D.issues[i][2]].id, cur = out.reviews[arcId] || { r: 0, t: '' };
+      out.reviews[arcId] = { r: Math.max(cur.r, +r.r || 0), t: [cur.t, r.t || ''].filter(Boolean).join('\n\n') };
+    });
+    return out;
+  }
+
+  /* ---- reading any code: QR, full, a #sync= link, or an old v2 code ---- */
+  function parseCode(text) {
+    text = String(text || '').trim();
+    var link = text.match(/#sync=(.+)$/);
+    if (link) text = decodeURIComponent(link[1]);
+    if (text.indexOf(TAG + 'q3.') === 0) return { kind: 'qr', data: unpackQR(text.slice(TAG.length + 3)) };
+    if (text.indexOf(TAG + 's3.') === 0) {
+      var body;
+      try { body = JSON.parse(b64urlToUtf8(text.slice(TAG.length + 3))); } catch (e) { throw new Error('That code is damaged: copy it again.'); }
+      return { kind: 'full', data: bodyData(body) };
+    }
+    var leg = D.franchise.storage && D.franchise.storage.legacy;
+    if (leg && leg.qrPrefix && text.indexOf(leg.qrPrefix) === 0) return { kind: 'v2', data: readV2Code(text.slice(leg.qrPrefix.length)) };
+    if (/^[A-Z0-9]+[0-9]*:/.test(text)) throw new Error('That code is from a different tracker.');
+    throw new Error('That is not a sync code for this tracker.');
+  }
+  function parseBackupFile(txt) {
+    var body;
+    try { body = JSON.parse(txt); } catch (e) { throw new Error('That file is not a backup.'); }
+    if (!body || body.format !== 'pull-list-backup') throw new Error('That file is not a backup from this tracker.');
+    return { kind: 'full', data: bodyData(body) };
+  }
+
+  /* ---- Merge: fills in, never downgrades a read mark ---- */
+  function mergeIn(data) {
+    var res = { marks: 0, kept: 0, unknown: 0, bookmarks: 0, reviews: 0 };
+    Object.keys(data.marks || {}).forEach(function (id) {
+      var st = data.marks[id], i = ID_I[id];
+      if (CYCLE.indexOf(st) < 1) return;
+      if (i === undefined || isInert(i)) { res.unknown++; return; }      // rows that left the list: ignored
+      var cur = stateOf(i);
+      if (cur === st) return;
+      if (cur === 'read') { res.kept++; return; }
+      applyMark(i, st); res.marks++;
+    });
+    (data.bookmarks || []).forEach(function (id) {
+      if (ID_I[id] !== undefined && progress.bookmarks.indexOf(id) === -1) { progress.bookmarks.push(id); res.bookmarks++; }
+    });
+    Object.keys(data.reviews || {}).forEach(function (arcId) {
+      var r = data.reviews[arcId];
+      if (ARC_I[arcId] === undefined || reviews[arcId] || !r || (!r.r && !r.t)) return;
+      reviews[arcId] = { r: +r.r || 0, t: String(r.t || '') }; res.reviews++;
+    });
+    afterMarks();
+    save('reviews', reviews);
+    renderPinbar();
+    if (activeTab === 'reading') renderReading();
+    return res;
+  }
+  function mergeSummary(res) {
+    var bits = [];
+    if (res.marks) bits.push(res.marks + ' mark' + (res.marks === 1 ? '' : 's'));
+    if (res.bookmarks) bits.push(res.bookmarks + ' bookmark' + (res.bookmarks === 1 ? '' : 's'));
+    if (res.reviews) bits.push(res.reviews + ' review' + (res.reviews === 1 ? '' : 's'));
+    return (bits.length ? 'Merged ' + bits.join(', ') + '.' : 'Nothing new to merge.') +
+      (res.kept ? ' Kept ' + res.kept + ' read mark' + (res.kept === 1 ? '' : 's') + ' you already had.' : '') +
+      (res.unknown ? ' ' + res.unknown + ' no longer in the list.' : '');
+  }
+  /* ---- Replace: exact, snapshotted, undoable. A QR code carries progress
+     only, so it replaces progress only; a full code replaces everything. ---- */
+  function replaceWith(parsed) {
+    var snap = takeSnapshot(), data = parsed.data, q = F.q, cr = F.creator;
+    progress = { marks: JSON.parse(JSON.stringify(data.marks)), bookmarks: data.bookmarks.slice() };
+    if (parsed.kind === 'full') {
+      reviews = JSON.parse(JSON.stringify(data.reviews));
+      if (data.settings) { settings = withDefaults(JSON.parse(JSON.stringify(data.settings))); filtersFromSettings(); F.q = q; F.creator = cr; }
+      save('reviews', reviews);
+    }
+    saveProgress(); saveSettings();
+    rerenderAll();
+    toast('Replaced from the ' + (parsed.kind === 'full' ? 'backup' : 'code') + '.', 'Undo', function () { restoreSnapshot(snap); toast('Restored what you had before.'); });
+  }
+
+  /* ---- UI state (session-only) and actions ---- */
+  var sync = { open: false, pending: null, error: '' };
+  function readCode(text) {
+    try { sync.pending = parseCode(text); sync.error = ''; }
+    catch (e) { sync.pending = null; sync.error = e.message; }
+    confirming = '';
+    renderSettings();
+  }
+  function readFile(file) {
+    var fr = new FileReader();
+    once(fr, ['load', 'error'], function (ev) {
+      if (ev.type === 'error') { sync.pending = null; sync.error = 'That file could not be read.'; }
+      else {
+        try { sync.pending = parseBackupFile(fr.result); sync.error = ''; }
+        catch (e) { sync.pending = null; sync.error = e.message; }
+      }
+      confirming = '';
+      if (activeTab === 'settings') renderSettings();
+    });
+    fr.readAsText(file);
+  }
+  function exportBackup() {
+    var body = fullBody(), out = { format: 'pull-list-backup' };
+    Object.keys(body).forEach(function (k) { out[k] = body[k]; });
+    var json = JSON.stringify(out, null, 1), name = D.franchise.key + '-backup-' + new Date(Date.now()).toISOString().slice(0, 10) + '.json';
+    var a = document.createElement('a');
+    a.href = window.URL && window.URL.createObjectURL && window.Blob ? window.URL.createObjectURL(new window.Blob([json], { type: 'application/json' }))
+                                                                    : 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('Backup saved as ' + name + '.');
+    return json;
+  }
+  /* one registration helper for one-off events (the lazy QR script, a file
+     read): keeps the listener budget honest */
+  function once(target, types, fn) {
+    types.forEach(function (type) { target.addEventListener(type, fn, { once: true }); });
+  }
+  function withQR(fn) {
+    if (window.qrcode) { fn(); return; }
+    var sc = $('script[data-qr]');
+    if (!sc) { sc = document.createElement('script'); sc.src = './qrcode.js'; sc.setAttribute('data-qr', '1'); document.head.appendChild(sc); }
+    once(sc, ['load', 'error'], fn);
+  }
+  function drawQR() {
+    var box = $('#qrbox');
+    if (!box) return;
+    if (!window.qrcode) { box.innerHTML = '<p class="muted">The QR maker could not load (offline?). Use the copy-code below.</p>'; return; }
+    try {
+      var q = window.qrcode(0, 'L');
+      q.addData(qrText());
+      q.make();
+      box.innerHTML = q.createSvgTag({ scalable: true, alt: 'Sync QR code' });
+      box.setAttribute('data-version', String((q.getModuleCount() - 17) / 4));
+    } catch (e) {                                              // over capacity: fall back to the copy-code, cleanly
+      box.innerHTML = '<p class="muted">Too much progress for a QR code: use the copy-code below instead.</p>';
+      box.setAttribute('data-version', '');
+    }
+  }
+  function copyText(text, what) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(what + ' copied.'); }, function () { toast('Copy failed: select it and copy by hand.'); });
+    } else {
+      var out = $('#syncOut'); if (out) { out.focus(); out.select(); }
+      toast('Selected: copy it with your device\'s Copy.');
+    }
+  }
+  /* #sync= on open (XM-6): merge, report, and clear the link. */
+  function importFromHash() {
+    var m = location.hash.match(/^#sync=(.+)$/);
+    if (!m) return false;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// */ }
+    try { toast(mergeSummary(mergeIn(parseCode(decodeURIComponent(m[1])).data))); }
+    catch (e) { toast(e.message); }
+    return true;
+  }
+  function backupHtml() {
+    var h = srow('Sync', '<button type="button" class="tool" data-act="sync-show" aria-expanded="' + sync.open + '">' +
+      (sync.open ? 'Hide sync code' : 'Show sync code') + '</button>');
+    if (sync.open) {
+      h += '<div class="syncbox"><div class="qrbox" id="qrbox" aria-label="QR code: scan it on your other device"><p class="muted">Making the QR code…</p></div>' +
+        '<p class="muted shelp">Scan it on your other device, or copy the code. The QR holds marks and bookmarks; the code also carries reviews and settings.</p>' +
+        '<textarea class="synctext" id="syncOut" readonly rows="3" aria-label="Your sync code">' + escapeHtml(fullCode()) + '</textarea>' +
+        '<button type="button" class="tool" data-act="sync-copy">Copy code</button><button type="button" class="tool" data-act="sync-link">Copy link</button></div>';
+    }
+    h += '<h3 class="ssub">Bring data in</h3><textarea class="synctext" id="syncIn" rows="2" placeholder="Paste a sync code or link" aria-label="Paste a sync code"></textarea>' +
+      '<button type="button" class="tool" data-act="sync-read">Read code</button>';
+    if (sync.error) h += '<p class="syncerr" role="alert">' + escapeHtml(sync.error) + '</p>';
+    if (sync.pending) {
+      var d = sync.pending.data, nm = Object.keys(d.marks).length, nb = d.bookmarks.length, nr = Object.keys(d.reviews || {}).length;
+      h += '<div class="confirm syncpend"><p>' + (sync.pending.kind === 'v2' ? 'A code from the previous version: ' : sync.pending.kind === 'qr' ? 'A QR code: ' : 'A backup: ') +
+        nm + ' mark' + (nm === 1 ? '' : 's') + ', ' + nb + ' bookmark' + (nb === 1 ? '' : 's') + (nr ? ', ' + nr + ' review' + (nr === 1 ? '' : 's') : '') + '.</p>' +
+        (confirming === 'replace'
+          ? '<p>Replace everything here with it? What you have now is kept for Undo.</p><button type="button" class="tool danger" data-act="sync-replace-yes">Replace everything</button>' +
+            '<button type="button" class="tool" data-act="sync-replace-no">Cancel</button>'
+          : '<button type="button" class="tool" data-act="sync-merge">Merge (keeps what you have read)</button>' +
+            '<button type="button" class="tool" data-act="sync-replace-ask">Replace…</button>') + '</div>';
+    }
+    h += '<h3 class="ssub">Backup file</h3><button type="button" class="tool" data-act="backup-export">Export backup</button>' +
+      '<label class="tool filelabel">Import from file<input class="vh" type="file" id="importFile" accept=".json,application/json"></label>';
+    return h;
+  }
+
+  /* ======================================================================
      SETTINGS — sectioned (F-4); string templates like everything else
      ====================================================================== */
   function seg(act, label, opts, cur) {
@@ -1359,7 +1658,9 @@
       (D.franchise.storage && D.franchise.storage.legacy
         ? srow('Previous version', '<button type="button" class="tool" data-act="import-legacy">Import from previous version</button>') : '') +
       clearHtml() + aboutHtml());
+    h += sset('backup', 'Backup', backupHtml());
     $('#settings').innerHTML = h;
+    if (sync.open) withQR(drawQR);
     if (keep && keep[0]) {                                     // keep keyboard focus across the re-render
       var again = $$('#settings [data-act="' + keep[0] + '"]').filter(function (el) {
         return el.dataset.v === keep[1] && el.dataset.k === keep[2];
@@ -1486,6 +1787,19 @@
       case 'clear-no': confirming = ''; renderSettings(); break;
       case 'clear-yes': clearProgress(); break;
       case 'import-legacy': runImportLegacy(); break;
+      case 'sync-show': sync.open = !sync.open; renderSettings(); break;
+      case 'sync-copy': copyText(fullCode(), 'Code'); break;
+      case 'sync-link': copyText(location.href.split('#')[0] + '#sync=' + fullCode(), 'Link'); break;
+      case 'sync-read': readCode($('#syncIn') ? $('#syncIn').value : ''); break;
+      case 'sync-merge': {
+        var mres = mergeIn(sync.pending.data);
+        sync.pending = null; renderSettings(); toast(mergeSummary(mres));
+        break;
+      }
+      case 'sync-replace-ask': confirming = 'replace'; renderSettings(); break;
+      case 'sync-replace-no': confirming = ''; renderSettings(); break;
+      case 'sync-replace-yes': { var pend = sync.pending; sync.pending = null; confirming = ''; replaceWith(pend); break; }
+      case 'backup-export': exportBackup(); break;
     }
   }
   /* change: the one listener for <select> controls (era dropdown now; bulk
@@ -1495,6 +1809,7 @@
     var id = ev.target.id;
     if (id === 'eraJump' && ev.target.value !== '') { jumpToEra(+ev.target.value); ev.target.value = ''; }
     if (BULK_SELECTS[id]) bulkSel[BULK_SELECTS[id]] = +ev.target.value;   // kept across Settings re-renders
+    if (id === 'importFile' && ev.target.files && ev.target.files[0]) readFile(ev.target.files[0]);
   }
 
   /* ======================================================================
@@ -1588,8 +1903,9 @@
   renderList();
   applyPrefs();
   showTab(settings.tab);
+  var synced = importFromHash();
   if (migration && legacySummary(migration)) toast(legacySummary(migration));
-  else checkRefresh();
+  else if (!synced) checkRefresh();
 
   /* Small public surface for session 3's Settings actions (and the harness). */
   window.PullList = {
@@ -1597,6 +1913,9 @@
     jumpToIssue: jumpToIssue,
     showTab: showTab,
     pacePresets: { minutes: PACE_MINUTES, weekly: PACE_WEEKLY },
-    setPace: setPace
+    setPace: setPace,
+    syncCodes: function () { return { qr: packQR(), qrText: qrText(), full: fullCode() }; },
+    readCode: function (text) { return parseCode(text); },
+    backupText: function () { var body = fullBody(), out = { format: 'pull-list-backup' }; Object.keys(body).forEach(function (k) { out[k] = body[k]; }); return JSON.stringify(out); }
   };
 })();

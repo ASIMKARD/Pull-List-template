@@ -49,7 +49,7 @@ module.exports = async function (t) {
   t.ok('the next boot opens on the remembered tab', visible($('#settings')) && $('#tab-settings').getAttribute('aria-selected') === 'true');
   t.ok('…and the checklist behind it still landed collapsed (no rows rendered)', d.querySelectorAll('.row').length === 0);
   t.eq('Settings is sectioned, at least 4 heads (T-11)', $$('#settings .sset > .seth').map(h => h.textContent),
-       ['Reading behaviour', 'Display', 'Touch', 'Bulk actions', 'Data']);
+       ['Reading behaviour', 'Display', 'Touch', 'Bulk actions', 'Data', 'Backup']);
   app.window.close();
 
   // ------------------------------------------- pace controls and readout

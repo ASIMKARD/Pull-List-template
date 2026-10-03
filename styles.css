@@ -13,6 +13,7 @@
   --accent-wash: #e3ecf8;
   --good: #2e7d4f;
   --danger: #a3352a;
+  --qr-paper: #ffffff;   /* a QR scans reliably only on white, whatever the skin */
   --track: #e6e2d8;
   --shadow: rgba(27, 29, 36, 0.12);
   --radius: 10px;
@@ -233,6 +234,17 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .preset { display: inline-flex; align-items: center; }
 .preset .chip { margin: 0; }
 .preset-form { display: flex; gap: 8px; }
+
+/* ---- sync and backup ---- */
+.syncbox { margin: 6px 0 10px; }
+.qrbox { width: min(260px, 100%); margin: 6px 0; padding: 8px; background: var(--qr-paper); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.qrbox svg { display: block; width: 100%; height: auto; }
+.synctext { display: block; width: 100%; margin: 6px 0; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--paper); color: var(--ink); font: 12px/1.4 var(--font-mono); word-break: break-all; resize: vertical; }
+.syncbox .tool, .syncpend .tool, #set-backup > .tool { margin: 0 8px 6px 0; }
+.syncerr { margin: 6px 0; color: var(--danger); font-size: 14px; }
+.filelabel { display: inline-block; position: relative; }
+.vh { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
 
 /* ---- per-format progress lines ---- */
 .pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }

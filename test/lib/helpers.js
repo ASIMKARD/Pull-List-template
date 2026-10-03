@@ -79,7 +79,7 @@ function boot(dataDir, opts) {
   }
   const listeners = [];
   const dom = new JSDOM(html, {
-    url: 'https://tracker.local/', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
+    url: opts.url || 'https://tracker.local/', runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       const orig = w.EventTarget.prototype.addEventListener;
       w.EventTarget.prototype.addEventListener = function (type) {

@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1045 assertions, 0 failed, 23 suites (session 3, step 7 of 9 done).
+**Harness:** 1105 assertions, 0 failed, 24 suites (session 3, step 8 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -519,15 +519,56 @@ Then push, and tell John.
 - **Real Chromium** at 360 px: the Characters, Creators and Presets areas render, with no
   overflow and no errors.
 
-### Step 8 begins with
-**Sync and backup** (two formats, decided 3 Oct; QR compression added at approval).
-- `tools/build.py` emits `dataVersion` (sha256 of `ids` in row order, 12 hex) into `data.js`.
-- In `app.js`, a SYNC section:
-  - `packQR()` / `unpackQR()`: the mode byte (RLE vs raw 2-bit, whichever is smaller), the
-    marks, delta-varint bookmark positions, base64url, and `<PREFIX>3.<dataVersion>.<payload>`
-    with the prefix from `franchise.key`.
-  - The full JSON code (copy-code, `#sync=`, file) with Merge or Replace.
-  - The v2 QR reader, whose old order is rebuilt from legacy-style ids plus `retiredIds`. **That
-    needs `retiredIds` in `data.js` too: add it to the build payload first.**
-- The first test to write, in `9e-sync`: on the 5,000-row dataset, realistic progress gives a QR
-  of version 15 or below (run `qrcode.js` in a vm), and it round-trips exactly.
+## Session 3 checkpoint — step 8 done (sync and backup), 3 Oct 2026
+
+### Done
+- **Build:** `data.js` carries `dataVersion` (sha256 of the ids in row order, 12 hex) and
+  `retiredIds`.
+- **Compact QR.** The prefix is `<KEY>:` (franchise key, uppercase alphanumerics), then
+  `q3.<dataVersion>.<payload>`. The payload is base64url bytes:
+  - a mode byte, then a varint row count;
+  - the marks as RLE (one varint per run, `length × 4 + state`) or raw 2-bit, whichever is
+    smaller;
+  - the bookmark positions as delta varints.
+  - **5,000 rows of realistic progress give a version-3 code; mixed marks fit too (raw).** With
+    RLE only, the mixed case overflows, so the choice of encoding matters.
+- **10,000 alternating marks overflow a QR**: the app shows "Too much progress for a QR code:
+  use the copy-code below instead", with the copy-code ready. That branch is tested, and the
+  copy-code round-trips.
+- **The QR holds a `#sync=` link — my call, open to veto.** XM-6 wants a camera scan to open the
+  tracker and import, so the QR's text is `<page URL>#sync=<compact code>`. The payload is still
+  the compact format. `#sync=` accepts either format, merges on open, reports counts and clears
+  the link.
+- **`qrcode.js` loads on demand** (only when Show sync code is tapped). In real Chromium the
+  rendered QR, decoded with jsQR from a screenshot (installed in the scratchpad only), gives back
+  exactly the expected link.
+- **The full format** (copy-code `<KEY>:s3.<base64url JSON>`, copy-link, backup file
+  `<key>-backup-YYYY-MM-DD.json`) is id-keyed and carries marks, bookmarks, reviews and settings.
+  Unknown ids are ignored and reported; rows added since stay unread.
+- **Import** shows a preview first, then:
+  - **Merge** (the default): never downgrades a read mark, adds bookmarks, fills in missing
+    reviews, and reports "Kept N read marks you already had".
+  - **Replace**: an in-page confirm, then an exact restore (a full code replaces settings too; a
+    QR replaces progress only), with a full-state snapshot and Undo.
+  - A QR from another list version, or a code from another tracker, is refused with a pointer
+    and nothing changes.
+- **Old v2 codes** via `storage.legacy.qrPrefix`: the order is rebuilt from legacy numeric ids
+  plus `retiredIds`, and v2's `count-first-last` check is honoured. The test puts a retired id
+  in the middle, and every later position lands on the right row.
+- **The franchise-string guard is narrowed for one false positive.** `position: absolute` (CSS)
+  matched "absolute" (the Absolute line). The CSS declaration is now ignored, and a self-test
+  proves "Absolute Batman" is still caught.
+- The QR's white backing is a `:root` token (`--qr-paper`).
+- **Listeners:** a `once()` helper registers the lazy script's and the file reader's load/error
+  events. The static count is 9 of 12; S4 plans keydown + install prompt (11).
+- **Tests:** `9e-sync` (59 assertions). Mutation-checked:
+  - the v2 order without `retiredIds` → fails;
+  - Merge downgrading read → 4 failures;
+  - always RLE → 2 failures;
+  - Replace without snapshot Undo → 4 failures;
+  - no dataVersion check → fails.
+
+### Step 9 begins with
+**Close-out:** inventory statuses for every S3 line (anything not done gets a reason or moves to
+S4), this file's transfer checkpoint and "Session 4 starts with", a CLAUDE.md lessons check, and
+the real-Chromium screenshot pass.
