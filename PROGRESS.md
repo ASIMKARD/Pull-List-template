@@ -530,8 +530,9 @@ Then push, and tell John.
   - the marks as RLE (one varint per run, `length × 4 + state`) or raw 2-bit, whichever is
     smaller;
   - the bookmark positions as delta varints.
-  - **5,000 rows of realistic progress give a version-3 code; mixed marks fit too (raw).** With
-    RLE only, the mixed case overflows, so the choice of encoding matters.
+  - **5,000 rows of realistic progress give a version-5 QR (88 characters, limit 15); mixed
+    marks fit too (raw packing, version 30).** With RLE only, the mixed case overflows, so the
+    choice of encoding matters.
 - **10,000 alternating marks overflow a QR**: the app shows "Too much progress for a QR code:
   use the copy-code below instead", with the copy-code ready. That branch is tested, and the
   copy-code round-trips.
