@@ -42,7 +42,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-19 | Filters: depth (Barebones/Essential/Everything with counts; Barebones is comics-only), type chips, priority M/O, format (one chip per medium), characters (strands) + all/none, era select, search (title, arc, note; debounced 180 ms), unread only, ALT tracks toggle, reset | S2 | present — tier, type, mandatory, format, characters, era, search incl. creators, unread, ALT (92-filters) |
 | F-20 | Order chip: reading order vs Arc Master timeline order | S2 | present (92-filters: arc order) |
 | F-21 | Dual-order chip (franchise `dualOrder` config; hidden when unset) using the alternate sort key | S2 | present (92-filters: reading/publication labelled from dualOrder) |
-| F-22 | Filter presets: save current filters by name, apply, delete | S3 | todo |
+| F-22 | Filter presets: save current filters by name, apply, delete | S3 | present (9d-story-filters: save by name, apply, update, delete with Undo) |
 | F-23 | Bulk mark era read / unread; mark era range read; toast with undo | S3 | present (9c-bulk-touch: era read / unread, range, arc; the rows the view counts; toast with Undo; 5,000 rows in one refresh) |
 | F-24 | Swipe to mark (right = read, left = skip), opt-in | S3 | present (9c-bulk-touch: opt-in, right = read, left = skip, short or vertical drags ignored) |
 | F-25 | Long-press a band/era/arc head to bulk-mark it read, opt-in | S3 | present (9c-bulk-touch: opt-in, band / era / arc head, Undo; the lift never also toggles the head; moving cancels) |
@@ -112,7 +112,7 @@ store is listed only to record where the value lived.
 | S-21 | Refresh reminder `#segRefresh` | settings.refreshEvery | quarterly | S3 | present (98-tabs-settings) |
 | S-22 | Swipe to mark `#swipeChip` | view.swipe | off | S3 | present (9c-bulk-touch: off by default, decided 3 Oct) |
 | S-23 | Long-press bulk-mark `#pressChip` | view.press | off | S3 | present (9c-bulk-touch: off by default, decided 3 Oct) |
-| S-24 | Presets `#presetRow` | view.presets | [] | S3 | todo |
+| S-24 | Presets `#presetRow` | view.presets | [] | S3 | present (9d-story-filters: settings.presets, filters stored by name) |
 | S-25 | Theme `#themeBtn` | settings.theme | default | S4 | re-express |
 | S-26 | Reading/timeline order `#orderChip` | settings.viewOrder | reading | S2 | present (92-filters) |
 | S-27 | Dual order `#cloneChip` | settings.cloneOrder | epic (A) | S2 | present (92-filters) |
@@ -198,7 +198,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-67 | every issue has a medium | S1 | present (20-build: every row has a medium) |
 | T-68 | media vocabulary is comic/game/screen | S1 | re-express → present (20-build: medium vocabulary comes from data; fixture uses comic/game/screen) |
 | T-69 | no hardcoded franchise chip leaks into Characters | S1/S2 | present (80-guards static + 92-filters DOM) |
-| T-70 | character chips match the strand list | S2 | re-express → present (92-filters: strand chips); presence grades S3 |
+| T-70 | character chips match the strand list | S2 | re-express → present (92-filters: strand chips; 9d-story-filters: a chip per character with presence grades) |
 | T-71 | character chips match the strand names | S2 | re-express → present (92-filters) |
 | T-72 | unticking Optional reduces rows | S2 | re-express → present (92-filters) |
 | T-73 | re-ticking Optional restores rows | S2 | re-express → present (92-filters) |
@@ -303,9 +303,9 @@ installed app once online.
 | V-7 | Keyboard navigation and shortcuts | S4 | todo |
 | V-8 | Fast first paint: critical CSS inline, preloaded display font, non-blocking data | S4 | todo |
 | V-9 | One colour-token block (guard: exactly one); zero `!important` (guard) | S1/S4 | present — guards (80-guards: one :root colour block, zero !important) |
-| V-10 | Essential / Complete event toggle in Settings; progress and counts recompute; "Complete view adds N issues" on event headers | S1 data / S3 UI | todo |
-| V-11 | Presence tags (major/minor/cameo), character filter defaults to meaningful appearances, cameo toggle | S1 data / S3 UI | todo |
-| V-12 | Depth tier independent of M/O; optional Importance 1–5 | S1 data / S2 UI | todo |
+| V-10 | Essential / Complete event toggle in Settings; progress and counts recompute; "Complete view adds N issues" on event headers | S1 data / S3 UI | present (9d-story-filters: Story chips + Settings, a plan setting; totals recompute; "Complete view adds N issues" on the event's own arc heading, tap to switch) |
+| V-11 | Presence tags (major/minor/cameo), character filter defaults to meaningful appearances, cameo toggle | S1 data / S3 UI | present (9d-story-filters: appearances per character, major + minor by default, Include cameos) |
+| V-12 | Depth tier independent of M/O; optional Importance 1–5 | S1 data / S2 UI | present (data: tier independent of M/O, 20-build; 9d-story-filters: importance on arc headings) |
 | V-13 | Era-ranked compound sort keys, derived; Alt Sort Key = publication order | S1 | present (20-build, 30-identity) |
 | V-14 | ALT continuity rows build, order, and are skipped by the per-series check (replaces v2's story band) | S1 data / S2 UI | present — data (30-identity: ALT order + per-series skip); UI S2 |
 | V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | present (90-render, 92-filters: 5,000-row dataset renders only opened/matching eras) |
@@ -334,10 +334,10 @@ installed app once online.
 | CR-4 | Full canonical names; surname-only fails unless in `creatorMononyms`; conflicting spellings fail | S1 | present (40-credits, 60-validation) |
 | CR-5 | Build-time creator index: name → writer / artist issue counts | S1 | present (40-credits: brute-force recount) |
 | CR-6 | Coverage % reported; missing credits warn; `strictCredits` makes them fail | S1 | present (40-credits: 98.3%, warn vs strict) |
-| CR-7 | Searchable creator picker with issue counts and a writers / artists switch | S3 | todo |
-| CR-8 | Tappable creator names on each run filter to that creator's work | S3 | todo |
+| CR-7 | Searchable creator picker with issue counts and a writers / artists switch | S3 | present (9d-story-filters: picker by count, writers / artists switch, typed narrowing) |
+| CR-8 | Tappable creator names on each run filter to that creator's work | S3 | present (9d-story-filters: credited names on arc heads are buttons; exact match through the creator index, proved on "Writer Number1" vs "…10–19") |
 | CR-9 | Search matches creator names | S2 | present (92-filters) |
-| CR-10 | Creator filter appears in the active-filter chips and Creators header summary | S3 | todo |
+| CR-10 | Creator filter appears in the active-filter chips and Creators header summary | S3 | present (9d-story-filters: chip "Creator: “X” as writer/artist" and the Creators summary) |
 
 ## FP — collapsible filter panel (approved mockup `starter/v3/filter-panel-mockup.html`, 1 Oct)
 
@@ -346,12 +346,12 @@ installed app once online.
 | FP-1 | Panel opens where it does in the current trackers; only its inside is reorganised | S2 | present (92-filters) |
 | FP-2 | Five sections in order: Reading, Story, Characters, Creators, Order and display | S2 | present (92-filters) |
 | FP-3 | Reading: depth tier, unread only, hide skipped, mandatory only | S2 | present (92-filters) |
-| FP-4 | Story: era, Essential/Complete events, type, ALT | S2/S3 | present — era, type, format, ALT (92-filters); Essential/Complete toggle S3 |
-| FP-5 | Characters: presence filters + include-cameos toggle | S3 | todo |
+| FP-4 | Story: era, Essential/Complete events, type, ALT | S2/S3 | present (92-filters: era, type, format, ALT; 9d-story-filters: Essential / Complete) |
+| FP-5 | Characters: presence filters + include-cameos toggle | S3 | present (9d-story-filters) |
 | FP-6 | Order and display: reading vs publication order, alternate stories | S2 | present (92-filters) |
 | FP-7 | Collapsed header shows icon, section name, one-line summary of what's active, chevron — nothing applied is ever hidden | S2 | present (92-filters: summaries) |
 | FP-8 | Removable chips at the top for every active filter, active count, Clear all | S2 | present (92-filters: removable chips, count, Clear all) |
-| FP-9 | Live "Showing N of M issues" and Save as preset at the bottom | S2/S3 | present — Showing N of M (92-filters); Save as preset S3 |
+| FP-9 | Live "Showing N of M issues" and Save as preset at the bottom | S2/S3 | present (92-filters: Showing N of M; 9d-story-filters: Save as preset) |
 | FP-10 | All sections start collapsed; open state remembered (namespaced storage) | S2 | present (92-filters: collapsed by default, remembered) |
 | FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | todo |
 | FP-12 | Sections are buttons with `aria-expanded`; delegated (counts toward the ≤12 listeners) | S2 | present (92-filters: aria-expanded, delegated) |

@@ -50,7 +50,14 @@
      ====================================================================== */
   var HAS_BANDS = D.periods.length > 0;
   var ID_I = {};
-  var HAY = new Array(N), CREATORS_HAY = new Array(N);
+  var HAY = new Array(N), CREATORS_HAY = new Array(N), W_HAY = new Array(N), A_HAY = new Array(N);
+  var CREATOR_I = {};
+  D.creators.forEach(function (c, ci) { CREATOR_I[c.n] = ci; });
+  /* Each event's own arc (stated in dataset.json or synthesised by the build):
+     its heading carries "Complete view adds N". Chapters merged into the
+     tracker's own arcs keep those arcs, so they never get the note. */
+  var ARC_EVENT = D.arcs.map(function () { return -1; });
+  D.events.forEach(function (ev, k) { if (ev.arc >= 0 && ARC_EVENT[ev.arc] === -1) ARC_EVENT[ev.arc] = k; });
   var ERA_ROWS = D.eras.map(function () { return []; });
   var BAND_OF_ERA = D.eras.map(function () { return -1; });
   D.periods.forEach(function (p, b) { p.eras.forEach(function (e) { BAND_OF_ERA[e] = b; }); });
@@ -64,6 +71,8 @@
     ERA_ROWS[D.issueEra[i0]].push(i0);
     if (r0[6] & FL.ALT) HAS_ALT = true;
     var credited = D.issueWriters[i0].concat(D.issueArtists[i0]).map(function (c) { return D.creators[c].n; }).join(' ');
+    W_HAY[i0] = D.issueWriters[i0].map(function (c) { return D.creators[c].n; }).join(' ').toLowerCase();
+    A_HAY[i0] = D.issueArtists[i0].map(function (c) { return D.creators[c].n; }).join(' ').toLowerCase();
     CREATORS_HAY[i0] = credited.toLowerCase();
     HAY[i0] = (r0[1] + ' ' + arc0.n + ' ' + (r0[7] || '') + ' ' + credited).toLowerCase();
   }
@@ -108,9 +117,11 @@
 
   function defaultFilters() {
     return { q: '', creator: '', tier: D.tiers.length - 1, unread: false, hideSkip: false, mandatory: false,
-             eras: [], types: [], media: [], strands: [], alt: true, notesOnly: false };
+             eras: [], types: [], media: [], strands: [], alt: true, notesOnly: false,
+             chars: [], cameos: false, role: 'any', creatorExact: false };
   }
-  var PERSISTED_FILTERS = ['tier', 'unread', 'hideSkip', 'mandatory', 'eras', 'types', 'media', 'strands', 'alt', 'notesOnly'];
+  var PERSISTED_FILTERS = ['tier', 'unread', 'hideSkip', 'mandatory', 'eras', 'types', 'media', 'strands', 'alt', 'notesOnly',
+                           'chars', 'cameos'];
   var progress = load('progress', null) || { marks: {}, bookmarks: [] };
   progress.marks = progress.marks || {};
   progress.bookmarks = progress.bookmarks || [];
@@ -134,6 +145,8 @@
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
     s.layout = s.layout === 'rows' ? 'rows' : 'arcs';
+    s.events = s.events === 'complete' ? 'complete' : 'essential';
+    s.presets = Array.isArray(s.presets) ? s.presets : [];
     return s;
   }
   var settings = withDefaults(load('settings', null));
@@ -142,7 +155,7 @@
      update that inserts an era or a strand must not shift saved filters onto
      the wrong ones. Names that no longer exist are dropped. */
   var FILTER_VOCAB = {
-    eras: D.eras.map(function (e) { return e.id; }), types: D.types, media: D.media, strands: D.strands,
+    eras: D.eras.map(function (e) { return e.id; }), types: D.types, media: D.media, strands: D.strands, chars: D.characters,
     tier: D.tiers
   };
   function toNames(k, list) { return list.map(function (i) { return FILTER_VOCAB[k][i]; }); }
@@ -249,12 +262,12 @@
   /* Three kinds of filter (decided 2 Oct):
      - PLAN   (depth tier, mandatory only, hide skipped, ALT, format; Essential/Complete):
               progress, time left and finish-by ALWAYS follow these.
-     - BROWSE (search, creator, era, type, character): while any is
+     - BROWSE (search, creator, era, type, character strand, appearances): while any is
               active, banners and header count only that view, marked "filtered".
      - DISPLAY-ONLY (unread only, notes only, order): never change any number.
        Notes only is the feel-reference build's "landmarks only": its landmark notes are the row note. */
   function browsing() {
-    return !!(F.q || F.creator || F.eras.length || F.types.length || F.strands.length);
+    return !!(F.q || F.creator || F.eras.length || F.types.length || F.strands.length || F.chars.length);
   }
   function narrowing() {
     return !!(browsing() || F.tier < D.tiers.length - 1 || F.media.length || F.unread || F.hideSkip || F.mandatory || !F.alt ||
@@ -277,9 +290,25 @@
     if (F.strands.length && !D.arcs[r[2]].s.some(function (s) { return F.strands.indexOf(s) !== -1; })) return false;
     if (isInert(i)) return true;
     if (F.q && HAY[i].indexOf(F.q.toLowerCase()) === -1) return false;
-    if (F.creator && CREATORS_HAY[i].indexOf(F.creator.toLowerCase()) === -1) return false;
+    if (F.creator && !creatorOk(i)) return false;
     if (F.types.length && F.types.indexOf(r[3]) === -1) return false;
+    if (F.chars.length && !presenceOk(i)) return false;
     return true;
+  }
+  /* Creators (CR-7/CR-8): a picked or tapped name matches exactly through the
+     build's creator index; typed text matches as a substring. The role switch
+     narrows either to writers or to artists. */
+  function creatorOk(i) {
+    if (F.creatorExact && CREATOR_I[F.creator] !== undefined) {
+      var ci = CREATOR_I[F.creator];
+      return (F.role !== 'a' && D.issueWriters[i].indexOf(ci) !== -1) || (F.role !== 'w' && D.issueArtists[i].indexOf(ci) !== -1);
+    }
+    var hay = F.role === 'w' ? W_HAY[i] : F.role === 'a' ? A_HAY[i] : CREATORS_HAY[i];
+    return hay.indexOf(F.creator.toLowerCase()) !== -1;
+  }
+  /* Appearances (V-11, FP-5): meaningful = major or minor; cameos only when asked. */
+  function presenceOk(i) {
+    return D.issuePresence[i].some(function (p) { return F.chars.indexOf(p[0]) !== -1 && (p[1] < 2 || F.cameos); });
   }
   /* What the list shows: plan + browse + display-only. */
   function matches(i) {
@@ -408,13 +437,28 @@
     return rows;
   }
 
-  function creditsLine(i) {
-    var w = D.issueWriters[i].map(function (c) { return D.creators[c].n; });
-    var a = D.issueArtists[i].map(function (c) { return D.creators[c].n; });
-    var bits = [];
-    if (w.length) bits.push('Writer' + (w.length > 1 ? 's' : '') + ': ' + w.join(', '));
-    if (a.length) bits.push('Art: ' + a.join(', '));
+  /* Credits on arc heads: every name is a button that filters to that
+     creator's work, matched exactly through the creator index (CR-8). */
+  function creditsHtml(i) {
+    var nameBtn = function (c) {
+      var n = D.creators[c].n;
+      return '<button type="button" class="cname" data-act="creator" data-n="' + escapeAttr(n) + '" aria-label="Show work by ' + escapeAttr(n) + '">' +
+        escapeHtml(n) + '</button>';
+    };
+    var w = D.issueWriters[i], a = D.issueArtists[i], bits = [];
+    if (w.length) bits.push('Writer' + (w.length > 1 ? 's' : '') + ': ' + w.map(nameBtn).join(', '));
+    if (a.length) bits.push('Art: ' + a.map(nameBtn).join(', '));
     return bits.join(' · ');
+  }
+  /* Essential / Complete (V-10): in Essential view an event's heading says
+     what the Complete view would add, and switches to it when tapped. */
+  function eventNote(a) {
+    var k = ARC_EVENT[a], ev = k >= 0 ? D.events[k] : null;
+    if (!ev || !ev.adds) return '';
+    var n = ev.adds + ' issue' + (ev.adds === 1 ? '' : 's');
+    return settings.events === 'essential'
+      ? '<p class="evnote"><button type="button" class="linkbtn" data-act="f" data-k="events" data-v="complete">Complete view adds ' + n + '</button></p>'
+      : '<p class="evnote">Complete view: ' + n + ' more than Essential</p>';
   }
 
   function rowHtml(i, rvArc) {
@@ -466,11 +510,11 @@
         if (curArc !== -1) html += '</div>';
         var arc = D.arcs[a], again = !!seen[a];
         seen[a] = 1; curArc = a;
-        var meta = [arc.y].filter(Boolean).join(' · ');
-        var cred = again ? '' : creditsLine(i);
+        var meta = [arc.y, arc.i ? 'importance ' + arc.i + '/5' : ''].filter(Boolean).join(' · ');   // V-12
+        var cred = again ? '' : creditsHtml(i);
         html += '<div class="arc" data-a="' + a + '"><div class="arc-head"><h3>' + escapeHtml(arc.n) +
           (again ? ' · cont.' : '') + '</h3>' + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') +
-          (cred ? '<p class="credits">' + escapeHtml(cred) + '</p>' : '') +
+          (cred ? '<p class="credits">' + cred + '</p>' : '') + (again ? '' : eventNote(a)) +
           (arc.b && !again && arc.b !== D.eras[e].intro ? '<p class="blurb">' + escapeHtml(arc.b) + '</p>' : '') +
           '<div class="arc-acts">' + rvButton(a) +
           '<button type="button" class="b" data-act="arc-mark" data-a="' + a + '" data-st="read">Mark arc read</button>' +
@@ -581,22 +625,30 @@
       return bits.length ? bits.join(' · ') : '';
     }
     if (k === 'story') {
+      if (settings.events === 'complete' && D.events.length) bits.push('complete events');
       if (F.eras.length) bits.push(F.eras.length === 1 ? D.eras[F.eras[0]].name : F.eras.length + ' eras');
       if (F.types.length) bits.push(names(F.types, function (t) { return D.types[t].toLowerCase(); }));
       if (F.media.length) bits.push(names(F.media, mediumLabel));
       if (!F.alt) bits.push('alternate stories hidden');
       return bits.join(' · ');
     }
-    if (k === 'chars') return F.strands.length ? names(F.strands, function (s) { return D.strands[s]; }) : '';
-    if (k === 'creators') return F.creator ? '“' + F.creator + '”' : '';
+    if (k === 'chars') {
+      if (F.strands.length) bits.push(names(F.strands, function (s) { return D.strands[s]; }));
+      if (F.chars.length) bits.push(names(F.chars, function (c) { return D.characters[c]; }) + (F.cameos ? ' incl. cameos' : ''));
+      return bits.join(' · ');
+    }
+    if (k === 'creators') return F.creator ? '“' + F.creator + '”' + ROLE_NOTE[F.role] : (F.role !== 'any' ? ROLE_LABEL[F.role].toLowerCase() + ' only' : '');
     return orderLabel(settings.order);
   }
   var SUMMARY_DEFAULT = { reading: 'All issues', story: 'Everything', chars: 'All characters', creators: 'All creators' };
+  var ROLE_LABEL = { any: 'Writers and artists', w: 'Writers', a: 'Artists' };
+  var ROLE_NOTE = { any: '', w: ' as writer', a: ' as artist' };
 
   function activeChips() {
     var c = [];
     if (F.q) c.push(['q', '', 'Search: “' + F.q + '”']);
-    if (F.creator) c.push(['creator', '', 'Creator: “' + F.creator + '”']);
+    if (F.creator) c.push(['creator', '', 'Creator: “' + F.creator + '”' + ROLE_NOTE[F.role]]);
+    if (settings.events === 'complete' && D.events.length) c.push(['events', 'essential', 'Complete events']);
     if (F.tier < D.tiers.length - 1) c.push(['tier', '', D.tiers[F.tier] + ' tier']);
     if (F.unread) c.push(['unread', '', 'Unread only']);
     if (F.notesOnly) c.push(['notesOnly', '', 'Notes only']);
@@ -606,6 +658,7 @@
     F.types.forEach(function (t) { c.push(['types', t, D.types[t].toLowerCase()]); });
     F.media.forEach(function (m) { c.push(['media', m, mediumLabel(m)]); });
     F.strands.forEach(function (s) { c.push(['strands', s, D.strands[s]]); });
+    F.chars.forEach(function (ch) { c.push(['chars', ch, D.characters[ch] + (F.cameos ? ' (incl. cameos)' : '')]); });
     if (!F.alt) c.push(['alt', '', 'No alternate stories']);
     return c;
   }
@@ -630,6 +683,10 @@
       h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) + chip('notesOnly', '', 'Notes only', F.notesOnly) +
         chip('hideSkip', '', 'Hide skipped', F.hideSkip) + chip('mandatory', '', 'Mandatory only', F.mandatory);
     } else if (k === 'story') {
+      if (D.events.length) {                                   // Essential / Complete (V-10, FP-4): a plan setting
+        h += '<div class="flabel">Events</div>' + chip('events', 'essential', 'Essential', settings.events === 'essential') +
+          chip('events', 'complete', 'Complete', settings.events === 'complete');
+      }
       h += '<div class="flabel">Era</div>';
       D.eras.forEach(function (e, ei) { h += chip('eras', ei, e.name, F.eras.indexOf(ei) !== -1); });
       if (D.media.length > 1) {
@@ -640,10 +697,19 @@
       D.types.forEach(function (t, ti) { h += chip('types', ti, t.toLowerCase(), F.types.indexOf(ti) !== -1); });
       if (HAS_ALT) h += '<div class="flabel">Alternate stories</div>' + chip('alt', '', 'Show alternate stories', F.alt);
     } else if (k === 'chars') {
+      if (D.characters.length) h += '<div class="flabel">Strands</div>';
       D.strands.forEach(function (s, si) { h += chip('strands', si, s, F.strands.indexOf(si) !== -1); });
+      if (D.characters.length) {
+        h += '<div class="flabel">Appearances</div>';
+        D.characters.forEach(function (c, ci) { h += chip('chars', ci, c, F.chars.indexOf(ci) !== -1); });
+        h += '<div class="flabel">Counts as an appearance</div>' + chip('cameos', '', 'Include cameos', F.cameos);
+      }
     } else if (k === 'creators') {
       h += '<input class="search" id="cq" type="search" placeholder="Search writers and artists" aria-label="Search writers and artists" value="' +
         escapeAttr(F.creator) + '" autocomplete="off">';
+      h += '<div class="flabel">Credited as</div>';
+      ['any', 'w', 'a'].forEach(function (r) { h += chip('role', r, ROLE_LABEL[r], F.role === r); });
+      h += creatorPicker();
     } else {
       ['reading', 'publication', 'arc'].forEach(function (o) { h += chip('order', o, orderLabel(o), settings.order === o); });
     }
@@ -667,8 +733,80 @@
         '<span class="fsec-chev" aria-hidden="true">▾</span></button>' + (isOpen ? sectionBody(s[0]) : '') + '</div>';
     }).join('');
     if (focusCq && $('#cq')) { var c = $('#cq'); c.focus(); c.setSelectionRange(c.value.length, c.value.length); }
+    $('#fpresets').innerHTML = presetsHtml();
     var shown = countWhere(matches), total = countWhere(function () { return true; });
     $('#fshow').textContent = 'Showing ' + shown.toLocaleString('en-GB') + ' of ' + total.toLocaleString('en-GB') + ' issues';
+  }
+
+  /* Creator picker (CR-7): the creator index filtered by what is typed,
+     counted by the chosen role, most-credited first. */
+  function creatorCount(c) { return F.role === 'w' ? c.w : F.role === 'a' ? c.a : c.w + c.a; }
+  function creatorPicker() {
+    var q = F.creator.toLowerCase();
+    var list = D.creators.filter(function (c) { return creatorCount(c) > 0 && (!q || c.n.toLowerCase().indexOf(q) !== -1); })
+      .sort(function (x, y) { return creatorCount(y) - creatorCount(x) || (x.n < y.n ? -1 : 1); });
+    if (!list.length) return '<p class="muted cpick-none">No one matches.</p>';
+    return '<div class="cpick">' + list.slice(0, 12).map(function (c) {
+      return '<button type="button" class="chip" data-act="creator" data-n="' + escapeAttr(c.n) + '" aria-pressed="' +
+        (F.creatorExact && F.creator === c.n) + '">' + escapeHtml(c.n) + ' <span class="cnt">' + creatorCount(c) + '</span></button>';
+    }).join('') + (list.length > 12 ? '<p class="muted">' + (list.length - 12) + ' more: keep typing</p>' : '') + '</div>';
+  }
+  function pickCreator(n) {
+    if (CREATOR_I[n] === undefined) return;
+    if (F.creatorExact && F.creator === n) { F.creator = ''; F.creatorExact = false; }   // tapping the picked name again clears it
+    else { F.creator = n; F.creatorExact = true; }
+    var inp = $('#cq'); if (inp) inp.value = F.creator;
+    if (activeTab !== 'list') showTab('list');
+    refilter();
+  }
+
+  /* Presets (F-22, FP-9): the persisted filters (stored by name, like the
+     saved filters themselves), plus order and Essential/Complete. */
+  var presetForm = false;
+  function presetsHtml() {
+    var h = '<div class="flabel">Presets</div><div class="presetrow">' + (settings.presets.length ? settings.presets.map(function (p) {
+      return '<span class="preset"><button type="button" class="chip" data-act="preset-apply" data-n="' + escapeAttr(p.name) + '">' + escapeHtml(p.name) +
+        '</button><button type="button" class="linkbtn" data-act="preset-del" data-n="' + escapeAttr(p.name) + '" aria-label="Delete preset ' +
+        escapeAttr(p.name) + '">×</button></span>';
+    }).join('') : '<span class="muted">None saved yet.</span>') + '</div>';
+    return h + (presetForm
+      ? '<div class="preset-form"><input class="search" id="presetName" maxlength="40" placeholder="Name these filters" aria-label="Preset name" autocomplete="off">' +
+        '<button type="button" class="tool" data-act="preset-save">Save</button><button type="button" class="tool" data-act="preset-cancel">Cancel</button></div>'
+      : '<button type="button" class="tool" data-act="preset-new">Save as preset</button>');
+  }
+  function presetIndex(name) {
+    for (var k = 0; k < settings.presets.length; k++) if (settings.presets[k].name === name) return k;
+    return -1;
+  }
+  function savePreset() {
+    var name = ($('#presetName') ? $('#presetName').value : '').trim().slice(0, 40);
+    if (!name) { toast('Give the preset a name first.'); return; }
+    saveSettings();                                            // settings.filters now mirrors F, by name
+    var p = { name: name, filters: JSON.parse(JSON.stringify(settings.filters)), order: settings.order, events: settings.events };
+    var at = presetIndex(name);
+    if (at === -1) settings.presets.push(p); else settings.presets[at] = p;
+    presetForm = false;
+    saveSettings(); renderPanel();
+    toast((at === -1 ? 'Saved' : 'Updated') + ' preset “' + name + '”.');
+  }
+  function applyPreset(name) {
+    var p = settings.presets[presetIndex(name)];
+    if (!p) return;
+    var keep = { q: F.q, creator: F.creator, creatorExact: F.creatorExact, role: F.role };   // search stays session-only
+    settings.filters = JSON.parse(JSON.stringify(p.filters));
+    filtersFromSettings();
+    Object.keys(keep).forEach(function (k) { F[k] = keep[k]; });
+    settings.order = p.order || settings.order;
+    settings.events = p.events === 'complete' ? 'complete' : 'essential';
+    refilter();
+    toast('Applied preset “' + name + '”.');
+  }
+  function deletePreset(name) {
+    var at = presetIndex(name);
+    if (at === -1) return;
+    var gone = settings.presets.splice(at, 1)[0];
+    saveSettings(); renderPanel();
+    toast('Deleted preset “' + name + '”.', 'Undo', function () { settings.presets.splice(at, 0, gone); saveSettings(); renderPanel(); });
   }
 
   function refilter() { expandMatches = true; saveSettings(); renderPanel(); renderList(); }
@@ -676,8 +814,14 @@
   function setFilter(k, v, on) {
     if (k === 'tier') F.tier = v === '' ? D.tiers.length - 1 : +v;
     else if (k === 'order') { settings.order = v; }
-    else if (k === 'q' || k === 'creator') { F[k] = ''; var inp = $(k === 'q' ? '#q' : '#cq'); if (inp) inp.value = ''; }
-    else if (['eras', 'types', 'media', 'strands'].indexOf(k) !== -1) {
+    else if (k === 'q' || k === 'creator') {
+      F[k] = '';
+      if (k === 'creator') F.creatorExact = false;
+      var inp = $(k === 'q' ? '#q' : '#cq'); if (inp) inp.value = '';
+    }
+    else if (k === 'events') settings.events = v === 'complete' ? 'complete' : 'essential';
+    else if (k === 'role') F.role = ROLE_LABEL[v] ? v : 'any';
+    else if (['eras', 'types', 'media', 'strands', 'chars'].indexOf(k) !== -1) {
       var n = +v, at = F[k].indexOf(n);
       if (on === undefined) on = at === -1;
       if (on && at === -1) F[k].push(n);
@@ -690,6 +834,7 @@
     var keepOrder = settings.order;
     F = defaultFilters();
     settings.order = keepOrder;
+    settings.events = 'essential';                            // shown as an active chip, so Clear all clears it
     $('#q').value = '';
     open = { b: {}, e: {} };
     refilter();
@@ -1185,6 +1330,7 @@
       srow('Issues per week', seg('pace-week', 'Issues per week', PACE_WEEKLY.map(function (p) { return [p[2], p[1] + ' · ' + p[2]]; }), settings.pace.weekly)) +
       '<p class="pace" id="paceOut" aria-live="polite">' + paceReadout(S) + '</p>' +
       (MEDIA_USED.length > 1 ? srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
+      (D.events.length ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
       srow('Next unread button', pref('showJump', 'Show it')));
     h += sset('display', 'Display',
       srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + pref('reveal', 'Tap to reveal notes') + pref('gapNotes', 'Gap notes')) +
@@ -1297,6 +1443,13 @@
         break;
       case 'era-jump': jumpToEra(+b.dataset.e); break;
       case 'rv': toggleReview(b); break;
+      case 'creator': pickCreator(b.dataset.n); break;
+      case 'events-view': setFilter('events', b.dataset.v); renderSettings(); break;
+      case 'preset-new': presetForm = true; renderPanel(); if ($('#presetName')) $('#presetName').focus(); break;
+      case 'preset-cancel': presetForm = false; renderPanel(); break;
+      case 'preset-save': savePreset(); break;
+      case 'preset-apply': applyPreset(b.dataset.n); break;
+      case 'preset-del': deletePreset(b.dataset.n); break;
       case 'arc-mark': bulkArc(+b.dataset.a, b.dataset.st === 'unread' ? 'unread' : 'read'); break;
       case 'bulk-era': bulkEra(bulkSel.era, bulkSel.era, b.dataset.st === 'unread' ? 'unread' : 'read'); break;
       case 'bulk-range': bulkEra(bulkSel.from, bulkSel.to, 'read'); break;
@@ -1393,6 +1546,7 @@
     clearTimeout(inputTimer);
     inputTimer = setTimeout(function () {
       F[id === 'q' ? 'q' : 'creator'] = ev.target.value.trim();
+      if (id === 'cq') F.creatorExact = false;                // typed text is a search, not a pick
       refilter();
     }, 180);
   }

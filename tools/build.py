@@ -348,7 +348,7 @@ def build(dataset_path, previous_datajs=None):
                 by_issue[cid] = new
             n_all += 1
             n_ess += 1 if (row is not None or essential) else 0
-        events_out.append({'id': eid, 'name': ev.get('name', eid), 'era': ERA[eera],
+        events_out.append({'id': eid, 'name': ev.get('name', eid), 'era': ERA[eera], 'arc': ARC.get(arc_id, -1),
                            'essential': n_ess, 'complete': n_all, 'adds': n_all - n_ess,
                            'hash': ev_hash})
 

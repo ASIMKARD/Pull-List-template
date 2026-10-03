@@ -222,6 +222,18 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .row[data-swipe="read-go"] { background: var(--accent-wash); }
 .row[data-swipe="skip-go"] { background: var(--track); }
 
+/* ---- creators, events, presets ---- */
+.cname { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.cpick { margin-top: 8px; }
+.cnt { font-size: 11px; color: var(--ink-soft); }
+.evnote { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); }
+.evnote .linkbtn { padding: 0; }
+.fpresets { padding: 4px 12px 12px; border-top: 1px solid var(--line); }
+.presetrow { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.preset { display: inline-flex; align-items: center; }
+.preset .chip { margin: 0; }
+.preset-form { display: flex; gap: 8px; }
+
 /* ---- per-format progress lines ---- */
 .pmedia { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
 .pmed { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; font-size: 13px; color: var(--ink-soft); }

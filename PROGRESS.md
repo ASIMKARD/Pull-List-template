@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 993 assertions, 0 failed, 22 suites (session 3, step 6 of 9 done).
+**Harness:** 1045 assertions, 0 failed, 23 suites (session 3, step 7 of 9 done).
 Session 1 ended at 307 and session 2 at 617; CI green on every run.
 
 ---
@@ -485,16 +485,49 @@ Then push, and tell John.
   and Touch sections lay out cleanly with no overflow. During a swipe the row pokes past the card
   edge; **session 4** may clip that with `overflow: hidden` on `.arc` if focus rings allow.
 
-### Step 7 begins with
-**Story, character and creator filters; presets.**
-- **Essential/Complete.** A `settings.events` toggle in the Story section and Settings. It is a
-  PLAN filter, and `inView()` already reads it. Event arc heads (`D.events[k]`; rows carry
-  `issueEvent`) say "Complete view adds N issues" in Essential view.
-- **Presence filters (FP-5, V-11):** chips per `D.characters`, matching major + minor by default,
-  with an include-cameos toggle (BROWSE).
-- **The Creators section (CR-7):** a searchable picker built from `D.creators` with
-  writer / artist counts and a writers / artists switch. Tappable names in arc credits (CR-8).
-- **Presets (F-22, FP-9):** "Save as preset" at the bottom of the panel, stored by name in
-  `settings.presets`; apply and delete.
-- The first test to write, in `9d-story-filters`: Complete view adds the complete-only rows to
-  figures and "Complete view adds N" shows in Essential view.
+## Session 3 checkpoint — step 7 done (story, character and creator filters; presets), 3 Oct 2026
+
+### Done
+- **Essential / Complete (V-10)**, a PLAN setting kept in `settings.events`.
+  - Controls: Story section chips plus a Settings seg; it shows as an active chip when Complete,
+    and Clear all returns it to Essential.
+  - **The build now emits each event's own `arc`** (`D.events[k].arc`). Only that heading carries
+    "Complete view adds N issues" (a button that switches views), or "Complete view: N more than
+    Essential" in Complete view. Chapters merged into the tracker's own arcs keep those arcs and
+    get no note; mutation-checked.
+- **Appearances (V-11, FP-5)**, a BROWSE filter.
+  - Each character chip shows their major and minor appearances; **Include cameos** adds the
+    cameo appearances.
+  - `chars` and `cameos` persist by name, and unknown names are dropped.
+- **Creators (CR-7/8/10)**, session-only like search.
+  - The picker lists the creator index by count for the chosen role (Writers and artists /
+    Writers / Artists), narrowed by typing.
+  - **Picked or tapped names match exactly** through the creator index; typed text stays a
+    substring search. This was proved on the stress set, where "Writer Number1" sits inside
+    "…10–19" (1,375 typed vs 125 picked).
+  - Credited names on arc heads are buttons (CR-8). The chip reads "Creator: “X” as artist".
+- **Presets (F-22, S-24, FP-9).** "Save as preset" sits at the bottom of the panel, with an
+  in-page name field.
+  - What is saved: the persisted filters (by name), the order and Essential/Complete.
+  - Apply keeps the session's search text. Saving a name that exists updates it, and delete has
+    Undo.
+- **Importance** shows on arc headings ("importance 5/5", V-12).
+- **Tests:** `9d-story-filters` (52 assertions). Mutation-checked:
+  - cameos always counted → fails;
+  - picks matched by substring → fails;
+  - the note on every arc holding a chapter → fails.
+- **Real Chromium** at 360 px: the Characters, Creators and Presets areas render, with no
+  overflow and no errors.
+
+### Step 8 begins with
+**Sync and backup** (two formats, decided 3 Oct; QR compression added at approval).
+- `tools/build.py` emits `dataVersion` (sha256 of `ids` in row order, 12 hex) into `data.js`.
+- In `app.js`, a SYNC section:
+  - `packQR()` / `unpackQR()`: the mode byte (RLE vs raw 2-bit, whichever is smaller), the
+    marks, delta-varint bookmark positions, base64url, and `<PREFIX>3.<dataVersion>.<payload>`
+    with the prefix from `franchise.key`.
+  - The full JSON code (copy-code, `#sync=`, file) with Merge or Replace.
+  - The v2 QR reader, whose old order is rebuilt from legacy-style ids plus `retiredIds`. **That
+    needs `retiredIds` in `data.js` too: add it to the build payload first.**
+- The first test to write, in `9e-sync`: on the 5,000-row dataset, realistic progress gives a QR
+  of version 15 or below (run `qrcode.js` in a vm), and it round-trips exactly.
