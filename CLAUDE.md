@@ -82,7 +82,7 @@ only at a cut-over swap John approves. (Full text: Master-Repo
     setting, no duration copy and no "+N untimed". Verbs are that medium's own; for
     comics that is plain "Read".
   - **The rest:**
-    - no Characters section without presence data;
+    - no Characters section without presence data or two or more strands;
     - no Creators section without credits;
     - no Essential/Complete toggle without events;
     - no ALT toggle without ALT rows;

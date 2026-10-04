@@ -674,7 +674,7 @@ Work through every S4 line in `FEATURE-INVENTORY.md` (51):
 
 ---
 
-## Session 4 plan (proposed 4 Oct 2026): look and PWA — awaiting John's OK
+## Session 4 plan (proposed 4 Oct 2026, questions answered 4 Oct): look and PWA — awaiting John's OK to start
 
 Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–3 merged).
 
@@ -700,7 +700,8 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
    - **John's list:**
      - One medium: no per-format lines, format filter, progress mode, duration copy or
        "+N untimed". Verbs are that medium's own; for comics, plain "Read".
-     - Characters needs presence data.
+     - Characters needs presence data, or two or more strands (answer 4: with strands, the
+       section shows its strand chips).
      - Creators needs credits. That also covers the tappable names and the word "creators" in
        the search hint.
      - Essential/Complete needs events.
@@ -785,7 +786,9 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
      - a helper that asks the browser which rules match an element, for multi-line selectors.
    - **Fonts:** `@font-face` for Plex Sans, Plex Mono and Anton, with `font-display: swap`, so
      every later measurement uses the real fonts. Then re-measure the tabs at 320 px.
-   - **CI:** see question 3.
+   - **CI (answer 3): every push.** The workflow installs Chromium and runs `test/layout/`
+     after the harness. Layout, contrast, reachability and offline checks become gates like
+     the harness, and a zero check count fails as well.
 
 4. **One token system and the skins.** Inventory lines: V-5, F-39, F-52…F-57, S-1…S-6, S-9, S-20,
    S-25, T-38…T-45, T-54…T-57, T-81…T-116, T-98, T-103, XM-17, XM-18, and D-12 styling.
@@ -816,6 +819,15 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
      - body text, soft text and chips;
      - era text on its tint, for eras 0–63;
      - chip borders, at the 3:1 non-text ratio (T-40).
+   - **The skins (answer 1: v2's four, re-expressed as token sets):**
+     - **Paper:** today's light look.
+     - **Newsprint:** v2's newsprint theme.
+     - **Pull:** the X-Men look, with a cream page, Anton capitals, mono metadata and a black
+       tab bar.
+     - **Night:** dark, designed against its surface, with contrast measured.
+
+     A tracker picks its default in config (T-104). Each skin sets `data-skin` and nothing else
+     (T-81).
    - **Settings → Look:**
      - skin: one option per configured skin, with the default from config;
      - paper: 7 swatches;
@@ -885,12 +897,12 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
      - the tabs, the panel and the Settings sections carry `aria-expanded` and
        `aria-controls`;
      - reduced motion stops every transition.
-   - **First paint:**
-     - preload the display font;
-     - `data.js` and `app.js` don't block the first paint;
-     - critical CSS follows the answer to question 2.
-
-     First paint is measured in Chromium before and after.
+   - **First paint (answer 2: one stylesheet plus preload).**
+     - `styles.css` stays the single stylesheet: one token block in one file, served from the
+       service-worker cache after the first visit.
+     - Preload the display font.
+     - `data.js` and `app.js` don't block the first paint.
+     - V-8 is re-expressed as a measured first-paint check in Chromium, before and after.
 
 9. **Close-out.**
    - Record the V-15 decision: lazy rendering replaces `content-visibility`, as shipped since
@@ -908,10 +920,12 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 - jsdom: `9f-visibility` (step 1), `9g-look` (step 4), `9h-pwa` (step 7) and `9i-a11y` (step 8);
 - Chromium: `test/layout/` (steps 3–9).
 
-**Questions for John (asked 4 Oct):**
-1. Which skins ship?
-2. How should critical CSS work (V-8)?
-3. Does the Chromium suite run in CI?
-4. Is there a Characters section when the data has strands but no presence data?
-
-The answers get recorded here.
+**Answers from John (4 Oct) — do not reopen:**
+1. **Skins:** v2's four, as token sets: Paper, Newsprint, Pull and Night. Each tracker's
+   default comes from config.
+2. **First paint (V-8):** one stylesheet plus preload. Nothing is inlined, and `index.html`
+   stays hand-written. V-8 is re-expressed as a measured first-paint check.
+3. **The Chromium suite runs in GitHub Actions on every push,** as a gate like the harness.
+4. **Strands without presence data:** the Characters section shows when there are two or more
+   strands, holding the strand chips. With one universal strand and no presence data, it is
+   gone.
