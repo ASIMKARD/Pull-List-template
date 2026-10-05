@@ -31,4 +31,13 @@ module.exports = async function (t) {
   const pass = runWith({ 'a.test.js': 'module.exports = async function (t) { t.ok("x", true); };' });
   t.ok('a passing run exits zero', pass.status === 0, pass.stdout);
   t.ok('a passing run reports its count', /1 assertions, 0 failed/.test(pass.stdout));
+
+  // the real-browser layout suite (session 4): present, and run by CI with the same rules
+  const fsx = require('fs'), px = require('path'), root = px.resolve(__dirname, '..', '..');
+  const layoutSuites = fsx.readdirSync(px.join(root, 'test', 'layout')).filter(f => f.endsWith('.test.js'));
+  t.ok('test/layout holds real-browser suites (' + layoutSuites.length + ')', layoutSuites.length >= 3);
+  const wf = fsx.readFileSync(px.join(root, '.github', 'workflows', 'harness.yml'), 'utf8');
+  t.ok('CI installs Chromium and runs the layout suite through the same runner', /playwright-core install[^\n]*chromium/.test(wf) &&
+       /HARNESS_SUITES=test\/layout node test\/run\.js/.test(wf));
+  t.ok('…and fails on a zero count for it as well as for the harness', /for log in harness layout/.test(wf));
 };

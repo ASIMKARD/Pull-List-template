@@ -7,7 +7,7 @@
      / arc head to mark it all read. No haptics: navigator.vibrate is never
      called (guarded statically in 80-guards and at runtime here). */
 'use strict';
-const { loadData, boot, wait, basic, stress } = require('../lib/helpers');
+const { loadData, boot, wait, basic, stress, openSettings } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -28,8 +28,8 @@ module.exports = async function (t) {
   const eraRows = e => D.ids.map((id, i) => i).filter(i => D.issueEra[i] === e && counted(i));
 
   // ------------------------------------------------ Settings sections
-  $('#tab-settings').click();
-  t.ok('Settings has Touch and Bulk actions sections', !!$('#set-touch .seth') && !!$('#set-bulk .seth'));
+  openSettings(app);
+  t.ok('Settings has Touch and Bulk actions sections', !!$('.sset[data-k="touch"] .seth') && !!$('.sset[data-k="bulk"] .seth'));
   const chip = k => $(`#settings [data-act="pref"][data-k="${k}"]`);
   t.ok('touch chips exist (T-20)', !!chip('swipe') && !!chip('press'));
   t.ok('both are off by default (opt-in, decided 3 Oct)', chip('swipe').getAttribute('aria-pressed') === 'false' && chip('press').getAttribute('aria-pressed') === 'false');
@@ -67,9 +67,9 @@ module.exports = async function (t) {
   // ------------------------------------------------ respects the view
   $('#tab-list').click();
   $('[data-act="panel"]').click();
-  $('.fsec-head[data-k="reading"]').click();
+  $('#fsecs .sec-head[data-k="reading"]').click();
   $('#fsec-reading .chip[data-k="mandatory"]').click();
-  $('#tab-settings').click();
+  openSettings(app);
   $('[data-act="bulk-era"][data-st="read"]').click();
   const m3 = marks();
   t.ok('with "mandatory only" on, bulk marks only what the view counts', eraRows(0).every(i => (m3[D.ids[i]] === 'read') === (D.issues[i][4] === 1 || start[D.ids[i]] === 'read')));
@@ -106,7 +106,7 @@ module.exports = async function (t) {
   const row = id => $(`.row[data-id="${id}"]`);
   swipe(row('fixture-hero-1980-4'), 120, 0);
   t.ok('swipe is off by default: a swipe marks nothing', !marks()['fixture-hero-1980-4']);
-  $('#tab-settings').click();
+  openSettings(app);
   chip('swipe').click();
   t.ok('swipe toggle flips and is stored (T-24)', chip('swipe').getAttribute('aria-pressed') === 'true' &&
        (W.dispatchEvent(new W.Event('pagehide')), JSON.parse(W.localStorage.getItem(ns + 'settings')).swipe === true));
@@ -141,7 +141,7 @@ module.exports = async function (t) {
   await press(eraHead(), 700);
   t.ok('long-press is off by default: nothing marked, the tap just toggles', eraRows(1).every(i => !marks()[D.ids[i]]) && expanded() !== before);
   eraHead().click();
-  $('#tab-settings').click();
+  openSettings(app);
   chip('press').click();
   t.ok('long-press toggle flips (T-25)', chip('press').getAttribute('aria-pressed') === 'true');
   $('#tab-list').click();
@@ -162,8 +162,9 @@ module.exports = async function (t) {
 
   // ------------------------------------------------ no haptics, listener budget
   t.ok('navigator.vibrate was never called by any gesture (no haptics)', vibrations === 0, vibrations);
-  const mine = ['click', 'input', 'change', 'touchstart', 'touchmove', 'touchend', 'pagehide', 'visibilitychange'];
-  t.ok('8 app listeners, one each, all delegated', mine.every(type => app.listeners.filter(x => x === type).length === 1), app.listeners.join(','));
+  const mine = ['click', 'input', 'change', 'keydown', 'touchstart', 'touchmove', 'touchend', 'pagehide', 'visibilitychange', 'beforeinstallprompt'];
+  t.ok('the 10 standing app listeners, one each, all delegated, and nothing else after every gesture', mine.every(type => app.listeners.filter(x => x === type).length === 1) &&
+       app.listeners.every(type => mine.includes(type)), app.listeners.join(','));
   t.ok('no runtime errors', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
 
@@ -172,7 +173,7 @@ module.exports = async function (t) {
   app = boot(s.out, { now: NOW });
   d = app.document;
   await wait(20);
-  d.querySelector('#tab-settings').click();
+  openSettings(app);
   const t0 = Date.now();
   d.querySelector('[data-act="bulk-range"]').click();
   const ms = Date.now() - t0;

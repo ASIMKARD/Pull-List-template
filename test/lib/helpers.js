@@ -59,7 +59,9 @@ function validateIssueIds(ids) {
 
 /* Boot the REAL index.html with the REAL app.js and a generated data.js.
    Local <script src> tags are inlined (jsdom does not fetch file URLs by
-   default). Returns { window, document, errors, listeners }. */
+   default). opts.appSrc replaces app.js and opts.cssSrc inlines a given
+   stylesheet (mutation self-tests, the stale-styles beacon).
+   Returns { window, document, errors, listeners }. */
 function boot(dataDir, opts) {
   opts = opts || {};
   const { JSDOM, VirtualConsole } = require('jsdom');
@@ -68,13 +70,14 @@ function boot(dataDir, opts) {
   vc.on('jsdomError', e => errors.push(String(e && (e.detail || e.message) || e)));
   vc.on('error', m => errors.push('console.error: ' + m));
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  html = html.replace(/<script src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
+  html = html.replace(/<script(?: defer)? src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
     const p = file === 'data.js' ? path.join(dataDir, 'data.js') : path.join(ROOT, file);
-    const src = fs.readFileSync(p, 'utf8').split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
+    const raw = file === 'app.js' && opts.appSrc !== undefined ? opts.appSrc : fs.readFileSync(p, 'utf8');
+    const src = raw.split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
     return '<script>' + src + '</scr' + 'ipt>';
   });
-  if (opts.css) {
-    const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  if (opts.css || opts.cssSrc) {
+    const css = opts.cssSrc || fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
     html = html.replace('<link rel="stylesheet" href="./styles.css">', '<style>' + css + '</style>');
   }
   const listeners = [];
@@ -83,19 +86,40 @@ function boot(dataDir, opts) {
     beforeParse(w) {
       const orig = w.EventTarget.prototype.addEventListener;
       w.EventTarget.prototype.addEventListener = function (type) {
-        listeners.push(type);
+        // the app's listeners only: jsdom's selector engine (nwsapi) adds its own
+        // mouseover/mouseout on each document it starts, which aren't the app's
+        const caller = (new Error().stack.split('\n')[2] || '');
+        if (!/node_modules[\\/]/.test(caller)) listeners.push(type);
         return orig.apply(this, arguments);
       };
       w.Element.prototype.scrollIntoView = function () { w.__scrolledTo = this; };
+      /* A closed section's body is inert: a person can't tap or focus anything in
+         it, so neither can a test (jsdom doesn't implement inert itself). */
+      const click = w.HTMLElement.prototype.click, focus = w.HTMLElement.prototype.focus;
+      w.HTMLElement.prototype.click = function () { if (!this.closest('[inert]')) return click.apply(this, arguments); };
+      w.HTMLElement.prototype.focus = function () { if (!this.closest('[inert]')) return focus.apply(this, arguments); };
       if (opts.now) { const fixed = opts.now; w.Date.now = () => fixed; }
       w.scrollTo = function () {};
       if (opts.storage) for (const k of Object.keys(opts.storage)) w.localStorage.setItem(k, opts.storage[k]);
+      if (opts.setup) opts.setup(w);                          // stand-ins jsdom lacks (a service worker, caches), set before the app runs
     }
   });
   return { dom, window: dom.window, document: dom.window.document, errors, listeners };
 }
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* Open collapsible sections the way a person does: tap the head of each closed
+   one. g is 'f' (filter panel) or 's' (Settings); no keys means all of them. */
+function openSections(app, g, keys) {
+  const heads = [...app.document.querySelectorAll('.sec-head[data-g="' + g + '"]')];
+  heads.filter(h => !keys || keys.includes(h.dataset.k)).forEach(h => { if (h.getAttribute('aria-expanded') !== 'true') h.click(); });
+}
+/* Go to Settings and open its sections (all of them unless keys are named). */
+function openSettings(app, keys) {
+  app.document.querySelector('#tab-settings').click();
+  openSections(app, 's', keys);
+}
 
 /* Type into a search box the way a person does: set the value, fire input,
    wait out the 180 ms debounce. */
@@ -152,4 +176,4 @@ function mixed() {
 }
 
 module.exports = { ROOT, FIX, BUILD, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
-                   validateIssueIds, boot, wait, typeInto, stress, basic, noPeriods, mixed };
+                   validateIssueIds, boot, wait, openSections, openSettings, typeInto, stress, basic, noPeriods, mixed };

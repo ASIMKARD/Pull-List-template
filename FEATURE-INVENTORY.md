@@ -36,8 +36,8 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-13 | Empty bands/eras/arcs hide under a filter; "Nothing matches these filters." empty state | S2 | present (92-filters: empty bands/eras hide, empty state) |
 | F-14 | Global progress: count, %, bar, `aria-valuenow`; progress mode combined vs per medium | S2 | present — combined (90-render, 95-pace) and per format with each format's own time left (98-tabs-settings) |
 | F-15 | Progress header (phead): title, offline-edition line, strapline + build tag, bar, "n / N read", days remaining | S2 | present (90-render: title, strapline, build, bar, n/N, time left, finish-by) |
-| F-16 | Persistent banner (off by default): one compact progress line per medium, sticky under the tabs | S4 | todo |
-| F-17 | Mini progress bar (on by default) | S4 | todo |
+| F-16 | Persistent banner (off by default): one compact progress line per medium, sticky under the tabs | S4 | present (9h-banners: off by default; one line, or one per format when progress is per format, each in its own verb; the header's figures, kept current by every mark. test/layout/50-table: on every tab, every skin, 320 px, no overflow. Sticky in step 6) |
+| F-17 | Mini progress bar (on by default) | S4 | present (9h-banners: on by default, a `<progress>` with the header's read of goal, refreshed by every mark; test/layout/50-table. Sticky in step 6) |
 | F-18 | Pace estimate: issues/week (light 5, steady 12, heavy 25, marathon 50) → "N left · W weeks · done Mon YYYY" | S3 | present (98-tabs-settings: "N left · W weeks at P a week · done Mon YYYY", same minutes maths and date as the header) |
 | F-19 | Filters: depth (Barebones/Essential/Everything with counts; Barebones is comics-only), type chips, priority M/O, format (one chip per medium), characters (strands) + all/none, era select, search (title, arc, note; debounced 180 ms), unread only, ALT tracks toggle, reset | S2 | present — tier, type, mandatory, format, characters, era, search incl. creators, unread, ALT (92-filters) |
 | F-20 | Order chip: reading order vs Arc Master timeline order | S2 | present (92-filters: arc order) |
@@ -55,11 +55,11 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-32 | Clear all progress (confirm; keeps reviews and bookmarks) | S3 | present (98-tabs-settings: in-page confirm, keeps reviews + bookmarks, snapshot undo restores exactly) |
 | F-33 | Toast with optional action button | S2 | present (94-navigation: toast with action) |
 | F-34 | Refresh reminder (monthly/quarterly/yearly/off), first run starts the clock, dismiss resets | S3 | present (98-tabs-settings: consumed at boot, first run starts the clock, Dismiss and a new interval reset it) |
-| F-35 | Offline readiness readout (Settings → Offline: ready / not ready / unsupported, files cached) | S4 | todo |
-| F-36 | Online/offline toasts and body `.offline` class | S4 | todo |
-| F-37 | Install prompt toast (`beforeinstallprompt`) and "Installed." | S4 | todo |
-| F-38 | Service-worker update flow: "A new version is ready" → Reload | S4 | todo |
-| F-39 | Theme button (default ↔ newsprint), theme-color meta follows | S4 | re-express (skins are CSS-only token sets) |
+| F-35 | Offline readiness readout (Settings → Offline: ready / not ready / unsupported, files cached) | S4 | present (9i-pwa: ready / not ready (N of M) / unavailable from the cache the build names; test/layout/70-pwa: "Ready offline · N of N" after a real install) |
+| F-36 | Online/offline toasts and body `.offline` class | S4 | re-express → present (no online/offline listeners, decided 2 Oct: the connection is read at boot, when the page is shown again and on every tap. The body `.offline` class, a header mark and toasts on change: 9i-pwa; test/layout/70-pwa: marked offline after an offline reload) |
+| F-37 | Install prompt toast (`beforeinstallprompt`) and "Installed." | S4 | present (9i-pwa: the browser bar is held back; a toast and Settings → Offline offer Install; the prompt runs once; "Installed." or a way back. `beforeinstallprompt` is listener 9 of the 9 at boot) |
+| F-38 | Service-worker update flow: "A new version is ready" → Reload | S4 | present (9i-pwa: a new worker is followed to "activated", then "A new version is ready" with Reload; a first install is not an update; quiet checks when the page is shown again. test/layout/70-pwa: a real update via Check for updates, the old cache deleted) |
+| F-39 | Theme button (default ↔ newsprint), theme-color meta follows | S4 | re-express → present (four skins in Settings → Look; the theme-color meta follows each skin's paper, measured for 4 skins × 7 papers in test/layout/40-look) |
 | F-40 | Franchise applied from data: document title, wordmark, strapline, theme-color, apple web-app title | S2 | present (70-shell) |
 | F-41 | Storage shim: `window.storage` → localStorage → in-memory fallback | S2 | present — localStorage with in-memory fallback (70-shell, 93-storage) |
 | F-42 | Debounced 400 ms writes, flushed on `pagehide` / `visibilitychange` hidden | S2 | present (70-shell: debounce 400ms, pagehide + visibilitychange flush) |
@@ -69,17 +69,17 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-46 | Layout-vocabulary migration (`lv`) | — | dropped: v3 has one layout |
 | F-47 | Elsewhere/story band: alternate-continuity rows grouped by story name in a final band | S2 | re-express (ALT rows + eras; see V-14) |
 | F-48 | Newest era first (reverse order) | S3 | present (99-display: bands and eras reversed, rows keep reading order, figures unchanged) |
-| F-49 | Table view (compact rows) | S4 | todo |
+| F-49 | Table view (compact rows) | S4 | present (9h-banners: a root flag, with badge words folding to glyphs that keep full names; test/layout/50-table: L-7, L-8, titles keep half the row, every control still reachable at 24 px) |
 | F-50 | Badges on/off; combo badge; tap-to-reveal notes; notes-only; hide skipped | S3 | present (99-display: badges, combo, tap to reveal, notes only; hide skipped in 92-filters) |
-| F-51 | Dyslexia font | S4 | todo |
-| F-52 | Seven paper swatches (default, warm, grey, rose, mint, sky, lilac) | S4 | todo |
-| F-53 | Density (compact/normal/roomy), text size (S/M/L), mark style (box/dot/web) | S4 | todo |
-| F-54 | Button size compact/standard/large (large ≥ 44 px) | S4 | todo |
-| F-55 | Era hue scheme (split / mono) | S4 | re-express (one token block; ramps derived) |
-| F-56 | Three layouts (signature skin, tabbed, classic/pull skin) | S4 | re-express (ONE layout; skins are pure CSS themes; V-5) |
-| F-57 | Skin CSS beacon (`--skin-ok`) warns when styles.css is stale | S4 | todo |
-| F-58 | Sticky stack measured at runtime (`--tabs-h`, `--stack-h`) | S4 | todo |
-| F-59 | Full offline PWA: network-first shell, cache-first fonts/icons, skipWaiting + clients.claim | S4 | todo |
+| F-51 | Dyslexia font | S4 | present (9g-look: a root attribute; test/layout/40-look: the body face becomes the dyslexia-friendly stack) |
+| F-52 | Seven paper swatches (default, warm, grey, rose, mint, sky, lilac) | S4 | present (9g-look: seven named swatches; 80-guards: one block per swatch colours the page and its own button; test/layout/40-look: contrast in every skin × swatch) |
+| F-53 | Density (compact/normal/roomy), text size (S/M/L), mark style (box/dot/web) | S4 | re-express → present (density and text size in 9g-look and test/layout/40-look: row height compact < normal < roomy; text × 0.9 / 1 / 1.15. Mark style is box / dot / tick and cross: v2's "web" was one franchise's motif, replaced by XM-17) |
+| F-54 | Button size compact/standard/large (large ≥ 44 px) | S4 | present (9g-look: three options, standard by default; test/layout/40-look: compact 26 px mark, large ≥ 44 px glyph buttons) |
+| F-55 | Era hue scheme (split / mono) | S4 | re-express → present (era colours derived per era index from tokens — split by the golden angle, or one colour; test/layout/40-look: 64 eras × 4 skins, AA on every wash) |
+| F-56 | Three layouts (signature skin, tabbed, classic/pull skin) | S4 | re-express → present (one layout; the four skins are token sets — see V-5) |
+| F-57 | Skin CSS beacon (`--skin-ok`) warns when styles.css is stale | S4 | present (9g-look: a stylesheet with an older or missing `--skin-ok` gets an "out of date" toast with Reload; 80-guards: the stylesheet carries the beacon app.js expects) |
+| F-58 | Sticky stack measured at runtime (`--tabs-h`, `--stack-h`) | S4 | present (one sticky `#stack` holds the tabs, the banner and the mini bar; a ResizeObserver measures it into `--stack-h`, which drives `scroll-margin-top`. test/layout/60-stack: --stack-h equals the measured height and follows the banner; row jumps and era chips land below the stack) |
+| F-59 | Full offline PWA: network-first shell, cache-first fonts/icons, skipWaiting + clients.claim | S4 | present (test/layout/70-pwa: installs and claims the page; offline, a reload boots from the cache with the server down; a deploy shows at once online (network-first shell); fonts from the cache; every fetch path ends in a real Response) |
 | F-60 | Data: per-issue medium, legend, maintenance notes, counts (total/core/mandatory/essential/gapnotes/renumbers), timeline order, alt order | S1 | present — data (20-build: media, counts incl. gap notes/renumbers, timeline, altKey); UI later |
 
 ## S — v2 settings (control → store → default)
@@ -89,17 +89,17 @@ store is listed only to record where the value lived.
 
 | ID | Control (v2 id) | v2 store | Default | Session | Status |
 |---|---|---|---|---|---|
-| S-1 | Layout `#segLayout` | settings.layout | signature | S4 | re-express (one layout + CSS skins) |
-| S-2 | Density `#segDensity` | view.density | normal | S4 | todo |
-| S-3 | Text size `#segFont` | view.font | md | S4 | todo |
-| S-4 | Paper `#bgRow` (7 swatches) | view.bg | 0 | S4 | todo |
-| S-5 | Marks `#segMark` | view.mark | box | S4 | todo |
-| S-6 | Era hues `#segEraScheme` | settings.eraScheme | split | S4 | re-express |
-| S-7 | Table view `#tableChip` | view.table | off | S4 | todo |
+| S-1 | Layout `#segLayout` | settings.layout | signature | S4 | re-express → present (one layout; the skin control is Settings → Look → Skin, see S-25) |
+| S-2 | Density `#segDensity` | view.density | normal | S4 | present (settings.density; 9g-look, test/layout/40-look) |
+| S-3 | Text size `#segFont` | view.font | md | S4 | present (settings.textSize, a scale multiplier; 9g-look, test/layout/40-look) |
+| S-4 | Paper `#bgRow` (7 swatches) | view.bg | 0 | S4 | present (settings.paper, seven swatches; 9g-look, test/layout/40-look) |
+| S-5 | Marks `#segMark` | view.mark | box | S4 | present (settings.marks: box / dot / tick and cross; 9g-look: the glyphs change, screen-reader labels don't) |
+| S-6 | Era hues `#segEraScheme` | settings.eraScheme | split | S4 | re-express → present (settings.eraHues: one per era / one colour, offered only with two or more eras; 9g-look, 9f-visibility, test/layout/40-look) |
+| S-7 | Table view `#tableChip` | view.table | off | S4 | present (settings.table, Display → Rows; 9h-banners) |
 | S-8 | Badges `#badgeChip` | view.badges | on | S3 | present (99-display) |
-| S-9 | Dyslexia font `#dysChip` | view.dys | off | S4 | todo |
-| S-10 | Mini progress bar `#miniChip` | view.mini | on | S4 | todo |
-| S-11 | Persistent banner `#bannerChip` | settings.banner | off | S4 | todo |
+| S-9 | Dyslexia font `#dysChip` | view.dys | off | S4 | present (settings.dys; 9g-look, test/layout/40-look) |
+| S-10 | Mini progress bar `#miniChip` | view.mini | on | S4 | present (settings.mini, Display → Progress, on by default; 9h-banners) |
+| S-11 | Persistent banner `#bannerChip` | settings.banner | off | S4 | present (settings.banner, Display → Progress, off by default; 9h-banners) |
 | S-12 | Combo badge `#comboChip` | view.combo | off | S3 | present (99-display) |
 | S-13 | Newest era first `#revChip` | view.rev | off | S3 | present (99-display) |
 | S-14 | Hide skipped `#skipChip` | view.hideSkip | off | S2 | present (92-filters: Reading section) |
@@ -108,12 +108,12 @@ store is listed only to record where the value lived.
 | S-17 | Jump to first unread on load `#autoChip` | view.auto | off | S3 | re-express → present (decided 3 Oct): no checklist jump, because the landing is always collapsed; the Reading tab resumes at the first unread (9a-reading: boot on Reading resumes, checklist stays collapsed) |
 | S-18 | Pace `#segPace` | view.pace | 12/week | S3 | present (98-tabs-settings) |
 | S-19 | Progress mode `#segProgress` | settings.progressMode | combined | S3 | present (98-tabs-settings) |
-| S-20 | Button size `#segTap` | view.tap | standard | S4 | todo |
+| S-20 | Button size `#segTap` | view.tap | standard | S4 | present (settings.tap; 9g-look, test/layout/40-look) |
 | S-21 | Refresh reminder `#segRefresh` | settings.refreshEvery | quarterly | S3 | present (98-tabs-settings) |
 | S-22 | Swipe to mark `#swipeChip` | view.swipe | off | S3 | present (9c-bulk-touch: off by default, decided 3 Oct) |
 | S-23 | Long-press bulk-mark `#pressChip` | view.press | off | S3 | present (9c-bulk-touch: off by default, decided 3 Oct) |
 | S-24 | Presets `#presetRow` | view.presets | [] | S3 | present (9d-story-filters: settings.presets, filters stored by name) |
-| S-25 | Theme `#themeBtn` | settings.theme | default | S4 | re-express |
+| S-25 | Theme `#themeBtn` | settings.theme | default | S4 | re-express → present (settings.skin from the data's skins, default from config; offered only with two or more skins; 9g-look, 9f-visibility) |
 | S-26 | Reading/timeline order `#orderChip` | settings.viewOrder | reading | S2 | present (92-filters) |
 | S-27 | Dual order `#cloneChip` | settings.cloneOrder | epic (A) | S2 | present (92-filters) |
 | S-28 | Collapsed eras / bands | settings.collapsed / pcollapsed | persisted | S2 | re-express → present: always collapsed, expand state session-only (90-render, 70-shell) |
@@ -166,26 +166,26 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-35 | all rows inside a period | S2 | present (90-render) |
 | T-36 | filters visible on Checklist in tabs | S2 | re-express → present (92-filters: panel above the checklist) |
 | T-37 | build tag and sw cache version agree | S1 | present (70-shell + 80-guards: build tag = sw.js cache hash) |
-| T-38 | signature ramp text clears WCAG AA on its dark surface | S4 | re-express: every skin's era text clears AA on its surface |
-| T-39 | signature era ramp is flat | S4 | re-express (per-skin token test) |
-| T-40 | signature filter chips have a visible border | S4 | todo |
+| T-38 | signature ramp text clears WCAG AA on its dark surface | S4 | re-express → present (test/layout/40-look: every skin's era text, years, counts and finish-by clear 4.5:1 on its wash, for 64 eras, split and one colour) |
+| T-39 | signature era ramp is flat | S4 | re-express → present (test/layout/40-look: washes are pale — luminance ≥ 0.7, or ≤ 0.08 on Night — neighbours differ, one colour is one colour) |
+| T-40 | signature filter chips have a visible border | S4 | re-express → present (test/layout/40-look: chip, button, search and mark outlines clear the 3:1 non-text ratio in every skin × paper) |
 | T-41 | filters survive a round trip through Reading | S3 | present (98-tabs-settings round trip through Settings; 9a-reading through Reading) |
 | T-42 | isTabbed covers every non-classic layout | — | dropped: one layout (spec §1) |
-| T-43 | paper + era-hue controls hidden on the signature skin | S4 | re-express: no control is ever hidden by a skin (reachability guard V-5) |
+| T-43 | paper + era-hue controls hidden on the signature skin | S4 | re-express → present (no control is ever hidden by a skin: V-5) |
 | T-44 | refresh interval is actually consumed, not just stored | S3 | present (98-tabs-settings) |
-| T-45 | title follows the text-size setting | S4 | todo |
+| T-45 | title follows the text-size setting | S4 | present (test/layout/40-look: the title is 25.2 / 28 / 32.2 px at small / medium / large) |
 | T-46 | button size reads and writes the same store applyView uses | S2 | re-express → present (93-storage: one settings object) |
 | T-47 | pending writes flush when the app is hidden | S2 | present (70-shell) |
 | T-48 | no function is defined twice | S1 | present (80-guards: brace-depth scan, scanner self-tested) |
 | T-49 | bookmarks open a list, not a jump to the first one | S3 | present (98-tabs-settings) |
-| T-50 | persistent banner toggle exists | S4 | todo |
-| T-51 | persistent banner is off by default | S4 | todo |
+| T-50 | persistent banner toggle exists | S4 | present (9h-banners) |
+| T-51 | persistent banner is off by default | S4 | present (9h-banners) |
 | T-52 | reading tab labels vary by medium | S3 | present (9a-reading) |
 | T-53 | review button is targetable by class | S2 | present (9b-reviews: `.b.rv` on every arc head) |
-| T-54 | button size seg has 3 options | S4 | todo |
-| T-55 | button size defaults to standard | S4 | todo |
-| T-56 | compact size restores the original 26px mark | S4 | todo |
-| T-57 | glyph buttons usable at standard, 44px at large | S4 | todo |
+| T-54 | button size seg has 3 options | S4 | present (9g-look) |
+| T-55 | button size defaults to standard | S4 | present (9g-look) |
+| T-56 | compact size restores the original 26px mark | S4 | present (test/layout/40-look) |
+| T-57 | glyph buttons usable at standard, 44px at large | S4 | present (test/layout/40-look: standard ≥ 24 px, large ≥ 44 px for mark, bookmark and star) |
 | T-58 | depth chips built | S2 | present (92-filters) |
 | T-59 | progress mode seg has 2 options | S3 | present (98-tabs-settings) |
 | T-60 | refresh reminder seg has 4 options incl. off | S3 | present (98-tabs-settings) |
@@ -209,42 +209,42 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-78 | search narrows the list | S2 | present (92-filters) |
 | T-79 | band count reflects filtered total | S2 | re-express → present (92-filters: Showing N of M) |
 | T-80 | clearing search restores all bands | S2 | present (92-filters: back to the collapsed landing) |
-| T-81 | classic skin sets data-skin=pull | S4 | re-express: each skin sets `data-skin` and nothing else |
+| T-81 | classic skin sets data-skin=pull | S4 | re-express → present (9g-look: a skin sets data-skin and nothing else in the page) |
 | T-82 | classic skin uses the tabbed shell | — | dropped: one shell |
-| T-83 | layout change lands on Checklist, not Settings | S4 | re-express: skin change keeps the current tab |
-| T-84 | classic skin shows filters | S4 | re-express (reachability guard, V-5) |
+| T-83 | layout change lands on Checklist, not Settings | S4 | re-express → present (9g-look: a skin change keeps the current tab) |
+| T-84 | classic skin shows filters | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
 | T-85 | classic skin has no hardcoded franchise chip | S1 | present (80-guards: no franchise or fixture strings in template code) |
-| T-86 | search box present in classic skin | S4 | re-express (V-5) |
-| T-87 | classic skin has depth chips | S4 | re-express (V-5) |
-| T-88 | classic skin has character chips | S4 | re-express (V-5) |
+| T-86 | search box present in classic skin | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
+| T-87 | classic skin has depth chips | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
+| T-88 | classic skin has character chips | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
 | T-89 | classic skin hides filters off-checklist | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-90 | classic skin restores filters on checklist | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-91 | classic skin: no filters on Reading | S3 | re-express → present (98-tabs-settings, 9a-reading: no filter panel on Reading) |
 | T-92 | classic skin: no filters on Reviews | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
-| T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express: `[hidden]` authoritative with **zero** `!important` |
-| T-94 | nothing sticky in tabbed mode either | S4 | re-express (one layout; sticky rules measured in browser, L-1..L-5) |
+| T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express → present (80-guards: zero !important, and every [hidden] element computes to display:none against the real stylesheet) |
+| T-94 | nothing sticky in tabbed mode either | S4 | re-express → present (one layout; the sticky stack is measured in test/layout/60-stack) |
 | T-95 | depth control is a single nowrap row | S3 | present (99-display) |
-| T-96 | nothing sticky in the classic skin | S4 | re-express (skins never change positioning) |
-| T-97 | layout seg has 3 buttons | S4 | re-express: skin seg has one option per configured skin |
-| T-98 | skin beacon present in styles.css | S4 | todo |
-| T-99 | classic option = pull skin | S4 | re-express (T-81) |
+| T-96 | nothing sticky in the classic skin | S4 | re-express → present (skins never change positioning: 80-guards token-only blocks; test/layout/60-stack pins the stack in every skin) |
+| T-97 | layout seg has 3 buttons | S4 | re-express → present (9g-look: one option per configured skin, in order; one skin → no control) |
+| T-98 | skin beacon present in styles.css | S4 | present (80-guards, 9g-look) |
+| T-99 | classic option = pull skin | S4 | re-express → present (T-81) |
 | T-100 | pull skin keeps the tab shell | — | dropped: one shell |
-| T-101 | pull skin: tabs visible | S4 | re-express (V-5) |
+| T-101 | pull skin: tabs visible | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
 | T-102 | pull skin: period bands carry data-p | S2 | present (90-render: data-b) |
-| T-103 | leaving classic clears the skin | S4 | todo |
-| T-104 | default layout = signature | S4 | re-express: default skin from config |
+| T-103 | leaving classic clears the skin | S4 | present (9g-look: moving to another skin leaves no trace of the last) |
+| T-104 | default layout = signature | S4 | re-express → present (9g-look: franchise.skin opens a first visit; the build validates it against franchise.skins) |
 | T-105 | phead visible in tabs | S2 | present (90-render) |
 | T-106 | topbar hidden in tabs | — | dropped: no topbar shell |
 | T-107 | signature option uses the tabbed shell | — | dropped: one shell |
-| T-108 | signature option sets data-skin=signature | S4 | re-express (T-81) |
+| T-108 | signature option sets data-skin=signature | S4 | re-express → present (T-81) |
 | T-109 | signature skin hides the topbar | — | dropped |
-| T-110 | signature skin keeps the tab nav | S4 | re-express (V-5) |
-| T-111 | signature skin keeps the progress header | S4 | re-express (V-5) |
-| T-112 | signature skin: checklist visible | S4 | re-express (V-5) |
+| T-110 | signature skin keeps the tab nav | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
+| T-111 | signature skin keeps the progress header | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
+| T-112 | signature skin: checklist visible | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
 | T-113 | signature skin hides the gear | — | dropped: no gear (Settings tab) |
 | T-114 | signature skin: Settings tab opens the pane | S3 | present (98-tabs-settings) |
-| T-115 | signature skin keeps the tab nav visible | S4 | re-express (V-5) |
-| T-116 | signature -> tabbed via seg works | S4 | re-express: switching skins round-trips |
+| T-115 | signature skin keeps the tab nav visible | S4 | present (V-5: 9g-look — a skin sets data-skin and changes no element; 80-guards — skin blocks set tokens only; test/layout/40-look — every control on every tab reachable in every skin) |
+| T-116 | signature -> tabbed via seg works | S4 | re-express → present (9g-look: switching skins round-trips, the page unchanged) |
 | T-117 | tabs: gear hidden again | — | dropped |
 | T-118 | Reading tab shows stepper title | S3 | present (9a-reading) |
 | T-119 | the done button persists a mark (label varies by medium) | S3 | present (9a-reading: Mark Beaten persists; D-1 regression) |
@@ -257,15 +257,15 @@ v3 replaces by design — the named v3 assertion replaces it.
 
 | ID | v2 assertion | Session | Status |
 |---|---|---|---|
-| L-1 | tabs are sticky | S4 | todo |
-| L-2 | tabs pinned to the top after scrolling | S4 | todo |
-| L-3 | banner is sticky | S4 | todo |
-| L-4 | banner sits directly under the tabs | S4 | todo |
-| L-5 | band is not shifted onto its own intro | S4 | todo |
-| L-6 | no large gap between bands (≤16 px) | S4 | todo |
-| L-7 | table view at least halves row height | S4 | todo |
-| L-8 | no table row overflows the screen width | S4 | todo |
-| L-9 | no runtime errors | S4 | todo |
+| L-1 | tabs are sticky | S4 | present (test/layout/60-stack: the stack holding the tabs is sticky, 4 skins, Checklist and Settings) |
+| L-2 | tabs pinned to the top after scrolling | S4 | present (test/layout/60-stack: the tabs are at the top after scrolling 700 px) |
+| L-3 | banner is sticky | S4 | present (test/layout/60-stack: the banner is pinned in the stack) |
+| L-4 | banner sits directly under the tabs | S4 | present (test/layout/60-stack: the banner sits within 2 px of the tabs) |
+| L-5 | band is not shifted onto its own intro | S4 | present (test/layout/60-stack: no band intro sits under its band head) |
+| L-6 | no large gap between bands (≤16 px) | S4 | present (test/layout/60-stack: bands at most 16 px apart in every density) |
+| L-7 | table view at least halves row height | S4 | present (test/layout/50-table: the median row height in table view is at most half the normal one, 4 skins × 320/390 px) |
+| L-8 | no table row overflows the screen width | S4 | present (test/layout/50-table: no table row wider than the screen — 944 rows, 4 skins × 320/390 px × default and largest settings) |
+| L-9 | no runtime errors | S4 | present (test/layout/10-sweep: no page or console errors on every tab, 4 datasets × 320/360/390 px, everything open; caught a font 404) |
 
 Also from v2's docs and deploy checklist (carried as process, CLAUDE.md):
 verify every SW path exists on disk (→ guard), manifest franchised, icons
@@ -277,7 +277,7 @@ installed app once online.
 | ID | Defect | Fix at source | Session | Status |
 |---|---|---|---|---|
 | D-1 | Reading-tab mark doesn't update era counters | one mark path for every surface; assert counters move from a Reading-tab mark | S3 | present (9a-reading: a Reading-tab mark moves the header, band and era counters and the time left; mutation: bypassing setMark fails it) |
-| D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present — SW precaches 12 fonts + 3 icons, every path exists (80-guards); live install S4 |
+| D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present (80-guards: 12 fonts + icons, every path exists; test/layout/70-pwa: a real install caches every precached file, and fonts load offline) |
 | D-3 | hardcoded franchise chip + filter branch | no franchise strings in template code (guard) | S1 | present (80-guards) |
 | D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | present (9b-reviews: `.b.rv` targetable, opens the arc's review editor) |
 | D-5 | phantom "Elseworlds (ALT)" era appended | build never adds an era not in the data | S1 | present (20-build: output eras == dataset eras) |
@@ -287,8 +287,8 @@ installed app once online.
 | D-9 | duplicate `switchTab` / `jumpToIssue` declarations | guard: no function defined twice | S1 | present (80-guards) |
 | D-10 | triple `jumpToIssue` breaks jumps into collapsed sections | one `jumpToIssue` that expands ancestors | S2 | present (94-navigation) |
 | D-11 | no save-flush when the app closes | flush on pagehide / visibilitychange | S2 | present (70-shell: pagehide and visibilitychange flush) |
-| D-12 | era colour ramps cap at 26 | no cap; 64-era stress dataset builds and (S4) styles | S1/S4 | present — data (20-build: 64 eras); styling S4 |
-| D-13 | template icons and manifest name leak into builds | manifest, icons, theme from config; guard | S4 | present — manifest from config (20-build, 80-guards); franchise icons S4 |
+| D-12 | era colour ramps cap at 26 | no cap; 64-era stress dataset builds and (S4) styles | S1/S4 | present (20-build: 64 eras build; test/layout/40-look: all 64 styled, AA in every skin) |
+| D-13 | template icons and manifest name leak into builds | manifest, icons, theme from config; guard | S4 | present (franchise.icons from config, each checked as a PNG of its size — broken/icon-wrong-size, broken/icon-missing; the manifest and page links follow it, and a tracker on the template's placeholder icons is warned: 9i-pwa, 20-build, 80-guards) |
 
 ## V — spec additions (v3 requirements v2 lacks)
 
@@ -298,20 +298,20 @@ installed app once online.
 | V-2 | String templating with `escapeHtml` / `escapeAttr` everywhere | S2 | present (80-guards, 90-render escaping) |
 | V-3 | Always collapsed on load, no setting; expand state session-only | S2 | present (90-render, 92-filters, 96-figures: boots collapsed even with saved filters) |
 | V-4 | Every band has its own identity (era index + occurrence) | S2 | present (90-render) |
-| V-5 | ONE layout; skins are pure CSS and never move or hide a control; reachability guard proves every control reachable in every skin | S4 | todo |
+| V-5 | ONE layout; skins are pure CSS and never move or hide a control; reachability guard proves every control reachable in every skin | S4 | present (one layout. 80-guards: skin, paper and Look blocks are bare `:root[data-…]` token sets with no position, display or size. 9g-look: switching skins changes no element, class, id or hidden state. test/layout/40-look: every control on every tab is displayed, at least 24 × 24 px, in view and the element hit at its centre, in 4 skins × 390/320 px × default and largest settings — 5,328 checks) |
 | V-6 | Goal banners: name, years, read count, progress bar, "days left" pace | S2 | present (90-render, 95-pace: name, years, count, bar, time left, cumulative finish-by) |
-| V-7 | Keyboard navigation and shortcuts | S4 | todo |
-| V-8 | Fast first paint: critical CSS inline, preloaded display font, non-blocking data | S4 | todo |
+| V-7 | Keyboard navigation and shortcuts | S4 | present (9j-a11y: on the Reading tab ← / → step, R reads, X skips; "/" goes to search from any tab; the arrow keys, Home and End move between tabs (ARIA tabs pattern); nothing fires while typing or with Ctrl/⌘. `keydown` is listener 10 of 12) |
+| V-8 | Fast first paint: critical CSS inline, preloaded display font, non-blocking data | S4 | re-express → present (John's answer 2: one stylesheet, the display font preloaded, the scripts deferred, measured in test/layout/80-paint: the shell paints at once with data.js or every font 2 s late; on a 1.6 Mbps link the display font lands by first paint; every @font-face swaps. Inlining was not chosen) |
 | V-9 | One colour-token block (guard: exactly one); zero `!important` (guard) | S1/S4 | present — guards (80-guards: one :root colour block, zero !important) |
 | V-10 | Essential / Complete event toggle in Settings; progress and counts recompute; "Complete view adds N issues" on event headers | S1 data / S3 UI | present (9d-story-filters: Story chips + Settings, a plan setting; totals recompute; "Complete view adds N issues" on the event's own arc heading, tap to switch) |
 | V-11 | Presence tags (major/minor/cameo), character filter defaults to meaningful appearances, cameo toggle | S1 data / S3 UI | present (9d-story-filters: appearances per character, major + minor by default, Include cameos) |
 | V-12 | Depth tier independent of M/O; optional Importance 1–5 | S1 data / S2 UI | present (data: tier independent of M/O, 20-build; 9d-story-filters: importance on arc headings) |
 | V-13 | Era-ranked compound sort keys, derived; Alt Sort Key = publication order | S1 | present (20-build, 30-identity) |
 | V-14 | ALT continuity rows build, order, and are skipped by the per-series check (replaces v2's story band) | S1 data / S2 UI | present — data (30-identity: ALT order + per-series skip); UI S2 |
-| V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | present (90-render, 92-filters: 5,000-row dataset renders only opened/matching eras) |
+| V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | present — closed 4 Oct (John): lazy rendering replaces `content-visibility`. 90-render, 92-filters: the 5,000-row dataset renders only opened or matching eras |
 | V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacy: {prefix, format}`) | S2 | present (70-shell namespacing, 93-storage read-only `storage.legacy` v2 reader) |
-| V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present — hash (20-build, 80-guards); icons/manifest polish S4 |
-| V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | todo |
+| V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present (20-build, 80-guards: hash; 9i-pwa: data.js names the cache and lists the worker's files; icons, manifest name and theme colour from config) |
+| V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | present (9j-a11y: every control named on every tab with everything open; aria references resolve; valid states; no duplicate ids; the tabs pattern; landmarks; polite live regions; marks named with their state. Reduced motion: test/layout/20-motion) |
 | V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | present (80-guards: sw.js run in a vm, install/activate/fetch exercised) |
 | V-20 | Harness in GitHub Actions on every push; fails on zero assertions | S1 | present (.github/workflows/harness.yml + 00-runner) |
 | V-21 | Harness passes on fixture, fixture without periods, and one real dataset (Absolute pilot, in a fresh repo) | S1/S5 | todo |
@@ -323,6 +323,8 @@ installed app once online.
 | V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | present (9c-bulk-touch: Undo restores every touched row's previous state) |
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
 | V-29 | Per-format durations (decided 1 Oct, untimed 3 Oct). Comics are one issue each at minutes per issue. Shows use `durations: {screen: N}`, which a row can override. Games carry their own `duration`, and a missing one warns with a coverage %, adds nothing and shows `+N untimed`. Time left sums each row's own minutes. Finish-by = minutes left ÷ (issues/week × minutes/issue), and comics-only results are bit-identical to session 2 | S3 | present (97-durations: build + coverage warning, own-minutes figures, untimed marker, format-as-plan totals, comics-only exactness on 4 datasets × 12 pace pairs + exhaustive arithmetic) |
+| V-30 | Data-driven visibility (John, 4 Oct; CLAUDE.md → UI rules): a control or section renders only when the dataset gives it something to do, decided by one capability map built from the data | S4 | present (9f-visibility: 36 controls × 19 capabilities. On `minimal` none appear and the controls every tracker has do; on the full fixture all appear. Second order measured on `mixed`; saved filters for controls that aren't offered are ignored; forcing each capability on is caught) |
+| V-31 | Collapsible Settings (John, 4 Oct): sections collapse like the filter panel, with icon, name and one-line summary; all collapsed by default; open state remembered; same animation and tokens | S4 | present (98-tabs-settings: one section component for the panel and Settings; collapsed by default with inert bodies; live summaries; open state saved after the debounce and restored on the next visit; toggled in place) |
 
 ## CR — creator credits (decided 1 Oct)
 
@@ -353,7 +355,7 @@ installed app once online.
 | FP-8 | Removable chips at the top for every active filter, active count, Clear all | S2 | present (92-filters: removable chips, count, Clear all) |
 | FP-9 | Live "Showing N of M issues" and Save as preset at the bottom | S2/S3 | present (92-filters: Showing N of M; 9d-story-filters: Save as preset) |
 | FP-10 | All sections start collapsed; open state remembered (namespaced storage) | S2 | present (92-filters: collapsed by default, remembered) |
-| FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | todo |
+| FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | present (98-tabs-settings: one shared rule animates the body's grid row 0fr → 1fr; every duration scales with `--motion`, which reduced motion sets to 0. Real Chromium: test/layout/20-motion, through the browser's own animation list: opens and shuts with a grid-template-rows transition, and under reduced motion no element has any duration) |
 | FP-12 | Sections are buttons with `aria-expanded`; delegated (counts toward the ≤12 listeners) | S2 | present (92-filters: aria-expanded, delegated) |
 
 ## XM — X-Men features v2 lacks
@@ -362,11 +364,11 @@ installed app once online.
 |---|---|---|---|
 | XM-1 | Era divider banners: name, years, read/total, skipped count, progress track, time left, ✓ when complete (the goal banner, V-6) | S2 | present (90-render, 95-pace) |
 | XM-2 | Pace as minutes per issue (quick 8 / average 15 / deep 25) driving "time left" per banner | S2/S3 | present — both, decided 2 Oct (95-pace); shows and games use their own durations (V-29, 97-durations) |
-| XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | todo |
+| XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | present (folds into V-7; the Reading card shows the keys on devices with a keyboard) |
 | XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | present (98-tabs-settings) |
 | XM-5 | File backup: export JSON download, import from file | S3 | present (9e-sync: export `<key>-backup-YYYY-MM-DD.json`, import from file) |
 | XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | present (9e-sync: #sync= imports on open, merges, never downgrades read, reports counts, clears the link) |
-| XM-7 | "Check for updates" button (`reg.update()`) | S4 | todo |
+| XM-7 | "Check for updates" button (`reg.update()`) | S4 | present (9i-pwa: Check for updates calls reg.update(), says "latest", waits for a connection offline, reports a failure; test/layout/70-pwa: finds a real new worker) |
 | XM-8 | Era navigation style: chips / dropdown / scroll | S3 | present (99-display: a jump bar, chips or dropdown, that opens and scrolls to an era and never filters; plain scroll is the default) |
 | XM-9 | Landmarks-only filter; landmarks inline vs tap-to-reveal | S3 | re-express → present (99-display: landmarks are the row note, so landmarks-only = notes only and inline vs tap = tap to reveal) |
 | XM-10 | Gap notes on/off | S3 | present (99-display) |
@@ -376,8 +378,8 @@ installed app once online.
 | XM-14 | Incremental count refresh (ancestor stats update without a full re-render) | S2 | present (91-marks: refreshStats) |
 | XM-15 | Arc issue list rendered on expand (lazy) — basis of V-15 | S2 | present (90-render) |
 | XM-16 | `escapeHtml` / `escapeAttr` string templating (V-2) | S2 | present (80-guards) |
-| XM-17 | Read-mark style tick / cross | S4 | todo (folds into S-5) |
-| XM-18 | Font size as a scale multiplier | S4 | todo (folds into S-3) |
+| XM-17 | Read-mark style tick / cross | S4 | present (folds into S-5: tick and cross) |
+| XM-18 | Font size as a scale multiplier | S4 | present (folds into S-3: a scale multiplier) |
 | XM-19 | Show/hide the jump button | S3 | present (98-tabs-settings) |
 | XM-20 | Remembered expanded eras | — | dropped: spec §1 — always collapsed on load, expand state session-only |
 

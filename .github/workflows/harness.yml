@@ -35,19 +35,30 @@ jobs:
         run: |
           python3 tools/build.py test/fixtures/basic/dataset.json --out "$RUNNER_TEMP/basic"
           python3 tools/build.py test/fixtures/no-periods/dataset.json --out "$RUNNER_TEMP/no-periods"
+          python3 tools/build.py test/fixtures/minimal/dataset.json --out "$RUNNER_TEMP/minimal"
 
       - name: Run the harness (fails on any failure, any crash, or zero assertions)
         run: |
           set -o pipefail
           node test/run.js | tee "$RUNNER_TEMP/harness.log"
 
-      - name: Require a non-zero assertion count
+      - name: Install Chromium for the layout suite (the version playwright-core pins)
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Run the real-browser layout suite (Chromium; same rules as the harness)
         run: |
-          line=$(grep -E '^[0-9]+ assertions, [0-9]+ failed' "$RUNNER_TEMP/harness.log" | tail -1)
-          echo "$line"
-          count=$(echo "$line" | grep -oE '^[0-9]+')
-          if [ -z "$count" ] || [ "$count" -eq 0 ]; then
-            echo "::error::The harness made zero assertions — a crashed harness looks like a pass."
-            exit 1
-          fi
-          echo "### Harness: $line" >> "$GITHUB_STEP_SUMMARY"
+          set -o pipefail
+          HARNESS_SUITES=test/layout node test/run.js | tee "$RUNNER_TEMP/layout.log"
+
+      - name: Require a non-zero assertion count (harness and layout suite)
+        run: |
+          for log in harness layout; do
+            line=$(grep -E '^[0-9]+ assertions, [0-9]+ failed' "$RUNNER_TEMP/$log.log" | tail -1)
+            echo "$log: $line"
+            count=$(echo "$line" | grep -oE '^[0-9]+')
+            if [ -z "$count" ] || [ "$count" -eq 0 ]; then
+              echo "::error::The $log run made zero assertions — a crashed run looks like a pass."
+              exit 1
+            fi
+            echo "### ${log^}: $line" >> "$GITHUB_STEP_SUMMARY"
+          done

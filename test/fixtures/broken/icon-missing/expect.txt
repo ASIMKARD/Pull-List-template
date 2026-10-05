@@ -1,0 +1,1 @@
+franchise.icons.512: icons/nope-512.png is not a PNG in the repo

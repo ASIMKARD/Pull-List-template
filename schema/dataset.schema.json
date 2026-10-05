@@ -1,239 +1,658 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://pull-list/schema/dataset.schema.json",
-  "title": "Pull List dataset.json (schema v1)",
-  "description": "The master data for one tracker. tools/build.py enforces the cross-field rules (references resolve, keys derived, ids stable); this schema enforces shape. The harness validates every fixture against both, so they cannot drift.",
-  "type": "object",
-  "required": ["schemaVersion", "franchise", "eras", "types", "tiers", "arcs"],
-  "additionalProperties": false,
-  "oneOf": [{ "required": ["rows"] }, { "required": ["sources"] }],
-  "properties": {
-    "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
-    "franchise": {
-      "type": "object",
-      "required": ["key", "wordmark", "title", "strapline", "span", "theme"],
-      "additionalProperties": false,
-      "properties": {
-        "key": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,30}$", "description": "Unique across every hosted tracker: namespaces storage, QR prefix and cache name." },
-        "wordmark": { "type": "string", "minLength": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "strapline": { "type": "string" },
-        "span": { "type": "string" },
-        "theme": { "$ref": "#/$defs/colour" },
-        "background": { "$ref": "#/$defs/colour" },
-        "searchUrl": { "type": "string" },
-        "dualOrder": {
-          "type": ["object", "null"],
-          "required": ["label", "a", "b"],
-          "properties": { "label": { "type": "string" }, "a": { "type": "string" }, "b": { "type": "string" } },
-          "additionalProperties": false
-        },
-        "storage": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "legacy": {
-              "type": "object",
-              "required": ["prefix", "format"],
-              "additionalProperties": false,
-              "description": "Migration hook: where the tracker's previous version kept its progress. Read-only — the old keys are never modified (the -archive site shares this origin).",
-              "properties": {
-                "prefix": { "type": "string", "minLength": 1, "description": "Old localStorage key prefix, e.g. 'absolute:v1:'." },
-                "format": { "enum": ["v2"], "description": "Old storage layout. 'v2' = template v2 ({p:{key:state}, b:[keys]} + reviews keyed by issue). Add formats per tracker at its migration, after inspecting its real stored data." },
-                "qrPrefix": { "type": "string", "description": "Old QR / sync-code prefix (import arrives in session 3)." }
-              }
-            }
-          }
-        },
-        "strictCredits": { "type": "boolean", "description": "Missing credits fail the build (on for new builds, off for migrations)." },
-        "eventRelevance": { "type": "string", "description": "The tag that marks an event chapter essential for this tracker. Defaults to key." }
-      }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://pull-list/schema/dataset.schema.json",
+ "title": "Pull List dataset.json (schema v1)",
+ "description": "The master data for one tracker. tools/build.py enforces the cross-field rules (references resolve, keys derived, ids stable); this schema enforces shape. The harness validates every fixture against both, so they cannot drift.",
+ "type": "object",
+ "required": [
+  "schemaVersion",
+  "franchise",
+  "eras",
+  "types",
+  "tiers",
+  "arcs"
+ ],
+ "additionalProperties": false,
+ "oneOf": [
+  {
+   "required": [
+    "rows"
+   ]
+  },
+  {
+   "required": [
+    "sources"
+   ]
+  }
+ ],
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "schemaVersion": {
+   "const": 1
+  },
+  "franchise": {
+   "type": "object",
+   "required": [
+    "key",
+    "wordmark",
+    "title",
+    "strapline",
+    "span",
+    "theme"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "key": {
+     "type": "string",
+     "pattern": "^[a-z0-9][a-z0-9-]{1,30}$",
+     "description": "Unique across every hosted tracker: namespaces storage, QR prefix and cache name."
     },
-    "eras": {
+    "wordmark": {
+     "type": "string",
+     "minLength": 1
+    },
+    "title": {
+     "type": "string",
+     "minLength": 1
+    },
+    "strapline": {
+     "type": "string"
+    },
+    "span": {
+     "type": "string"
+    },
+    "theme": {
+     "$ref": "#/$defs/colour"
+    },
+    "background": {
+     "$ref": "#/$defs/colour"
+    },
+    "searchUrl": {
+     "type": "string"
+    },
+    "dualOrder": {
+     "type": [
+      "object",
+      "null"
+     ],
+     "required": [
+      "label",
+      "a",
+      "b"
+     ],
+     "properties": {
+      "label": {
+       "type": "string"
+      },
+      "a": {
+       "type": "string"
+      },
+      "b": {
+       "type": "string"
+      }
+     },
+     "additionalProperties": false
+    },
+    "storage": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "legacy": {
+       "type": "object",
+       "required": [
+        "prefix",
+        "format"
+       ],
+       "additionalProperties": false,
+       "description": "Migration hook: where the tracker's previous version kept its progress. Read-only — the old keys are never modified (the -archive site shares this origin).",
+       "properties": {
+        "prefix": {
+         "type": "string",
+         "minLength": 1,
+         "description": "Old localStorage key prefix, e.g. 'absolute:v1:'."
+        },
+        "format": {
+         "enum": [
+          "v2"
+         ],
+         "description": "Old storage layout. 'v2' = template v2 ({p:{key:state}, b:[keys]} + reviews keyed by issue). Add formats per tracker at its migration, after inspecting its real stored data."
+        },
+        "qrPrefix": {
+         "type": "string",
+         "description": "Old QR / sync-code prefix (import arrives in session 3)."
+        }
+       }
+      }
+     }
+    },
+    "strictCredits": {
+     "type": "boolean",
+     "description": "Missing credits fail the build (on for new builds, off for migrations)."
+    },
+    "eventRelevance": {
+     "type": "string",
+     "description": "The tag that marks an event chapter essential for this tracker. Defaults to key."
+    },
+    "skins": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "paper",
+       "newsprint",
+       "pull",
+       "night"
+      ]
+     },
+     "minItems": 1,
+     "uniqueItems": true,
+     "description": "The skins this tracker offers, in order (default: all four). One skin means no skin control."
+    },
+    "skin": {
+     "enum": [
+      "paper",
+      "newsprint",
+      "pull",
+      "night"
+     ],
+     "description": "The skin a first visit opens in (default: the first of skins). Must be one of skins."
+    },
+    "icons": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "192": {
+       "type": "string"
+      },
+      "512": {
+       "type": "string"
+      },
+      "maskable": {
+       "type": "string"
+      }
+     },
+     "description": "PNG paths in the repo for the 192 px, 512 px and maskable icons (default: icons/icon-*.png). The template's placeholders warn."
+    }
+   }
+  },
+  "eras": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "rank"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/slug"
+     },
+     "name": {
+      "type": "string",
+      "minLength": 1
+     },
+     "rank": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 9999,
+      "description": "The RRRR key prefix. New builds start at 5000, spaced 10."
+     },
+     "years": {
+      "type": "string"
+     },
+     "intro": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "periods": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "eras"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/slug"
+     },
+     "name": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "blurb": {
+      "type": "string"
+     },
+     "eras": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "type": "object",
-        "required": ["id", "name", "rank"],
-        "additionalProperties": false,
-        "properties": {
-          "id": { "$ref": "#/$defs/slug" },
-          "name": { "type": "string", "minLength": 1 },
-          "rank": { "type": "integer", "minimum": 1000, "maximum": 9999, "description": "The RRRR key prefix. New builds start at 5000, spaced 10." },
-          "years": { "type": "string" },
-          "intro": { "type": "string" }
-        }
+       "$ref": "#/$defs/slug"
       }
-    },
-    "periods": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "name", "eras"],
-        "additionalProperties": false,
-        "properties": {
-          "id": { "$ref": "#/$defs/slug" },
-          "name": { "type": "string" },
-          "label": { "type": "string" },
-          "blurb": { "type": "string" },
-          "eras": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/slug" } }
-        }
-      }
-    },
-    "strands": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "types": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-    "tiers": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-    "media": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-    "defaultMedium": { "type": "string" },
-    "durations": {
-      "type": "object",
-      "description": "Default minutes per item for a non-comic medium, e.g. {\"screen\": 22}. Comics always use the minutes-per-issue setting, so \"comic\" is not allowed here.",
-      "propertyNames": { "not": { "const": "comic" } },
-      "additionalProperties": { "$ref": "#/$defs/minutes" }
-    },
-    "characters": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "name"],
-        "additionalProperties": false,
-        "properties": { "id": { "$ref": "#/$defs/slug" }, "name": { "type": "string" } }
-      }
-    },
-    "arcs": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "name", "era", "type", "mo", "tier"],
-        "additionalProperties": false,
-        "properties": {
-          "id": { "$ref": "#/$defs/slug" },
-          "name": { "type": "string", "minLength": 1 },
-          "era": { "$ref": "#/$defs/slug" },
-          "strands": { "type": "array", "items": { "type": "string" } },
-          "type": { "type": "string" },
-          "mo": { "enum": ["M", "O"] },
-          "tier": { "type": "string" },
-          "importance": { "$ref": "#/$defs/oneToFive" },
-          "quality": { "$ref": "#/$defs/oneToFive" },
-          "year": { "type": "string" },
-          "blurb": { "type": "string" },
-          "credits": { "$ref": "#/$defs/credits" },
-          "creditSplits": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["fromId"],
-              "additionalProperties": false,
-              "properties": {
-                "fromId": { "$ref": "#/$defs/rowId" },
-                "writers": { "$ref": "#/$defs/names" },
-                "artists": { "$ref": "#/$defs/names" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "rows": { "type": "array", "items": { "$ref": "#/$defs/row" } },
-    "sources": { "type": "array", "items": { "type": "string", "pattern": "\\.json$" } },
-    "eventsDir": { "type": "string" },
-    "events": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "era"],
-        "additionalProperties": false,
-        "properties": {
-          "id": { "$ref": "#/$defs/slug" },
-          "era": { "$ref": "#/$defs/slug", "description": "Chapters this tracker lacks are placed inside this era by date, then event order." },
-          "arc": { "$ref": "#/$defs/slug", "description": "Arc for placed chapters; defaults to a synthetic arc named after the event." }
-        }
-      }
-    },
-    "retiredIds": { "type": "array", "items": { "$ref": "#/$defs/rowId" } },
-    "creatorMononyms": { "type": "array", "items": { "type": "string" } },
-    "legend": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["term", "meaning"],
-        "additionalProperties": false,
-        "properties": { "term": { "type": "string" }, "meaning": { "type": "string" } }
-      }
-    },
-    "maintenance": { "type": "array", "items": { "type": "string" } }
+     }
+    }
+   }
   },
-  "$defs": {
-    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "rowId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
-    "issueId": {
+  "strands": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 1
+   }
+  },
+  "types": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "string",
+    "minLength": 1
+   }
+  },
+  "tiers": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "string",
+    "minLength": 1
+   }
+  },
+  "media": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "string",
+    "minLength": 1
+   }
+  },
+  "defaultMedium": {
+   "type": "string"
+  },
+  "durations": {
+   "type": "object",
+   "description": "Default minutes per item for a non-comic medium, e.g. {\"screen\": 22}. Comics always use the minutes-per-issue setting, so \"comic\" is not allowed here.",
+   "propertyNames": {
+    "not": {
+     "const": "comic"
+    }
+   },
+   "additionalProperties": {
+    "$ref": "#/$defs/minutes"
+   }
+  },
+  "characters": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "name"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/slug"
+     },
+     "name": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "arcs": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "era",
+     "type",
+     "mo",
+     "tier"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/slug"
+     },
+     "name": {
       "type": "string",
-      "maxLength": 120,
-      "pattern": "^(?=.*-(1[89][0-9]{2}|20[0-9]{2})(-|$))[a-z0-9]+(-[a-z0-9]+)*$",
-      "description": "<series>-<volume-start-year>[-<token>...]; the number token is optional and may be any slug token."
+      "minLength": 1
+     },
+     "era": {
+      "$ref": "#/$defs/slug"
+     },
+     "strands": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "type": {
+      "type": "string"
+     },
+     "mo": {
+      "enum": [
+       "M",
+       "O"
+      ]
+     },
+     "tier": {
+      "type": "string"
+     },
+     "importance": {
+      "$ref": "#/$defs/oneToFive"
+     },
+     "quality": {
+      "$ref": "#/$defs/oneToFive"
+     },
+     "year": {
+      "type": "string"
+     },
+     "blurb": {
+      "type": "string"
+     },
+     "credits": {
+      "$ref": "#/$defs/credits"
+     },
+     "creditSplits": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "required": [
+        "fromId"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "fromId": {
+         "$ref": "#/$defs/rowId"
+        },
+        "writers": {
+         "$ref": "#/$defs/names"
+        },
+        "artists": {
+         "$ref": "#/$defs/names"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "rows": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/row"
+   }
+  },
+  "sources": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "pattern": "\\.json$"
+   }
+  },
+  "eventsDir": {
+   "type": "string"
+  },
+  "events": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "era"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "$ref": "#/$defs/slug"
+     },
+     "era": {
+      "$ref": "#/$defs/slug",
+      "description": "Chapters this tracker lacks are placed inside this era by date, then event order."
+     },
+     "arc": {
+      "$ref": "#/$defs/slug",
+      "description": "Arc for placed chapters; defaults to a synthetic arc named after the event."
+     }
+    }
+   }
+  },
+  "retiredIds": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/rowId"
+   }
+  },
+  "creatorMononyms": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "legend": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "term",
+     "meaning"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "term": {
+      "type": "string"
+     },
+     "meaning": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "maintenance": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  }
+ },
+ "$defs": {
+  "slug": {
+   "type": "string",
+   "pattern": "^[a-z0-9][a-z0-9-]*$"
+  },
+  "rowId": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+  },
+  "issueId": {
+   "type": "string",
+   "maxLength": 120,
+   "pattern": "^(?=.*-(1[89][0-9]{2}|20[0-9]{2})(-|$))[a-z0-9]+(-[a-z0-9]+)*$",
+   "description": "<series>-<volume-start-year>[-<token>...]; the number token is optional and may be any slug token."
+  },
+  "colour": {
+   "type": "string",
+   "pattern": "^#[0-9A-Fa-f]{6}$"
+  },
+  "oneToFive": {
+   "type": "integer",
+   "minimum": 1,
+   "maximum": 5
+  },
+  "minutes": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "Whole minutes. One unit everywhere: a 40-hour game is 2400."
+  },
+  "date": {
+   "type": "string",
+   "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?$"
+  },
+  "names": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "minLength": 1
+   }
+  },
+  "credits": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "writers": {
+     "$ref": "#/$defs/names"
     },
-    "colour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-    "oneToFive": { "type": "integer", "minimum": 1, "maximum": 5 },
-    "minutes": { "type": "integer", "minimum": 1, "description": "Whole minutes. One unit everywhere: a 40-hour game is 2400." },
-    "date": { "type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?$" },
-    "names": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "credits": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": { "writers": { "$ref": "#/$defs/names" }, "artists": { "$ref": "#/$defs/names" } }
+    "artists": {
+     "$ref": "#/$defs/names"
+    }
+   }
+  },
+  "presence": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "who",
+     "grade"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "who": {
+      "$ref": "#/$defs/slug"
+     },
+     "grade": {
+      "enum": [
+       "major",
+       "minor",
+       "cameo"
+      ]
+     }
+    }
+   }
+  },
+  "row": {
+   "type": "object",
+   "required": [
+    "title",
+    "date"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "id": {
+     "$ref": "#/$defs/rowId",
+     "description": "Progress key, stable forever. Defaults to issueId."
+    },
+    "issueId": {
+     "$ref": "#/$defs/issueId"
+    },
+    "series": {
+     "type": "string"
+    },
+    "vol": {
+     "type": "string",
+     "pattern": "^[0-9]{4}$"
+    },
+    "num": {
+     "type": "string"
+    },
+    "title": {
+     "type": "string",
+     "minLength": 1
+    },
+    "era": {
+     "$ref": "#/$defs/slug"
+    },
+    "arc": {
+     "$ref": "#/$defs/slug"
+    },
+    "type": {
+     "type": "string"
+    },
+    "mo": {
+     "enum": [
+      "M",
+      "O"
+     ]
+    },
+    "tier": {
+     "type": "string"
+    },
+    "core": {
+     "type": "boolean"
+    },
+    "flags": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "enum": [
+       "FB",
+       "SKIP",
+       "ALT",
+       "GAPNOTE",
+       "RENUM",
+       "SPECIAL_NUMBERING"
+      ]
+     }
+    },
+    "note": {
+     "type": "string"
+    },
+    "medium": {
+     "type": "string"
+    },
+    "duration": {
+     "$ref": "#/$defs/minutes",
+     "description": "This row's own length, overriding durations[medium]. Not allowed on comic rows (every comic counts as one issue)."
+    },
+    "date": {
+     "type": "object",
+     "required": [
+      "cover"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "cover": {
+       "$ref": "#/$defs/date"
+      },
+      "onsale": {
+       "$ref": "#/$defs/date"
+      },
+      "source": {
+       "type": "string"
+      }
+     }
+    },
+    "sortDate": {
+     "$ref": "#/$defs/date",
+     "description": "In-story placement (e.g. a flashback); the key uses it instead of cover."
+    },
+    "seq": {
+     "type": "integer",
+     "minimum": 0,
+     "description": "Ordering hint within a month; the build assigns the real number."
     },
     "presence": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["who", "grade"],
-        "additionalProperties": false,
-        "properties": { "who": { "$ref": "#/$defs/slug" }, "grade": { "enum": ["major", "minor", "cameo"] } }
-      }
+     "$ref": "#/$defs/presence"
     },
-    "row": {
-      "type": "object",
-      "required": ["title", "date"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/rowId", "description": "Progress key, stable forever. Defaults to issueId." },
-        "issueId": { "$ref": "#/$defs/issueId" },
-        "series": { "type": "string" },
-        "vol": { "type": "string", "pattern": "^[0-9]{4}$" },
-        "num": { "type": "string" },
-        "title": { "type": "string", "minLength": 1 },
-        "era": { "$ref": "#/$defs/slug" },
-        "arc": { "$ref": "#/$defs/slug" },
-        "type": { "type": "string" },
-        "mo": { "enum": ["M", "O"] },
-        "tier": { "type": "string" },
-        "core": { "type": "boolean" },
-        "flags": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": { "enum": ["FB", "SKIP", "ALT", "GAPNOTE", "RENUM", "SPECIAL_NUMBERING"] }
-        },
-        "note": { "type": "string" },
-        "medium": { "type": "string" },
-        "duration": { "$ref": "#/$defs/minutes", "description": "This row's own length, overriding durations[medium]. Not allowed on comic rows (every comic counts as one issue)." },
-        "date": {
-          "type": "object",
-          "required": ["cover"],
-          "additionalProperties": false,
-          "properties": {
-            "cover": { "$ref": "#/$defs/date" },
-            "onsale": { "$ref": "#/$defs/date" },
-            "source": { "type": "string" }
-          }
-        },
-        "sortDate": { "$ref": "#/$defs/date", "description": "In-story placement (e.g. a flashback); the key uses it instead of cover." },
-        "seq": { "type": "integer", "minimum": 0, "description": "Ordering hint within a month; the build assigns the real number." },
-        "presence": { "$ref": "#/$defs/presence" },
-        "importance": { "$ref": "#/$defs/oneToFive" },
-        "credits": { "$ref": "#/$defs/credits" }
-      }
+    "importance": {
+     "$ref": "#/$defs/oneToFive"
+    },
+    "credits": {
+     "$ref": "#/$defs/credits"
     }
+   }
   }
+ }
 }

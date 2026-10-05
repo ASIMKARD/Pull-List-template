@@ -12,12 +12,17 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<!-- first paint (V-8): one small stylesheet (cached offline by the service worker); text never waits for a font
+     (font-display: swap); the scripts are deferred. Only the display font is preloaded. Measured on a 1.6 Mbps link,
+     preloading it costs ~100 ms of first paint and lands it before that paint (no swap of the title); preloading
+     the body font too cost another ~260 ms (test/layout/80-paint). -->
+<link rel="preload" href="./fonts/anton-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 <header class="phead" id="phead">
   <h1 class="ptitle" id="wordmark"></h1>
-  <p class="pmeta"><span id="strapline"></span> · <b id="buildtag"></b></p>
+  <p class="pmeta"><span id="strapline"></span> · <b id="buildtag"></b><span class="netstate" id="netState" hidden> · offline</span></p>
   <div class="pprog" id="pprog"></div>
   <div class="ptools">
     <button type="button" class="tool" data-act="next">Next unread</button>
@@ -26,12 +31,20 @@
   </div>
 </header>
 
+<!-- the sticky stack (F-58): the tabs, the banner and the mini bar stay on screen together. Its height is measured
+     at runtime into --stack-h, so jumps never land under it. -->
+<div class="stack" id="stack">
 <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
   <button type="button" class="tab" role="tab" id="tab-list" data-act="tab" data-tab="list" aria-controls="pane-list" aria-selected="true">Checklist</button>
   <button type="button" class="tab" role="tab" id="tab-reading" data-act="tab" data-tab="reading" aria-controls="pane-reading" aria-selected="false" tabindex="-1">Reading</button>
   <button type="button" class="tab" role="tab" id="tab-reviews" data-act="tab" data-tab="reviews" aria-controls="pane-reviews" aria-selected="false" tabindex="-1">Reviews</button>
   <button type="button" class="tab" role="tab" id="tab-settings" data-act="tab" data-tab="settings" aria-controls="pane-settings" aria-selected="false" tabindex="-1">Settings</button>
 </nav>
+<!-- under the tab bar, on every tab: the persistent banner (F-16, off by default) and the mini progress bar
+     (F-17, on by default). Layout lives on the inner wrappers, so [hidden] wins. -->
+<div class="pbanner" id="pbanner" aria-label="Progress" hidden><div class="pbanner-in" id="pbannerIn"></div></div>
+<div class="mini" id="mini" hidden><progress class="bar mini-bar" id="miniBar" max="1" value="0" aria-label="Overall progress"></progress></div>
+</div>
 
 <main id="main">
 <section class="pane" id="pane-list" role="tabpanel" aria-labelledby="tab-list">
@@ -40,7 +53,7 @@
 <section class="fpanel" id="fpanel" aria-label="Filters">
   <div class="fbar">
     <button type="button" class="ftoggle" data-act="panel" aria-expanded="false" aria-controls="fbody">Filters <span class="fcount" id="fcount"></span></button>
-    <input class="search" id="q" type="search" placeholder="Search titles, arcs, notes, creators…" aria-label="Search titles, arcs, notes and creators" autocomplete="off">
+    <input class="search" id="q" type="search" placeholder="Search titles and arcs…" aria-label="Search titles and arcs" autocomplete="off">
   </div>
   <p class="fshow" id="fshow" aria-live="polite"></p>
   <div class="fbody" id="fbody" hidden>
@@ -75,7 +88,7 @@
   </div>
 </div>
 
-<script src="./data.js"></script>
-<script src="./app.js"></script>
+<script defer src="./data.js"></script>
+<script defer src="./app.js"></script>
 </body>
 </html>

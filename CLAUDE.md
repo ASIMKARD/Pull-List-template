@@ -25,6 +25,14 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 - Update `PROGRESS.md` at the end of every step.
 - Ask design questions as short multiple-choice options; locked decisions are
   never reopened. Percentage-only progress updates.
+- **Stop cleanly (John, permanent).**
+  - Every step ends **committed, pushed and green**: the harness, the layout suite and CI.
+  - Never start a step that can't be finished.
+  - If a session runs long, stop at the end of a completed step and write in `PROGRESS.md`
+    exactly where the next step begins: the first file, the first test, and any half-made
+    decisions. Then push and tell John.
+  - A script that commits must stop unless both test runs came back clean. Session 4 pushed a
+    commit while a crash was still unexplained, because its script committed anyway.
 - The spec is Master-Repo `starter/v3/V3-SPEC.md`; suite rules are
   `starter/STANDARDS.md`. Where they disagree with this file, ask.
 
@@ -36,7 +44,8 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 | `data.js`, `sw.js` cache name, build tag | **generated** by `tools/build.py` — never hand-edit |
 | `schema/*.json` | JSON Schema for the data files; the harness validates fixtures against it |
 | `tools/build.py` | stitch + derive keys + validate + emit `data.js` (stdlib only) |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `broken/*`) |
+| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder. Same runner; CI runs it |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)
@@ -74,6 +83,44 @@ only at a cut-over swap John approves. (Full text: Master-Repo
   in v2's key order, rebuilt from legacy ids **plus `retiredIds`**: keep retired
   ids listed, or every later position shifts.
 
+## UI rules (v3)
+- **Data-driven visibility: a rule, not a one-off (decided 4 Oct).** A control or
+  section renders only when the dataset gives it something to do. The data
+  decides this, never a setting or a skin; skins never hide a control.
+  - **One medium:** no per-format header lines, no format filter, no progress-mode
+    setting, no duration copy and no "+N untimed". Verbs are that medium's own; for
+    comics that is plain "Read".
+  - **The rest:**
+    - no Characters section without presence data or two or more strands;
+    - no Creators section without credits;
+    - no Essential/Complete toggle without events;
+    - no ALT toggle without ALT rows;
+    - no order switch without a second order;
+    - no bands without periods;
+    - no era jump bar with only one era.
+  - **Extended (accepted 4 Oct).** Each control needs:
+    - depth, type and strand chips: two or more in use;
+    - "Include cameos": cameo data;
+    - "Mandatory only": both mandatory and optional rows;
+    - "Notes only" and tap to reveal: notes;
+    - "Gap notes": a gap note;
+    - the era filter, era picker, Mark range, "Newest era first" and era colours: two eras;
+    - the look-up link: `searchUrl`;
+    - the skin control: two or more configured skins;
+    - help copy that names bands: periods.
+
+    "+N untimed" follows the data: comics never lack a length, so a comics-only tracker never
+    shows it. A saved filter for a control that isn't offered is ignored.
+  - **How:** one capability map, built once at boot from the data, decides every
+    case. A missing capability means the control is **not rendered**; don't hide it
+    with CSS. That keeps the reachability guard and the visibility tests in
+    agreement.
+  - **Every new control** is added through that map, and it gets a row in the
+    visibility suite.
+    - The suite boots a bare fixture (comics only, one era, no extras), where none
+      of these controls appear, and the full fixture, where all of them do.
+    - A self-test forces each capability on in turn and must catch it.
+
 ---
 
 ## Traps carried over from v2 (each one cost real time)
@@ -96,7 +143,11 @@ were reasoned about, not measured. Use real Chromium (Playwright,
 visual. If no browser is available, say so rather than guessing.
 Session 3: the fourth tab pushed the page wider than 390 px, and at 320 px it was
 cut off inside the tab bar. Both were invisible to jsdom. Sweep every tab at
-320 px and check `scrollWidth`.
+320 px and check `scrollWidth`. `test/layout/10-sweep` does this on every push.
+Session 4: reduced motion had never worked. A `* { transition: none }` rule has no
+specificity, so every class rule that declares a transition beat it, and a test of the
+CSS text "passed". Every duration now scales with `--motion`, and `test/layout/20-motion`
+measures it.
 
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:
@@ -108,12 +159,13 @@ iterate `document.styleSheets` and test `el.matches(rule.selectorText)`.
 declaration of `position:relative` turned every sticky offset into a
 displacement: a phantom gap, an overlap and floating text.
 
-### content-visibility — [superseded §1, resolution proposed for session 4]
+### content-visibility — [superseded §1, resolved session 4]
 v2 removed `content-visibility:auto` + `contain-intrinsic-size`: blank unpainted
 rows on iOS, mis-positioned scroll-to-row, wrong estimates. Spec §1 says keep
-the performance guard. **Proposed resolution:** v3 lands collapsed, so render an
-era's rows only when it is first expanded — the guard becomes unnecessary and
-the iOS bugs can't occur. Decide in session 4.
+the performance guard. **Closed (John, 4 Oct):** v3 lands
+collapsed and renders an era's rows only when it is first expanded (90-render:
+5,000 rows render none at landing). The guard is unnecessary, and the iOS bugs
+can't occur. Don't add `content-visibility`.
 
 ### Two stores for one setting — [superseded §2 by design; lesson applies]
 v2 split settings between `state.settings` and `view`; a control that wrote one
@@ -155,6 +207,19 @@ v3: one colour-token block; ramps generated, no cap (60+ eras), and a guard
 asserts exactly one token block. Era tints are pale washes.
 **Design dark skins against the surface.** The first dark skin had 39 of 54
 era colours failing WCAG AA (worst 1.35:1). Measure contrast; don't eyeball.
+**How v3 holds this (session 4):**
+- `:root` holds numeric inputs (hue, saturation, lightness per role) and derives
+  every colour from them. Skins, paper swatches and the other Look settings set
+  inputs only, in bare `:root[data-…]` blocks, and 80-guards rejects anything else.
+- Outside `:root` the only colours allowed are *derived* ones, where every component
+  is a token: an era's wash is `oklch(var(--era-tint-l) var(--era-tint-c) var(--era-h))`,
+  with `--era-h` computed from the era's index (`style="--ei:N"`, a token, not a
+  style). A literal component anywhere is caught.
+- `test/layout/40-look` measures contrast for every skin × paper and for 64 eras.
+  Its first run caught Night's control outlines at 2.95:1 on the warm and mint
+  papers: at the same HSL lightness, a yellowish hue is brighter.
+- Every control must be at least 24 × 24 px (WCAG 2.5.8). Creator names inside a
+  line of credits are the inline exception.
 
 ### A control that saves a value nobody reads — [applies]
 v2's refresh reminder stored an interval for a whole build before anything used
@@ -173,6 +238,16 @@ it. Add the setting and the code that acts on it in the same change, or not at a
 - Network-first for the shell (`skipWaiting` + `clients.claim`), cache-first
   only for fonts and icons. A cache-first shell makes correct fixes invisible.
 - `addAll` rejects the whole install on one 404 — every precached path must exist.
+- Playwright's `setOffline` doesn't reach the service worker's own fetches, so an
+  "offline" test can quietly pass through the server. Take the test server down
+  instead (`test/layout/lib.js` `down()`), as `test/layout/70-pwa` does.
+
+### Preloading isn't free — [applies]
+A preloaded font competes for bandwidth with the render-blocking stylesheet. On a
+1.6 Mbps link, preloading the display font cost about 100 ms of first paint, and
+landed it before that paint, so the title never swaps. Preloading the body font as
+well cost another 260 ms. Only the display font is preloaded; `test/layout/80-paint`
+measures it. Measure before adding a preload.
 
 ### Cache name and build tag — [superseded: automatic in v3]
 v2 required bumping `CACHE` and the build tag together by hand. v3 derives both
@@ -189,7 +264,7 @@ Never synthetic elements. Boot the real `index.html` + generated `data.js`.
 ## Before declaring anything done
 1. `python3 tools/build.py --check` — generated files are fresh.
 2. `node test/run.js` — 0 failures, and the **count** is what you expect.
-3. Real-browser layout check for anything visual.
+3. `npm run test:layout` — real Chromium: 0 failures and the count. Add a check there for anything visual.
 4. Manifest and icons franchised (they have shipped with placeholder name and
    another franchise's artwork).
 5. Verify a deploy **by hash**, not HTTP 200; GitHub Pages takes ~100 s.

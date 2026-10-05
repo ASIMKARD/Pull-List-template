@@ -3,8 +3,9 @@
    - every franchise string comes from window.TRACKER_DATA, never from code;
    - all markup is built with string templates through escapeHtml/escapeAttr;
    - events are delegated: the whole app stays at or under 12 listeners
-     (8: click, input, change, touchstart, touchmove, touchend, pagehide,
-     visibilitychange);
+     (11: click, input, change, keydown, touchstart, touchmove, touchend,
+     pagehide, visibilitychange, beforeinstallprompt, and once() for one-off
+     waits);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
 (function () {
@@ -14,7 +15,10 @@
   var FL = D.flagBits;
   var INERT = FL.GAPNOTE | FL.RENUM;
   var CYCLE = ['unread', 'reading', 'read', 'skip'];
-  var GLYPH = { unread: '☐', reading: '◐', read: '✓', skip: '⊘' };
+  /* mark styles (S-5, XM-17): box is the default; tick is the feel-reference build's tick / cross */
+  var GLYPHS = { box: { unread: '☐', reading: '◐', read: '✓', skip: '⊘' },
+                 dot: { unread: '○', reading: '◐', read: '●', skip: '⊘' },
+                 tick: { unread: '', reading: '–', read: '✓', skip: '✗' } };
   var LABELS = {
     comic:  { unread: 'Unread', reading: 'Reading', read: 'Read', skip: 'Skipped' },
     game:   { unread: 'Not started', reading: 'Playing', read: 'Beaten', skip: 'Skipped' },
@@ -48,7 +52,6 @@
      MODEL — indexes built once from data.js; counts come from here, never
      from the DOM (rows render lazily, so the DOM is never the whole truth).
      ====================================================================== */
-  var HAS_BANDS = D.periods.length > 0;
   var ID_I = {};
   var HAY = new Array(N), CREATORS_HAY = new Array(N), W_HAY = new Array(N), A_HAY = new Array(N);
   var CREATOR_I = {};
@@ -83,6 +86,57 @@
   function isInert(i) { return !!(D.issues[i][6] & INERT); }
   function mediumOf(i) { return D.media[D.issueMedium[i]] || 'comic'; }
   function labelOf(i, st) { return (LABELS[mediumOf(i)] || LABELS.comic)[st]; }
+
+  /* ======================================================================
+     CAPABILITIES — data-driven visibility (decided 4 Oct; CLAUDE.md → UI
+     rules). A control or section renders only when the dataset gives it
+     something to do. This map, built once from the data (never from settings
+     or the skin), decides every case: a missing capability means the control
+     is NOT RENDERED, never hidden with CSS. Every new conditional control reads
+     it and gets a row in the 9f-visibility suite.
+     ====================================================================== */
+  function distinct(list) {
+    var seen = {}, n = 0;
+    list.forEach(function (v) { if (!seen[v]) { seen[v] = 1; n++; } });
+    return n;
+  }
+  function buildHas() {
+    var live = [], i, k, pub = false, arcOrd = false;
+    for (i = 0; i < N; i++) if (!isInert(i)) live.push(i);
+    /* a second order is measured, not declared: it counts only when it would
+       actually reorder some era's rows */
+    ERA_ROWS.forEach(function (rows) {
+      for (k = 1; k < rows.length; k++) {
+        if (D.issues[rows[k]][8] < D.issues[rows[k - 1]][8]) pub = true;
+        if (D.issues[rows[k]][2] < D.issues[rows[k - 1]][2]) arcOrd = true;
+      }
+    });
+    var some = function (pred) { return live.some(pred); };
+    return {
+      media: MEDIA_USED.length > 1,          // per-format lines, format filter, progress mode, duration copy, format pill
+      presence: some(function (i) { return D.issuePresence[i].length > 0; }),   // appearance chips
+      strands: distinct([].concat.apply([], D.arcs.map(function (a) { return a.s; }))) > 1,
+      cameos: some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 2; }); }),
+      credits: D.creators.length > 0,        // Creators section, tappable names, "creators" in the search hint
+      events: D.issueCompleteOnly.some(Boolean),            // Essential / Complete changes what is in view
+      alt: HAS_ALT,
+      publication: pub,
+      arcOrder: arcOrd,
+      bands: D.periods.length > 0,
+      eras: D.eras.length > 1,               // era filter, jump bar, newest era first, era pickers, Mark range
+      tiers: distinct(live.map(function (i) { return D.issueTier[i]; })) > 1,
+      types: distinct(live.map(function (i) { return D.issues[i][3]; })) > 1,
+      mandatory: distinct(live.map(function (i) { return D.issues[i][4] ? 1 : 0; })) > 1,
+      notes: some(function (i) { return !!D.issues[i][7]; }),                   // notes only, "notes" in the search hint
+      reveal: some(function (i) { return !!D.issues[i][7] && !(D.issues[i][6] & (FL.FB | FL.ALT)); }),
+      gapNotes: D.issues.some(function (r) { return !!(r[6] & FL.GAPNOTE); }),
+      lookup: !!D.franchise.searchUrl,
+      skins: (D.franchise.skins || []).length > 1,       // the skin control
+      legacy: !!(D.franchise.storage && D.franchise.storage.legacy)
+    };
+  }
+  var HAS = buildHas();
+  var ORDERS = ['reading'].concat(HAS.publication ? ['publication'] : [], HAS.arcOrder ? ['arc'] : []);
 
   /* ======================================================================
      STORAGE — namespaced per franchise, localStorage with an in-memory
@@ -127,6 +181,23 @@
   progress.bookmarks = progress.bookmarks || [];
   var reviews = load('reviews', null) || {};
   var ERA_NAV = ['scroll', 'chips', 'dropdown'];        // era navigation style (XM-8)
+  /* LOOK (session 4): the skin and the other look settings. Each one becomes
+     a root attribute that styles.css answers with tokens only, so none of
+     them can move or hide a control (V-5). Skins come from the data. */
+  var SKIN_NAMES = { paper: 'Paper', newsprint: 'Newsprint', pull: 'Pull', night: 'Night' };
+  var SKINS = (D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  var PAPERS = [['default', 'Skin default'], ['warm', 'Warm'], ['grey', 'Grey'], ['rose', 'Rose'], ['mint', 'Mint'], ['sky', 'Sky'],
+                ['lilac', 'Lilac']];
+  var LOOK = [   // [setting, root attribute, label, options, default]
+    ['eraHues', 'eras', 'Era colours', [['split', 'One per era'], ['mono', 'One colour']], 'split'],
+    ['textSize', 'text', 'Text size', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large']], 'm'],
+    ['density', 'density', 'Density', [['compact', 'Compact'], ['normal', 'Normal'], ['roomy', 'Roomy']], 'normal'],
+    ['tap', 'tap', 'Button size', [['compact', 'Compact'], ['standard', 'Standard'], ['large', 'Large']], 'standard'],
+    ['marks', 'marks', 'Marks', [['box', 'Box'], ['dot', 'Dot'], ['tick', 'Tick and cross']], 'box']
+  ];
+  function lookOf(k) { return LOOK.filter(function (l) { return l[0] === k; })[0]; }
+  function lookOk(l, v) { return l[3].some(function (o) { return o[0] === v; }); }
+  function glyph(st) { return (GLYPHS[settings.marks] || GLYPHS.box)[st]; }
   /* ONE settings store. Defaults are filled in here and nowhere else, so a
      restored snapshot or an imported backup gets exactly the same treatment. */
   function withDefaults(s) {
@@ -135,18 +206,26 @@
     s.pace = s.pace || { minutes: 15, weekly: 12 };
     s.order = s.order || 'reading';
     s.events = s.events || 'essential';
-    s.panelOpen = s.panelOpen || [];
+    s.panelOpen = Array.isArray(s.panelOpen) ? s.panelOpen : [];
+    s.settingsOpen = Array.isArray(s.settingsOpen) ? s.settingsOpen : [];   // Settings sections: all collapsed by default
     s.tab = s.tab || 'list';
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
     [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true],
-     ['swipe', false], ['press', false]].forEach(function (d) {          // touch gestures: off by default (decided 3 Oct)
+     ['swipe', false], ['press', false], ['mini', true], ['banner', false], ['table', false]].forEach(function (d) {   // gestures off (3 Oct); mini on, banner and table off (v2)
       if (typeof s[d[0]] !== 'boolean') s[d[0]] = d[1];
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
     s.layout = s.layout === 'rows' ? 'rows' : 'arcs';
-    s.events = s.events === 'complete' ? 'complete' : 'essential';
+    // an order or view the data doesn't offer is never applied invisibly
+    s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
+    s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
+    var firstSkin = SKINS.indexOf(D.franchise.skin) === -1 ? SKINS[0] : D.franchise.skin;      // default skin from config (T-104)
+    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin : s.skin;
+    s.paper = PAPERS.some(function (p) { return p[0] === s.paper; }) ? s.paper : 'default';
+    LOOK.forEach(function (l) { if (!lookOk(l, s[l[0]])) s[l[0]] = l[4]; });
+    if (typeof s.dys !== 'boolean') s.dys = false;
     return s;
   }
   var settings = withDefaults(load('settings', null));
@@ -163,11 +242,15 @@
     return (Array.isArray(list) ? list : []).map(function (n) { return FILTER_VOCAB[k].indexOf(n); })
       .filter(function (i) { return i !== -1; });
   }
+  /* A saved filter whose control isn't offered (data-driven visibility) is
+     ignored: nothing can filter through a control you can't see. */
+  var FILTER_CAP = { tier: 'tiers', types: 'types', media: 'media', strands: 'strands', chars: 'presence', cameos: 'cameos',
+                     alt: 'alt', mandatory: 'mandatory', notesOnly: 'notes', eras: 'eras' };
   function filtersFromSettings() {
     var saved = settings.filters || {};
     F = defaultFilters();
     PERSISTED_FILTERS.forEach(function (k) {
-      if (saved[k] === undefined) return;
+      if (saved[k] === undefined || (FILTER_CAP[k] && !HAS[FILTER_CAP[k]])) return;
       if (k === 'tier') { var ti = D.tiers.indexOf(saved.tier); if (ti !== -1) F.tier = ti; }
       else if (FILTER_VOCAB[k]) F[k] = toIdx(k, saved[k]);
       else F[k] = !!saved[k];
@@ -395,11 +478,11 @@
       '</span><progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>';
   }
 
-  function topUnits() { return HAS_BANDS ? D.periods.map(function (p, b) { return b; }) : D.eras.map(function (e, i) { return i; }); }
+  function topUnits() { return HAS.bands ? D.periods.map(function (p, b) { return b; }) : D.eras.map(function (e, i) { return i; }); }
   function finishMap(S) {
     var out = {}, cum = 0;
     topUnits().forEach(function (u) {
-      var t = HAS_BANDS ? S.band[u] : S.era[u];
+      var t = HAS.bands ? S.band[u] : S.era[u];
       cum += minutesLeft(t);
       out[u] = remaining(t) === 0 ? null : finishBy(cum);
     });
@@ -425,10 +508,33 @@
           '<progress class="bar" max="' + (goal(x) || 1) + '" value="' + x.read + '" aria-label="' + escapeAttr(mediumLabel(m)) + ' progress"></progress></li>';
       }).join('') + '</ul>' : '');
     if (activeTab === 'settings') { var po = $('#paceOut'); if (po) po.innerHTML = paceReadout(S); }
+    renderBanner(S);
+  }
+  /* Under the tab bar (step 6 makes them sticky): the mini progress bar (F-17,
+     on by default) and the persistent banner (F-16, off by default). The
+     banner is one compact line, or one per format when progress is per format
+     (which the data must offer); the same figures as the header. */
+  function bannerLine(t, m) {
+    var verb = m == null ? 'read' : (LABELS[D.media[m]] || LABELS.comic).read.toLowerCase();
+    return '<div class="pbl"' + (m == null ? '' : ' data-m="' + m + '"') + '>' +
+      (m == null ? '' : '<span class="pbl-name">' + escapeHtml(mediumLabel(m)) + '</span>') +
+      '<span class="pbl-count">' + t.read + ' / ' + goal(t) + ' ' + verb + '</span>' +
+      (remaining(t) === 0 ? (t.total ? '<span class="pdone">✓</span>' : '') : leftHtml(t, 'pbl-left') + untimedHtml(t, 'puntimed')) +
+      '<progress class="bar" max="' + (goal(t) || 1) + '" value="' + t.read + '" aria-label="' + escapeAttr((m == null ? 'Overall' : mediumLabel(m)) + ' progress') + '"></progress></div>';
+  }
+  function renderBanner(S) {
+    var t = S.all;
+    $('#mini').hidden = !settings.mini;
+    $('#miniBar').max = goal(t) || 1;
+    $('#miniBar').value = t.read;
+    $('#pbanner').hidden = !settings.banner;
+    $('#pbannerIn').innerHTML = !settings.banner ? '' : perFormat()
+      ? MEDIA_USED.map(function (m) { return bannerLine(S.med[m], m); }).join('')
+      : bannerLine(t, null);
   }
   /* Progress mode (S-19): one combined line, or one line per format as well.
      Offered only when the data really mixes formats. */
-  function perFormat() { return settings.progressMode === 'medium' && MEDIA_USED.length > 1; }
+  function perFormat() { return settings.progressMode === 'medium' && HAS.media; }
 
   function orderedEraRows(e) {
     var rows = ERA_ROWS[e].slice();
@@ -471,15 +577,15 @@
     }
     var st = stateOf(i), bm = progress.bookmarks.indexOf(id) !== -1;
     var badges = '';
-    if (r[5]) badges += '<span class="b core">★ core</span>';
-    if (flags & FL.FB) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" data-note="' +
-      escapeAttr(r[7] || 'Published later than it reads: this story fills in earlier events.') + '">↺ flashback</button>';
+    if (r[5]) badges += '<span class="b core">★<span class="b-t"> core</span></span>';
+    if (flags & FL.FB) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" aria-label="Flashback note" data-note="' +
+      escapeAttr(r[7] || 'Published later than it reads: this story fills in earlier events.') + '">↺<span class="b-t"> flashback</span></button>';
     if (flags & FL.ALT) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" data-note="' +
       escapeAttr(r[7] || 'A separate continuity from the main line.') + '">alt</button>';
     badges += '<button type="button" class="b bm" data-act="bm" aria-pressed="' + bm + '" aria-label="Bookmark ' +
       escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
-    if (D.franchise.searchUrl) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
-      encodeURIComponent(r[1])) + '" target="_blank" rel="noopener">look up ↗</a>';
+    if (HAS.lookup) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
+      encodeURIComponent(r[1])) + '" target="_blank" rel="noopener" aria-label="' + escapeAttr('Look up ' + r[1]) + '"><span class="b-t">look up </span>↗</a>';
     var hasSub = r[7] && !(flags & (FL.FB | FL.ALT));
     /* tap to reveal (S-16; the feel-reference build's landmark notes): the note waits behind a button */
     if (hasSub && settings.reveal) badges += '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>';
@@ -487,7 +593,7 @@
     var label = settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '';
     return '<div class="row" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
-      GLYPH[st] + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
+      glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
       '<span class="badges">' + badges + (rvArc >= 0 ? rvButton(rvArc) : '') + '</span>' + sub + '</div>';
   }
 
@@ -529,7 +635,7 @@
 
   function eraHtml(e, S, fin, hidden) {
     var era = D.eras[e], isOpen = !!open.e[e];
-    return '<section class="era" data-e="' + e + '"' + (hidden ? ' hidden' : '') + '>' +
+    return '<section class="era" data-e="' + e + '" style="--ei:' + e + '"' + (hidden ? ' hidden' : '') + '>' +
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
@@ -554,7 +660,7 @@
     /* newest era first (S-13) reverses bands and eras, never the rows inside
        an era; finish-by stays cumulative in READING order (fins by unit). */
     var html = '', rev = function (list) { return settings.rev ? list.slice().reverse() : list; };
-    if (HAS_BANDS) {
+    if (HAS.bands) {
       rev(D.periods.map(function (p, b) { return b; })).forEach(function (b) {
         var p = D.periods[b], shown = p.eras.some(function (e) { return visEra[e]; }), isOpen = !!open.b[b];
         html += '<section class="band" data-b="' + b + '"' + (shown ? '' : ' hidden') + '>' +
@@ -587,7 +693,7 @@
       if (!head) return;
       var old = head.querySelector('.bstats'), bar = head.querySelector('progress');
       var tmp = document.createElement('div');
-      tmp.innerHTML = statsHtml(S.era[e], HAS_BANDS ? null : fins[e]);
+      tmp.innerHTML = statsHtml(S.era[e], HAS.bands ? null : fins[e]);
       old.replaceWith(tmp.firstChild); bar.replaceWith(tmp.lastChild);
     });
     D.periods.forEach(function (p, b) {
@@ -602,10 +708,54 @@
   }
 
   /* ======================================================================
+     ONE COLLAPSIBLE SECTION — shared by the filter panel and Settings
+     (decided 4 Oct): icon, name, a live one-line summary and a chevron on the
+     head; all collapsed by default; the open ones remembered in the one store
+     (panelOpen, settingsOpen). The body stays in the DOM so it can animate
+     open (FP-11) and is inert while closed, so the keyboard and screen readers
+     skip it. Toggling changes the section in place, so the transition runs.
+     ====================================================================== */
+  var OPEN_KEY = { f: 'panelOpen', s: 'settingsOpen' };
+  function secOpen(g, k) { return settings[OPEN_KEY[g]].indexOf(k) !== -1; }
+  function secHtml(g, k, icon, name, sum, muted, body) {
+    var on = secOpen(g, k), id = (g === 's' ? 'set-' : 'fsec-') + k, nid = 'secn-' + g + '-' + k;
+    var head = '<button type="button" class="sec-head" data-act="sec" data-g="' + g + '" data-k="' + k + '" aria-expanded="' + on +
+      '" aria-controls="' + id + '"><span class="sec-ico" aria-hidden="true">' + icon + '</span><span class="sec-t"><span class="sec-name" id="' +
+      nid + '">' + escapeHtml(name) + '</span><span class="sec-sum' + (muted ? ' muted' : '') + '">' + escapeHtml(sum) + '</span></span>' +
+      '<span class="sec-chev" aria-hidden="true">▾</span></button>';
+    var inner = '<div class="sec-body" id="' + id + '"' + (on ? '' : ' inert') + '><div class="sec-in"><div class="sec-pad">' + body + '</div></div></div>';
+    return g === 's'
+      ? '<section class="sec sset' + (on ? ' open' : '') + '" data-k="' + k + '" aria-labelledby="' + nid + '"><h2 class="seth">' + head + '</h2>' + inner + '</section>'
+      : '<div class="sec fsec' + (on ? ' open' : '') + '" data-k="' + k + '">' + head + inner + '</div>';
+  }
+  function setSecOpen(g, k, on) {
+    var list = settings[OPEN_KEY[g]], at = list.indexOf(k);
+    if (on && at === -1) list.push(k);
+    if (!on && at !== -1) list.splice(at, 1);
+    var head = $('.sec-head[data-g="' + g + '"][data-k="' + k + '"]');
+    if (head) {
+      var sec = head.closest('.sec'), body = sec.querySelector('.sec-body');
+      sec.classList.toggle('open', on);
+      head.setAttribute('aria-expanded', on ? 'true' : 'false');
+      if (on) body.removeAttribute('inert'); else body.setAttribute('inert', '');
+    }
+    saveSettings();
+  }
+
+  /* ======================================================================
      FILTER PANEL — five collapsible sections (approved mockup, 1 Oct)
      ====================================================================== */
   var SECTIONS = [['reading', '☰', 'Reading'], ['story', '⧗', 'Story'], ['chars', '☺', 'Characters'],
                   ['creators', '✎', 'Creators'], ['order', '⇅', 'Order and display']];
+  /* A section is offered only when the data gives at least one of its controls
+     something to do (Reading always has Unread only and Hide skipped). */
+  var SECTION_OFFERED = {
+    reading: true,
+    story: HAS.events || HAS.eras || HAS.media || HAS.types || HAS.alt,
+    chars: HAS.presence || HAS.strands,
+    creators: HAS.credits,
+    order: ORDERS.length > 1
+  };
   function orderLabel(o) {
     var d = D.franchise.dualOrder;
     if (o === 'reading') return d ? d.a : 'Reading order';
@@ -625,7 +775,7 @@
       return bits.length ? bits.join(' · ') : '';
     }
     if (k === 'story') {
-      if (settings.events === 'complete' && D.events.length) bits.push('complete events');
+      if (settings.events === 'complete' && HAS.events) bits.push('complete events');
       if (F.eras.length) bits.push(F.eras.length === 1 ? D.eras[F.eras[0]].name : F.eras.length + ' eras');
       if (F.types.length) bits.push(names(F.types, function (t) { return D.types[t].toLowerCase(); }));
       if (F.media.length) bits.push(names(F.media, mediumLabel));
@@ -648,7 +798,7 @@
     var c = [];
     if (F.q) c.push(['q', '', 'Search: “' + F.q + '”']);
     if (F.creator) c.push(['creator', '', 'Creator: “' + F.creator + '”' + ROLE_NOTE[F.role]]);
-    if (settings.events === 'complete' && D.events.length) c.push(['events', 'essential', 'Complete events']);
+    if (settings.events === 'complete' && HAS.events) c.push(['events', 'essential', 'Complete events']);
     if (F.tier < D.tiers.length - 1) c.push(['tier', '', D.tiers[F.tier] + ' tier']);
     if (F.unread) c.push(['unread', '', 'Unread only']);
     if (F.notesOnly) c.push(['notesOnly', '', 'Notes only']);
@@ -675,35 +825,44 @@
   function sectionBody(k) {
     var h = '';
     if (k === 'reading') {
-      h += '<div class="flabel">Depth</div><div class="depthrow">';      // one row that never wraps (T-95)
-      D.tiers.forEach(function (t, ti) {
-        h += chip('tier', ti, t + ' · ' + countWhere(function (i) { return D.issueTier[i] <= ti; }), F.tier === ti);
-      });
-      h += '</div>';
-      h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) + chip('notesOnly', '', 'Notes only', F.notesOnly) +
-        chip('hideSkip', '', 'Hide skipped', F.hideSkip) + chip('mandatory', '', 'Mandatory only', F.mandatory);
+      if (HAS.tiers) {
+        h += '<div class="flabel">Depth</div><div class="depthrow">';    // one row that never wraps (T-95)
+        D.tiers.forEach(function (t, ti) {
+          h += chip('tier', ti, t + ' · ' + countWhere(function (i) { return D.issueTier[i] <= ti; }), F.tier === ti);
+        });
+        h += '</div>';
+      }
+      h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) +
+        (HAS.notes ? chip('notesOnly', '', 'Notes only', F.notesOnly) : '') + chip('hideSkip', '', 'Hide skipped', F.hideSkip) +
+        (HAS.mandatory ? chip('mandatory', '', 'Mandatory only', F.mandatory) : '');
     } else if (k === 'story') {
-      if (D.events.length) {                                   // Essential / Complete (V-10, FP-4): a plan setting
+      if (HAS.events) {                                        // Essential / Complete (V-10, FP-4): a plan setting
         h += '<div class="flabel">Events</div>' + chip('events', 'essential', 'Essential', settings.events === 'essential') +
           chip('events', 'complete', 'Complete', settings.events === 'complete');
       }
-      h += '<div class="flabel">Era</div>';
-      D.eras.forEach(function (e, ei) { h += chip('eras', ei, e.name, F.eras.indexOf(ei) !== -1); });
-      if (D.media.length > 1) {
-        h += '<div class="flabel">Format</div>';
-        D.media.forEach(function (m, mi) { h += chip('media', mi, mediumLabel(mi), F.media.indexOf(mi) !== -1); });
+      if (HAS.eras) {
+        h += '<div class="flabel">Era</div>';
+        D.eras.forEach(function (e, ei) { h += chip('eras', ei, e.name, F.eras.indexOf(ei) !== -1); });
       }
-      h += '<div class="flabel">Type</div>';
-      D.types.forEach(function (t, ti) { h += chip('types', ti, t.toLowerCase(), F.types.indexOf(ti) !== -1); });
-      if (HAS_ALT) h += '<div class="flabel">Alternate stories</div>' + chip('alt', '', 'Show alternate stories', F.alt);
+      if (HAS.media) {
+        h += '<div class="flabel">Format</div>';
+        MEDIA_USED.forEach(function (mi) { h += chip('media', mi, mediumLabel(mi), F.media.indexOf(mi) !== -1); });
+      }
+      if (HAS.types) {
+        h += '<div class="flabel">Type</div>';
+        D.types.forEach(function (t, ti) { h += chip('types', ti, t.toLowerCase(), F.types.indexOf(ti) !== -1); });
+      }
+      if (HAS.alt) h += '<div class="flabel">Alternate stories</div>' + chip('alt', '', 'Show alternate stories', F.alt);
     } else if (k === 'chars') {
-      if (D.characters.length) h += '<div class="flabel">Strands</div>';
-      D.strands.forEach(function (s, si) { h += chip('strands', si, s, F.strands.indexOf(si) !== -1); });
-      if (D.characters.length) {
+      if (HAS.strands) {
+        h += '<div class="flabel">Strands</div>';
+        D.strands.forEach(function (s, si) { h += chip('strands', si, s, F.strands.indexOf(si) !== -1); });
+      }
+      if (HAS.presence) {
         h += '<div class="flabel">Appearances</div>';
         D.characters.forEach(function (c, ci) { h += chip('chars', ci, c, F.chars.indexOf(ci) !== -1); });
-        h += '<div class="flabel">Counts as an appearance</div>' + chip('cameos', '', 'Include cameos', F.cameos);
       }
+      if (HAS.cameos) h += '<div class="flabel">Counts as an appearance</div>' + chip('cameos', '', 'Include cameos', F.cameos);
     } else if (k === 'creators') {
       h += '<input class="search" id="cq" type="search" placeholder="Search writers and artists" aria-label="Search writers and artists" value="' +
         escapeAttr(F.creator) + '" autocomplete="off">';
@@ -711,9 +870,9 @@
       ['any', 'w', 'a'].forEach(function (r) { h += chip('role', r, ROLE_LABEL[r], F.role === r); });
       h += creatorPicker();
     } else {
-      ['reading', 'publication', 'arc'].forEach(function (o) { h += chip('order', o, orderLabel(o), settings.order === o); });
+      ORDERS.forEach(function (o) { h += chip('order', o, orderLabel(o), settings.order === o); });
     }
-    return '<div class="fsec-body" id="fsec-' + k + '">' + h + '</div>';
+    return h;
   }
 
   function renderPanel() {
@@ -724,13 +883,9 @@
         '" aria-label="Remove filter: ' + escapeAttr(c[2]) + '">' + escapeHtml(c[2]) + ' <span aria-hidden="true">×</span></button>';
     }).join('') : '<span class="muted">None</span>';
     var focusCq = document.activeElement && document.activeElement.id === 'cq';
-    $('#fsecs').innerHTML = SECTIONS.map(function (s) {
-      var isOpen = settings.panelOpen.indexOf(s[0]) !== -1, sum = summary(s[0]);
-      return '<div class="fsec' + (isOpen ? ' open' : '') + '" data-k="' + s[0] + '">' +
-        '<button type="button" class="fsec-head" data-act="sec" data-k="' + s[0] + '" aria-expanded="' + isOpen + '" aria-controls="fsec-' + s[0] + '">' +
-        '<span class="fsec-ico" aria-hidden="true">' + s[1] + '</span><span class="fsec-t"><span class="fsec-name">' + s[2] + '</span>' +
-        '<span class="fsec-sum' + (sum ? '' : ' muted') + '">' + escapeHtml(sum || SUMMARY_DEFAULT[s[0]]) + '</span></span>' +
-        '<span class="fsec-chev" aria-hidden="true">▾</span></button>' + (isOpen ? sectionBody(s[0]) : '') + '</div>';
+    $('#fsecs').innerHTML = SECTIONS.filter(function (s) { return SECTION_OFFERED[s[0]]; }).map(function (s) {
+      var sum = summary(s[0]);
+      return secHtml('f', s[0], s[1], s[2], sum || SUMMARY_DEFAULT[s[0]], !sum, sectionBody(s[0]));
     }).join('');
     if (focusCq && $('#cq')) { var c = $('#cq'); c.focus(); c.setSelectionRange(c.value.length, c.value.length); }
     $('#fpresets').innerHTML = presetsHtml();
@@ -796,8 +951,8 @@
     settings.filters = JSON.parse(JSON.stringify(p.filters));
     filtersFromSettings();
     Object.keys(keep).forEach(function (k) { F[k] = keep[k]; });
-    settings.order = p.order || settings.order;
-    settings.events = p.events === 'complete' ? 'complete' : 'essential';
+    settings.order = ORDERS.indexOf(p.order) === -1 ? settings.order : p.order;
+    settings.events = p.events === 'complete' && HAS.events ? 'complete' : 'essential';
     refilter();
     toast('Applied preset “' + name + '”.');
   }
@@ -813,7 +968,7 @@
 
   function setFilter(k, v, on) {
     if (k === 'tier') F.tier = v === '' ? D.tiers.length - 1 : +v;
-    else if (k === 'order') { settings.order = v; }
+    else if (k === 'order') settings.order = ORDERS.indexOf(v) === -1 ? 'reading' : v;
     else if (k === 'q' || k === 'creator') {
       F[k] = '';
       if (k === 'creator') F.creatorExact = false;
@@ -853,7 +1008,7 @@
     $$('.row[data-i="' + i + '"]').forEach(function (row) {
       row.dataset.s = st;
       var m = row.querySelector('.mark');
-      m.textContent = GLYPH[st];
+      m.textContent = glyph(st);
       m.setAttribute('aria-label', D.issues[i][1] + ' — ' + labelOf(i, st));
     });
   }
@@ -998,7 +1153,7 @@
   }
   function rvButton(a) {
     return '<button type="button" class="b rv" data-act="rv" data-a="' + a + '" aria-expanded="false" aria-label="' +
-      escapeAttr(rvLabel(a)) + '">✎' + rvTag(reviews[D.arcs[a].id]) + '</button>';
+      escapeAttr(rvLabel(a)) + '">✎<span class="b-t">' + escapeHtml(rvTag(reviews[D.arcs[a].id])) + '</span></button>';
   }
   function reviewEditorHtml(a) {
     var arc = D.arcs[a], cur = reviews[arc.id] || { r: 0, t: '' }, h = '';
@@ -1025,7 +1180,7 @@
     if (!cur.r && !cur.t) delete reviews[id]; else reviews[id] = cur;
     save('reviews', reviews);
     $$('.b.rv[data-a="' + a + '"]').forEach(function (b) {
-      b.textContent = '✎' + rvTag(reviews[id]);
+      b.innerHTML = '✎<span class="b-t">' + escapeHtml(rvTag(reviews[id])) + '</span>';
       b.setAttribute('aria-label', rvLabel(a));
     });
     $$('.review[data-a="' + a + '"] .star').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.n <= cur.r ? 'true' : 'false'); });
@@ -1101,7 +1256,7 @@
     host.innerHTML = '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + list.length.toLocaleString('en-GB') + '</p>' +
       '<p class="rpills"><span class="rpill">' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>' +
-      (MEDIA_USED.length > 1 ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
+      (HAS.media ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
       '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
       '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]].toLowerCase()) + '</p>' +
       '<p class="rstate">' + escapeHtml(labelOf(i, st)) + '</p>' +
@@ -1115,7 +1270,7 @@
       '<button type="button" class="linkbtn" data-act="rd-prev"' + (at === 0 ? ' disabled' : '') + '>← Previous</button>' +
       '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
       '<button type="button" class="linkbtn" data-act="rd-next"' + (at === list.length - 1 ? ' disabled' : '') + '>Next →</button>' +
-      '</div></div>';
+      '</div><p class="muted rkeys">Keys: ← → step · R ' + escapeHtml(done.toLowerCase()) + ' · X skip · / search</p></div>';
   }
   function readerStep(delta) {
     var list = readerList(), at = list.indexOf(ID_I[reader.id]);
@@ -1241,7 +1396,8 @@
 
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
-  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css' };
+  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css',
+                mini: 'stats', banner: 'stats', table: 'css' };
   function applyPrefs() {
     var root = document.documentElement;
     $('.ptools [data-act="next"]').hidden = !settings.showJump;
@@ -1249,12 +1405,54 @@
     root.setAttribute('data-combo', settings.combo ? '1' : '0');
     root.setAttribute('data-reveal', settings.reveal ? '1' : '0');
     root.setAttribute('data-layout', settings.layout);
+    root.setAttribute('data-skin', settings.skin);
+    root.setAttribute('data-paper', settings.paper);
+    LOOK.forEach(function (l) { root.setAttribute('data-' + l[1], settings[l[0]]); });
+    root.setAttribute('data-dys', settings.dys ? '1' : '0');
+    root.setAttribute('data-table', settings.table ? '1' : '0');
+    /* the browser's own chrome follows the skin's paper (F-39) */
+    var tc = $('meta[name="theme-color"]'), bg = document.body ? getComputedStyle(document.body).backgroundColor : '';
+    if (tc) tc.setAttribute('content', bg && !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(bg) ? bg : D.franchise.theme);
+  }
+  /* a Look setting: validated, stored in the one store, applied as a root
+     attribute. Mark style also changes the glyphs, so the rows re-render. */
+  function setLook(k, v) {
+    if (k === 'skin') { if (SKINS.indexOf(v) === -1) return; settings.skin = v; }
+    else if (k === 'paper') { if (!PAPERS.some(function (p) { return p[0] === v; })) return; settings.paper = v; }
+    else { var l = lookOf(k); if (!l || !lookOk(l, v)) return; settings[k] = v; }
+    saveSettings(); applyPrefs();
+    if (k === 'marks') { renderList(); if (activeTab === 'reading') renderReading(); }
+    if (activeTab === 'settings') renderSettings();
+  }
+  /* The skin beacon (F-57): styles.css declares the token contract it was
+     written for; a stylesheet from an older build (a stale cache) is caught. */
+  var SKIN_OK = '3';
+  function skinBeacon() {
+    var sheets = document.styleSheets, v = null;
+    if (!sheets.length) return null;                           // nothing loaded to check
+    for (var k = 0; k < sheets.length && v === null; k++) {
+      var rules = null;
+      try { rules = sheets[k].cssRules; } catch (e) { rules = null; }
+      for (var j = 0; rules && j < rules.length; j++) {
+        if (rules[j].selectorText === ':root' && rules[j].style.getPropertyValue('--skin-ok')) { v = rules[j].style.getPropertyValue('--skin-ok').trim(); break; }
+      }
+    }
+    return v;
+  }
+  function checkBeacon() {
+    var v = skinBeacon();
+    if (v === null && !document.styleSheets.length) return false;
+    if (v === SKIN_OK) return false;
+    toast('The page styles are out of date (' + (v ? 'version ' + v : 'missing') + '). Reload to get the current version.', 'Reload',
+      function () { location.reload(); });
+    return true;
   }
   function togglePref(k) {
     if (!PREFS[k]) return;
     settings[k] = !settings[k];
     saveSettings(); applyPrefs();
     if (PREFS[k] === 'list') renderList();
+    if (PREFS[k] === 'stats') renderHeader(computeStats());
     renderSettings();
   }
 
@@ -1264,7 +1462,7 @@
   function renderEraNav(visEra) {
     var bar = $('#eranav'), eras = D.eras.map(function (e, i) { return i; }).filter(function (e) { return visEra[e]; });
     if (settings.rev) eras.reverse();
-    bar.hidden = settings.eraNav === 'scroll' || !eras.length;
+    bar.hidden = !HAS.eras || settings.eraNav === 'scroll' || !eras.length;
     if (bar.hidden) { $('#eranavIn').innerHTML = ''; return; }
     $('#eranavIn').innerHTML = settings.eraNav === 'chips'
       ? eras.map(function (e) { return '<button type="button" class="chip" data-act="era-jump" data-e="' + e + '">' + escapeHtml(D.eras[e].name) + '</button>'; }).join('')
@@ -1484,7 +1682,12 @@
     try { sync.pending = parseCode(text); sync.error = ''; }
     catch (e) { sync.pending = null; sync.error = e.message; }
     confirming = '';
-    renderSettings();
+    showImport();
+  }
+  /* a pending import (or its error) opens Backup, so it never waits inside a closed section */
+  function showImport() {
+    if (!secOpen('s', 'backup')) { settings.settingsOpen.push('backup'); saveSettings(); }
+    if (activeTab === 'settings') renderSettings();
   }
   function readFile(file) {
     var fr = new FileReader();
@@ -1495,7 +1698,7 @@
         catch (e) { sync.pending = null; sync.error = e.message; }
       }
       confirming = '';
-      if (activeTab === 'settings') renderSettings();
+      showImport();
     });
     fr.readAsText(file);
   }
@@ -1591,9 +1794,60 @@
     }).join('') + '</div>';
   }
   function srow(label, control) { return '<div class="srow"><span class="slabel">' + escapeHtml(label) + '</span>' + control + '</div>'; }
-  function sset(id, title, body) {
-    return '<section class="sset" id="set-' + id + '" aria-labelledby="seth-' + id + '"><h2 class="seth" id="seth-' + id + '">' +
-      escapeHtml(title) + '</h2>' + body + '</section>';
+  /* Settings sections collapse like the filter panel (decided 4 Oct), each
+     head carrying an icon and a live one-line summary of what is set. */
+  var SETTINGS_SECTIONS = { reading: ['◷', 'Reading behaviour'], look: ['◐', 'Look'], display: ['◧', 'Display'], touch: ['☝', 'Touch'],
+                            bulk: ['☑', 'Bulk actions'], data: ['▤', 'Data'], backup: ['⇄', 'Backup'], offline: ['⇣', 'Offline'] };
+  function presetLabel(list, v) {
+    for (var k = 0; k < list.length; k++) if (list[k][2] === v) return list[k][1] + ' ';
+    return '';
+  }
+  function settingsSummary(k) {
+    var bits = [];
+    if (k === 'reading') {
+      bits.push(presetLabel(PACE_MINUTES, settings.pace.minutes) + settings.pace.minutes + ' min',
+                presetLabel(PACE_WEEKLY, settings.pace.weekly) + settings.pace.weekly + ' a week');
+      if (perFormat()) bits.push('per format');
+      if (HAS.events && settings.events === 'complete') bits.push('Complete events');
+      if (!settings.showJump) bits.push('no Next unread');
+    } else if (k === 'look') {
+      bits.push(SKIN_NAMES[settings.skin] + ' skin');
+      if (settings.paper !== 'default') bits.push(PAPERS.filter(function (p) { return p[0] === settings.paper; })[0][1] + ' paper');
+      LOOK.forEach(function (l) {
+        if (settings[l[0]] === l[4] || (l[0] === 'eraHues' && !HAS.eras)) return;
+        var o = l[3].filter(function (x) { return x[0] === settings[l[0]]; })[0];
+        bits.push({ eraHues: 'one era colour', textSize: o[1].toLowerCase() + ' text', density: o[1].toLowerCase(), tap: o[1].toLowerCase() + ' buttons',
+                    marks: o[1].toLowerCase() + ' marks' }[l[0]]);
+      });
+      if (settings.dys) bits.push('dyslexia-friendly font');
+    } else if (k === 'display') {
+      bits.push(settings.badges ? 'Badges' : 'No badges', settings.layout === 'rows' ? 'Labels on rows' : 'Headings');
+      if (HAS.eras) bits.push({ scroll: 'Plain scroll', chips: 'Era chips', dropdown: 'Era dropdown' }[settings.eraNav]);
+      if (settings.combo) bits.push('combo badge');
+      if (HAS.reveal && settings.reveal) bits.push('tap to reveal');
+      if (HAS.gapNotes && !settings.gapNotes) bits.push('no gap notes');
+      if (HAS.eras && settings.rev) bits.push('newest era first');
+      if (settings.table) bits.push('table view');
+      if (settings.banner) bits.push('banner');
+      if (!settings.mini) bits.push('no mini bar');
+    } else if (k === 'touch') {
+      bits.push(settings.swipe && settings.press ? 'Swipe and long-press on' : settings.swipe ? 'Swipe on' : settings.press ? 'Long-press on' : 'Gestures off');
+    } else if (k === 'bulk') {
+      bits.push('Expand, collapse, mark ' + (HAS.eras ? 'eras and ranges' : 'everything'));
+    } else if (k === 'data') {
+      var r = REFRESH.filter(function (x) { return x[0] === settings.refreshEvery; })[0], nb = bookmarked().length;
+      bits.push(r && r[2] ? r[1] + ' reminder' : 'No reminder', nb + ' bookmark' + (nb === 1 ? '' : 's'));
+    } else if (k === 'backup') {
+      bits.push(sync.pending ? 'An import is waiting' : 'Sync code and backup file');
+    } else if (k === 'offline') {
+      bits.push(offlineState().short);
+      if (pwa.update) bits.push('update ready');
+      if (pwa.online === false) bits.push('offline now');
+    }
+    return bits.join(' · ');
+  }
+  function sset(id, body) {
+    return secHtml('s', id, SETTINGS_SECTIONS[id][0], SETTINGS_SECTIONS[id][1], settingsSummary(id), false, body);
   }
   function pref(k, label) {
     return '<button type="button" class="chip" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '">' + escapeHtml(label) + '</button>';
@@ -1624,41 +1878,61 @@
   }
   function renderSettings() {
     var S = computeStats(), ae = document.activeElement, keep = ae && ae.dataset ? [ae.dataset.act, ae.dataset.v, ae.dataset.k] : null;
-    var h = sset('reading', 'Reading behaviour',
+    var h = sset('reading',
       srow('Minutes per issue', seg('pace-min', 'Minutes per issue', PACE_MINUTES.map(function (p) { return [p[2], p[1] + ' · ' + p[2] + ' min']; }), settings.pace.minutes)) +
       srow('Issues per week', seg('pace-week', 'Issues per week', PACE_WEEKLY.map(function (p) { return [p[2], p[1] + ' · ' + p[2]]; }), settings.pace.weekly)) +
       '<p class="pace" id="paceOut" aria-live="polite">' + paceReadout(S) + '</p>' +
-      (MEDIA_USED.length > 1 ? srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
-      (D.events.length ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
+      (HAS.media ? '<p class="muted shelp pace-dur">Comics are timed at your minutes per issue; shows and games count their own length.</p>' +
+        srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
+      (HAS.events ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
       srow('Next unread button', pref('showJump', 'Show it')));
-    h += sset('display', 'Display',
-      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + pref('reveal', 'Tap to reveal notes') + pref('gapNotes', 'Gap notes')) +
-      srow('Order', pref('rev', 'Newest era first')) +
+    var lookSeg = function (k, label, opts, cur) {
+      return '<div class="seg" role="group" aria-label="' + escapeAttr(label) + '">' + opts.map(function (o) {
+        return '<button type="button" class="segbtn" data-act="look" data-k="' + k + '" data-v="' + escapeAttr(o[0]) + '" aria-pressed="' +
+          (o[0] === cur) + '">' + escapeHtml(o[1]) + '</button>';
+      }).join('') + '</div>';
+    };
+    h += sset('look',
+      (HAS.skins ? srow('Skin', lookSeg('skin', 'Skin', SKINS.map(function (k) { return [k, SKIN_NAMES[k]]; }), settings.skin)) : '') +
+      srow('Paper', '<div class="swatches" role="group" aria-label="Paper">' + PAPERS.map(function (p) {
+        return '<button type="button" class="swatch" data-act="look" data-k="paper" data-v="' + p[0] + '" aria-pressed="' + (settings.paper === p[0]) +
+          '" aria-label="' + escapeAttr(p[1] + ' paper') + '" title="' + escapeAttr(p[1]) + '"></button>';
+      }).join('') + '</div>') +
+      LOOK.filter(function (l) { return l[0] !== 'eraHues' || HAS.eras; }).map(function (l) {
+        return srow(l[2], lookSeg(l[0], l[2], l[3], settings[l[0]]));
+      }).join('') +
+      srow('Reading aid', pref('dys', 'Dyslexia-friendly font')));
+    h += sset('display',
+      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
+        (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '') + pref('table', 'Table view')) +
+      srow('Progress', pref('mini', 'Mini progress bar') + pref('banner', 'Persistent banner')) +
+      (HAS.eras ? srow('Order', pref('rev', 'Newest era first')) : '') +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
-      srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)));
-    h += sset('touch', 'Touch',
+      (HAS.eras ? srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)) : ''));
+    h += sset('touch',
       srow('Gestures', pref('swipe', 'Swipe to mark') + pref('press', 'Long-press to mark all read')) +
-      '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold a band, era or arc heading to mark everything in it read; ' +
-      'Undo puts every row back.</p>');
+      '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold ' + (HAS.bands ? 'a band, era' : 'an era') +
+      ' or arc heading to mark everything in it read; Undo puts every row back.</p>');
     var eraOpts = function (cur) {
       return D.eras.map(function (e, ei) { return '<option value="' + ei + '"' + (ei === cur ? ' selected' : '') + '>' + escapeHtml(e.name) + '</option>'; }).join('');
     };
-    h += sset('bulk', 'Bulk actions',
+    h += sset('bulk',
       srow('Sections', '<button type="button" class="tool" data-act="expand-all">Expand all</button>' +
         '<button type="button" class="tool" data-act="collapse-all">Collapse all</button>') +
-      srow('Mark era', '<select class="erasel" id="bulkEra" aria-label="Era to mark">' + eraOpts(bulkSel.era) + '</select>' +
+      srow('Mark era', (HAS.eras ? '<select class="erasel" id="bulkEra" aria-label="Era to mark">' + eraOpts(bulkSel.era) + '</select>' : '') +
         '<button type="button" class="tool" data-act="bulk-era" data-st="read">Mark read</button>' +
         '<button type="button" class="tool" data-act="bulk-era" data-st="unread">Mark unread</button>') +
-      srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
+      (HAS.eras ? srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
         '<span class="muted">through</span><select class="erasel" id="bulkTo" aria-label="Range end">' + eraOpts(bulkSel.to) + '</select>' +
-        '<button type="button" class="tool" data-act="bulk-range">Mark read</button>'));
-    h += sset('data', 'Data',
+        '<button type="button" class="tool" data-act="bulk-range">Mark read</button>') : ''));
+    h += sset('data',
       srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +
       '<h3 class="ssub">Bookmarks</h3>' + bookmarksHtml() +
-      (D.franchise.storage && D.franchise.storage.legacy
+      (HAS.legacy
         ? srow('Previous version', '<button type="button" class="tool" data-act="import-legacy">Import from previous version</button>') : '') +
       clearHtml() + aboutHtml());
-    h += sset('backup', 'Backup', backupHtml());
+    h += sset('backup', backupHtml());
+    h += sset('offline', offlineHtml());
     $('#settings').innerHTML = h;
     if (sync.open) withQR(drawQR);
     if (keep && keep[0]) {                                     // keep keyboard focus across the re-render
@@ -1667,6 +1941,129 @@
       })[0];
       if (again) again.focus();
     }
+  }
+
+  /* ======================================================================
+     OFFLINE AND UPDATES (F-35…F-38, F-59, XM-7). The service worker is
+     network-first for the shell and cache-first for fonts and icons
+     (tools/templates/sw.js). No online/offline listeners (decided 2 Oct): the
+     connection is read at boot, when the page is shown again, and on every
+     tap. Updates are looked for at boot, when the page is shown again and on
+     "Check for updates"; one-off waits go through once().
+     ====================================================================== */
+  var pwa = { supported: false, reg: null, hadController: false, cached: 0, total: (D.precache || []).length, online: null,
+              install: null, update: false, checking: false };
+  function offlineState() {
+    if (!pwa.supported) return { short: 'Not available here', long: 'Offline use isn\'t available in this browser: it needs service workers, over https.' };
+    if (pwa.total && pwa.cached >= pwa.total) return { short: 'Ready offline', long: 'Ready offline · ' + pwa.cached + ' of ' + pwa.total + ' files saved on this device.' };
+    return { short: 'Not ready yet', long: 'Not ready yet · ' + pwa.cached + ' of ' + pwa.total + ' files saved. Keep this page open while online.' };
+  }
+  function offlineHtml() {
+    var st = offlineState();
+    return '<p class="offstate" id="offState" data-ready="' + (st.short === 'Ready offline' ? '1' : '0') + '">' + escapeHtml(st.long) + '</p>' +
+      srow('Connection', '<span id="netLine">' + (pwa.online === false ? 'Offline: everything still works, and changes stay on this device.' : 'Online') + '</span>') +
+      srow('Version', '<span>build ' + escapeHtml(D.build) + (pwa.update ? ' · a new version is ready' : '') + '</span>') +
+      (pwa.supported ? srow('Updates', '<button type="button" class="tool" data-act="sw-check"' + (pwa.checking ? ' disabled' : '') + '>' +
+        (pwa.checking ? 'Checking…' : 'Check for updates') + '</button>' +
+        (pwa.update ? '<button type="button" class="tool" data-act="sw-reload">Reload now</button>' : '')) : '') +
+      (pwa.install ? srow('App', '<button type="button" class="tool" data-act="install">Install as an app</button>') : '') +
+      '<p class="muted shelp">On iPhone or iPad: Share → Add to Home Screen, then open it once while online so it can work offline.</p>';
+  }
+  /* Readiness, the connection and updates change at any moment (a promise
+     resolving, a tap), so only the Offline section is redrawn: re-rendering all
+     of Settings then would wipe a half-typed sync code and cut short a section
+     opening at that instant (caught as a flaky AbortError in 20-motion). */
+  function offlineChanged() {
+    if (!window.document) return;                              // the page has gone (a promise outlived it)
+    var pad = $('#set-offline .sec-pad'), sum = $('.sset[data-k="offline"] .sec-sum');
+    if (pad) pad.innerHTML = offlineHtml();
+    if (sum) sum.textContent = settingsSummary('offline');
+  }
+  /* the connection, read when needed: a change shows on the page and in a toast */
+  function checkOnline() {
+    var on = navigator.onLine !== false;
+    if (on === pwa.online) return on;
+    var first = pwa.online === null;
+    pwa.online = on;
+    document.body.classList.toggle('offline', !on);
+    $('#netState').hidden = on;
+    if (!first) { toast(on ? 'Back online.' : 'You\'re offline. Everything still works, and changes stay on this device.'); offlineChanged(); }
+    return on;
+  }
+  /* how many of this build's files are in its cache (Settings → Offline) */
+  function readiness() {
+    if (!window.caches || !D.cache) return;
+    window.caches.has(D.cache).then(function (has) {
+      if (!has) return [];
+      return window.caches.open(D.cache).then(function (c) { return Promise.all(D.precache.map(function (u) { return c.match(u); })); });
+    }).then(function (hits) {
+      pwa.cached = hits.filter(Boolean).length;
+      offlineChanged();
+    }, function () { /* no caches here: stays "not ready" */ });
+  }
+  function updateReady() {
+    if (pwa.update) return;
+    pwa.update = true;
+    toast('A new version is ready.', 'Reload', function () { location.reload(); });
+    offlineChanged();
+  }
+  /* follow a new worker to "activated": an update when an older one ran this page */
+  function follow(w) {
+    if (!w || w.state === 'redundant') return;
+    if (w.state === 'activated') { if (pwa.hadController) updateReady(); readiness(); return; }
+    once(w, ['statechange'], function () { follow(w); });
+  }
+  function lookForUpdate(report) {
+    var reg = pwa.reg;
+    if (!reg) return;
+    pwa.checking = !!report;
+    if (report) offlineChanged();
+    reg.update().then(function () {
+      pwa.checking = false;
+      var w = reg.installing || reg.waiting;
+      if (w) { if (report) toast('Downloading the new version…'); follow(w); }
+      else if (report) toast('You have the latest version (build ' + D.build + ').');
+      offlineChanged();
+    }, function () {
+      pwa.checking = false;
+      if (report) toast('Couldn\'t check for updates just now.');
+      offlineChanged();
+    });
+  }
+  function checkForUpdates() {
+    if (!checkOnline()) { toast('You\'re offline: check again when you\'re connected.'); return; }
+    if (!pwa.reg) { toast('Updates aren\'t available in this browser.'); return; }
+    lookForUpdate(true);
+  }
+  function registerSW() {
+    if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+    pwa.supported = true;
+    pwa.hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('./sw.js').then(function (reg) {
+      pwa.reg = reg;
+      if (reg.waiting && pwa.hadController) updateReady();
+      follow(reg.installing || reg.waiting);
+      readiness();
+    }, function () { pwa.supported = false; offlineChanged(); });
+  }
+  /* the install prompt (F-37): offered once in a toast, and in Settings → Offline */
+  function onInstallPrompt(ev) {
+    ev.preventDefault();
+    var first = !pwa.install;
+    pwa.install = ev;
+    if (first && $('#toast').hidden) toast('Install this tracker as an app on this device?', 'Install', promptInstall);
+    offlineChanged();
+  }
+  function promptInstall() {
+    var p = pwa.install;
+    if (!p) return;
+    pwa.install = null;
+    p.prompt();
+    Promise.resolve(p.userChoice).then(function (c) {
+      toast(c && c.outcome === 'accepted' ? 'Installed.' : 'Not installed. You can install it later from Settings → Offline.');
+      offlineChanged();
+    });
+    offlineChanged();
   }
 
   /* ======================================================================
@@ -1689,6 +2086,7 @@
      ====================================================================== */
   function rowIndex(el) { var row = el.closest('.row'); return row ? +row.dataset.i : -1; }
   function onClick(ev) {
+    checkOnline();
     if (swallowClick) { swallowClick = false; if (ev.target.closest('.band-head, .era-head, .arc-head')) return; }
     var b = ev.target.closest('[data-act]');
     if (!b) return;
@@ -1715,12 +2113,7 @@
         b.setAttribute('aria-expanded', show ? 'true' : 'false');
         break;
       }
-      case 'sec': {
-        var k = b.dataset.k, at = settings.panelOpen.indexOf(k);
-        if (at === -1) settings.panelOpen.push(k); else settings.panelOpen.splice(at, 1);
-        saveSettings(); renderPanel();
-        break;
-      }
+      case 'sec': if (OPEN_KEY[b.dataset.g]) setSecOpen(b.dataset.g, b.dataset.k, !secOpen(b.dataset.g, b.dataset.k)); break;
       case 'f': setFilter(b.dataset.k, b.dataset.v); break;
       case 'unset': setFilter(b.dataset.k, b.dataset.v, b.dataset.k === 'alt'); break;
       case 'clear': clearFilters(); break;
@@ -1737,6 +2130,7 @@
         saveSettings(); renderSettings();
         break;
       case 'pref': togglePref(b.dataset.k); break;
+      case 'look': setLook(b.dataset.k, b.dataset.v); break;
       case 'layout': settings.layout = b.dataset.v === 'rows' ? 'rows' : 'arcs'; saveSettings(); applyPrefs(); renderList(); renderSettings(); break;
       case 'eranav':
         settings.eraNav = ERA_NAV.indexOf(b.dataset.v) === -1 ? 'scroll' : b.dataset.v;
@@ -1800,6 +2194,9 @@
       case 'sync-replace-no': confirming = ''; renderSettings(); break;
       case 'sync-replace-yes': { var pend = sync.pending; sync.pending = null; confirming = ''; replaceWith(pend); break; }
       case 'backup-export': exportBackup(); break;
+      case 'sw-check': checkForUpdates(); break;
+      case 'sw-reload': location.reload(); break;
+      case 'install': promptInstall(); break;
     }
   }
   /* change: the one listener for <select> controls (era dropdown now; bulk
@@ -1853,6 +2250,30 @@
     if (Math.abs(dx) < SWIPE || Math.abs(dy) > 40) return;
     setMark(+t.row.dataset.i, dx > 0 ? 'read' : 'skip');
   }
+  /* KEYBOARD (V-7, XM-3): on the Reading tab ← / → step, R reads and X skips;
+     "/" goes to search. When a tab has focus, the arrow keys, Home and End move
+     between tabs (the ARIA tabs pattern). Nothing fires while typing, or with
+     a modifier key held. */
+  var KEYS_READING = { ArrowRight: function () { readerStep(1); }, ArrowLeft: function () { readerStep(-1); },
+                       r: function () { readerMark('read'); }, x: function () { readerMark('skip'); } };
+  function onKey(ev) {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    var el = ev.target, tag = el && el.tagName, k = ev.key;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el && el.isContentEditable)) return;
+    if (el && el.getAttribute && el.getAttribute('role') === 'tab' && /^(ArrowLeft|ArrowRight|Home|End)$/.test(k)) {
+      var at = TABS.indexOf(el.dataset.tab), n = TABS.length;
+      var to = k === 'Home' ? 0 : k === 'End' ? n - 1 : (at + (k === 'ArrowRight' ? 1 : n - 1)) % n;
+      showTab(TABS[to]);
+      $('#tab-' + TABS[to]).focus();
+      ev.preventDefault();
+      return;
+    }
+    if (k === '/') { if (activeTab !== 'list') showTab('list'); $('#q').focus(); ev.preventDefault(); return; }
+    var fn = activeTab === 'reading' && KEYS_READING[k.length === 1 ? k.toLowerCase() : k];
+    if (!fn) return;
+    fn();
+    ev.preventDefault();
+  }
   var inputTimer = null;
   function onInput(ev) {
     var id = ev.target.id;
@@ -1879,20 +2300,40 @@
     if (tc) tc.setAttribute('content', f.theme);
     var at = $('meta[name="apple-mobile-web-app-title"]');
     if (at) at.setAttribute('content', f.wordmark);
+    var icons = f.icons || {};                                 // icons from config (D-13)
+    $$('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(function (l) { if (icons['192']) l.setAttribute('href', icons['192']); });
+    /* the search hint names only what the data has to search */
+    var what = ['titles', 'arcs'].concat(HAS.notes ? ['notes'] : [], HAS.credits ? ['creators'] : []);
+    $('#q').placeholder = 'Search ' + what.join(', ') + '…';
+    $('#q').setAttribute('aria-label', 'Search ' + what.slice(0, -1).join(', ') + ' and ' + what[what.length - 1]);
   }
 
   document.addEventListener('click', onClick);
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
+  document.addEventListener('keydown', onKey);
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchmove', onTouchMove, { passive: true });
   document.addEventListener('touchend', onTouchEnd, { passive: true });
   window.addEventListener('pagehide', flushNow);
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') flushNow();
+    else { checkOnline(); lookForUpdate(false); }
   });
+  window.addEventListener('beforeinstallprompt', onInstallPrompt);
+
+  /* The sticky stack's height (F-58), measured whenever it changes (the
+     banner turning on, a wrap at a new width, a font landing). A
+     ResizeObserver is not an event listener, so the budget is unchanged. */
+  function measureStack() {
+    var st = $('#stack');
+    document.documentElement.style.setProperty('--stack-h', (st ? st.offsetHeight : 0) + 'px');
+  }
+  if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
 
   applyFranchise();
+  checkOnline();
+  registerSW();
   var migration = null;
   if (D.franchise.storage && D.franchise.storage.legacy && !settings.migrated) {
     migration = importLegacy();
@@ -1904,7 +2345,8 @@
   applyPrefs();
   showTab(settings.tab);
   var synced = importFromHash();
-  if (migration && legacySummary(migration)) toast(legacySummary(migration));
+  if (checkBeacon()) { /* the stale-styles warning outranks the other boot toasts */ }
+  else if (migration && legacySummary(migration)) toast(legacySummary(migration));
   else if (!synced) checkRefresh();
 
   /* Small public surface for session 3's Settings actions (and the harness). */
@@ -1913,6 +2355,7 @@
     jumpToIssue: jumpToIssue,
     showTab: showTab,
     pacePresets: { minutes: PACE_MINUTES, weekly: PACE_WEEKLY },
+    has: Object.freeze(JSON.parse(JSON.stringify(HAS))),     // read-only copy of the capability map
     setPace: setPace,
     syncCodes: function () { return { qr: packQR(), qrText: qrText(), full: fullCode() }; },
     readCode: function (text) { return parseCode(text); },

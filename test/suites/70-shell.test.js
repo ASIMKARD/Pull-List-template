@@ -7,6 +7,7 @@ const { ROOT, FIX, build, loadData, readJSON, writeJSON, copyFixture, boot, wait
 async function shellChecks(t, label, dataDir) {
   const D = loadData(dataDir);
   const app = boot(dataDir);
+  const atBoot = app.listeners.slice();                     // the app's own, right after boot
   const doc = app.document, w = app.window;
   await wait(20);
   t.ok(label + ': boots with no runtime errors', app.errors.length === 0, app.errors.join(' | '));
@@ -27,7 +28,8 @@ async function shellChecks(t, label, dataDir) {
     heads[1].click();
     t.ok(label + ': second click closes it', heads[1].getAttribute('aria-expanded') === 'false');
   }
-  t.ok(label + ': listener count at boot is within 12', app.listeners.length <= 12, app.listeners.join(','));
+  t.ok(label + ': the app registers at most 12 listeners at boot (' + atBoot.length + ': ' + atBoot.join(', ') + ')', atBoot.length <= 12 && atBoot.length >= 9,
+       atBoot.join(','));
 
   // storage: namespaced, debounced, flushed on pagehide
   const ns = D.franchise.key + ':';

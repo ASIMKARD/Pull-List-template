@@ -6,7 +6,7 @@
    Import from previous version. */
 'use strict';
 const path = require('path');
-const { ROOT, build, loadData, boot, wait, basic, mixed } = require('../lib/helpers');
+const { ROOT, build, loadData, boot, wait, basic, mixed, openSettings } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1), DAY = 864e5;
 
@@ -26,10 +26,10 @@ module.exports = async function (t) {
        $('#tab-list').getAttribute('aria-selected') === 'true');
   t.ok('the filter panel shows on Checklist', visible($('#fpanel')));
   $('[data-act="panel"]').click();
-  $('.fsec-head[data-k="reading"]').click();
+  $('#fsecs .sec-head[data-k="reading"]').click();
   $('#fsec-reading .chip[data-k="mandatory"]').click();
   const countBefore = $('#pprog .pcount').textContent;
-  $('#tab-settings').click();
+  openSettings(app);
   t.ok('Settings tab opens its pane (T-114, T-121)', visible($('#settings')) && $('#settings').children.length > 0 && $('#pane-list').hidden);
   t.ok('tab state is exposed to assistive tech (aria-selected, roving tabindex)',
        $('#tab-settings').getAttribute('aria-selected') === 'true' && $('#tab-list').getAttribute('aria-selected') === 'false' &&
@@ -39,7 +39,7 @@ module.exports = async function (t) {
   t.ok('Checklist pane visible again (T-122)', visible($('#app')) && $('#pane-settings').hidden);
   t.ok('filters survive a round trip through another tab (T-41)', $$('#fchips .chip').some(c => /Mandatory only/.test(c.textContent)) &&
        $('#pprog .pcount').textContent === countBefore);
-  $('#tab-settings').click();
+  openSettings(app);
   t.ok('the active tab is stored in the one settings store (S-29)', stored(app, 'settings').tab === 'settings');
   const keep = { [ns + 'settings']: app.window.localStorage.getItem(ns + 'settings') };
   app.window.close();
@@ -48,15 +48,15 @@ module.exports = async function (t) {
   await wait(20);
   t.ok('the next boot opens on the remembered tab', visible($('#settings')) && $('#tab-settings').getAttribute('aria-selected') === 'true');
   t.ok('…and the checklist behind it still landed collapsed (no rows rendered)', d.querySelectorAll('.row').length === 0);
-  t.eq('Settings is sectioned, at least 4 heads (T-11)', $$('#settings .sset > .seth').map(h => h.textContent),
-       ['Reading behaviour', 'Display', 'Touch', 'Bulk actions', 'Data', 'Backup']);
+  t.eq('Settings is sectioned, at least 4 heads (T-11)', $$('#settings .sset > .seth .sec-name').map(h => h.textContent),
+       ['Reading behaviour', 'Look', 'Display', 'Touch', 'Bulk actions', 'Data', 'Backup', 'Offline']);
   app.window.close();
 
   // ------------------------------------------- pace controls and readout
   app = boot(mx.out, { now: NOW });
   d = app.document;
   await wait(20);
-  $('#tab-settings').click();
+  openSettings(app);
   const segVals = act => $$(`#settings [data-act="${act}"]`).map(b => +b.dataset.v);
   const pressed = act => $$(`#settings [data-act="${act}"][aria-pressed="true"]`).map(b => +b.dataset.v);
   t.eq('minutes-per-issue control offers the presets (S-18)', segVals('pace-min'), app.window.PullList.pacePresets.minutes.map(p => p[2]));
@@ -118,7 +118,7 @@ module.exports = async function (t) {
   app = boot(mx.out, { now: NOW });
   d = app.document;
   await wait(20);
-  $('#tab-settings').click();
+  openSettings(app);
   t.eq('refresh reminder has 4 options including Off (T-60, T-61)', $$('#settings [data-act="refresh"]').map(b => b.textContent),
        ['Monthly', 'Quarterly', 'Yearly', 'Off']);
   t.ok('quarterly by default', $('#settings [data-act="refresh"][aria-pressed="true"]').dataset.v === 'quarter');
@@ -142,7 +142,7 @@ module.exports = async function (t) {
   app = boot(mx.out, { now: NOW, storage: seen('month', 31) });
   await wait(20);
   t.ok('monthly at 31 days: reminder due', !app.document.querySelector('#toast').hidden);
-  app.document.querySelector('#tab-settings').click();
+  openSettings(app);
   app.document.querySelector('#settings [data-act="refresh"][data-v="year"]').click();
   t.ok('choosing a new interval restarts the clock', stored(app, 'settings').refreshSeen === NOW && stored(app, 'settings').refreshEvery === 'year');
   app.window.close();
@@ -156,13 +156,13 @@ module.exports = async function (t) {
   t.ok('pinned bar is visible on the Checklist', visible($('#pinchips')));
   $('#pinchips .pin[data-id="mixed-hero-1990-5"]').click();
   t.ok('a pinned chip jumps to its row (era opened, row rendered)', !!$('.row[data-id="mixed-hero-1990-5"]') && visible($('.row[data-id="mixed-hero-1990-5"]')));
-  $('#tab-settings').click();
+  openSettings(app);
   t.eq('Settings lists every bookmark, not a jump to the first one (F-28, T-49)', $$('.bmlist [data-act="bm-jump"]').map(b => b.dataset.id),
        ['mixed-hero-1990-1', 'mixed-hero-1990-5']);
   $('.bmlist [data-act="bm-jump"][data-id="mixed-hero-1990-1"]').click();
   t.ok('Jump from Settings switches to the Checklist and opens the row (F-29)', !$('#pane-list').hidden &&
        visible($('.row[data-id="mixed-hero-1990-1"]')) && $('#tab-list').getAttribute('aria-selected') === 'true');
-  $('#tab-settings').click();
+  openSettings(app);
   $('.bmlist [data-act="bm-remove"][data-id="mixed-hero-1990-5"]').click();
   t.ok('Remove takes it off the list and the pinned bar', $$('.bmlist [data-act="bm-jump"]').length === 1 && $$('#pinchips .pin').length === 1);
   t.ok('…and un-stars its row', $('.row[data-id="mixed-hero-1990-5"] .bm').getAttribute('aria-pressed') === 'false');
@@ -183,7 +183,7 @@ module.exports = async function (t) {
   await wait(20);
   const readCount = () => $('#pprog .pcount').textContent;
   const startCount = readCount();
-  $('#tab-settings').click();
+  openSettings(app);
   $('[data-act="clear-ask"]').click();
   t.ok('Clear all asks first, in the page (no window.confirm)', !!$('.confirm [data-act="clear-yes"]') && !!$('.confirm [data-act="clear-no"]'));
   $('[data-act="clear-no"]').click();
@@ -210,7 +210,7 @@ module.exports = async function (t) {
   await wait(20);
   const bootListeners = app.listeners.length;
   t.ok('already migrated: nothing imported at boot', !JSON.parse(app.window.localStorage.getItem(nsb + 'progress') || '{"marks":{}}').marks[legacyId]);
-  $('#tab-settings').click();
+  openSettings(app);
   t.ok('Settings offers "Import from previous version" when the data declares one', !!$('[data-act="import-legacy"]'));
   $('[data-act="import-legacy"]').click();
   app.window.dispatchEvent(new app.window.Event('pagehide'));
@@ -222,11 +222,77 @@ module.exports = async function (t) {
   t.ok('no runtime errors (import)', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
 
+  // ----------------------- collapsible Settings (John, 4 Oct; V-31, FP-11)
+  app = boot(mx.out, { now: NOW });
+  d = app.document;
+  await wait(20);
+  $('#tab-settings').click();
+  const heads = () => $$('#settings .sset > .seth > .sec-head');
+  t.eq('Settings sections, in order, each with its own icon', heads().map(h => h.querySelector('.sec-name').textContent + ' ' + h.querySelector('.sec-ico').textContent),
+       ['Reading behaviour ◷', 'Look ◐', 'Display ◧', 'Touch ☝', 'Bulk actions ☑', 'Data ▤', 'Backup ⇄', 'Offline ⇣']);
+  t.ok('all collapsed by default: every head says so and every body is inert', heads().every(h => h.getAttribute('aria-expanded') === 'false') &&
+       $$('#settings .sec-body').every(b => b.hasAttribute('inert')) && $$('#settings .sset.open').length === 0);
+  t.ok('every head carries a one-line summary', heads().every(h => h.querySelector('.sec-sum').textContent.length > 0));
+  t.eq('the summaries say what is set', heads().map(h => h.querySelector('.sec-sum').textContent),
+       ['Average 15 min · Steady 12 a week', 'Paper skin', 'Badges · Headings · Plain scroll', 'Gestures off', 'Expand, collapse, mark eras and ranges',
+        'Quarterly reminder · 0 bookmarks', 'Sync code and backup file', 'Not available here']);
+  const shape = h => [...h.children].map(c => c.className).join(' ') + ' | ' + [...h.querySelector('.sec-t').children].map(c => c.className.split(' ')[0]).join(' ');
+  t.ok('one component: Settings heads and filter-panel heads have the same parts', shape(heads()[0]) === shape(d.querySelector('#fsecs .sec-head')),
+       shape(heads()[0]) + ' vs ' + shape(d.querySelector('#fsecs .sec-head')));
+  t.ok('a control inside a closed section can\'t be reached (inert)', !!$('[data-act="pref"][data-k="swipe"]').closest('[inert]'));
+  const touchSec = $('.sset[data-k="touch"]');
+  $('.sec-head[data-g="s"][data-k="touch"]').click();
+  t.ok('opening one: its head says so, its body is no longer inert, the rest stay shut',
+       $('.sec-head[data-g="s"][data-k="touch"]').getAttribute('aria-expanded') === 'true' && touchSec.classList.contains('open') &&
+       !touchSec.querySelector('.sec-body').hasAttribute('inert') && $$('#settings .sset.open').length === 1);
+  t.ok('…in place: the same section element, so the open animation can run', $('.sset[data-k="touch"]') === touchSec);
+  $('[data-act="pref"][data-k="swipe"]').click();
+  t.eq('the summary follows the setting', $('.sset[data-k="touch"] .sec-sum').textContent, 'Swipe on');
+  t.ok('…and the section stays open across the re-render', $('.sec-head[data-g="s"][data-k="touch"]').getAttribute('aria-expanded') === 'true');
+  $('.sec-head[data-g="s"][data-k="reading"]').click();
+  $('[data-act="pace-min"][data-v="25"]').click();
+  $('[data-act="pace-week"][data-v="5"]').click();
+  t.eq('the pace summary follows the pace', $('.sset[data-k="reading"] .sec-sum').textContent, 'Deep dive 25 min · Light 5 a week');
+  $('[data-act="pmode"][data-v="medium"]').click();
+  t.ok('…and says when progress is per format', /per format$/.test($('.sset[data-k="reading"] .sec-sum').textContent));
+  $('.sec-head[data-g="s"][data-k="data"]').click();
+  $('[data-act="refresh"][data-v="month"]').click();
+  t.eq('the Data summary follows the reminder', $('.sset[data-k="data"] .sec-sum').textContent, 'Monthly reminder · 0 bookmarks');
+  $('.sec-head[data-g="s"][data-k="reading"]').click();
+  t.ok('closing one makes its body inert again', $('.sset[data-k="reading"] .sec-body').hasAttribute('inert') &&
+       $('.sec-head[data-g="s"][data-k="reading"]').getAttribute('aria-expanded') === 'false');
+  await wait(450);                                                    // the 400 ms save debounce, without a pagehide flush
+  const openSaved = JSON.parse(app.window.localStorage.getItem(ns + 'settings')).settingsOpen;
+  t.eq('the open sections are remembered in the namespaced store (after the debounce)', openSaved.slice().sort(), ['data', 'touch']);
+  const keepS = {};
+  for (const k of Object.keys(app.window.localStorage)) keepS[k] = app.window.localStorage.getItem(k);
+  t.ok('no runtime errors (collapsible Settings)', app.errors.length === 0, app.errors.join(' | '));
+  app.window.close();
+  app = boot(mx.out, { now: NOW, storage: keepS });
+  d = app.document;
+  await wait(20);
+  t.eq('the next visit reopens exactly those sections', $$('#settings .sset.open').map(s => s.dataset.k), ['touch', 'data']);
+  t.ok('…and keeps the panel\'s own open sections separate', !$$('#fsecs .sec-head').some(h => h.getAttribute('aria-expanded') === 'true'));
+  $('.sec-head[data-g="s"][data-k="backup"]').click();
+  $('#syncIn').value = app.window.PullList.syncCodes().full;
+  $('[data-act="sync-read"]').click();
+  $('.sec-head[data-g="s"][data-k="backup"]').click();
+  t.eq('a pending import shows in the Backup summary while the section is shut', $('.sset[data-k="backup"] .sec-sum').textContent, 'An import is waiting');
+  const css = require('fs').readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  t.ok('the open animation is one shared rule: the body\'s grid row moves from 0fr to 1fr (FP-11)',
+       /\.sec-body\s*\{[^}]*grid-template-rows:\s*0fr[^}]*transition:\s*grid-template-rows/.test(css) && /\.sec\.open\s*>\s*\.sec-body\s*\{[^}]*grid-template-rows:\s*1fr/.test(css));
+  const motionDecls = css.replace(/\/\*[\s\S]*?\*\//g, '').match(/(?:transition|animation)(?:-duration)?\s*:[^;}]+/g) || [];
+  t.ok('…every transition and animation scales its duration with --motion (' + motionDecls.length + ' found)',
+       motionDecls.length >= 3 && motionDecls.every(dcl => /:\s*none\b/.test(dcl) || /var\(--motion\)/.test(dcl)), motionDecls.join(' | '));
+  t.ok('…and reduced motion sets --motion to 0 (a `*` rule has no specificity, so it can\'t stop class transitions)',
+       /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{\s*:root\s*\{\s*--motion:\s*0;?\s*\}/.test(css));
+  app.window.close();
+
   // ----------------------- comics-only data: no progress-mode control
   const rootB = build(path.join(ROOT, 'dataset.json'), { label: 'tabs-root' });
   app = boot(rootB.out, { now: NOW });
   await wait(20);
-  app.document.querySelector('#tab-settings').click();
+  openSettings(app);
   t.ok('a single-format tracker shows no progress-mode control', !app.document.querySelector('[data-act="pmode"]'));
   app.window.close();
 };

@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1105 assertions, 0 failed, 24 suites (end of session 3; CI green on every push).
-Session 1 ended at 307 and session 2 at 617; CI green on every run.
+**Harness:** 1298 assertions, 0 failed, 29 suites (end of session 4). **Layout suite (real Chromium, in CI too):** 153 checks, 0 failed, 8 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
 
@@ -599,20 +599,42 @@ Then push, and tell John.
   - one toast, one Undo;
   - `dataVersion` and `retiredIds`.
 
-### My calls this session — open to veto (everything else followed a decision)
+### My calls this session (1–5 accepted 4 Oct; 6–8 still open to veto)
 1. **Era navigation (XM-8) is a jump bar, not a filter.** Plain scroll is the default, because
-   the Story section's era chips already filter.
+   the Story section's era chips already filter. **Accepted 4 Oct.**
 2. **Bulk marks respect the view.** Era, range, arc and long-press mark the rows the banners
-   count, so "mandatory only" or Essential view limits them.
+   count, so "mandatory only" or Essential view limits them. **Accepted 4 Oct.**
 3. **The QR holds a `#sync=` link** to the compact code, so a camera scan opens the tracker and
-   merges (XM-6).
+   merges (XM-6). **Accepted 4 Oct.**
 4. **The Reading stepper ignores "newest era first"** and always steps in reading order.
+   **Accepted 4 Oct.**
 5. **The sync prefix is the whole franchise key**, uppercase alphanumerics (`FIXTURE:`). v2 used
-   the first 4 letters, which could collide between trackers.
+   the first 4 letters, which could collide between trackers. **Accepted 4 Oct.**
 6. **Merge keeps settings and fills only missing reviews.** Replace (full code) restores
    settings too. A QR's Replace touches progress only.
 7. **Essential/Complete shows as an active chip,** so Clear all returns it to Essential.
 8. **Review ✎ and "Mark arc read / unread"** share an action row under each arc heading.
+
+### Decided 4 Oct (John) — do not reopen
+- **Session 3's calls 1–5 are accepted** as shipped:
+  1. The era jump bar is off by default.
+  2. Bulk marking touches only the rows the figures count.
+  3. The QR holds a `#sync=` link.
+  4. The Reading tab steps in reading order.
+  5. The sync prefix is the full franchise key.
+- **Time left keeps the X-Men style:** `45m`, `3h`, `1.2d left` (days to one decimal). This is
+  `timeLeft()` as shipped, so nothing changes.
+- **Two additions to session 4's scope.** They are steps 1 and 2 of the plan below.
+  1. **Collapsible Settings.**
+     - Settings sections collapse like the filter panel: icon, name and a one-line summary on
+       each header.
+     - All collapsed by default, with the open state remembered in namespaced storage.
+     - Same animation and tokens as the filter panel.
+  2. **Data-driven visibility (a rule, not a one-off).** A control or section only renders when
+     the dataset gives it something to do. The rule is in CLAUDE.md → UI rules.
+     - Tests: a comics-only, single-era, no-extras fixture where none of these controls
+       appear; the full fixture where all of them do; and a mutation check that forcing one on
+       is caught.
 
 ### Open items for session 4
 - **A Chromium layout suite in the harness or CI.**
@@ -649,3 +671,880 @@ Work through every S4 line in `FEATURE-INVENTORY.md` (51):
 5. **Accessibility and performance** (V-7, XM-3, V-8, V-18, FP-11): keyboard shortcuts,
    critical CSS inline, a preloaded display font, reduced motion and smooth panel animation.
 6. **The content-visibility decision** (V-15), then this file's checkpoint.
+
+---
+
+## Session 4 plan (proposed 4 Oct 2026, questions answered 4 Oct): look and PWA — awaiting John's OK to start
+
+Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–3 merged).
+
+**Scope:**
+- the 51 S4 lines in `FEATURE-INVENTORY.md`;
+- John's two additions (steps 1 and 2);
+- the open items above.
+
+**Method (as in session 3):**
+- Each step lands with its tests, one mutation check (the old or wrong behaviour put back once),
+  updated inventory statuses and a checkpoint here.
+- Anything visual is measured in real Chromium, never reasoned about.
+- The session length rule holds: stop only at the end of a finished step, and record where the
+  next one begins.
+
+1. **Data-driven visibility** (John, 4 Oct; the rule is in CLAUDE.md → UI rules). This comes
+   first because every later control is added through it.
+   - **The capability map.**
+     - One map, `HAS`, built once at boot from the data (never from settings or the skin).
+     - A read-only copy is exposed as `PullList.has` for the harness.
+     - Every conditional control reads it. A missing capability means the control is not
+       rendered, rather than hidden with CSS.
+   - **John's list:**
+     - One medium: no per-format lines, format filter, progress mode, duration copy or
+       "+N untimed". Verbs are that medium's own; for comics, plain "Read".
+     - Characters needs presence data, or two or more strands (answer 4: with strands, the
+       section shows its strand chips).
+     - Creators needs credits. That also covers the tappable names and the word "creators" in
+       the search hint.
+     - Essential/Complete needs events.
+     - The ALT toggle needs ALT rows.
+     - The order switch needs a second order.
+     - Bands need periods.
+     - The era jump bar needs two or more eras.
+   - **A second order is measured, not declared.**
+     - Publication order counts only if some era's rows are out of publication order.
+     - Arc order counts only if some era's arcs interleave.
+     - Today `mixed` offers a publication chip that changes nothing.
+   - **The same rule applied further** (my reading of "a rule, not a one-off"; accepted 4 Oct).
+     Each control needs:
+     - depth chips: two tiers in use;
+     - type chips: two types;
+     - strand chips: two strands;
+     - "Include cameos": a cameo grade;
+     - "Mandatory only": both mandatory and optional rows;
+     - "Notes only" and tap to reveal: a note;
+     - "Gap notes": a gap note;
+     - the era filter, Mark range and "Newest era first": two eras;
+     - the look-up link: `searchUrl`;
+     - help copy that names bands: periods.
+   - **Saved state:** a saved filter or setting for a control that isn't offered is ignored, so
+     nothing can filter through a control you can't see.
+   - **New fixture `test/fixtures/minimal`.**
+     - Comics only, one era.
+     - None of: periods, presence, credits, events, ALT rows, notes, `searchUrl`, or a second
+       order.
+     - Exactly one type, one tier and one strand.
+   - **New suite `9f-visibility`.** One table pairs each control with its capability.
+     - On `minimal`, none of these controls appear on any tab, with every panel and Settings
+       section opened. The controls every tracker has (search, marks, bookmarks, pace, hide
+       skipped, skins, backup and so on) still do.
+     - On the full fixture, all of them appear. The full fixture is `basic` plus one untimed game
+       added at test time, because `basic` is fully timed by design.
+     - `mixed` checks the measured-order case.
+   - **A permanent mutation self-test.**
+     - `boot()` gains an `appSrc` option.
+     - The suite forces each capability on in turn in a copy of `app.js`, and every one must be
+       caught on `minimal`.
+
+2. **Collapsible Settings, with one section component for both panels** (John, 4 Oct; FP-11).
+   - **Sections collapse like the filter panel.**
+     - Each header shows an icon, the name, a live one-line summary and a chevron.
+     - All sections start collapsed.
+     - The open ones are kept in `settings.settingsOpen`, next to `panelOpen` in the one
+       namespaced store.
+   - **One helper renders the section heads** of both the filter panel and Settings, so the
+     two can't drift.
+   - **The animation (FP-11), shared by both.**
+     - Bodies stay in the DOM and collapse with `grid-template-rows: 0fr → 1fr`, so nothing is
+       measured.
+     - A closed body is `inert`, so the keyboard and screen readers skip it.
+     - The chevron rotates. Colours come from tokens only, and nothing moves under
+       `prefers-reduced-motion`.
+   - **Summary examples:**
+     - Reading behaviour: "Average 15 min · Steady 12 a week".
+     - Display: "Badges · Headings · Plain scroll".
+     - Touch: "Gestures off".
+     - Data: "Quarterly reminder · 3 bookmarks".
+     - Backup: "Sync code and backup file".
+     - The new Look and Offline sections get theirs in steps 4 and 7.
+   - **An import preview opens Backup on its own,** so a pasted code or a file never waits
+     inside a closed section.
+   - **Tests in `98-tabs-settings`:**
+     - sections start collapsed;
+     - the open state survives a reload, read after the 400 ms debounce;
+     - summaries follow the settings;
+     - a closed body is inert.
+   - **Earlier suites** open the sections they use through one helper. No assertion is removed or
+     weakened.
+   - **Mutations:** an open state that isn't saved, and a summary that isn't refreshed.
+
+3. **A Chromium layout harness**, built before the visual steps so that they are measured.
+   - **Setup:** `test/layout/` with Playwright (`executablePath: '/opt/pw-browsers/chromium'`),
+     served over `http://localhost`, because `cssRules` throws on `file://`.
+   - **Checks:**
+     - no page errors (L-9);
+     - every tab at 320, 360 and 390 px, with no horizontal overflow (`scrollWidth`) and all four
+       tabs fully visible;
+     - a helper that asks the browser which rules match an element, for multi-line selectors.
+   - **Fonts:** `@font-face` for Plex Sans, Plex Mono and Anton, with `font-display: swap`, so
+     every later measurement uses the real fonts. Then re-measure the tabs at 320 px.
+   - **CI (answer 3): every push.** The workflow installs Chromium and runs `test/layout/`
+     after the harness. Layout, contrast, reachability and offline checks become gates like
+     the harness, and a zero check count fails as well.
+
+4. **One token system and the skins.** Inventory lines: V-5, F-39, F-52…F-57, S-1…S-6, S-9, S-20,
+   S-25, T-38…T-45, T-54…T-57, T-81…T-116, T-98, T-103, XM-17, XM-18, and D-12 styling.
+   - **Colour stays in the one `:root` block.**
+     - Colours become formulas over a few numeric inputs: the hue, saturation and lightness of
+       the paper, ink and accent.
+     - A skin or a paper swatch sets only those inputs, with no colour written outside
+       `:root`, so skins and swatches combine freely.
+   - **Era ramps are derived from each era's index.**
+     - The hue is stepped by the golden angle, so there is no cap.
+     - The 64-era stress set gets styled, and era tints stay pale washes.
+   - **The colour guard is narrowed, not weakened.**
+     - Outside `:root`, a colour function is allowed only when every argument is a token
+       (`var()` or `calc()` of tokens).
+     - A self-test proves that a literal outside `:root` (`#fff`, `hsl(200 50% 50%)`) is still
+       caught.
+   - **Skins set `data-skin` and tokens only** (fonts, corner radius and letter case included).
+     A guard asserts that no skin rule touches position, display, visibility, size or order.
+   - **The reachability guard (V-5).** In every skin, every control the visibility table
+     expects must be:
+     - rendered and displayed;
+     - inside the viewport once its section is open;
+     - the topmost element at its centre (`elementFromPoint`).
+
+     jsdom checks presence; Chromium does the hit-testing.
+   - **Contrast is measured.** For every skin × paper swatch, these must clear WCAG AA in
+     Chromium:
+     - body text, soft text and chips;
+     - era text on its tint, for eras 0–63;
+     - chip borders, at the 3:1 non-text ratio (T-40).
+   - **The skins (answer 1: v2's four, re-expressed as token sets):**
+     - **Paper:** today's light look.
+     - **Newsprint:** v2's newsprint theme.
+     - **Pull:** the X-Men look, with a cream page, Anton capitals, mono metadata and a black
+       tab bar.
+     - **Night:** dark, designed against its surface, with contrast measured.
+
+     A tracker picks its default in config (T-104). Each skin sets `data-skin` and nothing else
+     (T-81).
+   - **Settings → Look:**
+     - skin: one option per configured skin, with the default from config;
+     - paper: 7 swatches;
+     - era hues: split or mono;
+     - text size, as a scale multiplier that the title follows (XM-18, T-45);
+     - density;
+     - button size: compact restores the 26 px mark, standard, and large at 44 px or more;
+     - mark style: box, dot or tick (XM-17);
+     - dyslexia font.
+
+     Changing skin keeps the current tab and round-trips (T-83, T-103, T-116).
+   - **Skin beacon (F-57, T-98):** a `--skin-ok` token is read at boot, and a stale
+     `styles.css` shows a warning.
+
+5. **Banners and table view.** Inventory lines: F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51,
+   L-7, L-8.
+   - **Mini progress bar:** on by default.
+   - **Persistent banner:** off by default. It is one compact line, split per format only when
+     the data mixes formats (step 1's rule).
+   - **Table view:** compact rows at least halve the row height, and no row is wider than the
+     screen. Both are measured in Chromium.
+
+6. **The sticky stack, measured at runtime.** Inventory lines: F-58, L-1…L-6.
+   - **The stack.**
+     - The tabs stick to the top.
+     - The mini bar or banner sits directly under them.
+     - `--stack-h` comes from a `ResizeObserver`, which is not an event listener, and never
+       from a hard-coded height.
+   - **Proved in Chromium after scrolling:**
+     - the tabs stay pinned and the banner sits directly under them;
+     - no band is shifted onto its own intro;
+     - there are no more than 16 px between bands;
+     - skins never change positioning (the `position: relative` trap).
+   - **Swipe clip:** `overflow: hidden` on `.arc`, if focus rings survive it (open item from
+     session 3).
+
+7. **PWA.** Inventory lines: F-35…F-38, F-59, XM-7, the live install of D-2, the icons of D-13,
+   and V-17.
+   - **Settings → Offline.** The service worker is registered, and the section shows:
+     - ready, not ready or unsupported, with "N of M files cached";
+     - the build tag.
+   - **Online and offline.** Per the 2 Oct decision there are no online/offline listeners.
+     - `navigator.onLine` is read at boot, on `visibilitychange` and before network actions.
+     - The `.offline` class and a toast follow any change.
+   - **Install prompt:** `beforeinstallprompt` is listener 10. "Installed." comes from the
+     prompt's result.
+   - **Update flow.**
+     - Two pieces: "A new version is ready → Reload", and a "Check for updates" button
+       (`reg.update()`).
+     - It is checked at boot, on `visibilitychange` and from the button. One-off waits go
+       through `once()`.
+   - **A real-Chromium offline check** over `http://localhost`.
+     - Install, go offline and reload: the app boots from the cache, and the QR still draws.
+     - Every fetch path ends in a real `Response`, because of the iOS trap.
+   - **Icons from config.**
+     - `franchise.icons` is optional, and the build checks the PNG sizes (stdlib only).
+     - The build warns when a franchise other than the starter ships the template's
+       placeholder icons, matched by hash.
+
+8. **Accessibility and first paint.** Inventory lines: V-7, XM-3, V-8, V-18.
+   - **Keyboard** (`keydown`, listener 11):
+     - on the Reading tab, ← and → step, R reads and X skips;
+     - "/" focuses search;
+     - keys are ignored in inputs and with modifier keys.
+   - **An aria audit in the harness:**
+     - every button and input has an accessible name;
+     - the tabs, the panel and the Settings sections carry `aria-expanded` and
+       `aria-controls`;
+     - reduced motion stops every transition.
+   - **First paint (answer 2: one stylesheet plus preload).**
+     - `styles.css` stays the single stylesheet: one token block in one file, served from the
+       service-worker cache after the first visit.
+     - Preload the display font.
+     - `data.js` and `app.js` don't block the first paint.
+     - V-8 is re-expressed as a measured first-paint check in Chromium, before and after.
+
+9. **Close-out.**
+   - Record the V-15 decision: lazy rendering replaces `content-visibility`, as shipped since
+     session 2 (closed by John, 4 Oct).
+   - Update the inventory statuses.
+   - Run the full Chromium sweep: 320, 360 and 390 px × every tab × every skin.
+   - Write this file's checkpoint.
+   - Update CLAUDE.md's repo map with `minimal` and `test/layout/`.
+
+**Listener budget:**
+- 9 today, 11 of 12 after this session: `keydown` and `beforeinstallprompt`.
+- The `ResizeObserver` and the one-off service-worker waits add none.
+
+**New suites:**
+- jsdom: `9f-visibility` (step 1), `9g-look` (step 4), `9h-pwa` (step 7) and `9i-a11y` (step 8);
+- Chromium: `test/layout/` (steps 3–9).
+
+**Answers from John (4 Oct) — do not reopen:**
+1. **Skins:** v2's four, as token sets: Paper, Newsprint, Pull and Night. Each tracker's
+   default comes from config.
+2. **First paint (V-8):** one stylesheet plus preload. Nothing is inlined, and `index.html`
+   stays hand-written. V-8 is re-expressed as a measured first-paint check.
+3. **The Chromium suite runs in GitHub Actions on every push,** as a gate like the harness.
+4. **Strands without presence data:** the Characters section shows when there are two or more
+   strands, holding the strand chips. With one universal strand and no presence data, it is
+   gone.
+
+---
+
+## Session 4 checkpoint — step 1 done (data-driven visibility), 5 Oct 2026
+
+### Done
+- **The capability map.**
+  - `app.js` builds one map, `HAS`, from the data at boot. It has 19 capabilities: media,
+    presence, strands, cameos, credits, events, alt, publication, arcOrder, bands, eras, tiers,
+    types, mandatory, notes, reveal, gapNotes, lookup and legacy.
+  - Every conditional control reads it, and a missing capability means the control is not
+    rendered. `PullList.has` is a frozen copy for the harness.
+  - The old one-off checks (`HAS_BANDS`, `MEDIA_USED.length > 1`, `D.events.length`,
+    `D.characters.length`, `searchUrl`, `storage.legacy`) now go through the map.
+- **Sections are offered by their contents.**
+  - Story needs events, eras, formats, types or ALT. Characters needs presence data or two
+    strands (John's answer 4). Creators needs credits. Order needs a second order.
+  - Reading is always offered, because Unread only and Hide skipped always have work to do.
+- **A second order is measured.**
+  - Publication order is offered only if some era's rows are out of publication order. Arc
+    order is offered only if some era's arcs interleave.
+  - `mixed` loses a publication chip that changed nothing.
+- **Saved state.**
+  - A saved filter for a control that isn't offered is ignored (`FILTER_CAP`).
+  - An order or Complete view the data doesn't offer falls back to reading and Essential: in
+    `withDefaults`, in presets and in `setFilter`.
+- **Copy follows the data.**
+  - The search hint names notes and creators only when there are some; the static `index.html`
+    hint is now "Search titles and arcs…".
+  - The Touch help names bands only with periods.
+  - With mixed formats, Reading behaviour gets a duration line: "Comics are timed at your minutes
+    per issue; shows and games count their own length."
+- **The rule applied further (accepted 4 Oct):** depth chips, type chips, strand chips, Include
+  cameos, Mandatory only, Notes only, Tap to reveal, Gap notes, the era filter, the era picker,
+  Mark range, Newest era first and the look-up link.
+- **New fixture `test/fixtures/minimal`:**
+  - 6 comics in 2 arcs and one era;
+  - one type, tier and strand;
+  - no periods, presence, credits, events, ALT, notes, `searchUrl`, legacy or second order.
+
+  CI builds it too.
+- **New suite `9f-visibility` (27 assertions).**
+  - One table of 36 controls × 19 capabilities, plus 3 markers driven by the data itself and
+    15 controls every tracker has.
+  - `minimal`: none of the 36 appear, on any tab, with the panel and every section open. The
+    controls every tracker has do appear, the verb is plain "Mark Read", and no other format's
+    words appear.
+  - Full fixture (`basic` plus one untimed game, added at test time): all of them appear.
+  - `mixed` checks the measured-order case. A saved-state check ignores, among others,
+    notes-only, which would otherwise hide every row.
+  - **Permanent self-test.** `boot()` gains `appSrc`. Each capability is forced on in turn in a
+    copy of `app.js`, and its own controls must appear on `minimal`. A capability with no row
+    fails the suite.
+- **Mutation checks**, each with the old or wrong behaviour put back once:
+  - saved filters applied through hidden controls → 2 failures;
+  - order chips not measured → 1;
+  - Characters section always offered → 3;
+  - a gate that bypasses the map → the self-test fails.
+- **Real Chromium** (`minimal` and the root starter, 320 and 390 px, every tab): no overflow,
+  no page errors. The bare tracker's panel shows only the Reading section.
+- **Inventory:** V-30 added as present (9f-visibility), and V-31 (collapsible Settings) added as
+  todo.
+
+### One reading to flag (accepted 4 Oct, as call 2 of the session)
+- **"+N untimed" follows the data, not the format count.** Comics never lack a length, so a
+  comics-only tracker never shows it, as the rule asks.
+- A single-format tracker of games with missing lengths would still show it. Hiding it there
+  would print a time left that silently leaves rows out, against the 3 Oct durations decision.
+
+
+## Session 4 checkpoint — step 2 done (collapsible Settings, one section component), 5 Oct 2026
+
+### Done
+- **One collapsible section component** (`secHtml`) renders both the filter panel's sections and
+  the Settings sections.
+  - Each head is a button with an icon, the name, a live one-line summary and a chevron. In
+    Settings it sits inside an `h2`.
+  - The shared classes are `.sec`, `.sec-head`, `.sec-name`, `.sec-sum`, `.sec-body` and so on.
+    `fsec` and `sset` remain as the group classes, and the body ids stay `#fsec-*` and `#set-*`.
+- **Settings sections collapse like the panel.**
+  - Reading behaviour ◷, Display ◧, Touch ☝, Bulk actions ☑, Data ▤ and Backup ⇄.
+  - All start collapsed. The open ones are kept in `settings.settingsOpen`, next to `panelOpen`
+    in the one namespaced store.
+  - Summaries are live: "Average 15 min · Steady 12 a week", "Badges · Headings · Plain scroll",
+    "Gestures off", "Quarterly reminder · 0 bookmarks", "An import is waiting".
+- **The animation (FP-11).**
+  - Bodies stay in the DOM and open by animating their grid row from 0fr to 1fr, so nothing is
+    measured. A closed body is `inert`.
+  - Toggling changes the section in place, with no re-render, so the transition runs.
+  - Reading a code or a file opens Backup, so a pending import never waits in a closed section.
+- **Bug found by measuring (since session 2):** reduced motion didn't stop any transition.
+  - `* { transition: none }` has no specificity, so every class rule that declares a transition
+    beat it. jsdom and a CSS-text test both "passed".
+  - Fixed with a `--motion` token: every duration is `calc(… * var(--motion))`, and
+    `@media (prefers-reduced-motion: reduce)` sets it to 0.
+  - A guard checks that every transition and animation uses it (mutation: one plain `.15s` put
+    back → caught).
+  - Real Chromium: a section is 262 of 402 px tall at 90 ms normally, and fully open at once
+    under reduced motion.
+- **Tests now honour `inert`.**
+  - `boot()` makes `click()` and `focus()` do nothing inside an inert body, as for a person, since
+    jsdom doesn't implement it.
+  - New helpers `openSections(app, g, keys)` and `openSettings(app, keys)` tap section heads
+    open. The suites that use Settings call them.
+  - **Re-expressed, not weakened:** "closed bodies aren't rendered" (92-filters) became "closed
+    bodies are inert".
+  - Undo-after-Replace (9e-sync) now expects `settingsOpen: ['backup']` alongside `tab`, because
+    the test opens Backup to paste, like a person.
+  - Class-name selectors were renamed mechanically; no assertion was removed.
+- **New tests in `98-tabs-settings`** (+22): sections and icons in order; collapsed and inert by
+  default; summaries per section, and following pace, per-format, swipe and the reminder; one
+  component (heads share their parts with the panel's); toggled in place; open state saved after
+  the 400 ms debounce and restored on the next visit, separately from the panel's; the pending
+  import summary; the shared animation rule; the motion guard.
+- **Mutation checks:**
+  - open state not recorded → 5 failures and a crash;
+  - summary not refreshed → 1;
+  - a toggle that rebuilds the section → 5 failures and a crash;
+  - closed bodies not inert → 3;
+  - a transition that ignores `--motion` → 1.
+- **Real Chromium** (`mixed`, 320 and 390 px): Settings collapsed and fully open, with no
+  overflow and no page errors. `visibility` also opens Settings sections in its audit now.
+- **Inventory:** V-31 and FP-11 present.
+
+
+## Session 4 checkpoint — step 3 done (the Chromium layout harness, fonts), 5 Oct 2026
+
+### Done
+- **`test/layout/`**, the real-Chromium suite. It is run as `npm run test:layout`, which is
+  `HARNESS_SUITES=test/layout node test/run.js`.
+  - It uses the same runner as the jsdom harness, so any failure, crash or zero count fails the
+    run. `run.js` now resolves `HARNESS_SUITES` to an absolute path.
+  - **`lib.js`:**
+    - finds Chromium from `CHROMIUM_PATH`, then Playwright's default (`PLAYWRIGHT_BROWSERS_PATH`
+      here, the CI install there), then `/opt/pw-browsers/chromium`. With no browser it crashes
+      with a clear message, never a silent skip;
+    - serves the repo over `http://localhost`, with a build's `data.js`, `sw.js` and
+      `manifest.json` swapped in;
+    - opens a page at a width, with storage seeded before load and page and console errors
+      collected;
+    - opens sections the way a person taps them;
+    - has `rulesFor()`, which asks the browser which rules match an element.
+  - **`10-sweep` (36 checks):** `basic`, `mixed`, `minimal` and the starter × 320, 360 and 390 px
+    × every tab, with everything open: no horizontal overflow, all four tabs fully visible in the
+    bar, no page or console errors (L-9).
+  - **`20-motion` (8):** sections open and shut through a `grid-template-rows` transition in both
+    the panel and Settings, ending at full height and at zero. Under reduced motion a section
+    opens at once, and no element has any duration. Measured through `getAnimations()`, so the
+    result doesn't depend on machine speed.
+  - **`30-css` (10):**
+    - `rulesFor` finds a grouped selector that spans lines (what grep misses) and the real `.tool,
+      .linkbtn` rule;
+    - all 12 `@font-face` files load;
+    - the body is in IBM Plex Sans and the title in Anton;
+    - every vendored font file is declared.
+- **Fonts:** 12 `@font-face` rules for the vendored files (Anton 400; Plex Sans 400/500/600; Plex
+  Mono 400/500; latin and latin-ext ranges), with `font-display: swap`. The service worker already
+  precaches them.
+- **Re-measured with the real fonts (an open item from session 3):** at 320 px the four tabs take
+  287 of 288 px with the `clamp()` label size (13.4 px). It fits but is tight, and the sweep now
+  guards it.
+- **Dependency:** `playwright-core` 1.56.1 (exact), which matches the pre-installed Chromium 1194.
+  It never downloads a browser on install.
+- **CI:** after the harness, it installs Chromium (`npx playwright-core install --with-deps
+  chromium`), runs the layout suite, and requires a non-zero count for both runs. `00-runner`
+  checks that the workflow still does this (+3).
+- **Mutation checks:**
+  - something 400 px wide → 12 failures;
+  - the old `* { transition: none }` → 2;
+  - a font file that 404s → 12;
+  - 19 px tab labels → 4, at 320 px on every dataset.
+  - Putting session 3's 15 px labels back is not caught, because with the real fonts they fit
+    (290 rounded vs 288 px; the true sum is under 288).
+- **CLAUDE.md:** the repo map gains `test/layout/`, the "done" checklist names
+  `npm run test:layout`, and the jsdom trap records the reduced-motion lesson.
+
+
+## Session 4 checkpoint — step 4 done (one token system, four skins, the Look), 5 Oct 2026
+
+### Done
+- **One token block (`styles.css` `:root`).**
+  - It holds numeric inputs (paper hue and saturation; lightness for paper, card, line, edge,
+    track, bar, ink, soft text, accent, wash and states) and derives every colour from them.
+  - New roles: `--edge` (control outlines, 3:1 on paper and card), and `--bar` /
+    `--bar-ink` / `--bar-soft` / `--bar-mark` for the tab bar.
+  - Type, shape and space are tokens too: `--font-meta`, the display and name case and
+    weight, the tab size and fit, `--scale`, `--row-pad`, `--tap`, `--b-min`, `--mark-radius`.
+  - All 43 font sizes are `calc(N px * var(--scale))`.
+- **Four skins (John's answer 1): Paper (the base), Newsprint, Pull and Night.**
+  - Each is a bare `:root[data-skin]` block of inputs: no colour literal and no layout.
+  - **Newsprint:** newsprint paper, Georgia display, a dark tab bar, newspaper red.
+  - **Pull:** the X-Men look — cream paper, Anton capitals for the title, bands and eras,
+    mono metadata, a black tab bar.
+  - **Night:** dark, from v2's signature palette, designed against its surface.
+- **Seven paper swatches.** The same declaration colours the page and the swatch button.
+  "Skin default" uses the skin's own paper.
+- **Era colours.**
+  - Derived per era index in OKLCH, so one lightness reads alike at every hue. The hue steps by
+    the golden angle, so there is no cap.
+  - "One colour" uses the skin's accent hue. Washes are pale.
+  - The era index reaches CSS as `style="--ei:N"`. B-6 (no inline styles) is narrowed to allow
+    custom properties only, with a self-test that `color: red` is still caught.
+- **Settings → Look ◐** (the second section):
+  - skin (only with two or more skins configured);
+  - paper swatches;
+  - era colours (only with two or more eras);
+  - text size, density, button size and marks (box / dot / tick and cross);
+  - a dyslexia-friendly font.
+
+  Each is a root attribute (`data-skin`, `data-paper`, `data-eras`, `data-text`, `data-density`,
+  `data-tap`, `data-marks`, `data-dys`) answered with tokens only. The summary lists what
+  differs from the defaults.
+- **Skins come from the data.** `franchise.skins` (default all four) and `franchise.skin` (a
+  first visit's skin) are in the schema and the build. They are validated, with two new broken
+  cases: `skin-unknown` and `skin-not-offered`. `minimal` declares one skin.
+- **Mark styles** change the glyphs (`glyph()`); screen-reader labels still name the state.
+- **The browser chrome:** the `theme-color` meta follows the skin's paper, falling back to the
+  franchise colour where nothing is computed (F-39).
+- **The skin beacon (F-57):** `--skin-ok: 3` in the stylesheet. A stylesheet with an older or
+  missing beacon gets "The page styles are out of date … Reload", which outranks the other boot
+  toasts.
+- **Guards (80-guards, +9).**
+  - The colour guard is narrowed, not weakened: outside `:root`, a colour function is allowed
+    only when every component is a token. Self-tests prove that `hsl(200 50% 50%)`, a literal
+    alpha, a partly literal `hsl`, `#fff`, `rgb(var…)` and `oklch(.9 .03 var(--h))` are still
+    caught.
+  - Skin, paper and Look blocks must be bare and set custom properties only.
+  - The build and `app.js` know the same skins; every skin and swatch has its block; the
+    beacon matches.
+- **`9g-look` (29 assertions):**
+  - the defaults; one option per configured skin (T-97); seven named swatches; button size has 3
+    options, standard by default (T-54, T-55);
+  - a skin changes no element, class, id or hidden state (T-81, V-5) and keeps the tab (T-83);
+    no trace of the last skin (T-103); round trip (T-116);
+  - all 25 Look options set their attribute and change nothing else;
+  - the summary; mark glyphs for box, dot and tick;
+  - stored in the one store and restored; unknown values fall back;
+  - the skin from config (T-104); two configured skins; one skin → no control;
+  - the beacon: current, older, missing.
+- **`9f-visibility`:** rows for the skin control and the era-colours setting (now 38 controls
+  and 20 capabilities), and a row for the Look controls every tracker has.
+- **`test/layout/40-look` (12 checks, real Chromium):**
+  - **Contrast:** 4 skins × 7 papers. 18 text pairs at 4.5:1 (worst 5.12) and 5 outlines
+    at 3:1.
+  - **Era banners:** 64 eras × 4 skins × split and one colour. All text clears AA on its wash,
+    washes are pale, neighbours differ.
+  - **Reachability (V-5):** 5,328 controls across 4 skins × 390/320 px × default and largest
+    settings. Each is displayed, at least 24 × 24 px, in view, and is the element hit at its
+    centre.
+  - **Overflow:** every skin at 320 px, with default and the largest settings: no overflow and
+    all four tabs in the bar.
+  - **Sizes:** text size (T-45, XM-18); 26 px compact mark (T-56); 44 px large glyph buttons
+    (T-57); the dyslexia font; density changes row height.
+- **Found by measuring:**
+  - Night's control outlines reached only 2.95:1 on the warm and mint papers; `--l-edge` went
+    from 45% to 49%.
+  - The event note's "Complete view adds N issues" button was 17 px tall; every `.linkbtn` now
+    has a 24 px minimum.
+- **Mutation checks**, each with the wrong behaviour put back:
+  - Night era text not designed against its surface → caught;
+  - a skin token collapsing the marks → caught, after the reachability check gained the 24 px
+    target (a 1 px "has a size" check missed it);
+  - theme-color not following → caught;
+  - a skin block with `position` → caught;
+  - a literal colour outside `:root` → 3 failures;
+  - mark style changing nothing → caught;
+  - the beacon never checked → 2 failures.
+- **Inventory:** 49 lines present or re-expressed: V-5, F-39, F-51…F-57, S-1…S-6, S-9, S-20,
+  S-25, T-38…T-45, T-54…T-57, T-81…T-116, T-93, XM-17, XM-18 and D-12 styling.
+- **CLAUDE.md:** the colour trap records how v3 holds it, and the 24 px target rule.
+
+
+## Session 4 checkpoint — step 5 done (the banner, the mini bar, table view), 5 Oct 2026
+
+### Done
+- **Under the tab bar, on every tab:** `#pbanner` and `#mini`. Layout lives on inner wrappers,
+  so `[hidden]` wins. Step 6 makes the stack sticky.
+  - **Mini progress bar (F-17, on by default):** a `<progress>` showing the header's read of
+    goal.
+  - **Persistent banner (F-16, off by default):** one compact line, or one line per format when
+    progress is per format (which only mixed data offers).
+    - Each line has the format's name and its own verb ("12 / 40 read", "1 / 2 beaten",
+      "0 / 3 watched"), time left, "+N untimed" and a thin bar.
+    - It draws from `renderHeader`, so a mark moves it with the header, with no re-render.
+- **Table view (F-49, S-7):** one line per issue.
+  - Rows lose their vertical padding, and marks and badges drop to `--tap-dense`: 24 px, or
+    44 px with large buttons, so targets never shrink below 24 px.
+  - Titles ellipsise. Notes, blurbs and intros fold away.
+  - Badge words sit in `.b-t` spans that table view hides. The glyph stays, and the look-up link
+    and flashback button now carry full `aria-label`s.
+- **Display gains** Table view (Rows) and Mini progress bar / Persistent banner (Progress).
+  The summary says "table view", "banner" or "no mini bar".
+- **`9h-banners` (27):**
+  - the defaults (T-50, T-51); placement under the bar, outside the panes;
+  - the mini bar and the banner match the header, and a mark moves both; both turn off;
+  - table view's flag; badge words fold but the text and names stay; kept in the one store;
+  - per format: three lines in their own verbs, matching the header's per-format counts and
+    untimed marker.
+- **`9f-visibility`:** a row for the per-format banner lines (media).
+- **`test/layout/50-table` (21, real Chromium):**
+  - L-7: table view at least halves the median row height, in 4 skins × 320/390 px;
+  - L-8: no table row wider than the screen (944 rows, default and largest settings);
+  - every title keeps at least half its row;
+  - every control in table view is reachable at 24 px (5,472 checked);
+  - no page errors;
+  - the banner (per format) and the mini bar show on every tab, in every skin, at 320 px.
+- **Reachability** moved into `test/layout/lib.js` (`reachability()`, `eachTab()`), shared by
+  40-look and 50-table.
+- **Found by measuring:** the mini bar made the page 16 px wider. `progress.bar { width: 100% }`
+  outranked `.mini-bar { width: auto }`, and the sweep failed everywhere. The inset now lives on
+  the wrapper.
+- **Mutation checks:**
+  - banner and mini bar not refreshed → caught;
+  - mini bar off by default → 5 failures;
+  - table rows keeping their padding and full marks → L-7;
+  - a title that doesn't ellipsise → L-8;
+  - badge words that don't fold → caught, once the title-share check was added. Before it, rows
+    still fit, with titles squeezed to 26%.
+- **Inventory:** F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51, L-7 and L-8 present.
+- **CI:** run 30 (step 4) is green, with both counts in the log.
+
+
+## Session 4 checkpoint — step 6 done (the sticky stack), 5 Oct 2026
+
+### Done
+- **One sticky `#stack`** holds the tabs, the banner and the mini bar (`position: sticky; top: 0`).
+  It is full width, so the paper behind it covers what scrolls under.
+  - The banner joins the tab bar directly (no gap, no top border).
+- **`--stack-h`, measured at runtime (F-58).**
+  - A `ResizeObserver` on the stack writes its height. It is not an event listener, so the
+    budget stays at 9.
+  - The inline `--stack-h` on `<html>` is a token, which B-6 allows.
+  - It drives `scroll-margin-top` on rows, arcs, eras and bands, so a jump lands below the stack.
+- **Band and era banners stay non-sticky** (my call, accepted 4 Oct): they are tall goal banners, and
+  pinning them would take most of a phone screen.
+- **The swipe clip** (session 3's open item): `.arc` clips with `overflow: hidden`, so a row
+  mid-swipe slides under the card edge. Rows keep 6 px inside the card, so focus rings aren't cut.
+- **`test/layout/60-stack` (20, real Chromium):**
+  - after scrolling, every skin, Checklist (390 and 320 px) and Settings: the stack holding the
+    tabs is sticky and the tabs are at the top (L-1, L-2); the banner is within 2 px under the
+    tabs (L-3, L-4); `--stack-h` equals the measured height;
+  - turning the banner on grows the stack, and `--stack-h` follows;
+  - `jumpToIssue` lands every row below the stack;
+  - era chips land each era 0–16 px below the stack, except where the page ends;
+  - bands at most 16 px apart and never on their intros, in every density (L-5, L-6);
+  - a row mid-swipe is clipped at the card edge;
+  - no page errors.
+- **`9h-banners` (+1):** the stack holds the tabs, the banner and the mini bar, in order.
+- **Mutation checks:**
+  - `position: relative` on the stack (the CLAUDE.md trap) → L-2 and the era landing;
+  - no scroll margin → era chips land under the stack;
+  - measured once, never again → 3 failures;
+  - no clip → the swipe check;
+  - a gap between the tabs and the banner → L-4.
+- **Inventory:** F-58, L-1…L-6, T-94 and T-96 present.
+- **Still open from session 3:** the real-device iOS check of swipe and long-press needs a phone,
+  so it stays for John.
+
+
+## Session 4 checkpoint — step 7 done (offline and updates), 5 Oct 2026
+
+### Done
+- **The service worker is registered** (over http(s) where supported). The build adds `cache`
+  (`<key>-<build>`) and `precache` (the worker's exact file list) to `data.js`, after hashing,
+  so there's no circular dependency.
+- **Settings → Offline ⇣:**
+  - "Ready offline · N of N files saved", "Not ready yet · n of N … keep this page open while
+    online", or "isn't available in this browser";
+  - the connection, and the version (build);
+  - Check for updates, and Reload now once one is ready;
+  - Install as an app, while the browser offers it;
+  - the iPhone and iPad hint: Add to Home Screen, then open it once online.
+  - Summary: "Ready offline · update ready · offline now".
+- **Online and offline (F-36), without listeners** (the 2 Oct decision): `navigator.onLine` is
+  read at boot, when the page is shown again, and on every tap. A change toggles `body.offline`
+  and a header mark, with a toast.
+- **Updates (F-38, XM-7):**
+  - looked for at boot (a waiting worker), quietly when the page is shown again, and on Check
+    for updates;
+  - a new worker is followed to "activated" through `once()`; then "A new version is ready" with
+    Reload;
+  - a first install is never called an update.
+- **The install prompt (F-37):** `beforeinstallprompt` is listener 9 at boot (10 static with
+  `once()`). The browser bar is held back; a toast and Settings offer Install; then "Installed."
+  or a way back.
+- **Icons from config (D-13):**
+  - `franchise.icons` (192 / 512 / maskable) is in the schema and the build. Each is checked as a
+    real PNG of its size: two new broken cases, `icon-wrong-size` and `icon-missing`.
+  - The manifest and the page's icon links follow it.
+  - A tracker other than the starter that still ships the template's placeholder icons gets a
+    build warning (matched by hash).
+- **Listener counting is now exact.** jsdom's selector engine (nwsapi) adds its own
+  `mouseover` and `mouseout` on each document it starts; `boot()` now records only listeners
+  registered from outside `node_modules`.
+  - 70-shell: the app registers 9 at boot.
+  - 9c: the 9 standing listeners, one each, and nothing else after every gesture.
+- **The `.onclick =` guard is narrowed, not weakened.** It fired on `pwa.online = on` (a
+  regex false positive). It now flags only real event-handler names, with a self-test that
+  `el.onclick =`, `reader.onload =` and `worker.onstatechange =` are caught and a field named
+  `online` isn't.
+- **`9i-pwa` (37, jsdom with a stand-in worker, caches and connection):**
+  - data.js names the worker's cache and file list;
+  - no service worker: the status says so;
+  - registration; ready / partly ready;
+  - Check for updates: latest, a failure, waits offline;
+  - an update followed to activated; a waiting worker at boot; a first install not announced;
+    quiet checks on return;
+  - offline and back online, with no online/offline listeners;
+  - the install prompt, accepted and dismissed;
+  - icons in the links and the manifest, a configured path, the placeholder warning.
+- **`test/layout/70-pwa` (11, a real service worker in Chromium):**
+  - installs and claims the page, caching every precached file, fonts and icons included;
+  - Offline reports "Ready offline · N of N";
+  - with the server down, a reload boots from the cache, the page is marked offline, and the QR
+    draws (qrcode.js from the cache);
+  - every fetch path ends in a real Response: a missing icon gives 504, a shell page with a
+    query falls back to the app, a font comes from the cache;
+  - online, a deploy shows on a plain reload (network-first);
+  - Check for updates finds a real new worker; "A new version is ready" with Reload; the old
+    cache is deleted.
+- **Found by testing:** Playwright's `setOffline` doesn't reach the service worker's own fetches.
+  The first "offline" run still reached the server. The test server now has `down()`, which
+  drops every request, so offline means offline.
+- **Mutation checks:**
+  - a cache-first path with no final Response (the iOS blank page) → caught;
+  - a cache-first shell (the stale-deploy trap) → 2 failures;
+  - no skipWaiting → the update never arrives;
+  - a first install announced as an update → caught;
+  - the connection not read on a tap → caught;
+  - readiness never counted → 3 failures.
+- **Inventory:** F-35…F-38, F-59, XM-7, D-2 (live install), D-13 and V-17 present.
+
+
+## Session 4 checkpoint — step 8 done (keyboard, accessibility, first paint), 5 Oct 2026
+
+### Done
+- **Keyboard (V-7, XM-3).** `keydown` is listener 10 at boot (11 static with `once()`), as
+  planned.
+  - On the Reading tab: ← / → step, R reads, X skips.
+  - "/" goes to search from any tab.
+  - On a tab, the arrow keys, Home and End move between tabs and show them (the ARIA tabs
+    pattern).
+  - Nothing fires while typing (inputs, text areas, selects) or with Ctrl, ⌘ or Alt held.
+  - The Reading card shows "Keys: ← → step · R read · X skip · / search", in the medium's verb,
+    on devices with a keyboard (`hover: none` hides it).
+- **`9j-a11y` (25, jsdom, everything open on every tab):**
+  - every control has an accessible name;
+  - every `aria-controls` and `aria-labelledby` resolves; every state is `true` or `false`;
+  - no id is used twice (all the ids seen across the tabs);
+  - every opener says whether it is open and what it opens;
+  - the page has a language, landmarks and the tabs pattern (one tablist, four tabs, panels
+    labelled by their tabs, roving tabindex);
+  - polite live regions; marks named with their state;
+  - the keyboard: steps, R, X, Ctrl/⌘ left alone, "/", typing keeps every key (in search and in
+    the sync box), arrows / Home / End / wrap between tabs.
+- **First paint (V-8, John's answer 2):** one stylesheet, the scripts deferred, the display font
+  preloaded.
+  - **Measured before and after.** On localhost, first paint is the same: 92 vs 120 ms normally,
+    44 vs 40 ms with data.js 2 s late. The shell already painted before the data arrived.
+  - **Measured on a 1.6 Mbps / 150 ms link** (median of 3):
+    - no preload: first paint 736 ms, Anton at 1,980 ms (the title swaps late);
+    - Anton only: first paint 840 ms, Anton at 667 ms (before the paint, so no swap);
+    - Anton and Plex Sans: first paint 1,104 ms.
+  - **So only the display font is preloaded**, as the spec says. Preloading the body font cost
+    another ~260 ms. CLAUDE.md gains "Preloading isn't free".
+- **`test/layout/80-paint` (7, real Chromium):**
+  - one stylesheet and deferred scripts;
+  - only the display font preloaded, with `crossorigin`;
+  - data.js 2 s late: the shell and "Loading the checklist…" paint at once;
+  - every font 2 s late: the page still paints at once;
+  - every `@font-face` swaps (read from the CSSOM, because paint timing can't see invisible
+    text);
+  - on a 1.6 Mbps link the display font lands by first paint, and first paint stays under 1.5 s.
+- **The test server** gains `delay()` / `undelay()`.
+- **Mutation checks:**
+  - keys firing while typing → 2 failures (the first version of that test was too weak: it typed
+    on a tab where Reading keys don't apply);
+  - keys with a modifier → 2;
+  - no arrow keys between tabs → 3;
+  - a mark with no name → 1;
+  - a section head pointing at nothing → 2;
+  - no preload → 2;
+  - `font-display: block` → caught by the CSSOM check (paint timing alone missed it).
+- **CLAUDE.md:** "Preloading isn't free", and the service-worker lesson that Playwright's
+  `setOffline` doesn't reach the worker.
+- **Inventory:** V-7, XM-3, V-8 (re-expressed) and V-18 present.
+
+
+---
+
+## Transfer checkpoint — end of session 4 (look and PWA), 5 Oct 2026
+
+### Done (all 9 steps; details in the step checkpoints above)
+- **Counts:** the jsdom harness went from 1,105 to **1298 assertions**. The new real-Chromium layout suite
+  has **153 checks** in 8 suites, and CI runs both.
+- **New suites:**
+  - jsdom: `9f-visibility`, `9g-look`, `9h-banners`, `9i-pwa`, `9j-a11y`;
+  - Chromium: `test/layout/` 10-sweep, 20-motion, 30-css, 40-look, 50-table, 60-stack, 70-pwa,
+    80-paint.
+- **The two additions (4 Oct):**
+  - data-driven visibility: one capability map, the `minimal` fixture, and a self-test that
+    forces each capability on;
+  - collapsible Settings: one section component for the panel and Settings, with the same
+    animation.
+- **One token system and four skins** (Paper, Newsprint, Pull, Night), seven paper swatches, era
+  washes with no cap, and text size, density, button size, marks and a dyslexia-friendly font.
+  All are token sets that can't move or hide a control. Contrast is measured in every skin ×
+  paper, and for 64 eras. The sweep covers every skin at 320, 360 and 390 px.
+- **The persistent banner, the mini bar and table view.** The sticky stack is measured at
+  runtime.
+- **Offline and updates:** a real service worker, readiness, the update flow, the install prompt
+  and icons from config.
+- **Keyboard, an accessibility audit, and measured first paint.**
+- **Every S4 line in `FEATURE-INVENTORY.md`** is present, re-expressed or dropped with a reason.
+  V-15 is decided: lazy rendering replaces `content-visibility` (CLAUDE.md trap resolved; closed by
+  John 4 Oct).
+  - 4 lines remain, all S5: V-21, V-22, V-23 and V-28.
+  - Six session-2 story-band lines (F-47, T-28…T-32) still read "re-express (V-14)". Their
+    wording should be checked in session 6.
+- **About 45 mutations were put back and caught.** Where one wasn't, the test was strengthened
+  and re-run; the step checkpoints record each.
+- **Listener budget:** 10 at boot (click, input, change, keydown, three touch, pagehide,
+  visibilitychange, beforeinstallprompt), 11 static with `once()`, of 12.
+
+### Found by measuring, not reasoning (each fixed and now guarded)
+- **Reduced motion never worked (since session 2).** `* { transition: none }` has no specificity;
+  the fix is the `--motion` token.
+- **Night's control outlines** were 2.95:1 on the warm and mint papers.
+- **Two 17 px link buttons**, now a 24 px minimum for every control.
+- **The mini bar widened the page by 16 px.**
+- **Preloading both fonts cost 368 ms of first paint** on a slow link; only the display font is
+  preloaded.
+- **Playwright's `setOffline` doesn't reach a service worker**, so offline tests take the server
+  down.
+- **jsdom's selector engine registers listeners of its own**; the harness now counts only the
+  app's.
+- **CI runs 34 and 35 failed on a race in the QR test** (it accepted the "Making the QR code…"
+  placeholder). It now waits for the final state.
+- **A flaky crash in `20-motion` (1 run in 12) was a real bug.**
+  - When the service worker's readiness check resolved, all of Settings was re-rendered. That cut
+    short any section opening at that moment, and would have wiped a half-typed sync code.
+  - Now only the Offline section is redrawn. A 9i-pwa test types half a code, lets readiness land
+    and checks the code survives (putting the full redraw back fails it). 0 crashes in 15 runs
+    since.
+  - A closed test page with a promise still pending no longer crashes the harness.
+- **The final screenshots showed "✎review" and "look up↗" run together** (since step 5). A flex
+  item's edge space is trimmed; the fix is a `gap` on badges, and 50-table now measures the
+  spacing.
+- **Process slip:** commit `a575f13` was pushed while that crash was unexplained, because my
+  close-out script committed even after its count check failed. The script now stops unless both
+  runs are clean.
+
+### My calls this session — all twelve accepted 4 Oct (John)
+1. **The visibility rule applied beyond your list.** Each control needs:
+   - depth, type and strand chips: two or more in use;
+   - Include cameos: cameo data;
+   - Mandatory only: both mandatory and optional rows;
+   - Notes only and tap to reveal: notes;
+   - Gap notes: a gap note;
+   - the era filter, picker, Mark range, Newest era first and era colours: two eras;
+   - the look-up link: `searchUrl`;
+   - the skin control: two or more configured skins.
+2. **"+N untimed" follows the data, not the format count.** A comics-only tracker never shows it;
+   a games-only tracker with missing lengths still does.
+3. **Only the stack is sticky** (tabs, banner, mini bar). Band and era banners are tall goal
+   banners, so they scroll.
+4. **Mark styles are box, dot, and tick and cross.** v2's "web" was one franchise's motif.
+5. **Skin details:**
+   - Newsprint: Georgia display and a dark tab bar;
+   - Pull: Anton capitals for era names too, and mono metadata;
+   - Night: from v2's signature palette.
+6. **Table view hides notes, blurbs and intros**, as v2 did.
+7. **The `theme-color` meta follows the skin's paper**, falling back to the franchise colour.
+8. **The install offer** is a toast once per visit when the browser offers it, and a button in
+   Settings → Offline.
+9. **Updates are looked for quietly** whenever the page is shown again.
+10. **Only the display font is preloaded** (measured above).
+11. **V-15:** lazy rendering replaces `content-visibility`.
+12. **The iPhone hint in Settings → Offline** shows to everyone.
+
+### Decided 4 Oct (John) — do not reopen
+- **Bulk marking stays as shipped.** It marks what the user can see: the plan filters plus any
+  active search or browse filter. Session 3's call 2 is accepted with exactly this behaviour.
+- **The extended visibility rule is accepted.** It now lives in CLAUDE.md → UI rules, beside the
+  original list.
+- **Content-visibility is closed.** Lazy rendering, where an era's rows render only when it is
+  first opened, replaces it (V-15). CLAUDE.md's trap now says so.
+- **All twelve of my session 4 calls above are accepted.**
+- **A new permanent rule, "Stop cleanly",** is in CLAUDE.md → Working method:
+  - every step ends committed, pushed and green;
+  - never start a step that can't be finished;
+  - if a session runs long, stop at the end of a completed step;
+  - write in PROGRESS.md exactly where the next step begins (the first file, the first test, any
+    half-made decisions);
+  - then push and tell John.
+
+  It makes permanent session 3's session-length rule, and it covers this session's slip, a commit
+  pushed while a crash was unexplained.
+
+### Open items for session 5
+- **A real-device check on iPhone (John):**
+  - swipe and long-press;
+  - Add to Home Screen, open it once online, then try it offline;
+  - the home-screen icon;
+  - the status-bar colour per skin.
+- **The Absolute pilot** goes into a fresh repo John creates first. Stop and ask before any edit
+  outside this repo.
+  - Its build will warn about placeholder icons until it has its own `franchise.icons`.
+  - It should choose its skins (`franchise.skins` / `skin`).
+- **Merge this branch** (`claude/keen-wozniak-w7lt6p`) before session 5.
+
+### Session 5 starts with: workbook and pilot (spec §7.5)
+1. `build_workbook.py` (V-23): the workbook generated from `dataset.json`, reading by header
+   name.
+2. The `verify.py` gate from Research-Repo's toolkit (V-22), read-only from a local copy.
+3. Docs (V-28): README (start a tracker in steps), BUILD-NOTES, MIGRATING, and the
+   `comic-tracker-build` Skill in `.claude/skills/`.
+4. The Absolute pilot (V-21) in a fresh repo John creates. Stop and tell John before the first
+   edit to it.

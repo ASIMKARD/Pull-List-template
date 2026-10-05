@@ -1,0 +1,143 @@
+{
+ "$schema": "../../../schema/dataset.schema.json",
+ "schemaVersion": 1,
+ "franchise": {
+  "key": "minimal",
+  "wordmark": "Minimal",
+  "title": "Minimal — Reading Order",
+  "strapline": "harness fixture · comics only, one era, no extras",
+  "span": "2001",
+  "theme": "#22303F",
+  "strictCredits": false,
+  "skins": [
+   "paper"
+  ]
+ },
+ "eras": [
+  {
+   "id": "main",
+   "name": "Main",
+   "rank": 5000,
+   "years": "2001",
+   "intro": "The only era."
+  }
+ ],
+ "strands": [
+  "Main"
+ ],
+ "types": [
+  "MAIN"
+ ],
+ "tiers": [
+  "Everything"
+ ],
+ "media": [
+  "comic"
+ ],
+ "arcs": [
+  {
+   "id": "first-steps",
+   "name": "First Steps",
+   "era": "main",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "2001"
+  },
+  {
+   "id": "second-steps",
+   "name": "Second Steps",
+   "era": "main",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "2001"
+  }
+ ],
+ "rows": [
+  {
+   "issueId": "plain-hero-2001-1",
+   "series": "Plain Hero",
+   "vol": "2001",
+   "num": "1",
+   "title": "Plain Hero (2001) #1",
+   "era": "main",
+   "arc": "first-steps",
+   "date": {
+    "cover": "2001-01",
+    "source": "invented for the harness"
+   }
+  },
+  {
+   "issueId": "plain-hero-2001-2",
+   "series": "Plain Hero",
+   "vol": "2001",
+   "num": "2",
+   "title": "Plain Hero (2001) #2",
+   "era": "main",
+   "arc": "first-steps",
+   "date": {
+    "cover": "2001-02",
+    "source": "invented for the harness"
+   }
+  },
+  {
+   "issueId": "plain-hero-2001-3",
+   "series": "Plain Hero",
+   "vol": "2001",
+   "num": "3",
+   "title": "Plain Hero (2001) #3",
+   "era": "main",
+   "arc": "first-steps",
+   "date": {
+    "cover": "2001-03",
+    "source": "invented for the harness"
+   }
+  },
+  {
+   "issueId": "plain-hero-2001-4",
+   "series": "Plain Hero",
+   "vol": "2001",
+   "num": "4",
+   "title": "Plain Hero (2001) #4",
+   "era": "main",
+   "arc": "second-steps",
+   "date": {
+    "cover": "2001-04",
+    "source": "invented for the harness"
+   }
+  },
+  {
+   "issueId": "plain-hero-2001-5",
+   "series": "Plain Hero",
+   "vol": "2001",
+   "num": "5",
+   "title": "Plain Hero (2001) #5",
+   "era": "main",
+   "arc": "second-steps",
+   "date": {
+    "cover": "2001-05",
+    "source": "invented for the harness"
+   }
+  },
+  {
+   "issueId": "plain-hero-2001-6",
+   "series": "Plain Hero",
+   "vol": "2001",
+   "num": "6",
+   "title": "Plain Hero (2001) #6",
+   "era": "main",
+   "arc": "second-steps",
+   "date": {
+    "cover": "2001-06",
+    "source": "invented for the harness"
+   }
+  }
+ ]
+}
