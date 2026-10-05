@@ -35,6 +35,7 @@ jobs:
         run: |
           python3 tools/build.py test/fixtures/basic/dataset.json --out "$RUNNER_TEMP/basic"
           python3 tools/build.py test/fixtures/no-periods/dataset.json --out "$RUNNER_TEMP/no-periods"
+          python3 tools/build.py test/fixtures/minimal/dataset.json --out "$RUNNER_TEMP/minimal"
 
       - name: Run the harness (fails on any failure, any crash, or zero assertions)
         run: |

@@ -323,6 +323,8 @@ installed app once online.
 | V-27 | Undo on bulk mark restores the previous states (see B-2) | S3 | present (9c-bulk-touch: Undo restores every touched row's previous state) |
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
 | V-29 | Per-format durations (decided 1 Oct, untimed 3 Oct). Comics are one issue each at minutes per issue. Shows use `durations: {screen: N}`, which a row can override. Games carry their own `duration`, and a missing one warns with a coverage %, adds nothing and shows `+N untimed`. Time left sums each row's own minutes. Finish-by = minutes left ÷ (issues/week × minutes/issue), and comics-only results are bit-identical to session 2 | S3 | present (97-durations: build + coverage warning, own-minutes figures, untimed marker, format-as-plan totals, comics-only exactness on 4 datasets × 12 pace pairs + exhaustive arithmetic) |
+| V-30 | Data-driven visibility (John, 4 Oct; CLAUDE.md → UI rules): a control or section renders only when the dataset gives it something to do, decided by one capability map built from the data | S4 | present (9f-visibility: 36 controls × 19 capabilities. On `minimal` none appear and the controls every tracker has do; on the full fixture all appear. Second order measured on `mixed`; saved filters for controls that aren't offered are ignored; forcing each capability on is caught) |
+| V-31 | Collapsible Settings (John, 4 Oct): sections collapse like the filter panel, with icon, name and one-line summary; all collapsed by default; open state remembered; same animation and tokens | S4 | todo |
 
 ## CR — creator credits (decided 1 Oct)
 

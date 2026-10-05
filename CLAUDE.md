@@ -36,7 +36,7 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 | `data.js`, `sw.js` cache name, build tag | **generated** by `tools/build.py` — never hand-edit |
 | `schema/*.json` | JSON Schema for the data files; the harness validates fixtures against it |
 | `tools/build.py` | stitch + derive keys + validate + emit `data.js` (stdlib only) |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `broken/*`) |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)

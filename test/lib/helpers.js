@@ -59,7 +59,8 @@ function validateIssueIds(ids) {
 
 /* Boot the REAL index.html with the REAL app.js and a generated data.js.
    Local <script src> tags are inlined (jsdom does not fetch file URLs by
-   default). Returns { window, document, errors, listeners }. */
+   default). opts.appSrc replaces app.js (mutation self-tests).
+   Returns { window, document, errors, listeners }. */
 function boot(dataDir, opts) {
   opts = opts || {};
   const { JSDOM, VirtualConsole } = require('jsdom');
@@ -70,7 +71,8 @@ function boot(dataDir, opts) {
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   html = html.replace(/<script src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
     const p = file === 'data.js' ? path.join(dataDir, 'data.js') : path.join(ROOT, file);
-    const src = fs.readFileSync(p, 'utf8').split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
+    const raw = file === 'app.js' && opts.appSrc ? opts.appSrc : fs.readFileSync(p, 'utf8');
+    const src = raw.split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
     return '<script>' + src + '</scr' + 'ipt>';
   });
   if (opts.css) {

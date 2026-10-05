@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1105 assertions, 0 failed, 24 suites (end of session 3; CI green on every push).
-Session 1 ended at 307 and session 2 at 617; CI green on every run.
+**Harness:** 1132 assertions, 0 failed, 25 suites (session 4, step 1).
+Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
 
@@ -929,3 +929,73 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 4. **Strands without presence data:** the Characters section shows when there are two or more
    strands, holding the strand chips. With one universal strand and no presence data, it is
    gone.
+
+---
+
+## Session 4 checkpoint — step 1 done (data-driven visibility), 5 Oct 2026
+
+### Done
+- **The capability map.**
+  - `app.js` builds one map, `HAS`, from the data at boot. It has 19 capabilities: media,
+    presence, strands, cameos, credits, events, alt, publication, arcOrder, bands, eras, tiers,
+    types, mandatory, notes, reveal, gapNotes, lookup and legacy.
+  - Every conditional control reads it, and a missing capability means the control is not
+    rendered. `PullList.has` is a frozen copy for the harness.
+  - The old one-off checks (`HAS_BANDS`, `MEDIA_USED.length > 1`, `D.events.length`,
+    `D.characters.length`, `searchUrl`, `storage.legacy`) now go through the map.
+- **Sections are offered by their contents.**
+  - Story needs events, eras, formats, types or ALT. Characters needs presence data or two
+    strands (John's answer 4). Creators needs credits. Order needs a second order.
+  - Reading is always offered, because Unread only and Hide skipped always have work to do.
+- **A second order is measured.**
+  - Publication order is offered only if some era's rows are out of publication order. Arc
+    order is offered only if some era's arcs interleave.
+  - `mixed` loses a publication chip that changed nothing.
+- **Saved state.**
+  - A saved filter for a control that isn't offered is ignored (`FILTER_CAP`).
+  - An order or Complete view the data doesn't offer falls back to reading and Essential: in
+    `withDefaults`, in presets and in `setFilter`.
+- **Copy follows the data.**
+  - The search hint names notes and creators only when there are some; the static `index.html`
+    hint is now "Search titles and arcs…".
+  - The Touch help names bands only with periods.
+  - With mixed formats, Reading behaviour gets a duration line: "Comics are timed at your minutes
+    per issue; shows and games count their own length."
+- **The rule applied further (open to veto):** depth chips, type chips, strand chips, Include
+  cameos, Mandatory only, Notes only, Tap to reveal, Gap notes, the era filter, the era picker,
+  Mark range, Newest era first and the look-up link.
+- **New fixture `test/fixtures/minimal`:**
+  - 6 comics in 2 arcs and one era;
+  - one type, tier and strand;
+  - no periods, presence, credits, events, ALT, notes, `searchUrl`, legacy or second order.
+
+  CI builds it too.
+- **New suite `9f-visibility` (27 assertions).**
+  - One table of 36 controls × 19 capabilities, plus 3 markers driven by the data itself and
+    15 controls every tracker has.
+  - `minimal`: none of the 36 appear, on any tab, with the panel and every section open. The
+    controls every tracker has do appear, the verb is plain "Mark Read", and no other format's
+    words appear.
+  - Full fixture (`basic` plus one untimed game, added at test time): all of them appear.
+  - `mixed` checks the measured-order case. A saved-state check ignores, among others,
+    notes-only, which would otherwise hide every row.
+  - **Permanent self-test.** `boot()` gains `appSrc`. Each capability is forced on in turn in a
+    copy of `app.js`, and its own controls must appear on `minimal`. A capability with no row
+    fails the suite.
+- **Mutation checks**, each with the old or wrong behaviour put back once:
+  - saved filters applied through hidden controls → 2 failures;
+  - order chips not measured → 1;
+  - Characters section always offered → 3;
+  - a gate that bypasses the map → the self-test fails.
+- **Real Chromium** (`minimal` and the root starter, 320 and 390 px, every tab): no overflow,
+  no page errors. The bare tracker's panel shows only the Reading section.
+- **Inventory:** V-30 added as present (9f-visibility), and V-31 (collapsible Settings) added as
+  todo.
+
+### One reading to flag
+- **"+N untimed" follows the data, not the format count.** Comics never lack a length, so a
+  comics-only tracker never shows it, as the rule asks.
+- A single-format tracker of games with missing lengths would still show it. Hiding it there
+  would print a time left that silently leaves rows out, against the 3 Oct durations decision.
+
+### Step 2 starts with: collapsible Settings and the shared section component (plan step 2)

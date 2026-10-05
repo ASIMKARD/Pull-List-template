@@ -48,7 +48,6 @@
      MODEL — indexes built once from data.js; counts come from here, never
      from the DOM (rows render lazily, so the DOM is never the whole truth).
      ====================================================================== */
-  var HAS_BANDS = D.periods.length > 0;
   var ID_I = {};
   var HAY = new Array(N), CREATORS_HAY = new Array(N), W_HAY = new Array(N), A_HAY = new Array(N);
   var CREATOR_I = {};
@@ -83,6 +82,56 @@
   function isInert(i) { return !!(D.issues[i][6] & INERT); }
   function mediumOf(i) { return D.media[D.issueMedium[i]] || 'comic'; }
   function labelOf(i, st) { return (LABELS[mediumOf(i)] || LABELS.comic)[st]; }
+
+  /* ======================================================================
+     CAPABILITIES — data-driven visibility (decided 4 Oct; CLAUDE.md → UI
+     rules). A control or section renders only when the dataset gives it
+     something to do. This map, built once from the data (never from settings
+     or the skin), decides every case: a missing capability means the control
+     is NOT RENDERED, never hidden with CSS. Every new conditional control reads
+     it and gets a row in the 9f-visibility suite.
+     ====================================================================== */
+  function distinct(list) {
+    var seen = {}, n = 0;
+    list.forEach(function (v) { if (!seen[v]) { seen[v] = 1; n++; } });
+    return n;
+  }
+  function buildHas() {
+    var live = [], i, k, pub = false, arcOrd = false;
+    for (i = 0; i < N; i++) if (!isInert(i)) live.push(i);
+    /* a second order is measured, not declared: it counts only when it would
+       actually reorder some era's rows */
+    ERA_ROWS.forEach(function (rows) {
+      for (k = 1; k < rows.length; k++) {
+        if (D.issues[rows[k]][8] < D.issues[rows[k - 1]][8]) pub = true;
+        if (D.issues[rows[k]][2] < D.issues[rows[k - 1]][2]) arcOrd = true;
+      }
+    });
+    var some = function (pred) { return live.some(pred); };
+    return {
+      media: MEDIA_USED.length > 1,          // per-format lines, format filter, progress mode, duration copy, format pill
+      presence: some(function (i) { return D.issuePresence[i].length > 0; }),   // appearance chips
+      strands: distinct([].concat.apply([], D.arcs.map(function (a) { return a.s; }))) > 1,
+      cameos: some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 2; }); }),
+      credits: D.creators.length > 0,        // Creators section, tappable names, "creators" in the search hint
+      events: D.issueCompleteOnly.some(Boolean),            // Essential / Complete changes what is in view
+      alt: HAS_ALT,
+      publication: pub,
+      arcOrder: arcOrd,
+      bands: D.periods.length > 0,
+      eras: D.eras.length > 1,               // era filter, jump bar, newest era first, era pickers, Mark range
+      tiers: distinct(live.map(function (i) { return D.issueTier[i]; })) > 1,
+      types: distinct(live.map(function (i) { return D.issues[i][3]; })) > 1,
+      mandatory: distinct(live.map(function (i) { return D.issues[i][4] ? 1 : 0; })) > 1,
+      notes: some(function (i) { return !!D.issues[i][7]; }),                   // notes only, "notes" in the search hint
+      reveal: some(function (i) { return !!D.issues[i][7] && !(D.issues[i][6] & (FL.FB | FL.ALT)); }),
+      gapNotes: D.issues.some(function (r) { return !!(r[6] & FL.GAPNOTE); }),
+      lookup: !!D.franchise.searchUrl,
+      legacy: !!(D.franchise.storage && D.franchise.storage.legacy)
+    };
+  }
+  var HAS = buildHas();
+  var ORDERS = ['reading'].concat(HAS.publication ? ['publication'] : [], HAS.arcOrder ? ['arc'] : []);
 
   /* ======================================================================
      STORAGE — namespaced per franchise, localStorage with an in-memory
@@ -145,7 +194,9 @@
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
     s.layout = s.layout === 'rows' ? 'rows' : 'arcs';
-    s.events = s.events === 'complete' ? 'complete' : 'essential';
+    // an order or view the data doesn't offer is never applied invisibly
+    s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
+    s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
     return s;
   }
@@ -163,11 +214,15 @@
     return (Array.isArray(list) ? list : []).map(function (n) { return FILTER_VOCAB[k].indexOf(n); })
       .filter(function (i) { return i !== -1; });
   }
+  /* A saved filter whose control isn't offered (data-driven visibility) is
+     ignored: nothing can filter through a control you can't see. */
+  var FILTER_CAP = { tier: 'tiers', types: 'types', media: 'media', strands: 'strands', chars: 'presence', cameos: 'cameos',
+                     alt: 'alt', mandatory: 'mandatory', notesOnly: 'notes', eras: 'eras' };
   function filtersFromSettings() {
     var saved = settings.filters || {};
     F = defaultFilters();
     PERSISTED_FILTERS.forEach(function (k) {
-      if (saved[k] === undefined) return;
+      if (saved[k] === undefined || (FILTER_CAP[k] && !HAS[FILTER_CAP[k]])) return;
       if (k === 'tier') { var ti = D.tiers.indexOf(saved.tier); if (ti !== -1) F.tier = ti; }
       else if (FILTER_VOCAB[k]) F[k] = toIdx(k, saved[k]);
       else F[k] = !!saved[k];
@@ -395,11 +450,11 @@
       '</span><progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>';
   }
 
-  function topUnits() { return HAS_BANDS ? D.periods.map(function (p, b) { return b; }) : D.eras.map(function (e, i) { return i; }); }
+  function topUnits() { return HAS.bands ? D.periods.map(function (p, b) { return b; }) : D.eras.map(function (e, i) { return i; }); }
   function finishMap(S) {
     var out = {}, cum = 0;
     topUnits().forEach(function (u) {
-      var t = HAS_BANDS ? S.band[u] : S.era[u];
+      var t = HAS.bands ? S.band[u] : S.era[u];
       cum += minutesLeft(t);
       out[u] = remaining(t) === 0 ? null : finishBy(cum);
     });
@@ -428,7 +483,7 @@
   }
   /* Progress mode (S-19): one combined line, or one line per format as well.
      Offered only when the data really mixes formats. */
-  function perFormat() { return settings.progressMode === 'medium' && MEDIA_USED.length > 1; }
+  function perFormat() { return settings.progressMode === 'medium' && HAS.media; }
 
   function orderedEraRows(e) {
     var rows = ERA_ROWS[e].slice();
@@ -478,7 +533,7 @@
       escapeAttr(r[7] || 'A separate continuity from the main line.') + '">alt</button>';
     badges += '<button type="button" class="b bm" data-act="bm" aria-pressed="' + bm + '" aria-label="Bookmark ' +
       escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
-    if (D.franchise.searchUrl) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
+    if (HAS.lookup) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
       encodeURIComponent(r[1])) + '" target="_blank" rel="noopener">look up ↗</a>';
     var hasSub = r[7] && !(flags & (FL.FB | FL.ALT));
     /* tap to reveal (S-16; the feel-reference build's landmark notes): the note waits behind a button */
@@ -554,7 +609,7 @@
     /* newest era first (S-13) reverses bands and eras, never the rows inside
        an era; finish-by stays cumulative in READING order (fins by unit). */
     var html = '', rev = function (list) { return settings.rev ? list.slice().reverse() : list; };
-    if (HAS_BANDS) {
+    if (HAS.bands) {
       rev(D.periods.map(function (p, b) { return b; })).forEach(function (b) {
         var p = D.periods[b], shown = p.eras.some(function (e) { return visEra[e]; }), isOpen = !!open.b[b];
         html += '<section class="band" data-b="' + b + '"' + (shown ? '' : ' hidden') + '>' +
@@ -587,7 +642,7 @@
       if (!head) return;
       var old = head.querySelector('.bstats'), bar = head.querySelector('progress');
       var tmp = document.createElement('div');
-      tmp.innerHTML = statsHtml(S.era[e], HAS_BANDS ? null : fins[e]);
+      tmp.innerHTML = statsHtml(S.era[e], HAS.bands ? null : fins[e]);
       old.replaceWith(tmp.firstChild); bar.replaceWith(tmp.lastChild);
     });
     D.periods.forEach(function (p, b) {
@@ -606,6 +661,15 @@
      ====================================================================== */
   var SECTIONS = [['reading', '☰', 'Reading'], ['story', '⧗', 'Story'], ['chars', '☺', 'Characters'],
                   ['creators', '✎', 'Creators'], ['order', '⇅', 'Order and display']];
+  /* A section is offered only when the data gives at least one of its controls
+     something to do (Reading always has Unread only and Hide skipped). */
+  var SECTION_OFFERED = {
+    reading: true,
+    story: HAS.events || HAS.eras || HAS.media || HAS.types || HAS.alt,
+    chars: HAS.presence || HAS.strands,
+    creators: HAS.credits,
+    order: ORDERS.length > 1
+  };
   function orderLabel(o) {
     var d = D.franchise.dualOrder;
     if (o === 'reading') return d ? d.a : 'Reading order';
@@ -625,7 +689,7 @@
       return bits.length ? bits.join(' · ') : '';
     }
     if (k === 'story') {
-      if (settings.events === 'complete' && D.events.length) bits.push('complete events');
+      if (settings.events === 'complete' && HAS.events) bits.push('complete events');
       if (F.eras.length) bits.push(F.eras.length === 1 ? D.eras[F.eras[0]].name : F.eras.length + ' eras');
       if (F.types.length) bits.push(names(F.types, function (t) { return D.types[t].toLowerCase(); }));
       if (F.media.length) bits.push(names(F.media, mediumLabel));
@@ -648,7 +712,7 @@
     var c = [];
     if (F.q) c.push(['q', '', 'Search: “' + F.q + '”']);
     if (F.creator) c.push(['creator', '', 'Creator: “' + F.creator + '”' + ROLE_NOTE[F.role]]);
-    if (settings.events === 'complete' && D.events.length) c.push(['events', 'essential', 'Complete events']);
+    if (settings.events === 'complete' && HAS.events) c.push(['events', 'essential', 'Complete events']);
     if (F.tier < D.tiers.length - 1) c.push(['tier', '', D.tiers[F.tier] + ' tier']);
     if (F.unread) c.push(['unread', '', 'Unread only']);
     if (F.notesOnly) c.push(['notesOnly', '', 'Notes only']);
@@ -675,35 +739,44 @@
   function sectionBody(k) {
     var h = '';
     if (k === 'reading') {
-      h += '<div class="flabel">Depth</div><div class="depthrow">';      // one row that never wraps (T-95)
-      D.tiers.forEach(function (t, ti) {
-        h += chip('tier', ti, t + ' · ' + countWhere(function (i) { return D.issueTier[i] <= ti; }), F.tier === ti);
-      });
-      h += '</div>';
-      h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) + chip('notesOnly', '', 'Notes only', F.notesOnly) +
-        chip('hideSkip', '', 'Hide skipped', F.hideSkip) + chip('mandatory', '', 'Mandatory only', F.mandatory);
+      if (HAS.tiers) {
+        h += '<div class="flabel">Depth</div><div class="depthrow">';    // one row that never wraps (T-95)
+        D.tiers.forEach(function (t, ti) {
+          h += chip('tier', ti, t + ' · ' + countWhere(function (i) { return D.issueTier[i] <= ti; }), F.tier === ti);
+        });
+        h += '</div>';
+      }
+      h += '<div class="flabel">Status</div>' + chip('unread', '', 'Unread only', F.unread) +
+        (HAS.notes ? chip('notesOnly', '', 'Notes only', F.notesOnly) : '') + chip('hideSkip', '', 'Hide skipped', F.hideSkip) +
+        (HAS.mandatory ? chip('mandatory', '', 'Mandatory only', F.mandatory) : '');
     } else if (k === 'story') {
-      if (D.events.length) {                                   // Essential / Complete (V-10, FP-4): a plan setting
+      if (HAS.events) {                                        // Essential / Complete (V-10, FP-4): a plan setting
         h += '<div class="flabel">Events</div>' + chip('events', 'essential', 'Essential', settings.events === 'essential') +
           chip('events', 'complete', 'Complete', settings.events === 'complete');
       }
-      h += '<div class="flabel">Era</div>';
-      D.eras.forEach(function (e, ei) { h += chip('eras', ei, e.name, F.eras.indexOf(ei) !== -1); });
-      if (D.media.length > 1) {
-        h += '<div class="flabel">Format</div>';
-        D.media.forEach(function (m, mi) { h += chip('media', mi, mediumLabel(mi), F.media.indexOf(mi) !== -1); });
+      if (HAS.eras) {
+        h += '<div class="flabel">Era</div>';
+        D.eras.forEach(function (e, ei) { h += chip('eras', ei, e.name, F.eras.indexOf(ei) !== -1); });
       }
-      h += '<div class="flabel">Type</div>';
-      D.types.forEach(function (t, ti) { h += chip('types', ti, t.toLowerCase(), F.types.indexOf(ti) !== -1); });
-      if (HAS_ALT) h += '<div class="flabel">Alternate stories</div>' + chip('alt', '', 'Show alternate stories', F.alt);
+      if (HAS.media) {
+        h += '<div class="flabel">Format</div>';
+        MEDIA_USED.forEach(function (mi) { h += chip('media', mi, mediumLabel(mi), F.media.indexOf(mi) !== -1); });
+      }
+      if (HAS.types) {
+        h += '<div class="flabel">Type</div>';
+        D.types.forEach(function (t, ti) { h += chip('types', ti, t.toLowerCase(), F.types.indexOf(ti) !== -1); });
+      }
+      if (HAS.alt) h += '<div class="flabel">Alternate stories</div>' + chip('alt', '', 'Show alternate stories', F.alt);
     } else if (k === 'chars') {
-      if (D.characters.length) h += '<div class="flabel">Strands</div>';
-      D.strands.forEach(function (s, si) { h += chip('strands', si, s, F.strands.indexOf(si) !== -1); });
-      if (D.characters.length) {
+      if (HAS.strands) {
+        h += '<div class="flabel">Strands</div>';
+        D.strands.forEach(function (s, si) { h += chip('strands', si, s, F.strands.indexOf(si) !== -1); });
+      }
+      if (HAS.presence) {
         h += '<div class="flabel">Appearances</div>';
         D.characters.forEach(function (c, ci) { h += chip('chars', ci, c, F.chars.indexOf(ci) !== -1); });
-        h += '<div class="flabel">Counts as an appearance</div>' + chip('cameos', '', 'Include cameos', F.cameos);
       }
+      if (HAS.cameos) h += '<div class="flabel">Counts as an appearance</div>' + chip('cameos', '', 'Include cameos', F.cameos);
     } else if (k === 'creators') {
       h += '<input class="search" id="cq" type="search" placeholder="Search writers and artists" aria-label="Search writers and artists" value="' +
         escapeAttr(F.creator) + '" autocomplete="off">';
@@ -711,7 +784,7 @@
       ['any', 'w', 'a'].forEach(function (r) { h += chip('role', r, ROLE_LABEL[r], F.role === r); });
       h += creatorPicker();
     } else {
-      ['reading', 'publication', 'arc'].forEach(function (o) { h += chip('order', o, orderLabel(o), settings.order === o); });
+      ORDERS.forEach(function (o) { h += chip('order', o, orderLabel(o), settings.order === o); });
     }
     return '<div class="fsec-body" id="fsec-' + k + '">' + h + '</div>';
   }
@@ -724,7 +797,7 @@
         '" aria-label="Remove filter: ' + escapeAttr(c[2]) + '">' + escapeHtml(c[2]) + ' <span aria-hidden="true">×</span></button>';
     }).join('') : '<span class="muted">None</span>';
     var focusCq = document.activeElement && document.activeElement.id === 'cq';
-    $('#fsecs').innerHTML = SECTIONS.map(function (s) {
+    $('#fsecs').innerHTML = SECTIONS.filter(function (s) { return SECTION_OFFERED[s[0]]; }).map(function (s) {
       var isOpen = settings.panelOpen.indexOf(s[0]) !== -1, sum = summary(s[0]);
       return '<div class="fsec' + (isOpen ? ' open' : '') + '" data-k="' + s[0] + '">' +
         '<button type="button" class="fsec-head" data-act="sec" data-k="' + s[0] + '" aria-expanded="' + isOpen + '" aria-controls="fsec-' + s[0] + '">' +
@@ -796,8 +869,8 @@
     settings.filters = JSON.parse(JSON.stringify(p.filters));
     filtersFromSettings();
     Object.keys(keep).forEach(function (k) { F[k] = keep[k]; });
-    settings.order = p.order || settings.order;
-    settings.events = p.events === 'complete' ? 'complete' : 'essential';
+    settings.order = ORDERS.indexOf(p.order) === -1 ? settings.order : p.order;
+    settings.events = p.events === 'complete' && HAS.events ? 'complete' : 'essential';
     refilter();
     toast('Applied preset “' + name + '”.');
   }
@@ -813,7 +886,7 @@
 
   function setFilter(k, v, on) {
     if (k === 'tier') F.tier = v === '' ? D.tiers.length - 1 : +v;
-    else if (k === 'order') { settings.order = v; }
+    else if (k === 'order') settings.order = ORDERS.indexOf(v) === -1 ? 'reading' : v;
     else if (k === 'q' || k === 'creator') {
       F[k] = '';
       if (k === 'creator') F.creatorExact = false;
@@ -1101,7 +1174,7 @@
     host.innerHTML = '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + list.length.toLocaleString('en-GB') + '</p>' +
       '<p class="rpills"><span class="rpill">' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>' +
-      (MEDIA_USED.length > 1 ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
+      (HAS.media ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
       '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
       '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]].toLowerCase()) + '</p>' +
       '<p class="rstate">' + escapeHtml(labelOf(i, st)) + '</p>' +
@@ -1264,7 +1337,7 @@
   function renderEraNav(visEra) {
     var bar = $('#eranav'), eras = D.eras.map(function (e, i) { return i; }).filter(function (e) { return visEra[e]; });
     if (settings.rev) eras.reverse();
-    bar.hidden = settings.eraNav === 'scroll' || !eras.length;
+    bar.hidden = !HAS.eras || settings.eraNav === 'scroll' || !eras.length;
     if (bar.hidden) { $('#eranavIn').innerHTML = ''; return; }
     $('#eranavIn').innerHTML = settings.eraNav === 'chips'
       ? eras.map(function (e) { return '<button type="button" class="chip" data-act="era-jump" data-e="' + e + '">' + escapeHtml(D.eras[e].name) + '</button>'; }).join('')
@@ -1628,34 +1701,36 @@
       srow('Minutes per issue', seg('pace-min', 'Minutes per issue', PACE_MINUTES.map(function (p) { return [p[2], p[1] + ' · ' + p[2] + ' min']; }), settings.pace.minutes)) +
       srow('Issues per week', seg('pace-week', 'Issues per week', PACE_WEEKLY.map(function (p) { return [p[2], p[1] + ' · ' + p[2]]; }), settings.pace.weekly)) +
       '<p class="pace" id="paceOut" aria-live="polite">' + paceReadout(S) + '</p>' +
-      (MEDIA_USED.length > 1 ? srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
-      (D.events.length ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
+      (HAS.media ? '<p class="muted shelp pace-dur">Comics are timed at your minutes per issue; shows and games count their own length.</p>' +
+        srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
+      (HAS.events ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
       srow('Next unread button', pref('showJump', 'Show it')));
     h += sset('display', 'Display',
-      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + pref('reveal', 'Tap to reveal notes') + pref('gapNotes', 'Gap notes')) +
-      srow('Order', pref('rev', 'Newest era first')) +
+      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
+        (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '')) +
+      (HAS.eras ? srow('Order', pref('rev', 'Newest era first')) : '') +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
-      srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)));
+      (HAS.eras ? srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)) : ''));
     h += sset('touch', 'Touch',
       srow('Gestures', pref('swipe', 'Swipe to mark') + pref('press', 'Long-press to mark all read')) +
-      '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold a band, era or arc heading to mark everything in it read; ' +
-      'Undo puts every row back.</p>');
+      '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold ' + (HAS.bands ? 'a band, era' : 'an era') +
+      ' or arc heading to mark everything in it read; Undo puts every row back.</p>');
     var eraOpts = function (cur) {
       return D.eras.map(function (e, ei) { return '<option value="' + ei + '"' + (ei === cur ? ' selected' : '') + '>' + escapeHtml(e.name) + '</option>'; }).join('');
     };
     h += sset('bulk', 'Bulk actions',
       srow('Sections', '<button type="button" class="tool" data-act="expand-all">Expand all</button>' +
         '<button type="button" class="tool" data-act="collapse-all">Collapse all</button>') +
-      srow('Mark era', '<select class="erasel" id="bulkEra" aria-label="Era to mark">' + eraOpts(bulkSel.era) + '</select>' +
+      srow('Mark era', (HAS.eras ? '<select class="erasel" id="bulkEra" aria-label="Era to mark">' + eraOpts(bulkSel.era) + '</select>' : '') +
         '<button type="button" class="tool" data-act="bulk-era" data-st="read">Mark read</button>' +
         '<button type="button" class="tool" data-act="bulk-era" data-st="unread">Mark unread</button>') +
-      srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
+      (HAS.eras ? srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
         '<span class="muted">through</span><select class="erasel" id="bulkTo" aria-label="Range end">' + eraOpts(bulkSel.to) + '</select>' +
-        '<button type="button" class="tool" data-act="bulk-range">Mark read</button>'));
+        '<button type="button" class="tool" data-act="bulk-range">Mark read</button>') : ''));
     h += sset('data', 'Data',
       srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +
       '<h3 class="ssub">Bookmarks</h3>' + bookmarksHtml() +
-      (D.franchise.storage && D.franchise.storage.legacy
+      (HAS.legacy
         ? srow('Previous version', '<button type="button" class="tool" data-act="import-legacy">Import from previous version</button>') : '') +
       clearHtml() + aboutHtml());
     h += sset('backup', 'Backup', backupHtml());
@@ -1879,6 +1954,10 @@
     if (tc) tc.setAttribute('content', f.theme);
     var at = $('meta[name="apple-mobile-web-app-title"]');
     if (at) at.setAttribute('content', f.wordmark);
+    /* the search hint names only what the data has to search */
+    var what = ['titles', 'arcs'].concat(HAS.notes ? ['notes'] : [], HAS.credits ? ['creators'] : []);
+    $('#q').placeholder = 'Search ' + what.join(', ') + '…';
+    $('#q').setAttribute('aria-label', 'Search ' + what.slice(0, -1).join(', ') + ' and ' + what[what.length - 1]);
   }
 
   document.addEventListener('click', onClick);
@@ -1913,6 +1992,7 @@
     jumpToIssue: jumpToIssue,
     showTab: showTab,
     pacePresets: { minutes: PACE_MINUTES, weekly: PACE_WEEKLY },
+    has: Object.freeze(JSON.parse(JSON.stringify(HAS))),     // read-only copy of the capability map
     setPace: setPace,
     syncCodes: function () { return { qr: packQR(), qrText: qrText(), full: fullCode() }; },
     readCode: function (text) { return parseCode(text); },
