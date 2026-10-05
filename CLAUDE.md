@@ -36,6 +36,7 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 | `data.js`, `sw.js` cache name, build tag | **generated** by `tools/build.py` — never hand-edit |
 | `schema/*.json` | JSON Schema for the data files; the harness validates fixtures against it |
 | `tools/build.py` | stitch + derive keys + validate + emit `data.js` (stdlib only) |
+| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder. Same runner; CI runs it |
 | `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
@@ -121,7 +122,11 @@ were reasoned about, not measured. Use real Chromium (Playwright,
 visual. If no browser is available, say so rather than guessing.
 Session 3: the fourth tab pushed the page wider than 390 px, and at 320 px it was
 cut off inside the tab bar. Both were invisible to jsdom. Sweep every tab at
-320 px and check `scrollWidth`.
+320 px and check `scrollWidth`. `test/layout/10-sweep` does this on every push.
+Session 4: reduced motion had never worked. A `* { transition: none }` rule has no
+specificity, so every class rule that declares a transition beat it, and a test of the
+CSS text "passed". Every duration now scales with `--motion`, and `test/layout/20-motion`
+measures it.
 
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:
@@ -214,7 +219,7 @@ Never synthetic elements. Boot the real `index.html` + generated `data.js`.
 ## Before declaring anything done
 1. `python3 tools/build.py --check` — generated files are fresh.
 2. `node test/run.js` — 0 failures, and the **count** is what you expect.
-3. Real-browser layout check for anything visual.
+3. `npm run test:layout` — real Chromium: 0 failures and the count. Add a check there for anything visual.
 4. Manifest and icons franchised (they have shipped with placeholder name and
    another franchise's artwork).
 5. Verify a deploy **by hash**, not HTTP 200; GitHub Pages takes ~100 s.

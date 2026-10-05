@@ -6,7 +6,8 @@
   "scripts": {
     "build": "python3 tools/build.py",
     "check": "python3 tools/build.py --check",
-    "test": "node test/run.js"
+    "test": "node test/run.js",
+    "test:layout": "HARNESS_SUITES=test/layout node test/run.js"
   },
   "engines": {
     "node": ">=20"
@@ -14,6 +15,7 @@
   "devDependencies": {
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
-    "jsdom": "^26.1.0"
+    "jsdom": "^26.1.0",
+    "playwright-core": "1.56.1"
   }
 }

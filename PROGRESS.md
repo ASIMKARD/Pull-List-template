@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1154 assertions, 0 failed, 25 suites (session 4, step 2).
+**Harness:** 1157 assertions, 0 failed, 25 suites (session 4, step 3). **Layout suite (real Chromium):** 54 checks, 0 failed, 3 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -1053,7 +1053,56 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   overflow and no page errors. `visibility` also opens Settings sections in its audit now.
 - **Inventory:** V-31 and FP-11 present.
 
-### Step 3 starts with: the Chromium layout harness (plan step 3)
-- Rebuild the scratchpad checks under `test/layout/`: page errors, the 320/360/390 sweep, and
-  this step's animation and reduced-motion measurement.
-- Wire up `@font-face`, and run the suite in CI (John's answer 3).
+
+## Session 4 checkpoint — step 3 done (the Chromium layout harness, fonts), 5 Oct 2026
+
+### Done
+- **`test/layout/`**, the real-Chromium suite. It is run as `npm run test:layout`, which is
+  `HARNESS_SUITES=test/layout node test/run.js`.
+  - It uses the same runner as the jsdom harness, so any failure, crash or zero count fails the
+    run. `run.js` now resolves `HARNESS_SUITES` to an absolute path.
+  - **`lib.js`:**
+    - finds Chromium from `CHROMIUM_PATH`, then Playwright's default (`PLAYWRIGHT_BROWSERS_PATH`
+      here, the CI install there), then `/opt/pw-browsers/chromium`. With no browser it crashes
+      with a clear message, never a silent skip;
+    - serves the repo over `http://localhost`, with a build's `data.js`, `sw.js` and
+      `manifest.json` swapped in;
+    - opens a page at a width, with storage seeded before load and page and console errors
+      collected;
+    - opens sections the way a person taps them;
+    - has `rulesFor()`, which asks the browser which rules match an element.
+  - **`10-sweep` (36 checks):** `basic`, `mixed`, `minimal` and the starter × 320, 360 and 390 px
+    × every tab, with everything open: no horizontal overflow, all four tabs fully visible in the
+    bar, no page or console errors (L-9).
+  - **`20-motion` (8):** sections open and shut through a `grid-template-rows` transition in both
+    the panel and Settings, ending at full height and at zero. Under reduced motion a section
+    opens at once, and no element has any duration. Measured through `getAnimations()`, so the
+    result doesn't depend on machine speed.
+  - **`30-css` (10):**
+    - `rulesFor` finds a grouped selector that spans lines (what grep misses) and the real `.tool,
+      .linkbtn` rule;
+    - all 12 `@font-face` files load;
+    - the body is in IBM Plex Sans and the title in Anton;
+    - every vendored font file is declared.
+- **Fonts:** 12 `@font-face` rules for the vendored files (Anton 400; Plex Sans 400/500/600; Plex
+  Mono 400/500; latin and latin-ext ranges), with `font-display: swap`. The service worker already
+  precaches them.
+- **Re-measured with the real fonts (an open item from session 3):** at 320 px the four tabs take
+  287 of 288 px with the `clamp()` label size (13.4 px). It fits but is tight, and the sweep now
+  guards it.
+- **Dependency:** `playwright-core` 1.56.1 (exact), which matches the pre-installed Chromium 1194.
+  It never downloads a browser on install.
+- **CI:** after the harness, it installs Chromium (`npx playwright-core install --with-deps
+  chromium`), runs the layout suite, and requires a non-zero count for both runs. `00-runner`
+  checks that the workflow still does this (+3).
+- **Mutation checks:**
+  - something 400 px wide → 12 failures;
+  - the old `* { transition: none }` → 2;
+  - a font file that 404s → 12;
+  - 19 px tab labels → 4, at 320 px on every dataset.
+  - Putting session 3's 15 px labels back is not caught, because with the real fonts they fit
+    (290 rounded vs 288 px; the true sum is under 288).
+- **CLAUDE.md:** the repo map gains `test/layout/`, the "done" checklist names
+  `npm run test:layout`, and the jsdom trap records the reduced-motion lesson.
+
+### Step 4 starts with: one token system and the skins (plan step 4)

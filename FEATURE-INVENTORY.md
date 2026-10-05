@@ -265,7 +265,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | L-6 | no large gap between bands (≤16 px) | S4 | todo |
 | L-7 | table view at least halves row height | S4 | todo |
 | L-8 | no table row overflows the screen width | S4 | todo |
-| L-9 | no runtime errors | S4 | todo |
+| L-9 | no runtime errors | S4 | present (test/layout/10-sweep: no page or console errors on every tab, 4 datasets × 320/360/390 px, everything open; caught a font 404) |
 
 Also from v2's docs and deploy checklist (carried as process, CLAUDE.md):
 verify every SW path exists on disk (→ guard), manifest franchised, icons
@@ -355,7 +355,7 @@ installed app once online.
 | FP-8 | Removable chips at the top for every active filter, active count, Clear all | S2 | present (92-filters: removable chips, count, Clear all) |
 | FP-9 | Live "Showing N of M issues" and Save as preset at the bottom | S2/S3 | present (92-filters: Showing N of M; 9d-story-filters: Save as preset) |
 | FP-10 | All sections start collapsed; open state remembered (namespaced storage) | S2 | present (92-filters: collapsed by default, remembered) |
-| FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | present (98-tabs-settings: one shared rule animates the body's grid row 0fr → 1fr; every duration scales with `--motion`, which reduced motion sets to 0. Real Chromium, 5 Oct: 262 of 402 px at 90 ms, and fully open at once under reduced motion. The layout suite automates this in step 3) |
+| FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | present (98-tabs-settings: one shared rule animates the body's grid row 0fr → 1fr; every duration scales with `--motion`, which reduced motion sets to 0. Real Chromium: test/layout/20-motion, through the browser's own animation list: opens and shuts with a grid-template-rows transition, and under reduced motion no element has any duration) |
 | FP-12 | Sections are buttons with `aria-expanded`; delegated (counts toward the ≤12 listeners) | S2 | present (92-filters: aria-expanded, delegated) |
 
 ## XM — X-Men features v2 lacks

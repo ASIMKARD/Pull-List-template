@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SUITES = process.env.HARNESS_SUITES || path.join(__dirname, 'suites');
+const SUITES = path.resolve(process.env.HARNESS_SUITES || path.join(__dirname, 'suites'));
 const filter = process.argv[2] || '';
 
 let total = 0, failed = 0, crashed = 0;
