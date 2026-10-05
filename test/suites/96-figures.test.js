@@ -80,8 +80,8 @@ module.exports = async function (t) {
   t.ok('default: no "filtered" marker', !read().marked);
 
   $('[data-act="panel"]').click();
-  $('.fsec-head[data-k="reading"]').click();
-  $('.fsec-head[data-k="story"]').click();
+  $('#fsecs .sec-head[data-k="reading"]').click();
+  $('#fsecs .sec-head[data-k="story"]').click();
 
   // ---- plan filters always count ----
   $('#fsec-reading .chip[data-k="mandatory"]').click();
@@ -137,7 +137,7 @@ module.exports = async function (t) {
   t.ok('display-only: unread only is not marked as filtered', !read().marked);
   t.ok('display-only: unread only still hides read rows from the list', !$('.row[data-id="fixture-hero-1980-1"]') && $$('.row').length > 0);
   $('#fsec-reading .chip[data-k="unread"]').click();
-  $('.fsec-head[data-k="order"]').click();
+  $('#fsecs .sec-head[data-k="order"]').click();
   $('.chip[data-k="order"][data-v="publication"]').click();
   expectFig('display-only: publication order leaves every figure unchanged', base);
   $('.chip[data-k="order"][data-v="reading"]').click();

@@ -217,7 +217,7 @@ module.exports = async function (t) {
   d = app.document;
   await wait(20);
   $('[data-act="panel"]').click();
-  $('.fsec-head[data-k="story"]').click();
+  $('#fsecs .sec-head[data-k="story"]').click();
   const chip = m => $(`#fsec-story .chip[data-k="media"][data-v="${D.media.indexOf(m)}"]`);
   const marked = () => !!$('#pprog .pfiltered') || !!d.querySelector('.bfiltered');
   const byMedium = m => i => D.media[D.issueMedium[i]] === m;

@@ -23,6 +23,7 @@
   --font-display: 'Anton', Impact, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --fs: 15px;
+  --motion: 1;           /* every transition's duration is multiplied by this; reduced motion sets 0 */
 }
 
 /* [hidden] must win: an element that toggles `hidden` never sets its own
@@ -66,17 +67,25 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .fhead { display: flex; align-items: center; padding: 0 12px; font-size: 13px; color: var(--ink-soft); }
 .fhead .linkbtn { margin-left: auto; }
 .fchips { padding: 4px 12px 10px; }
-.fsec { border-top: 1px solid var(--line); }
-.fsec-head {
+
+/* ---- one collapsible section: the filter panel's and Settings' (FP-11) ----
+   The body stays in the DOM and opens by animating its grid row from 0fr to
+   1fr, so nothing is measured; the inner wrapper clips while it moves. Its
+   duration scales with --motion, so reduced motion stops it (see the end). */
+.sec-head {
   display: flex; gap: 10px; align-items: center; width: 100%; padding: 12px 14px; border: 0; background: none; text-align: left;
 }
-.fsec-ico { color: var(--ink-soft); width: 1.2em; text-align: center; }
-.fsec-t { display: flex; flex-direction: column; }
-.fsec-name { font-weight: 600; }
-.fsec-sum { font-size: 13px; color: var(--ink); }
-.fsec-chev { margin-left: auto; color: var(--ink-soft); transition: transform .2s ease; }
-.fsec.open .fsec-chev { transform: rotate(180deg); }
-.fsec-body { padding: 2px 14px 14px 44px; }
+.sec-ico { color: var(--ink-soft); width: 1.2em; flex: none; text-align: center; }
+.sec-t { display: flex; flex-direction: column; min-width: 0; }
+.sec-name { font-weight: 600; }
+.sec-sum { font-size: 13px; color: var(--ink); }
+.sec-chev { margin-left: auto; color: var(--ink-soft); transition: transform calc(.2s * var(--motion)) ease; }
+.sec.open .sec-chev { transform: rotate(180deg); }
+.sec-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows calc(.22s * var(--motion)) ease; }
+.sec.open > .sec-body { grid-template-rows: 1fr; }
+.sec-in { overflow: hidden; min-height: 0; }
+.fsec { border-top: 1px solid var(--line); }
+.fsec .sec-pad { padding: 2px 14px 14px 44px; }
 .flabel { font-size: 12px; color: var(--ink-soft); margin: 8px 0 6px; }
 .chip {
   display: inline-flex; align-items: center; gap: 4px; margin: 0 6px 6px 0; padding: 5px 11px; font-size: 13px;
@@ -147,8 +156,9 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 
 /* ---- settings ---- */
 .settings { margin: 0 16px; }
-.sset { margin: 0 0 var(--gap); padding: 4px 14px 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-.seth { margin: 10px 0 6px; font-size: 17px; }
+.sset { margin: 0 0 var(--gap); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.seth { margin: 0; font-size: 17px; font-weight: 400; }
+.sset .sec-pad { padding: 0 14px 12px; }
 .ssub { margin: 14px 0 6px; font-size: 14px; color: var(--ink-soft); }
 .srow { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 6px 0; }
 .slabel { min-width: 9em; font-size: 14px; }
@@ -217,7 +227,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 /* ---- bulk marking and touch ---- */
 .arc-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .shelp { margin: 2px 0 6px; font-size: 13px; }
-.row { transition: transform .15s ease; }
+.row { transition: transform calc(.15s * var(--motion)) ease; }
 .row[data-swipe="read"], .row[data-swipe="read-go"] { transform: translateX(28px); box-shadow: inset 6px 0 var(--accent); }
 .row[data-swipe="skip"], .row[data-swipe="skip-go"] { transform: translateX(-28px); box-shadow: inset -6px 0 var(--ink-soft); }
 .row[data-swipe="read-go"] { background: var(--accent-wash); }
@@ -260,4 +270,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 }
 .toast-act { margin-left: auto; border: 0; background: none; color: var(--accent-wash); font-weight: 600; }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none; animation: none; } }
+/* Reduced motion. A `* { transition: none }` rule can't do this: it has no
+   specificity, so any class rule that declares a transition beats it (measured
+   in Chromium, 5 Oct). Every duration scales with --motion instead, and a
+   guard checks that each transition and animation uses it. */
+@media (prefers-reduced-motion: reduce) { :root { --motion: 0; } }

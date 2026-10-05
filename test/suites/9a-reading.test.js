@@ -86,7 +86,7 @@ module.exports = async function (t) {
   // ---- filters: the stepper follows the view, and filters survive the trip
   $('#tab-list').click();
   $('[data-act="panel"]').click();
-  $('.fsec-head[data-k="story"]').click();
+  $('#fsecs .sec-head[data-k="story"]').click();
   $(`#fsec-story .chip[data-k="media"][data-v="${D.media.indexOf('game')}"]`).click();
   const shown = $('#fshow').textContent;
   $('#tab-reading').click();

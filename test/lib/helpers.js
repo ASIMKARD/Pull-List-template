@@ -89,6 +89,11 @@ function boot(dataDir, opts) {
         return orig.apply(this, arguments);
       };
       w.Element.prototype.scrollIntoView = function () { w.__scrolledTo = this; };
+      /* A closed section's body is inert: a person can't tap or focus anything in
+         it, so neither can a test (jsdom doesn't implement inert itself). */
+      const click = w.HTMLElement.prototype.click, focus = w.HTMLElement.prototype.focus;
+      w.HTMLElement.prototype.click = function () { if (!this.closest('[inert]')) return click.apply(this, arguments); };
+      w.HTMLElement.prototype.focus = function () { if (!this.closest('[inert]')) return focus.apply(this, arguments); };
       if (opts.now) { const fixed = opts.now; w.Date.now = () => fixed; }
       w.scrollTo = function () {};
       if (opts.storage) for (const k of Object.keys(opts.storage)) w.localStorage.setItem(k, opts.storage[k]);
@@ -98,6 +103,18 @@ function boot(dataDir, opts) {
 }
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* Open collapsible sections the way a person does: tap the head of each closed
+   one. g is 'f' (filter panel) or 's' (Settings); no keys means all of them. */
+function openSections(app, g, keys) {
+  const heads = [...app.document.querySelectorAll('.sec-head[data-g="' + g + '"]')];
+  heads.filter(h => !keys || keys.includes(h.dataset.k)).forEach(h => { if (h.getAttribute('aria-expanded') !== 'true') h.click(); });
+}
+/* Go to Settings and open its sections (all of them unless keys are named). */
+function openSettings(app, keys) {
+  app.document.querySelector('#tab-settings').click();
+  openSections(app, 's', keys);
+}
 
 /* Type into a search box the way a person does: set the value, fire input,
    wait out the 180 ms debounce. */
@@ -154,4 +171,4 @@ function mixed() {
 }
 
 module.exports = { ROOT, FIX, BUILD, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
-                   validateIssueIds, boot, wait, typeInto, stress, basic, noPeriods, mixed };
+                   validateIssueIds, boot, wait, openSections, openSettings, typeInto, stress, basic, noPeriods, mixed };

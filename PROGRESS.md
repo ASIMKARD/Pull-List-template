@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1132 assertions, 0 failed, 25 suites (session 4, step 1).
+**Harness:** 1154 assertions, 0 failed, 25 suites (session 4, step 2).
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -998,4 +998,62 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 - A single-format tracker of games with missing lengths would still show it. Hiding it there
   would print a time left that silently leaves rows out, against the 3 Oct durations decision.
 
-### Step 2 starts with: collapsible Settings and the shared section component (plan step 2)
+
+## Session 4 checkpoint — step 2 done (collapsible Settings, one section component), 5 Oct 2026
+
+### Done
+- **One collapsible section component** (`secHtml`) renders both the filter panel's sections and
+  the Settings sections.
+  - Each head is a button with an icon, the name, a live one-line summary and a chevron. In
+    Settings it sits inside an `h2`.
+  - The shared classes are `.sec`, `.sec-head`, `.sec-name`, `.sec-sum`, `.sec-body` and so on.
+    `fsec` and `sset` remain as the group classes, and the body ids stay `#fsec-*` and `#set-*`.
+- **Settings sections collapse like the panel.**
+  - Reading behaviour ◷, Display ◧, Touch ☝, Bulk actions ☑, Data ▤ and Backup ⇄.
+  - All start collapsed. The open ones are kept in `settings.settingsOpen`, next to `panelOpen`
+    in the one namespaced store.
+  - Summaries are live: "Average 15 min · Steady 12 a week", "Badges · Headings · Plain scroll",
+    "Gestures off", "Quarterly reminder · 0 bookmarks", "An import is waiting".
+- **The animation (FP-11).**
+  - Bodies stay in the DOM and open by animating their grid row from 0fr to 1fr, so nothing is
+    measured. A closed body is `inert`.
+  - Toggling changes the section in place, with no re-render, so the transition runs.
+  - Reading a code or a file opens Backup, so a pending import never waits in a closed section.
+- **Bug found by measuring (since session 2):** reduced motion didn't stop any transition.
+  - `* { transition: none }` has no specificity, so every class rule that declares a transition
+    beat it. jsdom and a CSS-text test both "passed".
+  - Fixed with a `--motion` token: every duration is `calc(… * var(--motion))`, and
+    `@media (prefers-reduced-motion: reduce)` sets it to 0.
+  - A guard checks that every transition and animation uses it (mutation: one plain `.15s` put
+    back → caught).
+  - Real Chromium: a section is 262 of 402 px tall at 90 ms normally, and fully open at once
+    under reduced motion.
+- **Tests now honour `inert`.**
+  - `boot()` makes `click()` and `focus()` do nothing inside an inert body, as for a person, since
+    jsdom doesn't implement it.
+  - New helpers `openSections(app, g, keys)` and `openSettings(app, keys)` tap section heads
+    open. The suites that use Settings call them.
+  - **Re-expressed, not weakened:** "closed bodies aren't rendered" (92-filters) became "closed
+    bodies are inert".
+  - Undo-after-Replace (9e-sync) now expects `settingsOpen: ['backup']` alongside `tab`, because
+    the test opens Backup to paste, like a person.
+  - Class-name selectors were renamed mechanically; no assertion was removed.
+- **New tests in `98-tabs-settings`** (+22): sections and icons in order; collapsed and inert by
+  default; summaries per section, and following pace, per-format, swipe and the reminder; one
+  component (heads share their parts with the panel's); toggled in place; open state saved after
+  the 400 ms debounce and restored on the next visit, separately from the panel's; the pending
+  import summary; the shared animation rule; the motion guard.
+- **Mutation checks:**
+  - open state not recorded → 5 failures and a crash;
+  - summary not refreshed → 1;
+  - a toggle that rebuilds the section → 5 failures and a crash;
+  - closed bodies not inert → 3;
+  - a transition that ignores `--motion` → 1.
+- **Real Chromium** (`mixed`, 320 and 390 px): Settings collapsed and fully open, with no
+  overflow and no page errors. `visibility` also opens Settings sections in its audit now.
+- **Inventory:** V-31 and FP-11 present.
+
+### Step 3 starts with: the Chromium layout harness (plan step 3)
+- Rebuild the scratchpad checks under `test/layout/`: page errors, the 320/360/390 sweep, and
+  this step's animation and reduced-motion measurement.
+- Wire up `@font-face`, and run the suite in CI (John's answer 3).

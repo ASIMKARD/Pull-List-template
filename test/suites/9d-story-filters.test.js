@@ -8,7 +8,7 @@
    - Presets (F-22, S-24, FP-9): saved by name, applied, deleted with Undo.
    - Importance (V-12) on arc heads. */
 'use strict';
-const { loadData, boot, wait, typeInto, basic, stress } = require('../lib/helpers');
+const { loadData, boot, wait, typeInto, basic, stress, openSettings } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -27,7 +27,7 @@ module.exports = async function (t) {
   const goal = () => $('#pprog .pcount').textContent.match(/\/ (\d+)/)[1];
   const marked = () => !!$('#pprog .pfiltered');
   $('[data-act="panel"]').click();
-  ['story', 'chars', 'creators'].forEach(k => $(`.fsec-head[data-k="${k}"]`).click());
+  ['story', 'chars', 'creators'].forEach(k => $(`#fsecs .sec-head[data-k="${k}"]`).click());
 
   // ------------------------------------------------ Essential / Complete
   const evArc = D.events[0].arc;
@@ -48,9 +48,9 @@ module.exports = async function (t) {
   t.ok('…the heading now says what Complete adds', /Complete view: 2 issues more than Essential/.test(evHead().textContent));
   t.ok('Complete is a plan setting: never marked "filtered"', !marked());
   t.ok('…shown as an active chip and in the Story summary (nothing applied is hidden)',
-       $$('#fchips .chip').some(c => /Complete events/.test(c.textContent)) && /complete events/.test($('.fsec-head[data-k="story"] .fsec-sum').textContent));
+       $$('#fchips .chip').some(c => /Complete events/.test(c.textContent)) && /complete events/.test($('#fsecs .sec-head[data-k="story"] .sec-sum').textContent));
   t.ok('…stored in the one settings store', stored().events === 'complete');
-  $('#tab-settings').click();
+  openSettings(app);
   t.ok('Settings shows the same choice', $('#settings [data-act="events-view"][aria-pressed="true"]').dataset.v === 'complete');
   $('#settings [data-act="events-view"][data-v="essential"]').click();
   $('#tab-list').click();
@@ -58,7 +58,7 @@ module.exports = async function (t) {
   $('#fsec-story .chip[data-k="events"][data-v="complete"]').click();
   $('[data-act="clear"]').click();
   t.ok('Clear all returns to Essential', +goal() === D.counts.total && stored().events === 'essential');
-  ['story', 'chars', 'creators'].forEach(k => { if (!$(`#fsec-${k}`)) $(`.fsec-head[data-k="${k}"]`).click(); });
+  ['story', 'chars', 'creators'].forEach(k => { if ($(`#fsecs .sec-head[data-k="${k}"]`).getAttribute('aria-expanded') !== 'true') $(`#fsecs .sec-head[data-k="${k}"]`).click(); });
 
   // ------------------------------------------------ appearances
   t.eq('Characters: strands, then a chip per character (T-70 with presence)', $$('#fsec-chars .chip[data-k="chars"]').map(c => c.textContent), D.characters);
@@ -70,11 +70,11 @@ module.exports = async function (t) {
   $('#fsec-chars .chip[data-k="cameos"]').click();
   t.ok('Include cameos adds the cameo appearances (FP-5)', showing() === withK(true) && withK(true) === 17, showing());
   t.ok('the chip and summary say so', $$('#fchips .chip').some(c => /Kestrel \(incl\. cameos\)/.test(c.textContent)) &&
-       /Kestrel incl\. cameos/.test($('.fsec-head[data-k="chars"] .fsec-sum').textContent));
+       /Kestrel incl\. cameos/.test($('#fsecs .sec-head[data-k="chars"] .sec-sum').textContent));
   const st1 = stored();
   t.ok('stored by name, like every saved filter', JSON.stringify(st1.filters.chars) === '["Kestrel"]' && st1.filters.cameos === true);
   $('[data-act="clear"]').click();
-  ['story', 'chars', 'creators'].forEach(k => { if (!$(`#fsec-${k}`)) $(`.fsec-head[data-k="${k}"]`).click(); });
+  ['story', 'chars', 'creators'].forEach(k => { if ($(`#fsecs .sec-head[data-k="${k}"]`).getAttribute('aria-expanded') !== 'true') $(`#fsecs .sec-head[data-k="${k}"]`).click(); });
 
   // ------------------------------------------------ creators
   const cnt = (c, role) => role === 'w' ? c.w : role === 'a' ? c.a : c.w + c.a;
@@ -97,7 +97,7 @@ module.exports = async function (t) {
   $('#fsec-creators .cpick [data-act="creator"][data-n="Quillon"]').click();
   t.ok('a picked name matches exactly: only Quillon\'s issues', showing() === credited('Quillon') && credited('Quillon') === 4, showing());
   t.ok('…chip and summary name the creator (CR-10)', $$('#fchips .chip').some(c => c.textContent.includes('Creator: “Quillon”')) &&
-       $('.fsec-head[data-k="creators"] .fsec-sum').textContent === '“Quillon”');
+       $('#fsecs .sec-head[data-k="creators"] .sec-sum').textContent === '“Quillon”');
   $('#fsec-creators .cpick [data-act="creator"][data-n="Quillon"]').click();
   t.ok('tapping the picked name again clears it', !$$('#fchips .chip').some(c => /Creator/.test(c.textContent)));
   $('#fsec-creators .chip[data-k="role"][data-v="a"]').click();
@@ -106,7 +106,7 @@ module.exports = async function (t) {
   t.ok('role "artists" + a pick: only the issues Dorian Vale drew', showing() === credited('Dorian Vale', 'a') && credited('Dorian Vale', 'a') !== credited('Dorian Vale'));
   t.ok('…and the chip says "as artist"', $$('#fchips .chip').some(c => c.textContent.includes('Creator: “Dorian Vale” as artist')));
   $('[data-act="clear"]').click();
-  ['story', 'chars', 'creators'].forEach(k => { if (!$(`#fsec-${k}`)) $(`.fsec-head[data-k="${k}"]`).click(); });
+  ['story', 'chars', 'creators'].forEach(k => { if ($(`#fsecs .sec-head[data-k="${k}"]`).getAttribute('aria-expanded') !== 'true') $(`#fsecs .sec-head[data-k="${k}"]`).click(); });
   W_jump('fixture-hero-1980-1');
   const nameBtn = $('.era[data-e="0"] .arc-head .credits .cname');
   const tapped = nameBtn.dataset.n;
@@ -115,10 +115,10 @@ module.exports = async function (t) {
   t.ok('tapping a name filters to that creator\'s work, exactly (CR-8)', showing() === credited(tapped) && $$('#fchips .chip').some(c => c.textContent.includes('“' + tapped + '”')));
   t.ok('…opening the matches', $$('.row').length > 0 && $$('.row:not(.inert)').every(r => D.issueWriters[+r.dataset.i].concat(D.issueArtists[+r.dataset.i]).includes(ci(tapped))));
   $('[data-act="clear"]').click();
-  ['story', 'chars', 'creators'].forEach(k => { if (!$(`#fsec-${k}`)) $(`.fsec-head[data-k="${k}"]`).click(); });
+  ['story', 'chars', 'creators'].forEach(k => { if ($(`#fsecs .sec-head[data-k="${k}"]`).getAttribute('aria-expanded') !== 'true') $(`#fsecs .sec-head[data-k="${k}"]`).click(); });
 
   // ------------------------------------------------ presets
-  $('.fsec-head[data-k="reading"]').click();
+  $('#fsecs .sec-head[data-k="reading"]').click();
   $('#fsec-reading .chip[data-k="mandatory"]').click();
   $(`#fsec-chars .chip[data-k="chars"][data-v="${kest}"]`).click();
   const wanted = showing();
@@ -172,7 +172,7 @@ module.exports = async function (t) {
   d = app.document;
   await wait(20);
   d.querySelector('[data-act="panel"]').click();
-  d.querySelector('.fsec-head[data-k="creators"]').click();
+  d.querySelector('#fsecs .sec-head[data-k="creators"]').click();
   await typeInto(app, '#cq', 'Writer Number1');
   const typed = +d.querySelector('#fshow').textContent.match(/Showing ([\d,]+)/)[1].replace(/,/g, '');
   t.ok('typed "Writer Number1" also matches Number10–19 (a search: 11 eras x 125)', typed === 11 * 125, typed);

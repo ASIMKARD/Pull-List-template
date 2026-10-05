@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { ROOT, FIX, build, loadData, readJSON, writeJSON, copyFixture, boot, wait, tmpdir, basic, mixed, stress } = require('../lib/helpers');
+const { ROOT, FIX, build, loadData, readJSON, writeJSON, copyFixture, boot, wait, tmpdir, basic, mixed, stress, openSettings } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 const QR_SRC = fs.readFileSync(path.join(ROOT, 'qrcode.js'), 'utf8');
@@ -82,7 +82,7 @@ module.exports = async function (t) {
   app = boot(huge.out, { now: NOW, storage: { [nsh + 'progress']: JSON.stringify({ marks: alt, bookmarks: [] }) } });
   let d = app.document;
   await wait(20);
-  d.querySelector('#tab-settings').click();
+  openSettings(app, ['backup']);
   d.querySelector('[data-act="sync-show"]').click();
   const sc = d.querySelector('script[data-qr]');
   t.ok('the QR maker loads on demand, only when asked for', !!sc && /qrcode\.js$/.test(sc.getAttribute('src')));
@@ -118,7 +118,7 @@ module.exports = async function (t) {
   // file export: capture the download
   let href = null, fileName = null;
   app.window.HTMLAnchorElement.prototype.click = function () { href = this.href; fileName = this.download; };
-  app.document.querySelector('#tab-settings').click();
+  openSettings(app, ['backup']);
   app.document.querySelector('[data-act="backup-export"]').click();
   t.ok('Export backup downloads <key>-backup-YYYY-MM-DD.json', fileName === 'fixture-backup-2026-01-01.json', fileName);
   const fileJson = decodeURIComponent(href.replace(/^data:application\/json;charset=utf-8,/, ''));
@@ -137,7 +137,8 @@ module.exports = async function (t) {
                                               settings: JSON.parse(app.window.localStorage.getItem(ns + 'settings')) }; };
   const savedB = stored();
   $('#tab-settings').click();
-  const paste = text => { $('#syncIn').value = text; $('[data-act="sync-read"]').click(); };
+  const openBackup = () => { const h = $('.sec-head[data-g="s"][data-k="backup"]'); if (h.getAttribute('aria-expanded') !== 'true') h.click(); };
+  const paste = text => { openBackup(); $('#syncIn').value = text; $('[data-act="sync-read"]').click(); };
   paste(codeA.full);
   t.ok('reading a code previews what it holds before anything changes', /A backup: 3 marks, 1 bookmark, 1 review\./.test($('.syncpend').textContent) &&
        JSON.stringify(stored().progress) === JSON.stringify(savedB.progress));
@@ -170,8 +171,9 @@ module.exports = async function (t) {
   const undone = stored();
   same('Undo after Replace restores the previous progress exactly', undone.progress, savedB.progress);
   same('…reviews', undone.reviews, savedB.reviews);
-  same('…and settings', undone.settings, Object.assign({}, savedB.settings, { tab: 'settings' }));
+  same('…and settings', undone.settings, Object.assign({}, savedB.settings, { tab: 'settings', settingsOpen: ['backup'] }));   // where you were: the tab and the open section
   // Undo after Clear all (the same snapshot path)
+  openSettings(app, ['data']);
   $('[data-act="clear-ask"]').click();
   $('[data-act="clear-yes"]').click();
   t.ok('Clear all empties the marks', Object.keys(stored().progress.marks).length === 0);
@@ -230,7 +232,7 @@ module.exports = async function (t) {
   app = boot(gb.out, { now: NOW, storage: { [ns + 'settings']: JSON.stringify(baseSettings) } });
   d = app.document;
   await wait(20);
-  d.querySelector('#tab-settings').click();
+  openSettings(app, ['backup']);
   d.querySelector('#syncIn').value = codeA.qr;
   d.querySelector('[data-act="sync-read"]').click();
   t.ok('the old list\'s QR code is refused on the grown list', /different version of this list/.test(d.querySelector('.syncerr').textContent));

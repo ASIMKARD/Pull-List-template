@@ -103,12 +103,14 @@ function audit(app, rows) {
   const panel = d.querySelector('[data-act="panel"]');
   if (panel.getAttribute('aria-expanded') !== 'true') panel.click();
   let head, guard = 0;
-  while ((head = d.querySelector('#fsecs .fsec-head[aria-expanded="false"]')) && guard++ < 20) head.click();
+  while ((head = d.querySelector('#fsecs .sec-head[aria-expanded="false"]')) && guard++ < 20) head.click();
   d.querySelector('.ptools [data-act="expand-all"]').click();
   look('list');
   d.querySelector('#tab-reading').click();
   look('reading');
   d.querySelector('#tab-settings').click();
+  guard = 0;
+  while ((head = d.querySelector('#settings .sec-head[aria-expanded="false"]')) && guard++ < 20) head.click();
   look('settings');
   return found;
 }
@@ -187,7 +189,7 @@ module.exports = async function (t) {
   const mh = app.window.PullList.has, m = app.document;
   t.eq('mixed: publication order changes nothing there, so only arc order is a second order', [mh.publication, mh.arcOrder], [false, true]);
   m.querySelector('[data-act="panel"]').click();
-  m.querySelector('.fsec-head[data-k="order"]').click();
+  m.querySelector('#fsecs .sec-head[data-k="order"]').click();
   t.eq('mixed: the order switch offers Reading and Arc, not a publication chip that changes nothing',
        [...m.querySelectorAll('#fsecs .chip[data-k="order"]')].map(c => c.dataset.v), ['reading', 'arc']);
   t.ok('mixed: strands without presence data and only one strand — no Characters section', !m.querySelector('.fsec[data-k="chars"]'));

@@ -21,16 +21,17 @@ module.exports = async function (t) {
   t.ok('panel body starts closed', $('#fbody').hidden);
   $('[data-act="panel"]').click();
   t.ok('Filters button opens the panel', !$('#fbody').hidden && $('[data-act="panel"]').getAttribute('aria-expanded') === 'true');
-  t.eq('five sections in order (FP-2)', $$('.fsec-head .fsec-name').map(n => n.textContent), ['Reading', 'Story', 'Characters', 'Creators', 'Order and display']);
-  t.ok('all sections start collapsed (FP-10)', $$('.fsec-head').every(h => h.getAttribute('aria-expanded') === 'false') && $$('.fsec-body').length === 0);
-  t.ok('collapsed headers show a summary (FP-7)', $$('.fsec-sum').every(s => s.textContent.length > 0));
-  t.eq('default summaries', $$('.fsec-sum').map(s => s.textContent), ['All issues', 'Everything', 'All characters', 'All creators', 'Story']);  // fixture dualOrder labels reading order 'Story'
+  t.eq('five sections in order (FP-2)', $$('#fsecs .sec-name').map(n => n.textContent), ['Reading', 'Story', 'Characters', 'Creators', 'Order and display']);
+  t.ok('all sections start collapsed (FP-10): heads say so and every body is inert', $$('#fsecs .sec-head').every(h => h.getAttribute('aria-expanded') === 'false') &&
+       $$('#fsecs .sec-body').length === 5 && $$('#fsecs .sec-body').every(b => b.hasAttribute('inert')));
+  t.ok('collapsed headers show a summary (FP-7)', $$('#fsecs .sec-sum').every(s => s.textContent.length > 0));
+  t.eq('default summaries', $$('#fsecs .sec-sum').map(s => s.textContent), ['All issues', 'Everything', 'All characters', 'All creators', 'Story']);  // fixture dualOrder labels reading order 'Story'
   t.ok('"Showing N of M" counts the view', showing() === total && new RegExp('of ' + total + ' issues').test($('#fshow').textContent));
   t.ok('no active chips by default', $$('#fchips .chip').length === 0);
 
   // ---- sections and their chips ----
-  for (const k of ['reading', 'story', 'chars', 'creators', 'order']) $(`.fsec-head[data-k="${k}"]`).click();
-  t.ok('opening sections renders their bodies', $$('.fsec-body').length === 5);
+  for (const k of ['reading', 'story', 'chars', 'creators', 'order']) $(`#fsecs .sec-head[data-k="${k}"]`).click();
+  t.ok('opening sections opens their bodies (no longer inert)', $$('#fsecs .fsec.open').length === 5 && $$('#fsecs .sec-body').every(b => !b.hasAttribute('inert')));
   t.ok('depth chips built, one per tier (T-58)', $$('.chip[data-k="tier"]').length === D.tiers.length);
   t.ok('depth chips carry counts', $$('.chip[data-k="tier"]').every(c => /· \d+$/.test(c.textContent)));
   t.ok('type chips built (T-62)', $$('#fsec-story [data-k="types"]').length === D.types.length);
@@ -53,7 +54,7 @@ module.exports = async function (t) {
   t.ok('every rendered row matches', $$('.row').every(r => D.issues[+r.dataset.i][4] === 1));
   t.ok('an active chip appears for it (FP-8)', $$('#fchips .chip').map(c => c.textContent).some(x => /Mandatory only/.test(x)));
   t.ok('the active count shows on the Filters button', /1 active/.test($('#fcount').textContent));
-  t.ok('the Reading summary names it', /mandatory only/.test($('.fsec-head[data-k="reading"] .fsec-sum').textContent));
+  t.ok('the Reading summary names it', /mandatory only/.test($('#fsecs .sec-head[data-k="reading"] .sec-sum').textContent));
   $('#fchips .chip').click();
   t.ok('removing the chip restores the count (T-73)', showing() === total);
   t.ok('clearing the last filter returns to the collapsed landing', landing());
@@ -91,14 +92,14 @@ module.exports = async function (t) {
   await typeInto(app, '#cq', 'quillon');
   const q = D.ids.filter((x, i) => !D.issueCompleteOnly[i] && D.issueArtists[i].some(c => D.creators[c].n === 'Quillon')).length;
   t.ok('creator search filters to that creator\'s work', showing() === q && q > 0);
-  t.ok('Creators summary names the search', /quillon/.test($('.fsec-head[data-k="creators"] .fsec-sum').textContent));
+  t.ok('Creators summary names the search', /quillon/.test($('#fsecs .sec-head[data-k="creators"] .sec-sum').textContent));
   $('[data-act="clear"]').click();
 
   // ---- era, ALT, type, tier ----
   const echo = D.eras.findIndex(e => e.id === 'echo');
   $(`.chip[data-k="eras"][data-v="${echo}"]`).click();
   t.ok('era chip shows only that era', $$('.era').filter(e => !e.hidden).map(e => +e.dataset.e).join() === String(echo));
-  t.ok('Story summary names the era', $('.fsec-head[data-k="story"] .fsec-sum').textContent === 'Echo');
+  t.ok('Story summary names the era', $('#fsecs .sec-head[data-k="story"] .sec-sum').textContent === 'Echo');
   $('[data-act="clear"]').click();
   $('.chip[data-k="alt"]').click();
   const elsewhere = D.eras.findIndex(e => e.id === 'elsewhere');
@@ -123,7 +124,7 @@ module.exports = async function (t) {
 
   // ---- order ----
   $('.chip[data-k="order"][data-v="publication"]').click();
-  t.ok('Order summary shows the publication label', $('.fsec-head[data-k="order"] .fsec-sum').textContent === 'Published');
+  t.ok('Order summary shows the publication label', $('#fsecs .sec-head[data-k="order"] .sec-sum').textContent === 'Published');
   t.ok('changing the order is not a narrowing filter (landing stays collapsed)', landing());
   const rising = D.eras.findIndex(e => e.id === 'rising');
   $('.band[data-b="0"] > .band-head').click();
@@ -144,7 +145,7 @@ module.exports = async function (t) {
   d = app.document;
   await wait(20);
   $('[data-act="panel"]').click();
-  t.ok('reboot: open sections remembered', $$('.fsec-head[aria-expanded="true"]').length === 5);
+  t.ok('reboot: open sections remembered', $$('#fsecs .sec-head[aria-expanded="true"]').length === 5);
   t.ok('reboot: filters remembered (mandatory only)', $('#fsec-reading .chip[data-k="mandatory"]').getAttribute('aria-pressed') === 'true');
   t.ok('reboot: search is session-only', $('#q').value === '' && !$$('#fchips .chip').some(c => /Search/.test(c.textContent)));
   app.window.close();

@@ -5,7 +5,7 @@
      badges on/off, gap notes on/off, era navigation style, layout C;
    - the depth chips sit in one row that never wraps (T-95). */
 'use strict';
-const { loadData, boot, wait, basic, noPeriods } = require('../lib/helpers');
+const { loadData, boot, wait, basic, noPeriods, openSettings } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -25,14 +25,14 @@ module.exports = async function (t) {
     e: D.eras.map((e, ei) => [...d.querySelectorAll(`.era[data-e="${ei}"] > .era-head .bstats > span`)].map(x => x.textContent))
   });
   const base = figures();
-  const settingsTab = () => $('#tab-settings').click();
+  const settingsTab = () => openSettings(app);
   const listTab = () => $('#tab-list').click();
   const pref = k => $(`#settings [data-act="pref"][data-k="${k}"]`);
   const stored = () => { app.window.dispatchEvent(new app.window.Event('pagehide')); return JSON.parse(app.window.localStorage.getItem(ns + 'settings')); };
 
   // ------------------------------------------------- the Display section
   settingsTab();
-  t.ok('Settings has a Display section', !!$('#set-display .seth') && $('#set-display .seth').textContent === 'Display');
+  t.ok('Settings has a Display section', !!$('.sset[data-k="display"] .seth') && $('.sset[data-k="display"] .sec-name').textContent === 'Display');
   t.eq('display toggles exist (T-10 re-expressed: the v2 view chips)', ['badges', 'combo', 'reveal', 'gapNotes', 'rev'].map(k => !!pref(k)), [true, true, true, true, true]);
   t.eq('defaults: badges on, combo off, reveal off, gap notes on, oldest era first', ['badges', 'combo', 'reveal', 'gapNotes', 'rev'].map(k => pref(k).getAttribute('aria-pressed')),
        ['true', 'false', 'false', 'true', 'false']);
@@ -42,7 +42,7 @@ module.exports = async function (t) {
   // ---------------------------------------------- T-95: one depth row
   listTab();
   $('[data-act="panel"]').click();
-  $('.fsec-head[data-k="reading"]').click();
+  $('#fsecs .sec-head[data-k="reading"]').click();
   const depth = $('#fsec-reading .depthrow'), cs = app.window.getComputedStyle(depth);
   t.ok('depth chips sit in one row that never wraps (T-95)', cs.flexWrap === 'nowrap' && cs.whiteSpace === 'nowrap' &&
        $$('#fsec-reading .chip[data-k="tier"]').every(c => c.parentElement === depth), cs.flexWrap + ' ' + cs.whiteSpace);
@@ -54,7 +54,7 @@ module.exports = async function (t) {
   t.ok('notes only narrows the list to rows with a note (T-12)', shownRows.length === withNotes.length &&
        shownRows.every(r => D.issues[+r.dataset.i][7]), shownRows.length + ' vs ' + withNotes.length);
   t.ok('notes only shows as a removable chip and in the Reading summary', $$('#fchips .chip').some(c => /Notes only/.test(c.textContent)) &&
-       /notes only/.test($('.fsec-head[data-k="reading"] .fsec-sum').textContent));
+       /notes only/.test($('#fsecs .sec-head[data-k="reading"] .sec-sum').textContent));
   t.ok('"Showing N of M" counts the notes', new RegExp('Showing ' + withNotes.length + ' of').test($('#fshow').textContent), $('#fshow').textContent);
   t.ok('notes only never changes a figure (display-only)', figures() === base);
   $('#fsec-reading .chip[data-k="notesOnly"]').click();

@@ -324,7 +324,7 @@ installed app once online.
 | V-28 | Docs: README, BUILD-NOTES, MIGRATING, `comic-tracker-build` Skill in `.claude/skills/` | S5 | todo |
 | V-29 | Per-format durations (decided 1 Oct, untimed 3 Oct). Comics are one issue each at minutes per issue. Shows use `durations: {screen: N}`, which a row can override. Games carry their own `duration`, and a missing one warns with a coverage %, adds nothing and shows `+N untimed`. Time left sums each row's own minutes. Finish-by = minutes left ÷ (issues/week × minutes/issue), and comics-only results are bit-identical to session 2 | S3 | present (97-durations: build + coverage warning, own-minutes figures, untimed marker, format-as-plan totals, comics-only exactness on 4 datasets × 12 pace pairs + exhaustive arithmetic) |
 | V-30 | Data-driven visibility (John, 4 Oct; CLAUDE.md → UI rules): a control or section renders only when the dataset gives it something to do, decided by one capability map built from the data | S4 | present (9f-visibility: 36 controls × 19 capabilities. On `minimal` none appear and the controls every tracker has do; on the full fixture all appear. Second order measured on `mixed`; saved filters for controls that aren't offered are ignored; forcing each capability on is caught) |
-| V-31 | Collapsible Settings (John, 4 Oct): sections collapse like the filter panel, with icon, name and one-line summary; all collapsed by default; open state remembered; same animation and tokens | S4 | todo |
+| V-31 | Collapsible Settings (John, 4 Oct): sections collapse like the filter panel, with icon, name and one-line summary; all collapsed by default; open state remembered; same animation and tokens | S4 | present (98-tabs-settings: one section component for the panel and Settings; collapsed by default with inert bodies; live summaries; open state saved after the debounce and restored on the next visit; toggled in place) |
 
 ## CR — creator credits (decided 1 Oct)
 
@@ -355,7 +355,7 @@ installed app once online.
 | FP-8 | Removable chips at the top for every active filter, active count, Clear all | S2 | present (92-filters: removable chips, count, Clear all) |
 | FP-9 | Live "Showing N of M issues" and Save as preset at the bottom | S2/S3 | present (92-filters: Showing N of M; 9d-story-filters: Save as preset) |
 | FP-10 | All sections start collapsed; open state remembered (namespaced storage) | S2 | present (92-filters: collapsed by default, remembered) |
-| FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | todo |
+| FP-11 | Smooth expand/collapse, honours reduced motion, uses the single token system | S4 | present (98-tabs-settings: one shared rule animates the body's grid row 0fr → 1fr; every duration scales with `--motion`, which reduced motion sets to 0. Real Chromium, 5 Oct: 262 of 402 px at 90 ms, and fully open at once under reduced motion. The layout suite automates this in step 3) |
 | FP-12 | Sections are buttons with `aria-expanded`; delegated (counts toward the ≤12 listeners) | S2 | present (92-filters: aria-expanded, delegated) |
 
 ## XM — X-Men features v2 lacks

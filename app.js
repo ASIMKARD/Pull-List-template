@@ -184,7 +184,8 @@
     s.pace = s.pace || { minutes: 15, weekly: 12 };
     s.order = s.order || 'reading';
     s.events = s.events || 'essential';
-    s.panelOpen = s.panelOpen || [];
+    s.panelOpen = Array.isArray(s.panelOpen) ? s.panelOpen : [];
+    s.settingsOpen = Array.isArray(s.settingsOpen) ? s.settingsOpen : [];   // Settings sections: all collapsed by default
     s.tab = s.tab || 'list';
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
@@ -657,6 +658,41 @@
   }
 
   /* ======================================================================
+     ONE COLLAPSIBLE SECTION — shared by the filter panel and Settings
+     (decided 4 Oct): icon, name, a live one-line summary and a chevron on the
+     head; all collapsed by default; the open ones remembered in the one store
+     (panelOpen, settingsOpen). The body stays in the DOM so it can animate
+     open (FP-11) and is inert while closed, so the keyboard and screen readers
+     skip it. Toggling changes the section in place, so the transition runs.
+     ====================================================================== */
+  var OPEN_KEY = { f: 'panelOpen', s: 'settingsOpen' };
+  function secOpen(g, k) { return settings[OPEN_KEY[g]].indexOf(k) !== -1; }
+  function secHtml(g, k, icon, name, sum, muted, body) {
+    var on = secOpen(g, k), id = (g === 's' ? 'set-' : 'fsec-') + k, nid = 'secn-' + g + '-' + k;
+    var head = '<button type="button" class="sec-head" data-act="sec" data-g="' + g + '" data-k="' + k + '" aria-expanded="' + on +
+      '" aria-controls="' + id + '"><span class="sec-ico" aria-hidden="true">' + icon + '</span><span class="sec-t"><span class="sec-name" id="' +
+      nid + '">' + escapeHtml(name) + '</span><span class="sec-sum' + (muted ? ' muted' : '') + '">' + escapeHtml(sum) + '</span></span>' +
+      '<span class="sec-chev" aria-hidden="true">▾</span></button>';
+    var inner = '<div class="sec-body" id="' + id + '"' + (on ? '' : ' inert') + '><div class="sec-in"><div class="sec-pad">' + body + '</div></div></div>';
+    return g === 's'
+      ? '<section class="sec sset' + (on ? ' open' : '') + '" data-k="' + k + '" aria-labelledby="' + nid + '"><h2 class="seth">' + head + '</h2>' + inner + '</section>'
+      : '<div class="sec fsec' + (on ? ' open' : '') + '" data-k="' + k + '">' + head + inner + '</div>';
+  }
+  function setSecOpen(g, k, on) {
+    var list = settings[OPEN_KEY[g]], at = list.indexOf(k);
+    if (on && at === -1) list.push(k);
+    if (!on && at !== -1) list.splice(at, 1);
+    var head = $('.sec-head[data-g="' + g + '"][data-k="' + k + '"]');
+    if (head) {
+      var sec = head.closest('.sec'), body = sec.querySelector('.sec-body');
+      sec.classList.toggle('open', on);
+      head.setAttribute('aria-expanded', on ? 'true' : 'false');
+      if (on) body.removeAttribute('inert'); else body.setAttribute('inert', '');
+    }
+    saveSettings();
+  }
+
+  /* ======================================================================
      FILTER PANEL — five collapsible sections (approved mockup, 1 Oct)
      ====================================================================== */
   var SECTIONS = [['reading', '☰', 'Reading'], ['story', '⧗', 'Story'], ['chars', '☺', 'Characters'],
@@ -786,7 +822,7 @@
     } else {
       ORDERS.forEach(function (o) { h += chip('order', o, orderLabel(o), settings.order === o); });
     }
-    return '<div class="fsec-body" id="fsec-' + k + '">' + h + '</div>';
+    return h;
   }
 
   function renderPanel() {
@@ -798,12 +834,8 @@
     }).join('') : '<span class="muted">None</span>';
     var focusCq = document.activeElement && document.activeElement.id === 'cq';
     $('#fsecs').innerHTML = SECTIONS.filter(function (s) { return SECTION_OFFERED[s[0]]; }).map(function (s) {
-      var isOpen = settings.panelOpen.indexOf(s[0]) !== -1, sum = summary(s[0]);
-      return '<div class="fsec' + (isOpen ? ' open' : '') + '" data-k="' + s[0] + '">' +
-        '<button type="button" class="fsec-head" data-act="sec" data-k="' + s[0] + '" aria-expanded="' + isOpen + '" aria-controls="fsec-' + s[0] + '">' +
-        '<span class="fsec-ico" aria-hidden="true">' + s[1] + '</span><span class="fsec-t"><span class="fsec-name">' + s[2] + '</span>' +
-        '<span class="fsec-sum' + (sum ? '' : ' muted') + '">' + escapeHtml(sum || SUMMARY_DEFAULT[s[0]]) + '</span></span>' +
-        '<span class="fsec-chev" aria-hidden="true">▾</span></button>' + (isOpen ? sectionBody(s[0]) : '') + '</div>';
+      var sum = summary(s[0]);
+      return secHtml('f', s[0], s[1], s[2], sum || SUMMARY_DEFAULT[s[0]], !sum, sectionBody(s[0]));
     }).join('');
     if (focusCq && $('#cq')) { var c = $('#cq'); c.focus(); c.setSelectionRange(c.value.length, c.value.length); }
     $('#fpresets').innerHTML = presetsHtml();
@@ -1557,7 +1589,12 @@
     try { sync.pending = parseCode(text); sync.error = ''; }
     catch (e) { sync.pending = null; sync.error = e.message; }
     confirming = '';
-    renderSettings();
+    showImport();
+  }
+  /* a pending import (or its error) opens Backup, so it never waits inside a closed section */
+  function showImport() {
+    if (!secOpen('s', 'backup')) { settings.settingsOpen.push('backup'); saveSettings(); }
+    if (activeTab === 'settings') renderSettings();
   }
   function readFile(file) {
     var fr = new FileReader();
@@ -1568,7 +1605,7 @@
         catch (e) { sync.pending = null; sync.error = e.message; }
       }
       confirming = '';
-      if (activeTab === 'settings') renderSettings();
+      showImport();
     });
     fr.readAsText(file);
   }
@@ -1664,9 +1701,43 @@
     }).join('') + '</div>';
   }
   function srow(label, control) { return '<div class="srow"><span class="slabel">' + escapeHtml(label) + '</span>' + control + '</div>'; }
-  function sset(id, title, body) {
-    return '<section class="sset" id="set-' + id + '" aria-labelledby="seth-' + id + '"><h2 class="seth" id="seth-' + id + '">' +
-      escapeHtml(title) + '</h2>' + body + '</section>';
+  /* Settings sections collapse like the filter panel (decided 4 Oct), each
+     head carrying an icon and a live one-line summary of what is set. */
+  var SETTINGS_SECTIONS = { reading: ['◷', 'Reading behaviour'], display: ['◧', 'Display'], touch: ['☝', 'Touch'],
+                            bulk: ['☑', 'Bulk actions'], data: ['▤', 'Data'], backup: ['⇄', 'Backup'] };
+  function presetLabel(list, v) {
+    for (var k = 0; k < list.length; k++) if (list[k][2] === v) return list[k][1] + ' ';
+    return '';
+  }
+  function settingsSummary(k) {
+    var bits = [];
+    if (k === 'reading') {
+      bits.push(presetLabel(PACE_MINUTES, settings.pace.minutes) + settings.pace.minutes + ' min',
+                presetLabel(PACE_WEEKLY, settings.pace.weekly) + settings.pace.weekly + ' a week');
+      if (perFormat()) bits.push('per format');
+      if (HAS.events && settings.events === 'complete') bits.push('Complete events');
+      if (!settings.showJump) bits.push('no Next unread');
+    } else if (k === 'display') {
+      bits.push(settings.badges ? 'Badges' : 'No badges', settings.layout === 'rows' ? 'Labels on rows' : 'Headings');
+      if (HAS.eras) bits.push({ scroll: 'Plain scroll', chips: 'Era chips', dropdown: 'Era dropdown' }[settings.eraNav]);
+      if (settings.combo) bits.push('combo badge');
+      if (HAS.reveal && settings.reveal) bits.push('tap to reveal');
+      if (HAS.gapNotes && !settings.gapNotes) bits.push('no gap notes');
+      if (HAS.eras && settings.rev) bits.push('newest era first');
+    } else if (k === 'touch') {
+      bits.push(settings.swipe && settings.press ? 'Swipe and long-press on' : settings.swipe ? 'Swipe on' : settings.press ? 'Long-press on' : 'Gestures off');
+    } else if (k === 'bulk') {
+      bits.push('Expand, collapse, mark ' + (HAS.eras ? 'eras and ranges' : 'everything'));
+    } else if (k === 'data') {
+      var r = REFRESH.filter(function (x) { return x[0] === settings.refreshEvery; })[0], nb = bookmarked().length;
+      bits.push(r && r[2] ? r[1] + ' reminder' : 'No reminder', nb + ' bookmark' + (nb === 1 ? '' : 's'));
+    } else if (k === 'backup') {
+      bits.push(sync.pending ? 'An import is waiting' : 'Sync code and backup file');
+    }
+    return bits.join(' · ');
+  }
+  function sset(id, body) {
+    return secHtml('s', id, SETTINGS_SECTIONS[id][0], SETTINGS_SECTIONS[id][1], settingsSummary(id), false, body);
   }
   function pref(k, label) {
     return '<button type="button" class="chip" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '">' + escapeHtml(label) + '</button>';
@@ -1697,7 +1768,7 @@
   }
   function renderSettings() {
     var S = computeStats(), ae = document.activeElement, keep = ae && ae.dataset ? [ae.dataset.act, ae.dataset.v, ae.dataset.k] : null;
-    var h = sset('reading', 'Reading behaviour',
+    var h = sset('reading',
       srow('Minutes per issue', seg('pace-min', 'Minutes per issue', PACE_MINUTES.map(function (p) { return [p[2], p[1] + ' · ' + p[2] + ' min']; }), settings.pace.minutes)) +
       srow('Issues per week', seg('pace-week', 'Issues per week', PACE_WEEKLY.map(function (p) { return [p[2], p[1] + ' · ' + p[2]]; }), settings.pace.weekly)) +
       '<p class="pace" id="paceOut" aria-live="polite">' + paceReadout(S) + '</p>' +
@@ -1705,20 +1776,20 @@
         srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
       (HAS.events ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
       srow('Next unread button', pref('showJump', 'Show it')));
-    h += sset('display', 'Display',
+    h += sset('display',
       srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
         (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '')) +
       (HAS.eras ? srow('Order', pref('rev', 'Newest era first')) : '') +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
       (HAS.eras ? srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)) : ''));
-    h += sset('touch', 'Touch',
+    h += sset('touch',
       srow('Gestures', pref('swipe', 'Swipe to mark') + pref('press', 'Long-press to mark all read')) +
       '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold ' + (HAS.bands ? 'a band, era' : 'an era') +
       ' or arc heading to mark everything in it read; Undo puts every row back.</p>');
     var eraOpts = function (cur) {
       return D.eras.map(function (e, ei) { return '<option value="' + ei + '"' + (ei === cur ? ' selected' : '') + '>' + escapeHtml(e.name) + '</option>'; }).join('');
     };
-    h += sset('bulk', 'Bulk actions',
+    h += sset('bulk',
       srow('Sections', '<button type="button" class="tool" data-act="expand-all">Expand all</button>' +
         '<button type="button" class="tool" data-act="collapse-all">Collapse all</button>') +
       srow('Mark era', (HAS.eras ? '<select class="erasel" id="bulkEra" aria-label="Era to mark">' + eraOpts(bulkSel.era) + '</select>' : '') +
@@ -1727,13 +1798,13 @@
       (HAS.eras ? srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
         '<span class="muted">through</span><select class="erasel" id="bulkTo" aria-label="Range end">' + eraOpts(bulkSel.to) + '</select>' +
         '<button type="button" class="tool" data-act="bulk-range">Mark read</button>') : ''));
-    h += sset('data', 'Data',
+    h += sset('data',
       srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +
       '<h3 class="ssub">Bookmarks</h3>' + bookmarksHtml() +
       (HAS.legacy
         ? srow('Previous version', '<button type="button" class="tool" data-act="import-legacy">Import from previous version</button>') : '') +
       clearHtml() + aboutHtml());
-    h += sset('backup', 'Backup', backupHtml());
+    h += sset('backup', backupHtml());
     $('#settings').innerHTML = h;
     if (sync.open) withQR(drawQR);
     if (keep && keep[0]) {                                     // keep keyboard focus across the re-render
@@ -1790,12 +1861,7 @@
         b.setAttribute('aria-expanded', show ? 'true' : 'false');
         break;
       }
-      case 'sec': {
-        var k = b.dataset.k, at = settings.panelOpen.indexOf(k);
-        if (at === -1) settings.panelOpen.push(k); else settings.panelOpen.splice(at, 1);
-        saveSettings(); renderPanel();
-        break;
-      }
+      case 'sec': if (OPEN_KEY[b.dataset.g]) setSecOpen(b.dataset.g, b.dataset.k, !secOpen(b.dataset.g, b.dataset.k)); break;
       case 'f': setFilter(b.dataset.k, b.dataset.v); break;
       case 'unset': setFilter(b.dataset.k, b.dataset.v, b.dataset.k === 'alt'); break;
       case 'clear': clearFilters(); break;
