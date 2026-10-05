@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1298 assertions, 0 failed, 29 suites (end of session 4). **Layout suite (real Chromium, in CI too):** 152 checks, 0 failed, 8 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 152 layout checks).
+**Harness:** 1298 assertions, 0 failed, 29 suites (end of session 4). **Layout suite (real Chromium, in CI too):** 153 checks, 0 failed, 8 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
 
@@ -1423,7 +1423,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 
 ### Done (all 9 steps; details in the step checkpoints above)
 - **Counts:** the jsdom harness went from 1,105 to **1298 assertions**. The new real-Chromium layout suite
-  has **152 checks** in 8 suites, and CI runs both.
+  has **153 checks** in 8 suites, and CI runs both.
 - **New suites:**
   - jsdom: `9f-visibility`, `9g-look`, `9h-banners`, `9i-pwa`, `9j-a11y`;
   - Chromium: `test/layout/` 10-sweep, 20-motion, 30-css, 40-look, 50-table, 60-stack, 70-pwa,
@@ -1474,6 +1474,9 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
     and checks the code survives (putting the full redraw back fails it). 0 crashes in 15 runs
     since.
   - A closed test page with a promise still pending no longer crashes the harness.
+- **The final screenshots showed "✎review" and "look up↗" run together** (since step 5). A flex
+  item's edge space is trimmed; the fix is a `gap` on badges, and 50-table now measures the
+  spacing.
 - **Process slip:** commit `a575f13` was pushed while that crash was unexplained, because my
   close-out script committed even after its count check failed. The script now stops unless both
   runs are clean.

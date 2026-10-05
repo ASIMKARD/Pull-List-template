@@ -54,6 +54,17 @@ module.exports = async function (t) {
       }
     }
     t.eq('table view at least halves the row height, every skin, 320 and 390 px (L-7)', halves, []);
+    // normal view: a badge's glyph and its word are spaced ("✎ review", not "✎review")
+    const pgB = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed('fixture', {}) });
+    await openAll(pgB.page);
+    const tight = await pgB.page.evaluate(() => [...document.querySelectorAll('.b')].filter(b => b.querySelector('.b-t')).map(b => {
+      const parts = [...b.childNodes].map(n => { if (n.nodeType === 3) { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect(); } return n.getBoundingClientRect(); })
+        .filter(r => r.width > 0);
+      const gaps = parts.slice(1).map((r, k) => r.left - parts[k].right);
+      return { t: b.textContent.trim(), gap: Math.min.apply(null, gaps) };
+    }).filter(x => !(x.gap >= 2)));
+    t.eq('a badge\'s glyph and word are spaced, not run together ("✎ review", "look up ↗")', tight.slice(0, 5), []);
+    await pgB.close();
     t.eq('no table row is wider than the screen (' + rows + ' rows; L-8)', wide.slice(0, 10), []);
     t.eq('…and every title keeps at least half its row: badge words fold to glyphs', narrow, []);
     t.eq('every control in table view is reachable at 24 px or more (' + checked + ' checked)', unreachable.slice(0, 10), []);

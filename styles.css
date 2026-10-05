@@ -255,6 +255,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .b {
   min-height: var(--b-min); padding: 2px 8px; border: 1px solid var(--edge); border-radius: 999px;
   background: none; font-size: calc(12px * var(--scale)); color: var(--ink-soft); text-decoration: none; display: inline-flex; align-items: center;
+  gap: .3em;     /* glyph and word: a flex item's edge space is trimmed, so the gap spaces them */
 }
 .b.core { color: var(--accent); border-color: var(--accent); }
 .b.bm { min-width: var(--b-min); justify-content: center; }
