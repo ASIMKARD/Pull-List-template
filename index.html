@@ -12,6 +12,11 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<!-- first paint (V-8): one small stylesheet (cached offline by the service worker); text never waits for a font
+     (font-display: swap); the scripts are deferred. Only the display font is preloaded. Measured on a 1.6 Mbps link,
+     preloading it costs ~100 ms of first paint and lands it before that paint (no swap of the title); preloading
+     the body font too cost another ~260 ms (test/layout/80-paint). -->
+<link rel="preload" href="./fonts/anton-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -83,7 +88,7 @@
   </div>
 </div>
 
-<script src="./data.js"></script>
-<script src="./app.js"></script>
+<script defer src="./data.js"></script>
+<script defer src="./app.js"></script>
 </body>
 </html>

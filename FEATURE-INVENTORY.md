@@ -300,8 +300,8 @@ installed app once online.
 | V-4 | Every band has its own identity (era index + occurrence) | S2 | present (90-render) |
 | V-5 | ONE layout; skins are pure CSS and never move or hide a control; reachability guard proves every control reachable in every skin | S4 | present (one layout. 80-guards: skin, paper and Look blocks are bare `:root[data-…]` token sets with no position, display or size. 9g-look: switching skins changes no element, class, id or hidden state. test/layout/40-look: every control on every tab is displayed, at least 24 × 24 px, in view and the element hit at its centre, in 4 skins × 390/320 px × default and largest settings — 5,328 checks) |
 | V-6 | Goal banners: name, years, read count, progress bar, "days left" pace | S2 | present (90-render, 95-pace: name, years, count, bar, time left, cumulative finish-by) |
-| V-7 | Keyboard navigation and shortcuts | S4 | todo |
-| V-8 | Fast first paint: critical CSS inline, preloaded display font, non-blocking data | S4 | todo |
+| V-7 | Keyboard navigation and shortcuts | S4 | present (9j-a11y: on the Reading tab ← / → step, R reads, X skips; "/" goes to search from any tab; the arrow keys, Home and End move between tabs (ARIA tabs pattern); nothing fires while typing or with Ctrl/⌘. `keydown` is listener 10 of 12) |
+| V-8 | Fast first paint: critical CSS inline, preloaded display font, non-blocking data | S4 | re-express → present (John's answer 2: one stylesheet, the display font preloaded, the scripts deferred, measured in test/layout/80-paint: the shell paints at once with data.js or every font 2 s late; on a 1.6 Mbps link the display font lands by first paint; every @font-face swaps. Inlining was not chosen) |
 | V-9 | One colour-token block (guard: exactly one); zero `!important` (guard) | S1/S4 | present — guards (80-guards: one :root colour block, zero !important) |
 | V-10 | Essential / Complete event toggle in Settings; progress and counts recompute; "Complete view adds N issues" on event headers | S1 data / S3 UI | present (9d-story-filters: Story chips + Settings, a plan setting; totals recompute; "Complete view adds N issues" on the event's own arc heading, tap to switch) |
 | V-11 | Presence tags (major/minor/cameo), character filter defaults to meaningful appearances, cameo toggle | S1 data / S3 UI | present (9d-story-filters: appearances per character, major + minor by default, Include cameos) |
@@ -311,7 +311,7 @@ installed app once online.
 | V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | present (90-render, 92-filters: 5,000-row dataset renders only opened/matching eras) |
 | V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacy: {prefix, format}`) | S2 | present (70-shell namespacing, 93-storage read-only `storage.legacy` v2 reader) |
 | V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present (20-build, 80-guards: hash; 9i-pwa: data.js names the cache and lists the worker's files; icons, manifest name and theme colour from config) |
-| V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | todo |
+| V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | present (9j-a11y: every control named on every tab with everything open; aria references resolve; valid states; no duplicate ids; the tabs pattern; landmarks; polite live regions; marks named with their state. Reduced motion: test/layout/20-motion) |
 | V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | present (80-guards: sw.js run in a vm, install/activate/fetch exercised) |
 | V-20 | Harness in GitHub Actions on every push; fails on zero assertions | S1 | present (.github/workflows/harness.yml + 00-runner) |
 | V-21 | Harness passes on fixture, fixture without periods, and one real dataset (Absolute pilot, in a fresh repo) | S1/S5 | todo |
@@ -364,7 +364,7 @@ installed app once online.
 |---|---|---|---|
 | XM-1 | Era divider banners: name, years, read/total, skipped count, progress track, time left, ✓ when complete (the goal banner, V-6) | S2 | present (90-render, 95-pace) |
 | XM-2 | Pace as minutes per issue (quick 8 / average 15 / deep 25) driving "time left" per banner | S2/S3 | present — both, decided 2 Oct (95-pace); shows and games use their own durations (V-29, 97-durations) |
-| XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | todo |
+| XM-3 | Reading-tab keyboard shortcuts: ← / → step, R read, X skip; ignored in inputs | S4 | present (folds into V-7; the Reading card shows the keys on devices with a keyboard) |
 | XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | present (98-tabs-settings) |
 | XM-5 | File backup: export JSON download, import from file | S3 | present (9e-sync: export `<key>-backup-YYYY-MM-DD.json`, import from file) |
 | XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | present (9e-sync: #sync= imports on open, merges, never downgrades read, reports counts, clears the link) |

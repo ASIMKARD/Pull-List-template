@@ -41,15 +41,20 @@ async function closeBrowser() { if (browserP) { const b = await browserP.catch((
    build's generated files (data.js, sw.js, manifest.json) swapped in.
    override(path, text) serves different content for one path (a deploy);
    down(true) drops every request, so even the service worker's own fetches
-   fail (Playwright's setOffline doesn't reach the worker). */
+   fail (Playwright's setOffline doesn't reach the worker); delay(test, ms)
+   holds back the paths a test matches (a slow network for one file). */
 function serve(dataDir) {
-  const overrides = {};
+  const overrides = {}, delays = [];
   let isDown = false;
   return new Promise(resolve => {
     const server = http.createServer((req, res) => {
       if (isDown) { req.socket.destroy(); return; }
       let f = decodeURIComponent(req.url.split('?')[0].split('#')[0]);
       if (f === '/') f = '/index.html';
+      const hold = delays.filter(x => x[0](f)).reduce((m, x) => Math.max(m, x[1]), 0);
+      if (hold) { setTimeout(send, hold); return; }
+      send();
+      function send() {
       if (overrides[f] !== undefined) {
         res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'text/plain', 'cache-control': 'no-store' });
         return res.end(overrides[f]);
@@ -60,9 +65,11 @@ function serve(dataDir) {
       if (!fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
       res.writeHead(200, { 'content-type': TYPES[path.extname(p)] || 'application/octet-stream', 'cache-control': 'no-store' });
       fs.createReadStream(p).pipe(res);
+      }
     });
     server.listen(0, '127.0.0.1', () => resolve({ url: 'http://localhost:' + server.address().port + '/', close: () => new Promise(r => server.close(r)),
-      override: (p, text) => { overrides[p] = text; }, down: v => { isDown = !!v; }, file: p => fs.readFileSync(p === '/sw.js' || p === '/data.js' ? path.join(dataDir, p) : path.join(ROOT, p), 'utf8') }));
+      override: (p, text) => { overrides[p] = text; }, down: v => { isDown = !!v; },
+      delay: (test, ms) => { delays.push([typeof test === 'string' ? f => f === test : f => test.test(f), ms]); }, undelay: () => { delays.length = 0; }, file: p => fs.readFileSync(p === '/sw.js' || p === '/data.js' ? path.join(dataDir, p) : path.join(ROOT, p), 'utf8') }));
   });
 }
 

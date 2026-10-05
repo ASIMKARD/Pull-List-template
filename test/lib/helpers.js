@@ -70,7 +70,7 @@ function boot(dataDir, opts) {
   vc.on('jsdomError', e => errors.push(String(e && (e.detail || e.message) || e)));
   vc.on('error', m => errors.push('console.error: ' + m));
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  html = html.replace(/<script src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
+  html = html.replace(/<script(?: defer)? src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
     const p = file === 'data.js' ? path.join(dataDir, 'data.js') : path.join(ROOT, file);
     const raw = file === 'app.js' && opts.appSrc !== undefined ? opts.appSrc : fs.readFileSync(p, 'utf8');
     const src = raw.split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');

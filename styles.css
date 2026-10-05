@@ -366,6 +366,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .rbtn.solid { background: var(--accent); color: var(--accent-ink); }
 .rnav { display: flex; justify-content: space-between; gap: 8px; margin: 12px 0 0; }
 .rnav .linkbtn[disabled] { color: var(--ink-soft); cursor: default; }
+.rkeys { margin: 10px 0 0; font-size: calc(12px * var(--scale)); }
+@media (hover: none) { .rkeys { display: none; } }     /* the key hint is for keyboards */
 
 /* ---- reviews ---- */
 .arc-head h3 { display: inline; margin-right: 8px; }

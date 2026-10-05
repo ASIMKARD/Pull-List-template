@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1271 assertions, 0 failed, 28 suites (session 4, step 7). **Layout suite (real Chromium):** 118 checks, 0 failed, 7 suites.
+**Harness:** 1296 assertions, 0 failed, 29 suites (session 4, step 8). **Layout suite (real Chromium):** 125 checks, 0 failed, 8 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -1361,4 +1361,59 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   - readiness never counted → 3 failures.
 - **Inventory:** F-35…F-38, F-59, XM-7, D-2 (live install), D-13 and V-17 present.
 
-### Step 8 starts with: accessibility and first paint (plan step 8)
+
+## Session 4 checkpoint — step 8 done (keyboard, accessibility, first paint), 5 Oct 2026
+
+### Done
+- **Keyboard (V-7, XM-3).** `keydown` is listener 10 at boot (11 static with `once()`), as
+  planned.
+  - On the Reading tab: ← / → step, R reads, X skips.
+  - "/" goes to search from any tab.
+  - On a tab, the arrow keys, Home and End move between tabs and show them (the ARIA tabs
+    pattern).
+  - Nothing fires while typing (inputs, text areas, selects) or with Ctrl, ⌘ or Alt held.
+  - The Reading card shows "Keys: ← → step · R read · X skip · / search", in the medium's verb,
+    on devices with a keyboard (`hover: none` hides it).
+- **`9j-a11y` (25, jsdom, everything open on every tab):**
+  - every control has an accessible name;
+  - every `aria-controls` and `aria-labelledby` resolves; every state is `true` or `false`;
+  - no id is used twice (all the ids seen across the tabs);
+  - every opener says whether it is open and what it opens;
+  - the page has a language, landmarks and the tabs pattern (one tablist, four tabs, panels
+    labelled by their tabs, roving tabindex);
+  - polite live regions; marks named with their state;
+  - the keyboard: steps, R, X, Ctrl/⌘ left alone, "/", typing keeps every key (in search and in
+    the sync box), arrows / Home / End / wrap between tabs.
+- **First paint (V-8, John's answer 2):** one stylesheet, the scripts deferred, the display font
+  preloaded.
+  - **Measured before and after.** On localhost, first paint is the same: 92 vs 120 ms normally,
+    44 vs 40 ms with data.js 2 s late. The shell already painted before the data arrived.
+  - **Measured on a 1.6 Mbps / 150 ms link** (median of 3):
+    - no preload: first paint 736 ms, Anton at 1,980 ms (the title swaps late);
+    - Anton only: first paint 840 ms, Anton at 667 ms (before the paint, so no swap);
+    - Anton and Plex Sans: first paint 1,104 ms.
+  - **So only the display font is preloaded**, as the spec says. Preloading the body font cost
+    another ~260 ms. CLAUDE.md gains "Preloading isn't free".
+- **`test/layout/80-paint` (7, real Chromium):**
+  - one stylesheet and deferred scripts;
+  - only the display font preloaded, with `crossorigin`;
+  - data.js 2 s late: the shell and "Loading the checklist…" paint at once;
+  - every font 2 s late: the page still paints at once;
+  - every `@font-face` swaps (read from the CSSOM, because paint timing can't see invisible
+    text);
+  - on a 1.6 Mbps link the display font lands by first paint, and first paint stays under 1.5 s.
+- **The test server** gains `delay()` / `undelay()`.
+- **Mutation checks:**
+  - keys firing while typing → 2 failures (the first version of that test was too weak: it typed
+    on a tab where Reading keys don't apply);
+  - keys with a modifier → 2;
+  - no arrow keys between tabs → 3;
+  - a mark with no name → 1;
+  - a section head pointing at nothing → 2;
+  - no preload → 2;
+  - `font-display: block` → caught by the CSSOM check (paint timing alone missed it).
+- **CLAUDE.md:** "Preloading isn't free", and the service-worker lesson that Playwright's
+  `setOffline` doesn't reach the worker.
+- **Inventory:** V-7, XM-3, V-8 (re-expressed) and V-18 present.
+
+### Step 9 starts with: close-out (plan step 9)

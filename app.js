@@ -3,8 +3,9 @@
    - every franchise string comes from window.TRACKER_DATA, never from code;
    - all markup is built with string templates through escapeHtml/escapeAttr;
    - events are delegated: the whole app stays at or under 12 listeners
-     (10: click, input, change, touchstart, touchmove, touchend, pagehide,
-     visibilitychange, beforeinstallprompt, and once() for one-off waits);
+     (11: click, input, change, keydown, touchstart, touchmove, touchend,
+     pagehide, visibilitychange, beforeinstallprompt, and once() for one-off
+     waits);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
 (function () {
@@ -1269,7 +1270,7 @@
       '<button type="button" class="linkbtn" data-act="rd-prev"' + (at === 0 ? ' disabled' : '') + '>← Previous</button>' +
       '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
       '<button type="button" class="linkbtn" data-act="rd-next"' + (at === list.length - 1 ? ' disabled' : '') + '>Next →</button>' +
-      '</div></div>';
+      '</div><p class="muted rkeys">Keys: ← → step · R ' + escapeHtml(done.toLowerCase()) + ' · X skip · / search</p></div>';
   }
   function readerStep(delta) {
     var list = readerList(), at = list.indexOf(ID_I[reader.id]);
@@ -2242,6 +2243,30 @@
     if (Math.abs(dx) < SWIPE || Math.abs(dy) > 40) return;
     setMark(+t.row.dataset.i, dx > 0 ? 'read' : 'skip');
   }
+  /* KEYBOARD (V-7, XM-3): on the Reading tab ← / → step, R reads and X skips;
+     "/" goes to search. When a tab has focus, the arrow keys, Home and End move
+     between tabs (the ARIA tabs pattern). Nothing fires while typing, or with
+     a modifier key held. */
+  var KEYS_READING = { ArrowRight: function () { readerStep(1); }, ArrowLeft: function () { readerStep(-1); },
+                       r: function () { readerMark('read'); }, x: function () { readerMark('skip'); } };
+  function onKey(ev) {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    var el = ev.target, tag = el && el.tagName, k = ev.key;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el && el.isContentEditable)) return;
+    if (el && el.getAttribute && el.getAttribute('role') === 'tab' && /^(ArrowLeft|ArrowRight|Home|End)$/.test(k)) {
+      var at = TABS.indexOf(el.dataset.tab), n = TABS.length;
+      var to = k === 'Home' ? 0 : k === 'End' ? n - 1 : (at + (k === 'ArrowRight' ? 1 : n - 1)) % n;
+      showTab(TABS[to]);
+      $('#tab-' + TABS[to]).focus();
+      ev.preventDefault();
+      return;
+    }
+    if (k === '/') { if (activeTab !== 'list') showTab('list'); $('#q').focus(); ev.preventDefault(); return; }
+    var fn = activeTab === 'reading' && KEYS_READING[k.length === 1 ? k.toLowerCase() : k];
+    if (!fn) return;
+    fn();
+    ev.preventDefault();
+  }
   var inputTimer = null;
   function onInput(ev) {
     var id = ev.target.id;
@@ -2279,6 +2304,7 @@
   document.addEventListener('click', onClick);
   document.addEventListener('input', onInput);
   document.addEventListener('change', onChange);
+  document.addEventListener('keydown', onKey);
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchmove', onTouchMove, { passive: true });
   document.addEventListener('touchend', onTouchEnd, { passive: true });

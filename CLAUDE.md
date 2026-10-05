@@ -216,6 +216,16 @@ it. Add the setting and the code that acts on it in the same change, or not at a
 - Network-first for the shell (`skipWaiting` + `clients.claim`), cache-first
   only for fonts and icons. A cache-first shell makes correct fixes invisible.
 - `addAll` rejects the whole install on one 404 — every precached path must exist.
+- Playwright's `setOffline` doesn't reach the service worker's own fetches, so an
+  "offline" test can quietly pass through the server. Take the test server down
+  instead (`test/layout/lib.js` `down()`), as `test/layout/70-pwa` does.
+
+### Preloading isn't free — [applies]
+A preloaded font competes for bandwidth with the render-blocking stylesheet. On a
+1.6 Mbps link, preloading the display font cost about 100 ms of first paint, and
+landed it before that paint, so the title never swaps. Preloading the body font as
+well cost another 260 ms. Only the display font is preloaded; `test/layout/80-paint`
+measures it. Measure before adding a preload.
 
 ### Cache name and build tag — [superseded: automatic in v3]
 v2 required bumping `CACHE` and the build tag together by hand. v3 derives both
