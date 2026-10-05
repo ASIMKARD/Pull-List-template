@@ -14,7 +14,7 @@
      at compact (T-56) and 44 px glyph buttons at large (T-57). */
 'use strict';
 const { basic, stress } = require('../lib/helpers');
-const { serve, open, openAll, openSettings, closeBrowser } = require('./lib');
+const { serve, open, openAll, openSettings, reachability, closeBrowser } = require('./lib');
 
 const SKINS = ['paper', 'newsprint', 'pull', 'night'];
 const PAPERS = ['default', 'warm', 'grey', 'rose', 'mint', 'sky', 'lilac'];
@@ -127,25 +127,7 @@ module.exports = async function (t) {
           if (tab === 'list') await openAll(pg.page);
           else if (tab === 'settings') await openSettings(pg.page);
           else await pg.page.click('#tab-' + tab);
-          const r = await pg.page.evaluate(() => {
-            const bad = [], els = [...document.querySelectorAll('button, a[href], input, select, textarea')]
-              .filter(el => !el.closest('[hidden]') && !el.closest('[inert]'));
-            for (const el0 of els) {
-              const el = el0.classList.contains('vh') ? el0.closest('label') : el0;     // a visually hidden file input is reached by its label
-              el.scrollIntoView({ block: 'center', inline: 'center' });
-              const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
-              const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-              const hit = document.elementFromPoint(cx, cy);
-              const name = el.tagName.toLowerCase() + (el.dataset.act ? '[' + el.dataset.act + (el.dataset.k ? ':' + el.dataset.k : '') + ']' : el.id ? '#' + el.id : '');
-              const inline = el.matches('.credits .cname');                // a name inside a line of credits (inline exception)
-              if (r.width < 1 || r.height < 1) bad.push(name + ' has no size');
-              else if (!inline && (r.width < 24 || r.height < 24)) bad.push(name + ' is ' + Math.round(r.width) + ' × ' + Math.round(r.height) + ' px, under the 24 px target');
-              else if (cs.visibility !== 'visible' || +cs.opacity === 0) bad.push(name + ' is invisible');
-              else if (cx < 0 || cx > innerWidth || cy < 0 || cy > innerHeight) bad.push(name + ' is off screen');
-              else if (!hit || !(hit === el || el.contains(hit))) bad.push(name + ' is covered by ' + (hit ? hit.tagName.toLowerCase() + '.' + hit.className : 'nothing'));
-            }
-            return { n: els.length, bad };
-          });
+          const r = await reachability(pg.page);
           counted += r.n;
           r.bad.forEach(x => unreachable.push(skin + ' @' + w + (extra.tap ? ' largest' : '') + ' ' + tab + ': ' + x));
         }

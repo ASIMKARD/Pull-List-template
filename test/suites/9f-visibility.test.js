@@ -28,6 +28,7 @@ const ROWS = [
   { cap: 'media', tab: 'settings', what: 'progress-mode setting', has: d => any(d, '[data-act="pmode"]') },
   { cap: 'media', tab: 'settings', what: 'duration copy', has: d => any(d, '.pace-dur') },
   { cap: 'media', tab: 'reading', what: 'format pill on the Reading card', has: d => any(d, '.rmed') },
+  { cap: 'media', tab: 'list', what: 'per-format banner lines', has: d => any(d, '#pbannerIn .pbl[data-m]') },
   // characters
   { cap: ['presence', 'strands'], tab: 'list', what: 'Characters section', has: d => any(d, '.fsec[data-k="chars"]') },
   { cap: 'presence', tab: 'list', what: 'appearance chips', has: d => label(d, 'Appearances') },
@@ -98,7 +99,7 @@ const ALWAYS = [
    together with it. */
 const REQUIRES = { cameos: ['presence'] };
 /* Settings that make a capability's control show when it is offered. */
-const SEED = { progressMode: 'medium', eraNav: 'chips', reveal: true, gapNotes: true };
+const SEED = { progressMode: 'medium', eraNav: 'chips', reveal: true, gapNotes: true, banner: true };
 
 /* Open everything a person could open, then report which rows are present. */
 function audit(app, rows) {

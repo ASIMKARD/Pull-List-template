@@ -111,4 +111,39 @@ async function rulesFor(page, selector) {
   }, selector);
 }
 
-module.exports = { browser, closeBrowser, serve, open, openAll, openSettings, rulesFor };
+/* Reachability on the current tab (V-5): every control that isn't hidden or
+   inert is displayed, at least 24 x 24 px (WCAG 2.5.8; creator names inside a
+   line of credits are the inline exception), in the viewport once scrolled to,
+   and the element actually hit at its centre. Returns { n, bad }. */
+async function reachability(page) {
+  return page.evaluate(() => {
+    const bad = [], els = [...document.querySelectorAll('button, a[href], input, select, textarea')]
+      .filter(el => !el.closest('[hidden]') && !el.closest('[inert]'));
+    for (const el0 of els) {
+      const el = el0.classList.contains('vh') ? el0.closest('label') : el0;     // a visually hidden file input is reached by its label
+      el.scrollIntoView({ block: 'center', inline: 'center' });
+      const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const hit = document.elementFromPoint(cx, cy);
+      const name = el.tagName.toLowerCase() + (el.dataset.act ? '[' + el.dataset.act + (el.dataset.k ? ':' + el.dataset.k : '') + ']' : el.id ? '#' + el.id : '');
+      const inline = el.matches('.credits .cname');
+      if (r.width < 1 || r.height < 1) bad.push(name + ' has no size');
+      else if (!inline && (r.width < 24 || r.height < 24)) bad.push(name + ' is ' + Math.round(r.width) + ' × ' + Math.round(r.height) + ' px, under the 24 px target');
+      else if (cs.visibility !== 'visible' || +cs.opacity === 0) bad.push(name + ' is invisible');
+      else if (cx < 0 || cx > innerWidth || cy < 0 || cy > innerHeight) bad.push(name + ' is off screen');
+      else if (!hit || !(hit === el || el.contains(hit))) bad.push(name + ' is covered by ' + (hit ? hit.tagName.toLowerCase() + '.' + hit.className : 'nothing'));
+    }
+    return { n: els.length, bad };
+  });
+}
+/* Visit each tab with everything open, calling fn(tab) on each. */
+async function eachTab(page, fn) {
+  for (const tab of ['list', 'reading', 'reviews', 'settings']) {
+    if (tab === 'list') await openAll(page);
+    else if (tab === 'settings') await openSettings(page);
+    else await page.click('#tab-' + tab);
+    await fn(tab);
+  }
+}
+
+module.exports = { browser, closeBrowser, serve, open, openAll, openSettings, rulesFor, reachability, eachTab };

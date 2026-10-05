@@ -211,7 +211,7 @@
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
     [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true],
-     ['swipe', false], ['press', false]].forEach(function (d) {          // touch gestures: off by default (decided 3 Oct)
+     ['swipe', false], ['press', false], ['mini', true], ['banner', false], ['table', false]].forEach(function (d) {   // gestures off (3 Oct); mini on, banner and table off (v2)
       if (typeof s[d[0]] !== 'boolean') s[d[0]] = d[1];
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
@@ -507,6 +507,29 @@
           '<progress class="bar" max="' + (goal(x) || 1) + '" value="' + x.read + '" aria-label="' + escapeAttr(mediumLabel(m)) + ' progress"></progress></li>';
       }).join('') + '</ul>' : '');
     if (activeTab === 'settings') { var po = $('#paceOut'); if (po) po.innerHTML = paceReadout(S); }
+    renderBanner(S);
+  }
+  /* Under the tab bar (step 6 makes them sticky): the mini progress bar (F-17,
+     on by default) and the persistent banner (F-16, off by default). The
+     banner is one compact line, or one per format when progress is per format
+     (which the data must offer); the same figures as the header. */
+  function bannerLine(t, m) {
+    var verb = m == null ? 'read' : (LABELS[D.media[m]] || LABELS.comic).read.toLowerCase();
+    return '<div class="pbl"' + (m == null ? '' : ' data-m="' + m + '"') + '>' +
+      (m == null ? '' : '<span class="pbl-name">' + escapeHtml(mediumLabel(m)) + '</span>') +
+      '<span class="pbl-count">' + t.read + ' / ' + goal(t) + ' ' + verb + '</span>' +
+      (remaining(t) === 0 ? (t.total ? '<span class="pdone">✓</span>' : '') : leftHtml(t, 'pbl-left') + untimedHtml(t, 'puntimed')) +
+      '<progress class="bar" max="' + (goal(t) || 1) + '" value="' + t.read + '" aria-label="' + escapeAttr((m == null ? 'Overall' : mediumLabel(m)) + ' progress') + '"></progress></div>';
+  }
+  function renderBanner(S) {
+    var t = S.all;
+    $('#mini').hidden = !settings.mini;
+    $('#miniBar').max = goal(t) || 1;
+    $('#miniBar').value = t.read;
+    $('#pbanner').hidden = !settings.banner;
+    $('#pbannerIn').innerHTML = !settings.banner ? '' : perFormat()
+      ? MEDIA_USED.map(function (m) { return bannerLine(S.med[m], m); }).join('')
+      : bannerLine(t, null);
   }
   /* Progress mode (S-19): one combined line, or one line per format as well.
      Offered only when the data really mixes formats. */
@@ -553,15 +576,15 @@
     }
     var st = stateOf(i), bm = progress.bookmarks.indexOf(id) !== -1;
     var badges = '';
-    if (r[5]) badges += '<span class="b core">★ core</span>';
-    if (flags & FL.FB) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" data-note="' +
-      escapeAttr(r[7] || 'Published later than it reads: this story fills in earlier events.') + '">↺ flashback</button>';
+    if (r[5]) badges += '<span class="b core">★<span class="b-t"> core</span></span>';
+    if (flags & FL.FB) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" aria-label="Flashback note" data-note="' +
+      escapeAttr(r[7] || 'Published later than it reads: this story fills in earlier events.') + '">↺<span class="b-t"> flashback</span></button>';
     if (flags & FL.ALT) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" data-note="' +
       escapeAttr(r[7] || 'A separate continuity from the main line.') + '">alt</button>';
     badges += '<button type="button" class="b bm" data-act="bm" aria-pressed="' + bm + '" aria-label="Bookmark ' +
       escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
     if (HAS.lookup) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
-      encodeURIComponent(r[1])) + '" target="_blank" rel="noopener">look up ↗</a>';
+      encodeURIComponent(r[1])) + '" target="_blank" rel="noopener" aria-label="' + escapeAttr('Look up ' + r[1]) + '"><span class="b-t">look up </span>↗</a>';
     var hasSub = r[7] && !(flags & (FL.FB | FL.ALT));
     /* tap to reveal (S-16; the feel-reference build's landmark notes): the note waits behind a button */
     if (hasSub && settings.reveal) badges += '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>';
@@ -1129,7 +1152,7 @@
   }
   function rvButton(a) {
     return '<button type="button" class="b rv" data-act="rv" data-a="' + a + '" aria-expanded="false" aria-label="' +
-      escapeAttr(rvLabel(a)) + '">✎' + rvTag(reviews[D.arcs[a].id]) + '</button>';
+      escapeAttr(rvLabel(a)) + '">✎<span class="b-t">' + escapeHtml(rvTag(reviews[D.arcs[a].id])) + '</span></button>';
   }
   function reviewEditorHtml(a) {
     var arc = D.arcs[a], cur = reviews[arc.id] || { r: 0, t: '' }, h = '';
@@ -1156,7 +1179,7 @@
     if (!cur.r && !cur.t) delete reviews[id]; else reviews[id] = cur;
     save('reviews', reviews);
     $$('.b.rv[data-a="' + a + '"]').forEach(function (b) {
-      b.textContent = '✎' + rvTag(reviews[id]);
+      b.innerHTML = '✎<span class="b-t">' + escapeHtml(rvTag(reviews[id])) + '</span>';
       b.setAttribute('aria-label', rvLabel(a));
     });
     $$('.review[data-a="' + a + '"] .star').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.n <= cur.r ? 'true' : 'false'); });
@@ -1372,7 +1395,8 @@
 
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
-  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css' };
+  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css',
+                mini: 'stats', banner: 'stats', table: 'css' };
   function applyPrefs() {
     var root = document.documentElement;
     $('.ptools [data-act="next"]').hidden = !settings.showJump;
@@ -1384,6 +1408,7 @@
     root.setAttribute('data-paper', settings.paper);
     LOOK.forEach(function (l) { root.setAttribute('data-' + l[1], settings[l[0]]); });
     root.setAttribute('data-dys', settings.dys ? '1' : '0');
+    root.setAttribute('data-table', settings.table ? '1' : '0');
     /* the browser's own chrome follows the skin's paper (F-39) */
     var tc = $('meta[name="theme-color"]'), bg = document.body ? getComputedStyle(document.body).backgroundColor : '';
     if (tc) tc.setAttribute('content', bg && !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(bg) ? bg : D.franchise.theme);
@@ -1426,6 +1451,7 @@
     settings[k] = !settings[k];
     saveSettings(); applyPrefs();
     if (PREFS[k] === 'list') renderList();
+    if (PREFS[k] === 'stats') renderHeader(computeStats());
     renderSettings();
   }
 
@@ -1800,6 +1826,9 @@
       if (HAS.reveal && settings.reveal) bits.push('tap to reveal');
       if (HAS.gapNotes && !settings.gapNotes) bits.push('no gap notes');
       if (HAS.eras && settings.rev) bits.push('newest era first');
+      if (settings.table) bits.push('table view');
+      if (settings.banner) bits.push('banner');
+      if (!settings.mini) bits.push('no mini bar');
     } else if (k === 'touch') {
       bits.push(settings.swipe && settings.press ? 'Swipe and long-press on' : settings.swipe ? 'Swipe on' : settings.press ? 'Long-press on' : 'Gestures off');
     } else if (k === 'bulk') {
@@ -1870,7 +1899,8 @@
       srow('Reading aid', pref('dys', 'Dyslexia-friendly font')));
     h += sset('display',
       srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
-        (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '')) +
+        (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '') + pref('table', 'Table view')) +
+      srow('Progress', pref('mini', 'Mini progress bar') + pref('banner', 'Persistent banner')) +
       (HAS.eras ? srow('Order', pref('rev', 'Newest era first')) : '') +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
       (HAS.eras ? srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)) : ''));

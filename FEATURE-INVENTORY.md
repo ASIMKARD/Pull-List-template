@@ -36,8 +36,8 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-13 | Empty bands/eras/arcs hide under a filter; "Nothing matches these filters." empty state | S2 | present (92-filters: empty bands/eras hide, empty state) |
 | F-14 | Global progress: count, %, bar, `aria-valuenow`; progress mode combined vs per medium | S2 | present — combined (90-render, 95-pace) and per format with each format's own time left (98-tabs-settings) |
 | F-15 | Progress header (phead): title, offline-edition line, strapline + build tag, bar, "n / N read", days remaining | S2 | present (90-render: title, strapline, build, bar, n/N, time left, finish-by) |
-| F-16 | Persistent banner (off by default): one compact progress line per medium, sticky under the tabs | S4 | todo |
-| F-17 | Mini progress bar (on by default) | S4 | todo |
+| F-16 | Persistent banner (off by default): one compact progress line per medium, sticky under the tabs | S4 | present (9h-banners: off by default; one line, or one per format when progress is per format, each in its own verb; the header's figures, kept current by every mark. test/layout/50-table: on every tab, every skin, 320 px, no overflow. Sticky in step 6) |
+| F-17 | Mini progress bar (on by default) | S4 | present (9h-banners: on by default, a `<progress>` with the header's read of goal, refreshed by every mark; test/layout/50-table. Sticky in step 6) |
 | F-18 | Pace estimate: issues/week (light 5, steady 12, heavy 25, marathon 50) → "N left · W weeks · done Mon YYYY" | S3 | present (98-tabs-settings: "N left · W weeks at P a week · done Mon YYYY", same minutes maths and date as the header) |
 | F-19 | Filters: depth (Barebones/Essential/Everything with counts; Barebones is comics-only), type chips, priority M/O, format (one chip per medium), characters (strands) + all/none, era select, search (title, arc, note; debounced 180 ms), unread only, ALT tracks toggle, reset | S2 | present — tier, type, mandatory, format, characters, era, search incl. creators, unread, ALT (92-filters) |
 | F-20 | Order chip: reading order vs Arc Master timeline order | S2 | present (92-filters: arc order) |
@@ -69,7 +69,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-46 | Layout-vocabulary migration (`lv`) | — | dropped: v3 has one layout |
 | F-47 | Elsewhere/story band: alternate-continuity rows grouped by story name in a final band | S2 | re-express (ALT rows + eras; see V-14) |
 | F-48 | Newest era first (reverse order) | S3 | present (99-display: bands and eras reversed, rows keep reading order, figures unchanged) |
-| F-49 | Table view (compact rows) | S4 | todo |
+| F-49 | Table view (compact rows) | S4 | present (9h-banners: a root flag, with badge words folding to glyphs that keep full names; test/layout/50-table: L-7, L-8, titles keep half the row, every control still reachable at 24 px) |
 | F-50 | Badges on/off; combo badge; tap-to-reveal notes; notes-only; hide skipped | S3 | present (99-display: badges, combo, tap to reveal, notes only; hide skipped in 92-filters) |
 | F-51 | Dyslexia font | S4 | present (9g-look: a root attribute; test/layout/40-look: the body face becomes the dyslexia-friendly stack) |
 | F-52 | Seven paper swatches (default, warm, grey, rose, mint, sky, lilac) | S4 | present (9g-look: seven named swatches; 80-guards: one block per swatch colours the page and its own button; test/layout/40-look: contrast in every skin × swatch) |
@@ -95,11 +95,11 @@ store is listed only to record where the value lived.
 | S-4 | Paper `#bgRow` (7 swatches) | view.bg | 0 | S4 | present (settings.paper, seven swatches; 9g-look, test/layout/40-look) |
 | S-5 | Marks `#segMark` | view.mark | box | S4 | present (settings.marks: box / dot / tick and cross; 9g-look: the glyphs change, screen-reader labels don't) |
 | S-6 | Era hues `#segEraScheme` | settings.eraScheme | split | S4 | re-express → present (settings.eraHues: one per era / one colour, offered only with two or more eras; 9g-look, 9f-visibility, test/layout/40-look) |
-| S-7 | Table view `#tableChip` | view.table | off | S4 | todo |
+| S-7 | Table view `#tableChip` | view.table | off | S4 | present (settings.table, Display → Rows; 9h-banners) |
 | S-8 | Badges `#badgeChip` | view.badges | on | S3 | present (99-display) |
 | S-9 | Dyslexia font `#dysChip` | view.dys | off | S4 | present (settings.dys; 9g-look, test/layout/40-look) |
-| S-10 | Mini progress bar `#miniChip` | view.mini | on | S4 | todo |
-| S-11 | Persistent banner `#bannerChip` | settings.banner | off | S4 | todo |
+| S-10 | Mini progress bar `#miniChip` | view.mini | on | S4 | present (settings.mini, Display → Progress, on by default; 9h-banners) |
+| S-11 | Persistent banner `#bannerChip` | settings.banner | off | S4 | present (settings.banner, Display → Progress, off by default; 9h-banners) |
 | S-12 | Combo badge `#comboChip` | view.combo | off | S3 | present (99-display) |
 | S-13 | Newest era first `#revChip` | view.rev | off | S3 | present (99-display) |
 | S-14 | Hide skipped `#skipChip` | view.hideSkip | off | S2 | present (92-filters: Reading section) |
@@ -178,8 +178,8 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-47 | pending writes flush when the app is hidden | S2 | present (70-shell) |
 | T-48 | no function is defined twice | S1 | present (80-guards: brace-depth scan, scanner self-tested) |
 | T-49 | bookmarks open a list, not a jump to the first one | S3 | present (98-tabs-settings) |
-| T-50 | persistent banner toggle exists | S4 | todo |
-| T-51 | persistent banner is off by default | S4 | todo |
+| T-50 | persistent banner toggle exists | S4 | present (9h-banners) |
+| T-51 | persistent banner is off by default | S4 | present (9h-banners) |
 | T-52 | reading tab labels vary by medium | S3 | present (9a-reading) |
 | T-53 | review button is targetable by class | S2 | present (9b-reviews: `.b.rv` on every arc head) |
 | T-54 | button size seg has 3 options | S4 | present (9g-look) |
@@ -263,8 +263,8 @@ v3 replaces by design — the named v3 assertion replaces it.
 | L-4 | banner sits directly under the tabs | S4 | todo |
 | L-5 | band is not shifted onto its own intro | S4 | todo |
 | L-6 | no large gap between bands (≤16 px) | S4 | todo |
-| L-7 | table view at least halves row height | S4 | todo |
-| L-8 | no table row overflows the screen width | S4 | todo |
+| L-7 | table view at least halves row height | S4 | present (test/layout/50-table: the median row height in table view is at most half the normal one, 4 skins × 320/390 px) |
+| L-8 | no table row overflows the screen width | S4 | present (test/layout/50-table: no table row wider than the screen — 944 rows, 4 skins × 320/390 px × default and largest settings) |
 | L-9 | no runtime errors | S4 | present (test/layout/10-sweep: no page or console errors on every tab, 4 datasets × 320/360/390 px, everything open; caught a font 404) |
 
 Also from v2's docs and deploy checklist (carried as process, CLAUDE.md):

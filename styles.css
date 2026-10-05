@@ -81,6 +81,7 @@
   --radius: 10px; --radius-sm: 6px; --gap: 10px;
   --row-pad: 8px;                                  /* density (S-2) */
   --tap: 34px; --tap-glyph: 18px; --b-min: 30px;   /* button size (S-20) */
+  --tap-dense: 24px;                               /* table view's targets: never under 24 px, 44 px with large buttons */
   --mark-radius: var(--radius-sm);                 /* mark style (S-5) */
   --motion: 1;           /* every transition's duration is multiplied by this; reduced motion sets 0 */
   --skin-ok: 3;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
@@ -134,7 +135,7 @@
 :root[data-density="compact"] { --row-pad: 4px; --gap: 6px; }
 :root[data-density="roomy"] { --row-pad: 13px; --gap: 14px; }
 :root[data-tap="compact"] { --tap: 26px; --tap-glyph: 16px; --b-min: 26px; }
-:root[data-tap="large"] { --tap: 44px; --tap-glyph: 22px; --b-min: 44px; }
+:root[data-tap="large"] { --tap: 44px; --tap-glyph: 22px; --b-min: 44px; --tap-dense: 44px; }
 :root[data-marks="dot"] { --mark-radius: 50%; }
 :root[data-dys="1"] { --font-body: 'Comic Sans MS', 'Trebuchet MS', Verdana, sans-serif; --body-track: .02em; --word-space: .08em; }
 
@@ -315,6 +316,26 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
   background: hsl(var(--paper-h) var(--paper-s) var(--l-paper));
 }
 .swatch[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- under the tab bar: the persistent banner (F-16) and the mini bar (F-17) ---- */
+.pbanner-in { display: grid; gap: 4px; margin: 0 16px var(--gap); padding: 6px 12px 8px; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.pbl { display: flex; flex-wrap: wrap; gap: 0 10px; align-items: baseline; font-size: calc(13px * var(--scale)); color: var(--ink-soft);
+  font-family: var(--font-meta); }
+.pbl-name { font-weight: 600; color: var(--ink); min-width: 4.5em; }
+.pbl progress.bar { flex-basis: 100%; height: 4px; margin-top: 2px; }
+.mini { padding: 0 16px; margin-bottom: var(--gap); }      /* the inset lives on the wrapper: the bar stays 100% of it */
+.mini-bar { height: 3px; }
+
+/* ---- table view (F-49, S-7): one line per issue, half the height (L-7),
+   never wider than the screen (L-8). Targets stay at least 24 px. ---- */
+:root[data-table="1"] .row { flex-wrap: nowrap; gap: 6px; padding-top: 0; padding-bottom: 0; }
+:root[data-table="1"] .row .mark { width: var(--tap-dense); height: var(--tap-dense); font-size: calc(14px * var(--scale)); }
+:root[data-table="1"] .title { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:root[data-table="1"] .subnote, :root[data-table="1"] .blurb, :root[data-table="1"] .era-intro, :root[data-table="1"] .band-intro { display: none; }
+:root[data-table="1"] .badges { flex: none; flex-wrap: nowrap; gap: 3px; }
+:root[data-table="1"] .row .b { min-height: var(--tap-dense); min-width: var(--tap-dense); padding: 0 5px; justify-content: center; }
+:root[data-table="1"] .row .b-t { display: none; }      /* badge words fold away; glyphs and accessible names stay */
 
 /* ---- reading tab ---- */
 .reader { margin: 0 16px; }

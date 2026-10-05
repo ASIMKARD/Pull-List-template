@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1201 assertions, 0 failed, 26 suites (session 4, step 4). **Layout suite (real Chromium):** 66 checks, 0 failed, 4 suites.
+**Harness:** 1229 assertions, 0 failed, 27 suites (session 4, step 5). **Layout suite (real Chromium):** 87 checks, 0 failed, 5 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -1200,4 +1200,54 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   S-25, T-38…T-45, T-54…T-57, T-81…T-116, T-93, XM-17, XM-18 and D-12 styling.
 - **CLAUDE.md:** the colour trap records how v3 holds it, and the 24 px target rule.
 
-### Step 5 starts with: banners and table view (plan step 5)
+
+## Session 4 checkpoint — step 5 done (the banner, the mini bar, table view), 5 Oct 2026
+
+### Done
+- **Under the tab bar, on every tab:** `#pbanner` and `#mini`. Layout lives on inner wrappers,
+  so `[hidden]` wins. Step 6 makes the stack sticky.
+  - **Mini progress bar (F-17, on by default):** a `<progress>` showing the header's read of
+    goal.
+  - **Persistent banner (F-16, off by default):** one compact line, or one line per format when
+    progress is per format (which only mixed data offers).
+    - Each line has the format's name and its own verb ("12 / 40 read", "1 / 2 beaten",
+      "0 / 3 watched"), time left, "+N untimed" and a thin bar.
+    - It draws from `renderHeader`, so a mark moves it with the header, with no re-render.
+- **Table view (F-49, S-7):** one line per issue.
+  - Rows lose their vertical padding, and marks and badges drop to `--tap-dense`: 24 px, or
+    44 px with large buttons, so targets never shrink below 24 px.
+  - Titles ellipsise. Notes, blurbs and intros fold away.
+  - Badge words sit in `.b-t` spans that table view hides. The glyph stays, and the look-up link
+    and flashback button now carry full `aria-label`s.
+- **Display gains** Table view (Rows) and Mini progress bar / Persistent banner (Progress).
+  The summary says "table view", "banner" or "no mini bar".
+- **`9h-banners` (27):**
+  - the defaults (T-50, T-51); placement under the bar, outside the panes;
+  - the mini bar and the banner match the header, and a mark moves both; both turn off;
+  - table view's flag; badge words fold but the text and names stay; kept in the one store;
+  - per format: three lines in their own verbs, matching the header's per-format counts and
+    untimed marker.
+- **`9f-visibility`:** a row for the per-format banner lines (media).
+- **`test/layout/50-table` (21, real Chromium):**
+  - L-7: table view at least halves the median row height, in 4 skins × 320/390 px;
+  - L-8: no table row wider than the screen (944 rows, default and largest settings);
+  - every title keeps at least half its row;
+  - every control in table view is reachable at 24 px (5,472 checked);
+  - no page errors;
+  - the banner (per format) and the mini bar show on every tab, in every skin, at 320 px.
+- **Reachability** moved into `test/layout/lib.js` (`reachability()`, `eachTab()`), shared by
+  40-look and 50-table.
+- **Found by measuring:** the mini bar made the page 16 px wider. `progress.bar { width: 100% }`
+  outranked `.mini-bar { width: auto }`, and the sweep failed everywhere. The inset now lives on
+  the wrapper.
+- **Mutation checks:**
+  - banner and mini bar not refreshed → caught;
+  - mini bar off by default → 5 failures;
+  - table rows keeping their padding and full marks → L-7;
+  - a title that doesn't ellipsise → L-8;
+  - badge words that don't fold → caught, once the title-share check was added. Before it, rows
+    still fit, with titles squeezed to 26%.
+- **Inventory:** F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51, L-7 and L-8 present.
+- **CI:** run 30 (step 4) is green, with both counts in the log.
+
+### Step 6 starts with: the sticky stack, measured at runtime (plan step 6)
