@@ -136,7 +136,16 @@ module.exports = async function (t) {
   const staticListeners = (codeOnly(appJs).match(/addEventListener\s*\(/g) || []).length;
   t.ok('app.js registers at most 12 listeners (static count: ' + staticListeners + ')', staticListeners <= 12);
   t.ok('no inline on*= handlers in index.html', !/\son[a-z]+\s*=/.test(read('index.html')));
-  t.ok('no element.onclick-style assignments in app.js', !/\.on[a-z]+\s*=/.test(codeOnly(appJs)));
+  /* an on-handler assignment (el.onclick = …) is a listener the budget can't
+     see. Only real event-handler names count: \`pwa.online = …\` is a field. */
+  const { JSDOM } = require('jsdom');
+  const hw = new JSDOM('').window;
+  const HANDLER_EXTRA = ['onstatechange', 'onupdatefound', 'oncontrollerchange', 'onmessage', 'onbeforeinstallprompt', 'onappinstalled'];
+  const isHandler = n => HANDLER_EXTRA.includes(n) || n in hw || n in hw.document || n in hw.HTMLElement.prototype || n in hw.FileReader.prototype;
+  const onAssign = src => (src.match(/\.(on[a-z]+)\s*=(?!=)/g) || []).map(m => m.slice(1).replace(/\s*=$/, '')).filter(isHandler);
+  t.eq('no element.onclick-style assignments in app.js', onAssign(codeOnly(appJs)), []);
+  t.ok('…the check still sees one (el.onclick =, reader.onload =, worker.onstatechange =) and ignores a field named online',
+       onAssign('a.onclick = f; r.onload = g; w.onstatechange = h;').length === 3 && onAssign('pwa.online = on; x.onlineCount = 1;').length === 0);
 
   // ---- no function defined twice in the same scope (brace-depth scan) ----
   for (const f of ['app.js', 'tools/templates/sw.js']) {

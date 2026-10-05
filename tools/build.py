@@ -16,7 +16,7 @@ canonical event files it lists, then:
 
 Every field is read BY NAME. Nothing is read by position.
 """
-import hashlib, json, os, re, sys, unicodedata
+import hashlib, json, os, re, struct, sys, unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMA_VERSION = 1
@@ -25,6 +25,11 @@ FLAG_BITS = {'FB': 1, 'SKIP': 2, 'ALT': 4, 'GAPNOTE': 8, 'RENUM': 16, 'SPECIAL_N
 INERT_FLAGS = {'GAPNOTE', 'RENUM'}
 GRADES = ['major', 'minor', 'cameo']
 SKINS = ['paper', 'newsprint', 'pull', 'night']     # skins styles.css defines (session 4); the first is the base
+# icons (D-13): paths from franchise.icons, each checked as a PNG of the right size
+DEFAULT_ICONS = {'192': 'icons/icon-192.png', '512': 'icons/icon-512.png', 'maskable': 'icons/icon-maskable.png'}
+ICON_SIZES = {'192': (192, 192), '512': (512, 512), 'maskable': (512, 512)}
+# sha256 prefixes of the template's own placeholder icons: a tracker must replace them
+PLACEHOLDER_ICONS = {'b381faf3f316c831', '915c703c55fc9e4f', '0f5ff9639697a08d'}
 COMIC = 'comic'          # every comic counts as one issue, timed by the minutes-per-issue setting
 ROLES = ['core', 'tie-in']
 UNIVERSAL_STRAND = 'All'
@@ -172,6 +177,26 @@ def build(dataset_path, previous_datajs=None):
     skin = fr.get('skin', skins[0])
     if skin not in skins:
         errs.append('franchise.skin "%s" must be one of franchise.skins (%s)' % (skin, ', '.join(skins)))
+    # icons: from config (D-13), every one a real PNG of its size; placeholders warn
+    icons = dict(DEFAULT_ICONS)
+    cfg_icons = fr.get('icons', {})
+    if not isinstance(cfg_icons, dict) or any(k not in DEFAULT_ICONS or not isinstance(v, str) for k, v in cfg_icons.items()):
+        errs.append('franchise.icons must map any of %s to a PNG path in the repo' % ', '.join(sorted(DEFAULT_ICONS)))
+    else:
+        icons.update(cfg_icons)
+    placeholders = []
+    for k in sorted(icons):
+        path = os.path.join(ROOT, icons[k])
+        size = png_size(path)
+        if size is None:
+            errs.append('franchise.icons.%s: %s is not a PNG in the repo' % (k, icons[k]))
+        elif size != ICON_SIZES[k]:
+            errs.append('franchise.icons.%s: %s is %dx%d, needs %dx%d' % ((k, icons[k]) + size + ICON_SIZES[k]))
+        elif sha_prefix(path) in PLACEHOLDER_ICONS:
+            placeholders.append(icons[k])
+    if placeholders and fr.get('key') != 'starter':
+        warns.append('icons: %s %s the template\'s placeholder artwork. Replace with the franchise\'s own before the first deploy '
+                     '(iOS caches a home-screen icon at install)' % (', '.join(placeholders), 'is' if len(placeholders) == 1 else 'are'))
     relevance = fr.get('eventRelevance', fr.get('key'))
 
     # ---- eras / periods ----
@@ -635,7 +660,7 @@ def build(dataset_path, previous_datajs=None):
         'schemaVersion': SCHEMA_VERSION,
         'franchise': dict({k: canon(fr[k]) for k in ('key', 'wordmark', 'title', 'strapline', 'span', 'theme',
                                                      'background', 'searchUrl', 'dualOrder', 'storage')
-                           if k in fr}, skins=skins, skin=skin),
+                           if k in fr}, skins=skins, skin=skin, icons={k: './' + v for k, v in sorted(icons.items())}),
         'eras': [{'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
                   'intro': e.get('intro', '')} for e in eras],
         'periods': [{'id': p.get('id'), 'name': p.get('name', ''), 'label': p.get('label', ''),
@@ -728,16 +753,34 @@ def static_files(shell_root):
     return out
 
 
+def png_size(path):
+    """(width, height) from a PNG's IHDR, or None when it isn't a PNG."""
+    try:
+        with open(path, 'rb') as f:
+            head = f.read(24)
+    except OSError:
+        return None
+    if len(head) < 24 or head[:8] != b'\x89PNG\r\n\x1a\n' or head[12:16] != b'IHDR':
+        return None
+    return struct.unpack('>II', head[16:24])
+
+
+def sha_prefix(path):
+    with open(path, 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()[:16]
+
+
 def manifest_for(fr):
     bg = fr.get('background', fr['theme'])
+    ic = fr.get('icons') or {k: './' + v for k, v in DEFAULT_ICONS.items()}
     return json.dumps({
         'name': fr['title'], 'short_name': fr['wordmark'], 'description': fr['strapline'],
         'start_url': './', 'scope': './', 'display': 'standalone', 'orientation': 'any',
         'background_color': bg, 'theme_color': fr['theme'],
         'icons': [
-            {'src': './icons/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
-            {'src': './icons/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
-            {'src': './icons/icon-maskable.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'},
+            {'src': ic['192'], 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
+            {'src': ic['512'], 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
+            {'src': ic['maskable'], 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'},
         ]}, indent=2, ensure_ascii=False) + '\n'
 
 
@@ -758,12 +801,14 @@ def render_outputs(payload, shell_root):
             h.update(rel.encode() + b'\0' + f.read())
     build_id = h.hexdigest()[:12]
 
-    data = dict(payload, build=build_id)
+    shell = ['./', './index.html', './app.js', './styles.css', './data.js', './qrcode.js', './manifest.json']
+    cache = '%s-%s' % (payload['franchise']['key'], build_id)
+    # the page reads its own cache name and file list for Settings -> Offline (F-35)
+    data = dict(payload, build=build_id, cache=cache, precache=shell + statics)
     datajs = 'window.TRACKER_DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
     with open(os.path.join(shell_root, SW_TEMPLATE), encoding='utf-8') as f:
         tpl = f.read()
-    shell = ['./', './index.html', './app.js', './styles.css', './data.js', './qrcode.js', './manifest.json']
-    sw = (tpl.replace('__CACHE__', '%s-%s' % (payload['franchise']['key'], build_id))
+    sw = (tpl.replace('__CACHE__', cache)
              .replace('__SHELL__', json.dumps(shell))
              .replace('__STATIC__', json.dumps(statics, indent=2)))
     return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id

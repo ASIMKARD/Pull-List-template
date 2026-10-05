@@ -3,8 +3,8 @@
    - every franchise string comes from window.TRACKER_DATA, never from code;
    - all markup is built with string templates through escapeHtml/escapeAttr;
    - events are delegated: the whole app stays at or under 12 listeners
-     (8: click, input, change, touchstart, touchmove, touchend, pagehide,
-     visibilitychange);
+     (10: click, input, change, touchstart, touchmove, touchend, pagehide,
+     visibilitychange, beforeinstallprompt, and once() for one-off waits);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
 (function () {
@@ -1796,7 +1796,7 @@
   /* Settings sections collapse like the filter panel (decided 4 Oct), each
      head carrying an icon and a live one-line summary of what is set. */
   var SETTINGS_SECTIONS = { reading: ['◷', 'Reading behaviour'], look: ['◐', 'Look'], display: ['◧', 'Display'], touch: ['☝', 'Touch'],
-                            bulk: ['☑', 'Bulk actions'], data: ['▤', 'Data'], backup: ['⇄', 'Backup'] };
+                            bulk: ['☑', 'Bulk actions'], data: ['▤', 'Data'], backup: ['⇄', 'Backup'], offline: ['⇣', 'Offline'] };
   function presetLabel(list, v) {
     for (var k = 0; k < list.length; k++) if (list[k][2] === v) return list[k][1] + ' ';
     return '';
@@ -1838,6 +1838,10 @@
       bits.push(r && r[2] ? r[1] + ' reminder' : 'No reminder', nb + ' bookmark' + (nb === 1 ? '' : 's'));
     } else if (k === 'backup') {
       bits.push(sync.pending ? 'An import is waiting' : 'Sync code and backup file');
+    } else if (k === 'offline') {
+      bits.push(offlineState().short);
+      if (pwa.update) bits.push('update ready');
+      if (pwa.online === false) bits.push('offline now');
     }
     return bits.join(' · ');
   }
@@ -1927,6 +1931,7 @@
         ? srow('Previous version', '<button type="button" class="tool" data-act="import-legacy">Import from previous version</button>') : '') +
       clearHtml() + aboutHtml());
     h += sset('backup', backupHtml());
+    h += sset('offline', offlineHtml());
     $('#settings').innerHTML = h;
     if (sync.open) withQR(drawQR);
     if (keep && keep[0]) {                                     // keep keyboard focus across the re-render
@@ -1935,6 +1940,122 @@
       })[0];
       if (again) again.focus();
     }
+  }
+
+  /* ======================================================================
+     OFFLINE AND UPDATES (F-35…F-38, F-59, XM-7). The service worker is
+     network-first for the shell and cache-first for fonts and icons
+     (tools/templates/sw.js). No online/offline listeners (decided 2 Oct): the
+     connection is read at boot, when the page is shown again, and on every
+     tap. Updates are looked for at boot, when the page is shown again and on
+     "Check for updates"; one-off waits go through once().
+     ====================================================================== */
+  var pwa = { supported: false, reg: null, hadController: false, cached: 0, total: (D.precache || []).length, online: null,
+              install: null, update: false, checking: false };
+  function offlineState() {
+    if (!pwa.supported) return { short: 'Not available here', long: 'Offline use isn\'t available in this browser: it needs service workers, over https.' };
+    if (pwa.total && pwa.cached >= pwa.total) return { short: 'Ready offline', long: 'Ready offline · ' + pwa.cached + ' of ' + pwa.total + ' files saved on this device.' };
+    return { short: 'Not ready yet', long: 'Not ready yet · ' + pwa.cached + ' of ' + pwa.total + ' files saved. Keep this page open while online.' };
+  }
+  function offlineHtml() {
+    var st = offlineState();
+    return '<p class="offstate" id="offState" data-ready="' + (st.short === 'Ready offline' ? '1' : '0') + '">' + escapeHtml(st.long) + '</p>' +
+      srow('Connection', '<span id="netLine">' + (pwa.online === false ? 'Offline: everything still works, and changes stay on this device.' : 'Online') + '</span>') +
+      srow('Version', '<span>build ' + escapeHtml(D.build) + (pwa.update ? ' · a new version is ready' : '') + '</span>') +
+      (pwa.supported ? srow('Updates', '<button type="button" class="tool" data-act="sw-check"' + (pwa.checking ? ' disabled' : '') + '>' +
+        (pwa.checking ? 'Checking…' : 'Check for updates') + '</button>' +
+        (pwa.update ? '<button type="button" class="tool" data-act="sw-reload">Reload now</button>' : '')) : '') +
+      (pwa.install ? srow('App', '<button type="button" class="tool" data-act="install">Install as an app</button>') : '') +
+      '<p class="muted shelp">On iPhone or iPad: Share → Add to Home Screen, then open it once while online so it can work offline.</p>';
+  }
+  function offlineChanged() {
+    if (activeTab === 'settings') renderSettings();
+  }
+  /* the connection, read when needed: a change shows on the page and in a toast */
+  function checkOnline() {
+    var on = navigator.onLine !== false;
+    if (on === pwa.online) return on;
+    var first = pwa.online === null;
+    pwa.online = on;
+    document.body.classList.toggle('offline', !on);
+    $('#netState').hidden = on;
+    if (!first) { toast(on ? 'Back online.' : 'You\'re offline. Everything still works, and changes stay on this device.'); offlineChanged(); }
+    return on;
+  }
+  /* how many of this build's files are in its cache (Settings → Offline) */
+  function readiness() {
+    if (!window.caches || !D.cache) return;
+    window.caches.has(D.cache).then(function (has) {
+      if (!has) return [];
+      return window.caches.open(D.cache).then(function (c) { return Promise.all(D.precache.map(function (u) { return c.match(u); })); });
+    }).then(function (hits) {
+      pwa.cached = hits.filter(Boolean).length;
+      offlineChanged();
+    }, function () { /* no caches here: stays "not ready" */ });
+  }
+  function updateReady() {
+    if (pwa.update) return;
+    pwa.update = true;
+    toast('A new version is ready.', 'Reload', function () { location.reload(); });
+    offlineChanged();
+  }
+  /* follow a new worker to "activated": an update when an older one ran this page */
+  function follow(w) {
+    if (!w || w.state === 'redundant') return;
+    if (w.state === 'activated') { if (pwa.hadController) updateReady(); readiness(); return; }
+    once(w, ['statechange'], function () { follow(w); });
+  }
+  function lookForUpdate(report) {
+    var reg = pwa.reg;
+    if (!reg) return;
+    pwa.checking = !!report;
+    if (report) offlineChanged();
+    reg.update().then(function () {
+      pwa.checking = false;
+      var w = reg.installing || reg.waiting;
+      if (w) { if (report) toast('Downloading the new version…'); follow(w); }
+      else if (report) toast('You have the latest version (build ' + D.build + ').');
+      offlineChanged();
+    }, function () {
+      pwa.checking = false;
+      if (report) toast('Couldn\'t check for updates just now.');
+      offlineChanged();
+    });
+  }
+  function checkForUpdates() {
+    if (!checkOnline()) { toast('You\'re offline: check again when you\'re connected.'); return; }
+    if (!pwa.reg) { toast('Updates aren\'t available in this browser.'); return; }
+    lookForUpdate(true);
+  }
+  function registerSW() {
+    if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+    pwa.supported = true;
+    pwa.hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('./sw.js').then(function (reg) {
+      pwa.reg = reg;
+      if (reg.waiting && pwa.hadController) updateReady();
+      follow(reg.installing || reg.waiting);
+      readiness();
+    }, function () { pwa.supported = false; offlineChanged(); });
+  }
+  /* the install prompt (F-37): offered once in a toast, and in Settings → Offline */
+  function onInstallPrompt(ev) {
+    ev.preventDefault();
+    var first = !pwa.install;
+    pwa.install = ev;
+    if (first && $('#toast').hidden) toast('Install this tracker as an app on this device?', 'Install', promptInstall);
+    offlineChanged();
+  }
+  function promptInstall() {
+    var p = pwa.install;
+    if (!p) return;
+    pwa.install = null;
+    p.prompt();
+    Promise.resolve(p.userChoice).then(function (c) {
+      toast(c && c.outcome === 'accepted' ? 'Installed.' : 'Not installed. You can install it later from Settings → Offline.');
+      offlineChanged();
+    });
+    offlineChanged();
   }
 
   /* ======================================================================
@@ -1957,6 +2078,7 @@
      ====================================================================== */
   function rowIndex(el) { var row = el.closest('.row'); return row ? +row.dataset.i : -1; }
   function onClick(ev) {
+    checkOnline();
     if (swallowClick) { swallowClick = false; if (ev.target.closest('.band-head, .era-head, .arc-head')) return; }
     var b = ev.target.closest('[data-act]');
     if (!b) return;
@@ -2064,6 +2186,9 @@
       case 'sync-replace-no': confirming = ''; renderSettings(); break;
       case 'sync-replace-yes': { var pend = sync.pending; sync.pending = null; confirming = ''; replaceWith(pend); break; }
       case 'backup-export': exportBackup(); break;
+      case 'sw-check': checkForUpdates(); break;
+      case 'sw-reload': location.reload(); break;
+      case 'install': promptInstall(); break;
     }
   }
   /* change: the one listener for <select> controls (era dropdown now; bulk
@@ -2143,6 +2268,8 @@
     if (tc) tc.setAttribute('content', f.theme);
     var at = $('meta[name="apple-mobile-web-app-title"]');
     if (at) at.setAttribute('content', f.wordmark);
+    var icons = f.icons || {};                                 // icons from config (D-13)
+    $$('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(function (l) { if (icons['192']) l.setAttribute('href', icons['192']); });
     /* the search hint names only what the data has to search */
     var what = ['titles', 'arcs'].concat(HAS.notes ? ['notes'] : [], HAS.credits ? ['creators'] : []);
     $('#q').placeholder = 'Search ' + what.join(', ') + '…';
@@ -2158,7 +2285,9 @@
   window.addEventListener('pagehide', flushNow);
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') flushNow();
+    else { checkOnline(); lookForUpdate(false); }
   });
+  window.addEventListener('beforeinstallprompt', onInstallPrompt);
 
   /* The sticky stack's height (F-58), measured whenever it changes (the
      banner turning on, a wrap at a new width, a font landing). A
@@ -2170,6 +2299,8 @@
   if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
 
   applyFranchise();
+  checkOnline();
+  registerSW();
   var migration = null;
   if (D.franchise.storage && D.franchise.storage.legacy && !settings.migrated) {
     migration = importLegacy();

@@ -1,0 +1,1 @@
+franchise.icons.192: icons/icon-512.png is 512x512, needs 192x192

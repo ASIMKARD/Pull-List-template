@@ -72,7 +72,7 @@ function boot(dataDir, opts) {
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   html = html.replace(/<script src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
     const p = file === 'data.js' ? path.join(dataDir, 'data.js') : path.join(ROOT, file);
-    const raw = file === 'app.js' && opts.appSrc ? opts.appSrc : fs.readFileSync(p, 'utf8');
+    const raw = file === 'app.js' && opts.appSrc !== undefined ? opts.appSrc : fs.readFileSync(p, 'utf8');
     const src = raw.split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
     return '<script>' + src + '</scr' + 'ipt>';
   });
@@ -86,7 +86,10 @@ function boot(dataDir, opts) {
     beforeParse(w) {
       const orig = w.EventTarget.prototype.addEventListener;
       w.EventTarget.prototype.addEventListener = function (type) {
-        listeners.push(type);
+        // the app's listeners only: jsdom's selector engine (nwsapi) adds its own
+        // mouseover/mouseout on each document it starts, which aren't the app's
+        const caller = (new Error().stack.split('\n')[2] || '');
+        if (!/node_modules[\\/]/.test(caller)) listeners.push(type);
         return orig.apply(this, arguments);
       };
       w.Element.prototype.scrollIntoView = function () { w.__scrolledTo = this; };
@@ -98,6 +101,7 @@ function boot(dataDir, opts) {
       if (opts.now) { const fixed = opts.now; w.Date.now = () => fixed; }
       w.scrollTo = function () {};
       if (opts.storage) for (const k of Object.keys(opts.storage)) w.localStorage.setItem(k, opts.storage[k]);
+      if (opts.setup) opts.setup(w);                          // stand-ins jsdom lacks (a service worker, caches), set before the app runs
     }
   });
   return { dom, window: dom.window, document: dom.window.document, errors, listeners };

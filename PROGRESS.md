@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1229 assertions, 0 failed, 27 suites (session 4, step 6). **Layout suite (real Chromium):** 107 checks, 0 failed, 6 suites.
+**Harness:** 1271 assertions, 0 failed, 28 suites (session 4, step 7). **Layout suite (real Chromium):** 118 checks, 0 failed, 7 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -1287,4 +1287,78 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 - **Still open from session 3:** the real-device iOS check of swipe and long-press needs a phone,
   so it stays for John.
 
-### Step 7 starts with: PWA (plan step 7)
+
+## Session 4 checkpoint — step 7 done (offline and updates), 5 Oct 2026
+
+### Done
+- **The service worker is registered** (over http(s) where supported). The build adds `cache`
+  (`<key>-<build>`) and `precache` (the worker's exact file list) to `data.js`, after hashing,
+  so there's no circular dependency.
+- **Settings → Offline ⇣:**
+  - "Ready offline · N of N files saved", "Not ready yet · n of N … keep this page open while
+    online", or "isn't available in this browser";
+  - the connection, and the version (build);
+  - Check for updates, and Reload now once one is ready;
+  - Install as an app, while the browser offers it;
+  - the iPhone and iPad hint: Add to Home Screen, then open it once online.
+  - Summary: "Ready offline · update ready · offline now".
+- **Online and offline (F-36), without listeners** (the 2 Oct decision): `navigator.onLine` is
+  read at boot, when the page is shown again, and on every tap. A change toggles `body.offline`
+  and a header mark, with a toast.
+- **Updates (F-38, XM-7):**
+  - looked for at boot (a waiting worker), quietly when the page is shown again, and on Check
+    for updates;
+  - a new worker is followed to "activated" through `once()`; then "A new version is ready" with
+    Reload;
+  - a first install is never called an update.
+- **The install prompt (F-37):** `beforeinstallprompt` is listener 9 at boot (10 static with
+  `once()`). The browser bar is held back; a toast and Settings offer Install; then "Installed."
+  or a way back.
+- **Icons from config (D-13):**
+  - `franchise.icons` (192 / 512 / maskable) is in the schema and the build. Each is checked as a
+    real PNG of its size: two new broken cases, `icon-wrong-size` and `icon-missing`.
+  - The manifest and the page's icon links follow it.
+  - A tracker other than the starter that still ships the template's placeholder icons gets a
+    build warning (matched by hash).
+- **Listener counting is now exact.** jsdom's selector engine (nwsapi) adds its own
+  `mouseover` and `mouseout` on each document it starts; `boot()` now records only listeners
+  registered from outside `node_modules`.
+  - 70-shell: the app registers 9 at boot.
+  - 9c: the 9 standing listeners, one each, and nothing else after every gesture.
+- **The `.onclick =` guard is narrowed, not weakened.** It fired on `pwa.online = on` (a
+  regex false positive). It now flags only real event-handler names, with a self-test that
+  `el.onclick =`, `reader.onload =` and `worker.onstatechange =` are caught and a field named
+  `online` isn't.
+- **`9i-pwa` (37, jsdom with a stand-in worker, caches and connection):**
+  - data.js names the worker's cache and file list;
+  - no service worker: the status says so;
+  - registration; ready / partly ready;
+  - Check for updates: latest, a failure, waits offline;
+  - an update followed to activated; a waiting worker at boot; a first install not announced;
+    quiet checks on return;
+  - offline and back online, with no online/offline listeners;
+  - the install prompt, accepted and dismissed;
+  - icons in the links and the manifest, a configured path, the placeholder warning.
+- **`test/layout/70-pwa` (11, a real service worker in Chromium):**
+  - installs and claims the page, caching every precached file, fonts and icons included;
+  - Offline reports "Ready offline · N of N";
+  - with the server down, a reload boots from the cache, the page is marked offline, and the QR
+    draws (qrcode.js from the cache);
+  - every fetch path ends in a real Response: a missing icon gives 504, a shell page with a
+    query falls back to the app, a font comes from the cache;
+  - online, a deploy shows on a plain reload (network-first);
+  - Check for updates finds a real new worker; "A new version is ready" with Reload; the old
+    cache is deleted.
+- **Found by testing:** Playwright's `setOffline` doesn't reach the service worker's own fetches.
+  The first "offline" run still reached the server. The test server now has `down()`, which
+  drops every request, so offline means offline.
+- **Mutation checks:**
+  - a cache-first path with no final Response (the iOS blank page) → caught;
+  - a cache-first shell (the stale-deploy trap) → 2 failures;
+  - no skipWaiting → the update never arrives;
+  - a first install announced as an update → caught;
+  - the connection not read on a tap → caught;
+  - readiness never counted → 3 failures.
+- **Inventory:** F-35…F-38, F-59, XM-7, D-2 (live install), D-13 and V-17 present.
+
+### Step 8 starts with: accessibility and first paint (plan step 8)

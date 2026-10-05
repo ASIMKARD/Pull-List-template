@@ -162,8 +162,9 @@ module.exports = async function (t) {
 
   // ------------------------------------------------ no haptics, listener budget
   t.ok('navigator.vibrate was never called by any gesture (no haptics)', vibrations === 0, vibrations);
-  const mine = ['click', 'input', 'change', 'touchstart', 'touchmove', 'touchend', 'pagehide', 'visibilitychange'];
-  t.ok('8 app listeners, one each, all delegated', mine.every(type => app.listeners.filter(x => x === type).length === 1), app.listeners.join(','));
+  const mine = ['click', 'input', 'change', 'touchstart', 'touchmove', 'touchend', 'pagehide', 'visibilitychange', 'beforeinstallprompt'];
+  t.ok('the 9 standing app listeners, one each, all delegated, and nothing else after every gesture', mine.every(type => app.listeners.filter(x => x === type).length === 1) &&
+       app.listeners.every(type => mine.includes(type)), app.listeners.join(','));
   t.ok('no runtime errors', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
 

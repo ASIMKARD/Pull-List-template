@@ -55,10 +55,10 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-32 | Clear all progress (confirm; keeps reviews and bookmarks) | S3 | present (98-tabs-settings: in-page confirm, keeps reviews + bookmarks, snapshot undo restores exactly) |
 | F-33 | Toast with optional action button | S2 | present (94-navigation: toast with action) |
 | F-34 | Refresh reminder (monthly/quarterly/yearly/off), first run starts the clock, dismiss resets | S3 | present (98-tabs-settings: consumed at boot, first run starts the clock, Dismiss and a new interval reset it) |
-| F-35 | Offline readiness readout (Settings → Offline: ready / not ready / unsupported, files cached) | S4 | todo |
-| F-36 | Online/offline toasts and body `.offline` class | S4 | todo |
-| F-37 | Install prompt toast (`beforeinstallprompt`) and "Installed." | S4 | todo |
-| F-38 | Service-worker update flow: "A new version is ready" → Reload | S4 | todo |
+| F-35 | Offline readiness readout (Settings → Offline: ready / not ready / unsupported, files cached) | S4 | present (9i-pwa: ready / not ready (N of M) / unavailable from the cache the build names; test/layout/70-pwa: "Ready offline · N of N" after a real install) |
+| F-36 | Online/offline toasts and body `.offline` class | S4 | re-express → present (no online/offline listeners, decided 2 Oct: the connection is read at boot, when the page is shown again and on every tap. The body `.offline` class, a header mark and toasts on change: 9i-pwa; test/layout/70-pwa: marked offline after an offline reload) |
+| F-37 | Install prompt toast (`beforeinstallprompt`) and "Installed." | S4 | present (9i-pwa: the browser bar is held back; a toast and Settings → Offline offer Install; the prompt runs once; "Installed." or a way back. `beforeinstallprompt` is listener 9 of the 9 at boot) |
+| F-38 | Service-worker update flow: "A new version is ready" → Reload | S4 | present (9i-pwa: a new worker is followed to "activated", then "A new version is ready" with Reload; a first install is not an update; quiet checks when the page is shown again. test/layout/70-pwa: a real update via Check for updates, the old cache deleted) |
 | F-39 | Theme button (default ↔ newsprint), theme-color meta follows | S4 | re-express → present (four skins in Settings → Look; the theme-color meta follows each skin's paper, measured for 4 skins × 7 papers in test/layout/40-look) |
 | F-40 | Franchise applied from data: document title, wordmark, strapline, theme-color, apple web-app title | S2 | present (70-shell) |
 | F-41 | Storage shim: `window.storage` → localStorage → in-memory fallback | S2 | present — localStorage with in-memory fallback (70-shell, 93-storage) |
@@ -79,7 +79,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-56 | Three layouts (signature skin, tabbed, classic/pull skin) | S4 | re-express → present (one layout; the four skins are token sets — see V-5) |
 | F-57 | Skin CSS beacon (`--skin-ok`) warns when styles.css is stale | S4 | present (9g-look: a stylesheet with an older or missing `--skin-ok` gets an "out of date" toast with Reload; 80-guards: the stylesheet carries the beacon app.js expects) |
 | F-58 | Sticky stack measured at runtime (`--tabs-h`, `--stack-h`) | S4 | present (one sticky `#stack` holds the tabs, the banner and the mini bar; a ResizeObserver measures it into `--stack-h`, which drives `scroll-margin-top`. test/layout/60-stack: --stack-h equals the measured height and follows the banner; row jumps and era chips land below the stack) |
-| F-59 | Full offline PWA: network-first shell, cache-first fonts/icons, skipWaiting + clients.claim | S4 | todo |
+| F-59 | Full offline PWA: network-first shell, cache-first fonts/icons, skipWaiting + clients.claim | S4 | present (test/layout/70-pwa: installs and claims the page; offline, a reload boots from the cache with the server down; a deploy shows at once online (network-first shell); fonts from the cache; every fetch path ends in a real Response) |
 | F-60 | Data: per-issue medium, legend, maintenance notes, counts (total/core/mandatory/essential/gapnotes/renumbers), timeline order, alt order | S1 | present — data (20-build: media, counts incl. gap notes/renumbers, timeline, altKey); UI later |
 
 ## S — v2 settings (control → store → default)
@@ -277,7 +277,7 @@ installed app once online.
 | ID | Defect | Fix at source | Session | Status |
 |---|---|---|---|---|
 | D-1 | Reading-tab mark doesn't update era counters | one mark path for every surface; assert counters move from a Reading-tab mark | S3 | present (9a-reading: a Reading-tab mark moves the header, band and era counters and the time left; mutation: bypassing setMark fails it) |
-| D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present — SW precaches 12 fonts + 3 icons, every path exists (80-guards); live install S4 |
+| D-2 | `sw.js` precaches no fonts or icons | precache list generated from disk; guard asserts fonts + icons present and every path exists | S4 | present (80-guards: 12 fonts + icons, every path exists; test/layout/70-pwa: a real install caches every precached file, and fonts load offline) |
 | D-3 | hardcoded franchise chip + filter branch | no franchise strings in template code (guard) | S1 | present (80-guards) |
 | D-4 | review button has no distinguishing class | `.b.rv` targetable | S2 | present (9b-reviews: `.b.rv` targetable, opens the arc's review editor) |
 | D-5 | phantom "Elseworlds (ALT)" era appended | build never adds an era not in the data | S1 | present (20-build: output eras == dataset eras) |
@@ -288,7 +288,7 @@ installed app once online.
 | D-10 | triple `jumpToIssue` breaks jumps into collapsed sections | one `jumpToIssue` that expands ancestors | S2 | present (94-navigation) |
 | D-11 | no save-flush when the app closes | flush on pagehide / visibilitychange | S2 | present (70-shell: pagehide and visibilitychange flush) |
 | D-12 | era colour ramps cap at 26 | no cap; 64-era stress dataset builds and (S4) styles | S1/S4 | present (20-build: 64 eras build; test/layout/40-look: all 64 styled, AA in every skin) |
-| D-13 | template icons and manifest name leak into builds | manifest, icons, theme from config; guard | S4 | present — manifest from config (20-build, 80-guards); franchise icons S4 |
+| D-13 | template icons and manifest name leak into builds | manifest, icons, theme from config; guard | S4 | present (franchise.icons from config, each checked as a PNG of its size — broken/icon-wrong-size, broken/icon-missing; the manifest and page links follow it, and a tracker on the template's placeholder icons is warned: 9i-pwa, 20-build, 80-guards) |
 
 ## V — spec additions (v3 requirements v2 lacks)
 
@@ -310,7 +310,7 @@ installed app once online.
 | V-14 | ALT continuity rows build, order, and are skipped by the per-series check (replaces v2's story band) | S1 data / S2 UI | present — data (30-identity: ALT order + per-series skip); UI S2 |
 | V-15 | Rows render only when an era is first expanded (resolves the `content-visibility` conflict; decide S4) | S2/S4 | present (90-render, 92-filters: 5,000-row dataset renders only opened/matching eras) |
 | V-16 | Storage namespaced from `franchise.key`; migration hook (`storage.legacy: {prefix, format}`) | S2 | present (70-shell namespacing, 93-storage read-only `storage.legacy` v2 reader) |
-| V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present — hash (20-build, 80-guards); icons/manifest polish S4 |
+| V-17 | PWA: cache name and build tag derived from a content hash; icons, manifest name, theme colour from config | S1 hash / S4 | present (20-build, 80-guards: hash; 9i-pwa: data.js names the cache and lists the worker's files; icons, manifest name and theme colour from config) |
 | V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | todo |
 | V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | present (80-guards: sw.js run in a vm, install/activate/fetch exercised) |
 | V-20 | Harness in GitHub Actions on every push; fails on zero assertions | S1 | present (.github/workflows/harness.yml + 00-runner) |
@@ -368,7 +368,7 @@ installed app once online.
 | XM-4 | Pinned bar: bookmarked issues as a scrollable chip row atop the checklist, tap to jump | S3 | present (98-tabs-settings) |
 | XM-5 | File backup: export JSON download, import from file | S3 | present (9e-sync: export `<key>-backup-YYYY-MM-DD.json`, import from file) |
 | XM-6 | QR as a URL (`#sync=…`) that imports on open and **merges** (never downgrades read), reporting counts | S3 | present (9e-sync: #sync= imports on open, merges, never downgrades read, reports counts, clears the link) |
-| XM-7 | "Check for updates" button (`reg.update()`) | S4 | todo |
+| XM-7 | "Check for updates" button (`reg.update()`) | S4 | present (9i-pwa: Check for updates calls reg.update(), says "latest", waits for a connection offline, reports a failure; test/layout/70-pwa: finds a real new worker) |
 | XM-8 | Era navigation style: chips / dropdown / scroll | S3 | present (99-display: a jump bar, chips or dropdown, that opens and scrolls to an era and never filters; plain scroll is the default) |
 | XM-9 | Landmarks-only filter; landmarks inline vs tap-to-reveal | S3 | re-express → present (99-display: landmarks are the row note, so landmarks-only = notes only and inline vs tap = tap to reveal) |
 | XM-10 | Gap notes on/off | S3 | present (99-display) |

@@ -317,6 +317,11 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 /* combo badge: a row that is both bookmarked and read gets a filled star */
 :root[data-combo="1"] .row[data-s="read"] .bm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
+/* ---- offline ---- */
+.offstate { margin: 4px 0 6px; font-size: calc(14px * var(--scale)); }
+.offstate[data-ready="1"] { color: var(--good); font-weight: 600; }
+.netstate { color: var(--danger); font-weight: 600; }
+
 /* ---- the Look section: paper swatches show their own paper ---- */
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch {

@@ -157,6 +157,22 @@
       "night"
      ],
      "description": "The skin a first visit opens in (default: the first of skins). Must be one of skins."
+    },
+    "icons": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "192": {
+       "type": "string"
+      },
+      "512": {
+       "type": "string"
+      },
+      "maskable": {
+       "type": "string"
+      }
+     },
+     "description": "PNG paths in the repo for the 192 px, 512 px and maskable icons (default: icons/icon-*.png). The template's placeholders warn."
     }
    }
   },
