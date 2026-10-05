@@ -1969,8 +1969,15 @@
       (pwa.install ? srow('App', '<button type="button" class="tool" data-act="install">Install as an app</button>') : '') +
       '<p class="muted shelp">On iPhone or iPad: Share → Add to Home Screen, then open it once while online so it can work offline.</p>';
   }
+  /* Readiness, the connection and updates change at any moment (a promise
+     resolving, a tap), so only the Offline section is redrawn: re-rendering all
+     of Settings then would wipe a half-typed sync code and cut short a section
+     opening at that instant (caught as a flaky AbortError in 20-motion). */
   function offlineChanged() {
-    if (activeTab === 'settings') renderSettings();
+    if (!window.document) return;                              // the page has gone (a promise outlived it)
+    var pad = $('#set-offline .sec-pad'), sum = $('.sset[data-k="offline"] .sec-sum');
+    if (pad) pad.innerHTML = offlineHtml();
+    if (sum) sum.textContent = settingsSummary('offline');
   }
   /* the connection, read when needed: a change shows on the page and in a toast */
   function checkOnline() {

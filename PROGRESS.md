@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1296 assertions, 0 failed, 29 suites (session 4, step 8). **Layout suite (real Chromium):** 125 checks, 0 failed, 8 suites.
-Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
+**Harness:** 1298 assertions, 0 failed, 29 suites (end of session 4). **Layout suite (real Chromium, in CI too):** 152 checks, 0 failed, 8 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 152 layout checks).
 
 ---
 
@@ -1416,4 +1416,113 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   `setOffline` doesn't reach the worker.
 - **Inventory:** V-7, XM-3, V-8 (re-expressed) and V-18 present.
 
-### Step 9 starts with: close-out (plan step 9)
+
+---
+
+## Transfer checkpoint — end of session 4 (look and PWA), 5 Oct 2026
+
+### Done (all 9 steps; details in the step checkpoints above)
+- **Counts:** the jsdom harness went from 1,105 to **1298 assertions**. The new real-Chromium layout suite
+  has **152 checks** in 8 suites, and CI runs both.
+- **New suites:**
+  - jsdom: `9f-visibility`, `9g-look`, `9h-banners`, `9i-pwa`, `9j-a11y`;
+  - Chromium: `test/layout/` 10-sweep, 20-motion, 30-css, 40-look, 50-table, 60-stack, 70-pwa,
+    80-paint.
+- **The two additions (4 Oct):**
+  - data-driven visibility: one capability map, the `minimal` fixture, and a self-test that
+    forces each capability on;
+  - collapsible Settings: one section component for the panel and Settings, with the same
+    animation.
+- **One token system and four skins** (Paper, Newsprint, Pull, Night), seven paper swatches, era
+  washes with no cap, and text size, density, button size, marks and a dyslexia-friendly font.
+  All are token sets that can't move or hide a control. Contrast is measured in every skin ×
+  paper, and for 64 eras. The sweep covers every skin at 320, 360 and 390 px.
+- **The persistent banner, the mini bar and table view.** The sticky stack is measured at
+  runtime.
+- **Offline and updates:** a real service worker, readiness, the update flow, the install prompt
+  and icons from config.
+- **Keyboard, an accessibility audit, and measured first paint.**
+- **Every S4 line in `FEATURE-INVENTORY.md`** is present, re-expressed or dropped with a reason.
+  V-15 is decided: lazy rendering replaces `content-visibility` (CLAUDE.md trap resolved; open to
+  veto).
+  - 4 lines remain, all S5: V-21, V-22, V-23 and V-28.
+  - Six session-2 story-band lines (F-47, T-28…T-32) still read "re-express (V-14)". Their
+    wording should be checked in session 6.
+- **About 45 mutations were put back and caught.** Where one wasn't, the test was strengthened
+  and re-run; the step checkpoints record each.
+- **Listener budget:** 10 at boot (click, input, change, keydown, three touch, pagehide,
+  visibilitychange, beforeinstallprompt), 11 static with `once()`, of 12.
+
+### Found by measuring, not reasoning (each fixed and now guarded)
+- **Reduced motion never worked (since session 2).** `* { transition: none }` has no specificity;
+  the fix is the `--motion` token.
+- **Night's control outlines** were 2.95:1 on the warm and mint papers.
+- **Two 17 px link buttons**, now a 24 px minimum for every control.
+- **The mini bar widened the page by 16 px.**
+- **Preloading both fonts cost 368 ms of first paint** on a slow link; only the display font is
+  preloaded.
+- **Playwright's `setOffline` doesn't reach a service worker**, so offline tests take the server
+  down.
+- **jsdom's selector engine registers listeners of its own**; the harness now counts only the
+  app's.
+- **CI runs 34 and 35 failed on a race in the QR test** (it accepted the "Making the QR code…"
+  placeholder). It now waits for the final state.
+- **A flaky crash in `20-motion` (1 run in 12) was a real bug.**
+  - When the service worker's readiness check resolved, all of Settings was re-rendered. That cut
+    short any section opening at that moment, and would have wiped a half-typed sync code.
+  - Now only the Offline section is redrawn. A 9i-pwa test types half a code, lets readiness land
+    and checks the code survives (putting the full redraw back fails it). 0 crashes in 15 runs
+    since.
+  - A closed test page with a promise still pending no longer crashes the harness.
+- **Process slip:** commit `a575f13` was pushed while that crash was unexplained, because my
+  close-out script committed even after its count check failed. The script now stops unless both
+  runs are clean.
+
+### My calls this session — open to veto
+1. **The visibility rule applied beyond your list.** Each control needs:
+   - depth, type and strand chips: two or more in use;
+   - Include cameos: cameo data;
+   - Mandatory only: both mandatory and optional rows;
+   - Notes only and tap to reveal: notes;
+   - Gap notes: a gap note;
+   - the era filter, picker, Mark range, Newest era first and era colours: two eras;
+   - the look-up link: `searchUrl`;
+   - the skin control: two or more configured skins.
+2. **"+N untimed" follows the data, not the format count.** A comics-only tracker never shows it;
+   a games-only tracker with missing lengths still does.
+3. **Only the stack is sticky** (tabs, banner, mini bar). Band and era banners are tall goal
+   banners, so they scroll.
+4. **Mark styles are box, dot, and tick and cross.** v2's "web" was one franchise's motif.
+5. **Skin details:**
+   - Newsprint: Georgia display and a dark tab bar;
+   - Pull: Anton capitals for era names too, and mono metadata;
+   - Night: from v2's signature palette.
+6. **Table view hides notes, blurbs and intros**, as v2 did.
+7. **The `theme-color` meta follows the skin's paper**, falling back to the franchise colour.
+8. **The install offer** is a toast once per visit when the browser offers it, and a button in
+   Settings → Offline.
+9. **Updates are looked for quietly** whenever the page is shown again.
+10. **Only the display font is preloaded** (measured above).
+11. **V-15:** lazy rendering replaces `content-visibility`.
+12. **The iPhone hint in Settings → Offline** shows to everyone.
+
+### Open items for session 5
+- **A real-device check on iPhone (John):**
+  - swipe and long-press;
+  - Add to Home Screen, open it once online, then try it offline;
+  - the home-screen icon;
+  - the status-bar colour per skin.
+- **The Absolute pilot** goes into a fresh repo John creates first. Stop and ask before any edit
+  outside this repo.
+  - Its build will warn about placeholder icons until it has its own `franchise.icons`.
+  - It should choose its skins (`franchise.skins` / `skin`).
+- **Merge this branch** (`claude/keen-wozniak-w7lt6p`) before session 5.
+
+### Session 5 starts with: workbook and pilot (spec §7.5)
+1. `build_workbook.py` (V-23): the workbook generated from `dataset.json`, reading by header
+   name.
+2. The `verify.py` gate from Research-Repo's toolkit (V-22), read-only from a local copy.
+3. Docs (V-28): README (start a tracker in steps), BUILD-NOTES, MIGRATING, and the
+   `comic-tracker-build` Skill in `.claude/skills/`.
+4. The Absolute pilot (V-21) in a fresh repo John creates. Stop and tell John before the first
+   edit to it.

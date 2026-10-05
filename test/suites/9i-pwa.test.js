@@ -20,7 +20,8 @@ function standIns(opts) {
         value: { controller: opts.controlled ? {} : null, register: url => { state.registered = url; return Promise.resolve(reg); } } });
     }
     Object.defineProperty(w.navigator, 'onLine', { configurable: true, get: () => state.online });
-    w.caches = { has: n => Promise.resolve(opts.cached !== undefined && n === opts.cacheName),
+    const later = v => opts.slowCaches ? new Promise(r => setTimeout(() => r(v), opts.slowCaches)) : Promise.resolve(v);
+    w.caches = { has: n => later(opts.cached !== undefined && n === opts.cacheName),
                  open: () => Promise.resolve({ match: u => Promise.resolve(opts.cached === 'all' || (opts.cached || []).includes(u) ? {} : undefined) }) };
   };
   return { state, setup };
@@ -64,6 +65,17 @@ module.exports = async function (t) {
   x.app.window.close();
   x = await go({ cached: ['./', './index.html', './app.js'] });
   t.ok('a partly filled cache: "Not ready yet · 3 of N", keep the page open while online', /Not ready yet · 3 of \d+ files saved\. Keep this page open while online\./.test(offSec(x)));
+  x.app.window.close();
+
+  // ------------------------------------------------ an async change redraws the Offline section only
+  x = await go({ cached: 'all', slowCaches: 80 });
+  openSettings(x.app, ['backup', 'offline']);
+  const display = x.$('.sset[data-k="display"]'), half = x.app.window.PullList.syncCodes().full.slice(0, 20);
+  x.$('#syncIn').value = half;                                                 // half-typed when readiness lands
+  await wait(150);
+  t.ok('readiness lands while a sync code is half typed: the Offline section updates…', x.$('#offState').dataset.ready === '1');
+  t.ok('…the half-typed code is kept, and no other section is redrawn (a full redraw wiped it, and cut short an opening section)',
+       x.$('#syncIn').value === half && x.$('.sset[data-k="display"]') === display);
   x.app.window.close();
 
   // ------------------------------------------------ an update (F-38)
