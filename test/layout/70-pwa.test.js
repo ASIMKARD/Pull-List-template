@@ -35,8 +35,10 @@ module.exports = async function (t) {
     t.ok('…and marks the page offline (body class, header mark) without a listener (F-36)', off.body && off.mark);
     await openSettings(page);
     await page.click('[data-act="sync-show"]');
-    await page.waitForSelector('#qrbox svg, #qrbox p', { timeout: 5000 });
-    t.ok('…the QR still draws offline: qrcode.js comes from the cache', !!(await page.$('#qrbox svg')));
+    // wait for the box's final state: it starts out saying "Making the QR code…" while qrcode.js loads
+    await page.waitForFunction(() => { const q = document.querySelector('#qrbox'); return q && (q.querySelector('svg') || !/Making the QR code/.test(q.textContent)); },
+                               null, { timeout: 10000 }).catch(() => null);
+    t.ok('…the QR still draws offline: qrcode.js comes from the cache', !!(await page.$('#qrbox svg')), await page.textContent('#qrbox'));
     const responses = await page.evaluate(async () => {
       const r = async u => { try { const x = await fetch(u); return x.status; } catch (e) { return 'network error'; } };
       return { icon: await r('./icons/not-there.png'), shellQuery: await r('./index.html?v=2'), font: await r('./fonts/ibm-plex-sans-400-latin.woff2'),
