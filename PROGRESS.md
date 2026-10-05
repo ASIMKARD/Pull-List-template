@@ -713,7 +713,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
      - Publication order counts only if some era's rows are out of publication order.
      - Arc order counts only if some era's arcs interleave.
      - Today `mixed` offers a publication chip that changes nothing.
-   - **The same rule applied further** (my reading of "a rule, not a one-off"; open to veto).
+   - **The same rule applied further** (my reading of "a rule, not a one-off"; accepted 4 Oct).
      Each control needs:
      - depth chips: two tiers in use;
      - type chips: two types;
@@ -906,7 +906,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 
 9. **Close-out.**
    - Record the V-15 decision: lazy rendering replaces `content-visibility`, as shipped since
-     session 2. Say if you want otherwise.
+     session 2 (closed by John, 4 Oct).
    - Update the inventory statuses.
    - Run the full Chromium sweep: 320, 360 and 390 px × every tab × every skin.
    - Write this file's checkpoint.
@@ -961,7 +961,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   - The Touch help names bands only with periods.
   - With mixed formats, Reading behaviour gets a duration line: "Comics are timed at your minutes
     per issue; shows and games count their own length."
-- **The rule applied further (open to veto):** depth chips, type chips, strand chips, Include
+- **The rule applied further (accepted 4 Oct):** depth chips, type chips, strand chips, Include
   cameos, Mandatory only, Notes only, Tap to reveal, Gap notes, the era filter, the era picker,
   Mark range, Newest era first and the look-up link.
 - **New fixture `test/fixtures/minimal`:**
@@ -992,7 +992,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 - **Inventory:** V-30 added as present (9f-visibility), and V-31 (collapsible Settings) added as
   todo.
 
-### One reading to flag
+### One reading to flag (accepted 4 Oct, as call 2 of the session)
 - **"+N untimed" follows the data, not the format count.** Comics never lack a length, so a
   comics-only tracker never shows it, as the rule asks.
 - A single-format tracker of games with missing lengths would still show it. Hiding it there
@@ -1262,7 +1262,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
     budget stays at 9.
   - The inline `--stack-h` on `<html>` is a token, which B-6 allows.
   - It drives `scroll-margin-top` on rows, arcs, eras and bands, so a jump lands below the stack.
-- **Band and era banners stay non-sticky** (my call, open to veto): they are tall goal banners, and
+- **Band and era banners stay non-sticky** (my call, accepted 4 Oct): they are tall goal banners, and
   pinning them would take most of a phone screen.
 - **The swipe clip** (session 3's open item): `.arc` clips with `overflow: hidden`, so a row
   mid-swipe slides under the card edge. Rows keep 6 px inside the card, so focus rings aren't cut.
@@ -1443,8 +1443,8 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   and icons from config.
 - **Keyboard, an accessibility audit, and measured first paint.**
 - **Every S4 line in `FEATURE-INVENTORY.md`** is present, re-expressed or dropped with a reason.
-  V-15 is decided: lazy rendering replaces `content-visibility` (CLAUDE.md trap resolved; open to
-  veto).
+  V-15 is decided: lazy rendering replaces `content-visibility` (CLAUDE.md trap resolved; closed by
+  John 4 Oct).
   - 4 lines remain, all S5: V-21, V-22, V-23 and V-28.
   - Six session-2 story-band lines (F-47, T-28…T-32) still read "re-express (V-14)". Their
     wording should be checked in session 6.
@@ -1481,7 +1481,7 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   close-out script committed even after its count check failed. The script now stops unless both
   runs are clean.
 
-### My calls this session — open to veto
+### My calls this session — all twelve accepted 4 Oct (John)
 1. **The visibility rule applied beyond your list.** Each control needs:
    - depth, type and strand chips: two or more in use;
    - Include cameos: cameo data;
@@ -1508,6 +1508,25 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 10. **Only the display font is preloaded** (measured above).
 11. **V-15:** lazy rendering replaces `content-visibility`.
 12. **The iPhone hint in Settings → Offline** shows to everyone.
+
+### Decided 4 Oct (John) — do not reopen
+- **Bulk marking stays as shipped.** It marks what the user can see: the plan filters plus any
+  active search or browse filter. Session 3's call 2 is accepted with exactly this behaviour.
+- **The extended visibility rule is accepted.** It now lives in CLAUDE.md → UI rules, beside the
+  original list.
+- **Content-visibility is closed.** Lazy rendering, where an era's rows render only when it is
+  first opened, replaces it (V-15). CLAUDE.md's trap now says so.
+- **All twelve of my session 4 calls above are accepted.**
+- **A new permanent rule, "Stop cleanly",** is in CLAUDE.md → Working method:
+  - every step ends committed, pushed and green;
+  - never start a step that can't be finished;
+  - if a session runs long, stop at the end of a completed step;
+  - write in PROGRESS.md exactly where the next step begins (the first file, the first test, any
+    half-made decisions);
+  - then push and tell John.
+
+  It makes permanent session 3's session-length rule, and it covers this session's slip, a commit
+  pushed while a crash was unexplained.
 
 ### Open items for session 5
 - **A real-device check on iPhone (John):**

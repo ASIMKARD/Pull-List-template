@@ -25,6 +25,14 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 - Update `PROGRESS.md` at the end of every step.
 - Ask design questions as short multiple-choice options; locked decisions are
   never reopened. Percentage-only progress updates.
+- **Stop cleanly (John, permanent).**
+  - Every step ends **committed, pushed and green**: the harness, the layout suite and CI.
+  - Never start a step that can't be finished.
+  - If a session runs long, stop at the end of a completed step and write in `PROGRESS.md`
+    exactly where the next step begins: the first file, the first test, and any half-made
+    decisions. Then push and tell John.
+  - A script that commits must stop unless both test runs came back clean. Session 4 pushed a
+    commit while a crash was still unexplained, because its script committed anyway.
 - The spec is Master-Repo `starter/v3/V3-SPEC.md`; suite rules are
   `starter/STANDARDS.md`. Where they disagree with this file, ask.
 
@@ -90,6 +98,19 @@ only at a cut-over swap John approves. (Full text: Master-Repo
     - no order switch without a second order;
     - no bands without periods;
     - no era jump bar with only one era.
+  - **Extended (accepted 4 Oct).** Each control needs:
+    - depth, type and strand chips: two or more in use;
+    - "Include cameos": cameo data;
+    - "Mandatory only": both mandatory and optional rows;
+    - "Notes only" and tap to reveal: notes;
+    - "Gap notes": a gap note;
+    - the era filter, era picker, Mark range, "Newest era first" and era colours: two eras;
+    - the look-up link: `searchUrl`;
+    - the skin control: two or more configured skins;
+    - help copy that names bands: periods.
+
+    "+N untimed" follows the data: comics never lack a length, so a comics-only tracker never
+    shows it. A saved filter for a control that isn't offered is ignored.
   - **How:** one capability map, built once at boot from the data, decides every
     case. A missing capability means the control is **not rendered**; don't hide it
     with CSS. That keeps the reachability guard and the visibility tests in
@@ -141,7 +162,7 @@ displacement: a phantom gap, an overlap and floating text.
 ### content-visibility — [superseded §1, resolved session 4]
 v2 removed `content-visibility:auto` + `contain-intrinsic-size`: blank unpainted
 rows on iOS, mis-positioned scroll-to-row, wrong estimates. Spec §1 says keep
-the performance guard. **Resolved (session 4, open to John's veto):** v3 lands
+the performance guard. **Closed (John, 4 Oct):** v3 lands
 collapsed and renders an era's rows only when it is first expanded (90-render:
 5,000 rows render none at landing). The guard is unnecessary, and the iOS bugs
 can't occur. Don't add `content-visibility`.
