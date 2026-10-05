@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1229 assertions, 0 failed, 27 suites (session 4, step 5). **Layout suite (real Chromium):** 87 checks, 0 failed, 5 suites.
+**Harness:** 1228 assertions, 0 failed, 27 suites (session 4, step 5). **Layout suite (real Chromium):** 87 checks, 0 failed, 5 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
