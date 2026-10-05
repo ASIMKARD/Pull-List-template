@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1228 assertions, 0 failed, 27 suites (session 4, step 5). **Layout suite (real Chromium):** 87 checks, 0 failed, 5 suites.
+**Harness:** 1229 assertions, 0 failed, 27 suites (session 4, step 6). **Layout suite (real Chromium):** 107 checks, 0 failed, 6 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -1250,4 +1250,41 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 - **Inventory:** F-16, F-17, F-49, S-7, S-10, S-11, T-50, T-51, L-7 and L-8 present.
 - **CI:** run 30 (step 4) is green, with both counts in the log.
 
-### Step 6 starts with: the sticky stack, measured at runtime (plan step 6)
+
+## Session 4 checkpoint — step 6 done (the sticky stack), 5 Oct 2026
+
+### Done
+- **One sticky `#stack`** holds the tabs, the banner and the mini bar (`position: sticky; top: 0`).
+  It is full width, so the paper behind it covers what scrolls under.
+  - The banner joins the tab bar directly (no gap, no top border).
+- **`--stack-h`, measured at runtime (F-58).**
+  - A `ResizeObserver` on the stack writes its height. It is not an event listener, so the
+    budget stays at 9.
+  - The inline `--stack-h` on `<html>` is a token, which B-6 allows.
+  - It drives `scroll-margin-top` on rows, arcs, eras and bands, so a jump lands below the stack.
+- **Band and era banners stay non-sticky** (my call, open to veto): they are tall goal banners, and
+  pinning them would take most of a phone screen.
+- **The swipe clip** (session 3's open item): `.arc` clips with `overflow: hidden`, so a row
+  mid-swipe slides under the card edge. Rows keep 6 px inside the card, so focus rings aren't cut.
+- **`test/layout/60-stack` (20, real Chromium):**
+  - after scrolling, every skin, Checklist (390 and 320 px) and Settings: the stack holding the
+    tabs is sticky and the tabs are at the top (L-1, L-2); the banner is within 2 px under the
+    tabs (L-3, L-4); `--stack-h` equals the measured height;
+  - turning the banner on grows the stack, and `--stack-h` follows;
+  - `jumpToIssue` lands every row below the stack;
+  - era chips land each era 0–16 px below the stack, except where the page ends;
+  - bands at most 16 px apart and never on their intros, in every density (L-5, L-6);
+  - a row mid-swipe is clipped at the card edge;
+  - no page errors.
+- **`9h-banners` (+1):** the stack holds the tabs, the banner and the mini bar, in order.
+- **Mutation checks:**
+  - `position: relative` on the stack (the CLAUDE.md trap) → L-2 and the era landing;
+  - no scroll margin → era chips land under the stack;
+  - measured once, never again → 3 failures;
+  - no clip → the swipe check;
+  - a gap between the tabs and the banner → L-4.
+- **Inventory:** F-58, L-1…L-6, T-94 and T-96 present.
+- **Still open from session 3:** the real-device iOS check of swipe and long-press needs a phone,
+  so it stays for John.
+
+### Step 7 starts with: PWA (plan step 7)

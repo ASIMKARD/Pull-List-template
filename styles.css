@@ -83,6 +83,7 @@
   --tap: 34px; --tap-glyph: 18px; --b-min: 30px;   /* button size (S-20) */
   --tap-dense: 24px;                               /* table view's targets: never under 24 px, 44 px with large buttons */
   --mark-radius: var(--radius-sm);                 /* mark style (S-5) */
+  --stack-h: 0px;        /* the sticky stack's height, measured at runtime (F-58) */
   --motion: 1;           /* every transition's duration is multiplied by this; reduced motion sets 0 */
   --skin-ok: 3;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
 }
@@ -230,7 +231,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .band-intro, .era-intro { margin: 8px 4px; color: var(--ink-soft); font-size: calc(14px * var(--scale)); }
 
 /* ---- arcs and rows ---- */
-.arc { margin: 10px 0 0; }
+.arc { margin: 10px 0 0; overflow: hidden; }   /* a swiped row slides under the card edge, not past it */
 .arc-head { padding: 4px 4px 6px; }
 .arc-head h3 { margin: 0; font-size: calc(15px * var(--scale)); }
 .arc-meta { font-family: var(--font-meta); }
@@ -261,8 +262,15 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .subnote, .notepop { flex-basis: 100%; margin: 0 0 0 calc(var(--tap) + 10px); font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .notepop { margin: 0; padding: 6px 10px 8px calc(var(--tap) + 16px); background: var(--accent-wash); }
 
+/* ---- the sticky stack (F-58): tabs, banner and mini bar, pinned together. Full
+   width, so the paper behind it covers what scrolls under. Never give it (or
+   anything in it) position: relative: `top` then shifts instead of sticking. ---- */
+.stack { position: sticky; top: 0; z-index: 10; background: var(--paper); padding-bottom: var(--gap); }
+/* a jump (next unread, a bookmark, an era chip) lands below the stack, not under it */
+.row, .arc, .era, .band { scroll-margin-top: calc(var(--stack-h) + 8px); }
+
 /* ---- tabs and panes ---- */
-.tabs { display: flex; gap: 0; margin: 0 16px var(--gap); border-bottom: 1px solid var(--line); overflow-x: auto;
+.tabs { display: flex; gap: 0; margin: 0 16px; border-bottom: 1px solid var(--line); overflow-x: auto;
   background: var(--bar); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
 .tab {
   flex: 1 0 auto; padding: 10px 2px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--bar-soft);
@@ -318,13 +326,13 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .swatch[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* ---- under the tab bar: the persistent banner (F-16) and the mini bar (F-17) ---- */
-.pbanner-in { display: grid; gap: 4px; margin: 0 16px var(--gap); padding: 6px 12px 8px; background: var(--card);
-  border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.pbanner-in { display: grid; gap: 4px; margin: 0 16px; padding: 6px 12px 8px; background: var(--card);
+  border: 1px solid var(--line); border-top: 0; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }   /* directly under the tabs */
 .pbl { display: flex; flex-wrap: wrap; gap: 0 10px; align-items: baseline; font-size: calc(13px * var(--scale)); color: var(--ink-soft);
   font-family: var(--font-meta); }
 .pbl-name { font-weight: 600; color: var(--ink); min-width: 4.5em; }
 .pbl progress.bar { flex-basis: 100%; height: 4px; margin-top: 2px; }
-.mini { padding: 0 16px; margin-bottom: var(--gap); }      /* the inset lives on the wrapper: the bar stays 100% of it */
+.mini { padding: 0 16px; }      /* the inset lives on the wrapper: the bar stays 100% of it */
 .mini-bar { height: 3px; }
 
 /* ---- table view (F-49, S-7): one line per issue, half the height (L-7),

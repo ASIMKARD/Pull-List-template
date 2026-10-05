@@ -20,6 +20,7 @@ module.exports = async function (t) {
   t.ok('the persistent banner is off by default (T-51, S-11)', $('#pbanner').hidden && $('#pbannerIn').innerHTML === '');
   t.ok('both sit under the tab bar, outside the panes, so every tab has them', $('#tabs').nextElementSibling === $('#pbanner') &&
        $('#pbanner').nextElementSibling === $('#mini') && !$('#mini').closest('.pane'));
+  t.eq('…all three in the one sticky stack, in order (F-58; pinned and measured in test/layout/60-stack)', [...$('#stack').children].map(c => c.id), ['tabs', 'pbanner', 'mini']);
   const header = () => $('#pprog .pcount').textContent.match(/(\d+) \/ (\d+)/).slice(1).map(Number);
   t.eq('the mini bar shows the header\'s figures (read of goal)', [+$('#miniBar').value, +$('#miniBar').max], header());
   openSettings(app, ['display']);

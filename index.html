@@ -26,16 +26,20 @@
   </div>
 </header>
 
+<!-- the sticky stack (F-58): the tabs, the banner and the mini bar stay on screen together. Its height is measured
+     at runtime into --stack-h, so jumps never land under it. -->
+<div class="stack" id="stack">
 <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
   <button type="button" class="tab" role="tab" id="tab-list" data-act="tab" data-tab="list" aria-controls="pane-list" aria-selected="true">Checklist</button>
   <button type="button" class="tab" role="tab" id="tab-reading" data-act="tab" data-tab="reading" aria-controls="pane-reading" aria-selected="false" tabindex="-1">Reading</button>
   <button type="button" class="tab" role="tab" id="tab-reviews" data-act="tab" data-tab="reviews" aria-controls="pane-reviews" aria-selected="false" tabindex="-1">Reviews</button>
   <button type="button" class="tab" role="tab" id="tab-settings" data-act="tab" data-tab="settings" aria-controls="pane-settings" aria-selected="false" tabindex="-1">Settings</button>
 </nav>
-<!-- under the tab bar, on every tab (step 6 makes the stack sticky): the persistent banner (F-16, off by default)
-     and the mini progress bar (F-17, on by default). Layout lives on the inner wrappers, so [hidden] wins. -->
+<!-- under the tab bar, on every tab: the persistent banner (F-16, off by default) and the mini progress bar
+     (F-17, on by default). Layout lives on the inner wrappers, so [hidden] wins. -->
 <div class="pbanner" id="pbanner" aria-label="Progress" hidden><div class="pbanner-in" id="pbannerIn"></div></div>
 <div class="mini" id="mini" hidden><progress class="bar mini-bar" id="miniBar" max="1" value="0" aria-label="Overall progress"></progress></div>
+</div>
 
 <main id="main">
 <section class="pane" id="pane-list" role="tabpanel" aria-labelledby="tab-list">

@@ -2160,6 +2160,15 @@
     if (document.visibilityState === 'hidden') flushNow();
   });
 
+  /* The sticky stack's height (F-58), measured whenever it changes (the
+     banner turning on, a wrap at a new width, a font landing). A
+     ResizeObserver is not an event listener, so the budget is unchanged. */
+  function measureStack() {
+    var st = $('#stack');
+    document.documentElement.style.setProperty('--stack-h', (st ? st.offsetHeight : 0) + 'px');
+  }
+  if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
+
   applyFranchise();
   var migration = null;
   if (D.franchise.storage && D.franchise.storage.legacy && !settings.migrated) {

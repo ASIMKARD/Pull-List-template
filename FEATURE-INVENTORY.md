@@ -78,7 +78,7 @@ X extra lines John asked for · B v2 bugs found while inventorying.
 | F-55 | Era hue scheme (split / mono) | S4 | re-express → present (era colours derived per era index from tokens — split by the golden angle, or one colour; test/layout/40-look: 64 eras × 4 skins, AA on every wash) |
 | F-56 | Three layouts (signature skin, tabbed, classic/pull skin) | S4 | re-express → present (one layout; the four skins are token sets — see V-5) |
 | F-57 | Skin CSS beacon (`--skin-ok`) warns when styles.css is stale | S4 | present (9g-look: a stylesheet with an older or missing `--skin-ok` gets an "out of date" toast with Reload; 80-guards: the stylesheet carries the beacon app.js expects) |
-| F-58 | Sticky stack measured at runtime (`--tabs-h`, `--stack-h`) | S4 | todo |
+| F-58 | Sticky stack measured at runtime (`--tabs-h`, `--stack-h`) | S4 | present (one sticky `#stack` holds the tabs, the banner and the mini bar; a ResizeObserver measures it into `--stack-h`, which drives `scroll-margin-top`. test/layout/60-stack: --stack-h equals the measured height and follows the banner; row jumps and era chips land below the stack) |
 | F-59 | Full offline PWA: network-first shell, cache-first fonts/icons, skipWaiting + clients.claim | S4 | todo |
 | F-60 | Data: per-issue medium, legend, maintenance notes, counts (total/core/mandatory/essential/gapnotes/renumbers), timeline order, alt order | S1 | present — data (20-build: media, counts incl. gap notes/renumbers, timeline, altKey); UI later |
 
@@ -222,9 +222,9 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-91 | classic skin: no filters on Reading | S3 | re-express → present (98-tabs-settings, 9a-reading: no filter panel on Reading) |
 | T-92 | classic skin: no filters on Reviews | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express → present (80-guards: zero !important, and every [hidden] element computes to display:none against the real stylesheet) |
-| T-94 | nothing sticky in tabbed mode either | S4 | re-express (one layout; sticky rules measured in browser, L-1..L-5) |
+| T-94 | nothing sticky in tabbed mode either | S4 | re-express → present (one layout; the sticky stack is measured in test/layout/60-stack) |
 | T-95 | depth control is a single nowrap row | S3 | present (99-display) |
-| T-96 | nothing sticky in the classic skin | S4 | re-express (skins never change positioning) |
+| T-96 | nothing sticky in the classic skin | S4 | re-express → present (skins never change positioning: 80-guards token-only blocks; test/layout/60-stack pins the stack in every skin) |
 | T-97 | layout seg has 3 buttons | S4 | re-express → present (9g-look: one option per configured skin, in order; one skin → no control) |
 | T-98 | skin beacon present in styles.css | S4 | present (80-guards, 9g-look) |
 | T-99 | classic option = pull skin | S4 | re-express → present (T-81) |
@@ -257,12 +257,12 @@ v3 replaces by design — the named v3 assertion replaces it.
 
 | ID | v2 assertion | Session | Status |
 |---|---|---|---|
-| L-1 | tabs are sticky | S4 | todo |
-| L-2 | tabs pinned to the top after scrolling | S4 | todo |
-| L-3 | banner is sticky | S4 | todo |
-| L-4 | banner sits directly under the tabs | S4 | todo |
-| L-5 | band is not shifted onto its own intro | S4 | todo |
-| L-6 | no large gap between bands (≤16 px) | S4 | todo |
+| L-1 | tabs are sticky | S4 | present (test/layout/60-stack: the stack holding the tabs is sticky, 4 skins, Checklist and Settings) |
+| L-2 | tabs pinned to the top after scrolling | S4 | present (test/layout/60-stack: the tabs are at the top after scrolling 700 px) |
+| L-3 | banner is sticky | S4 | present (test/layout/60-stack: the banner is pinned in the stack) |
+| L-4 | banner sits directly under the tabs | S4 | present (test/layout/60-stack: the banner sits within 2 px of the tabs) |
+| L-5 | band is not shifted onto its own intro | S4 | present (test/layout/60-stack: no band intro sits under its band head) |
+| L-6 | no large gap between bands (≤16 px) | S4 | present (test/layout/60-stack: bands at most 16 px apart in every density) |
 | L-7 | table view at least halves row height | S4 | present (test/layout/50-table: the median row height in table view is at most half the normal one, 4 skins × 320/390 px) |
 | L-8 | no table row overflows the screen width | S4 | present (test/layout/50-table: no table row wider than the screen — 944 rows, 4 skins × 320/390 px × default and largest settings) |
 | L-9 | no runtime errors | S4 | present (test/layout/10-sweep: no page or console errors on every tab, 4 datasets × 320/360/390 px, everything open; caught a font 404) |
