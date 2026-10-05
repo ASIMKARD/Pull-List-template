@@ -817,6 +817,13 @@
     return '<button type="button" class="chip" data-act="f" data-k="' + k + '" data-v="' + escapeAttr(v) + '" aria-pressed="' +
       !!on + '">' + escapeHtml(label) + '</button>';
   }
+  /* A depth chip: name and count. When the row is narrow the chips shrink
+     together and each count drops under its name, so the row never wraps
+     (T-95) and nothing is cut off. The " · " is read out, not drawn. */
+  function tierChip(ti, name, n) {
+    return '<button type="button" class="chip" data-act="f" data-k="tier" data-v="' + ti + '" aria-pressed="' + (F.tier === ti) + '">' +
+      '<span>' + escapeHtml(name) + '</span><span class="vh"> · </span><span class="tcount">' + n + '</span></button>';
+  }
   function countWhere(pred) {
     var n = 0;
     for (var i = 0; i < N; i++) if (!isInert(i) && inView(i) && pred(i)) n++;
@@ -828,7 +835,7 @@
       if (HAS.tiers) {
         h += '<div class="flabel">Depth</div><div class="depthrow">';    // one row that never wraps (T-95)
         D.tiers.forEach(function (t, ti) {
-          h += chip('tier', ti, t + ' · ' + countWhere(function (i) { return D.issueTier[i] <= ti; }), F.tier === ti);
+          h += tierChip(ti, t, countWhere(function (i) { return D.issueTier[i] <= ti; }));
         });
         h += '</div>';
       }
@@ -1793,7 +1800,12 @@
         (String(o[0]) === String(cur)) + '">' + escapeHtml(o[1]) + '</button>';
     }).join('') + '</div>';
   }
-  function srow(label, control) { return '<div class="srow"><span class="slabel">' + escapeHtml(label) + '</span>' + control + '</div>'; }
+  /* A label and its controls. The controls move as one block: beside the
+     label when they all fit on its line, otherwise on their own line under
+     it, never split between the two (John's phone, 5 Oct). */
+  function srow(label, control) {
+    return '<div class="srow"><span class="slabel">' + escapeHtml(label) + '</span><div class="sctl">' + control + '</div></div>';
+  }
   /* Settings sections collapse like the filter panel (decided 4 Oct), each
      head carrying an icon and a live one-line summary of what is set. */
   var SETTINGS_SECTIONS = { reading: ['◷', 'Reading behaviour'], look: ['◐', 'Look'], display: ['◧', 'Display'], touch: ['☝', 'Touch'],
@@ -1923,7 +1935,7 @@
         '<button type="button" class="tool" data-act="bulk-era" data-st="read">Mark read</button>' +
         '<button type="button" class="tool" data-act="bulk-era" data-st="unread">Mark unread</button>') +
       (HAS.eras ? srow('Mark range', '<select class="erasel" id="bulkFrom" aria-label="Range start">' + eraOpts(bulkSel.from) + '</select>' +
-        '<span class="muted">through</span><select class="erasel" id="bulkTo" aria-label="Range end">' + eraOpts(bulkSel.to) + '</select>' +
+        '<span class="sgrp"><span class="muted">through</span><select class="erasel" id="bulkTo" aria-label="Range end">' + eraOpts(bulkSel.to) + '</select></span>' +
         '<button type="button" class="tool" data-act="bulk-range">Mark read</button>') : ''));
     h += sset('data',
       srow('Refresh reminder', seg('refresh', 'Refresh reminder', REFRESH.map(function (r) { return [r[0], r[1]]; }), settings.refreshEvery)) +

@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1298 assertions, 0 failed, 29 suites (end of session 4). **Layout suite (real Chromium, in CI too):** 153 checks, 0 failed, 8 suites.
+**Harness:** 1299 assertions, 0 failed, 29 suites (after the 5 Oct phone fix). **Layout suite (real Chromium, in CI too):** 231 checks, 0 failed, 8 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
@@ -1538,7 +1538,8 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
   outside this repo.
   - Its build will warn about placeholder icons until it has its own `franchise.icons`.
   - It should choose its skins (`franchise.skins` / `skin`).
-- **Merge this branch** (`claude/keen-wozniak-w7lt6p`) before session 5.
+- ~~Merge this branch before session 5.~~ Merged 5 Oct (ASIMKARD/Pull-List-template#3). The
+  phone fix below is on the same branch, restarted from `main`.
 
 ### Session 5 starts with: workbook and pilot (spec §7.5)
 1. `build_workbook.py` (V-23): the workbook generated from `dataset.json`, reading by header
@@ -1548,3 +1549,45 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
    `comic-tracker-build` Skill in `.claude/skills/`.
 4. The Absolute pilot (V-21) in a fresh repo John creates. Stop and tell John before the first
    edit to it.
+
+---
+
+## Fix after session 4 — the buttons fit on the phone (John's screenshots), 5 Oct 2026
+
+John's iPhone (393 px wide) showed two kinds of button that didn't fit. Both reproduced in real
+Chromium at 390 and 393 px before anything changed.
+
+### What was wrong
+- **Settings rows split their controls.** A row was the label, then its buttons, in one wrapping
+  line. The first button stayed beside the label and the rest dropped under it, starting from the
+  left edge. Seen in Display → Rows and Progress, Touch → Gestures, and Bulk actions → Sections,
+  Mark era and Mark range ("through" was left at the start of a line).
+- **The last depth chip was cut off.** The depth row never wraps (T-95). It was 320 px of chips in
+  a 301 px space, so "Everything · 5" was clipped inside a row that scrolled sideways.
+
+### Why the layout suite missed it
+The sweep checked that the *page* never got wider than the screen. A chip clipped inside its own
+scrolling row doesn't widen the page, and a button under its label doesn't either. The
+reachability check scrolls each control into view first, so it found the hidden chip reachable.
+
+### Done
+| Change | Where |
+|---|---|
+| Each Settings row is now a label and **one block of controls**. The block sits beside the label when all of it fits on that line. Otherwise the whole block takes the next line and wraps inside itself, from one left edge. "through" stays with the range's end | `app.js` `srow`, `styles.css` `.sctl`, `.sgrp` |
+| The **depth chips shrink together**. When the row is narrow, each count drops under its name, so the row stays one line (T-95) and nothing is cut off. The " · " between the name and the count is still read out, but no longer drawn | `app.js` `tierChip`, `styles.css` `.depthrow` |
+| On the **smallest phones** (≤ 360 px), filter-section bodies drop the 44 px indent to 12 px, and the depth chips use 6 px side padding and a 4 px gap. With large text at 320 px, that leaves 10 px spare | `styles.css` |
+| **The sweep now checks fit** in every set, at every width, on every tab:<br>• no control reaches past the edge of any box that clips it (the era jump bar and the pins scroll by design);<br>• every Settings row keeps its controls together;<br>• the depth chips sit on one line, with none hidden.<br>It also gains a set with large text and large buttons | `test/layout/10-sweep` |
+| jsdom: every Settings row is a label and one block of controls | `98-tabs-settings` |
+
+All 5 mutations were caught: the old `srow`, the block flattened with `display: contents`, depth
+chips that never shrink, a depth row that wraps, and a clipped block. Large text at 320 px failed
+first (10 px over), and the narrow-phone padding fixed it.
+
+**Harness:** 1299 assertions (+1), 0 failed, 29 suites. **Layout:** 231 checks (+78), 0 failed,
+8 suites.
+
+### For John to check on the phone
+Settings → Display, Touch and Bulk actions, and Checklist → Filters → Reading → Depth. On a
+393 px phone the depth chips stay on one line, as before. If iOS text runs a little wider, the
+counts drop under the names instead of being cut off.
+

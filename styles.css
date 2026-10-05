@@ -202,6 +202,11 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .sec-in { overflow: hidden; min-height: 0; }
 .fsec { border-top: 1px solid var(--line); }
 .fsec .sec-pad { padding: 2px 14px 14px 44px; }
+@media (max-width: 360px) {                       /* the smallest phones: width over the indent */
+  .fsec .sec-pad { padding-left: 12px; padding-right: 12px; }
+  .depthrow { gap: 4px; }
+  .depthrow .chip { padding-left: 6px; padding-right: 6px; }
+}
 .flabel { font-size: calc(12px * var(--scale)); color: var(--ink-soft); margin: 8px 0 6px; }
 .chip {
   display: inline-flex; align-items: center; gap: 4px; margin: 0 6px 6px 0; padding: 5px 11px; font-size: calc(13px * var(--scale));
@@ -290,8 +295,15 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .seth { margin: 0; font-size: calc(17px * var(--scale)); font-weight: 400; }
 .sset .sec-pad { padding: 0 14px 12px; }
 .ssub { margin: 14px 0 6px; font-size: calc(14px * var(--scale)); color: var(--ink-soft); }
+/* A row is a label and one block of controls (srow in app.js). The block sits
+   beside the label when all of it fits on that line; otherwise the whole block
+   takes the next line and wraps inside itself, from the same left edge. A
+   control is never left beside the label while its siblings drop under it. */
 .srow { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 6px 0; }
 .slabel { min-width: 9em; font-size: calc(14px * var(--scale)); }
+.sctl { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.sctl .chip { margin: 0; }
+.sgrp { display: inline-flex; gap: 6px; align-items: center; }   /* "through" stays with the range's end */
 .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .segbtn { padding: 6px 12px; border: 1px solid var(--edge); border-radius: 999px; background: none; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .segbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -308,8 +320,12 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .maint { margin: 6px 0; padding-left: 1.2em; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 
 /* ---- display options ---- */
-.depthrow { display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
-.depthrow .chip { flex: none; }
+/* Depth: one row that never wraps (T-95) and always fits. The chips shrink
+   together; a chip narrower than its one-line width puts its count under its
+   name. min-content is the floor; past it the row scrolls rather than clip. */
+.depthrow { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; white-space: nowrap; margin-bottom: 6px; }
+.depthrow .chip { flex: 0 1 auto; min-width: min-content; margin: 0; flex-wrap: wrap; justify-content: center; column-gap: .35em; text-align: center; }
+.tcount { font-variant-numeric: tabular-nums; }
 .eranav-in { display: flex; gap: 6px; overflow-x: auto; margin: 0 16px var(--gap); }
 .eranav-in .chip { flex: none; margin: 0; white-space: nowrap; }
 .erasel { height: 36px; padding: 0 8px; border: 1px solid var(--edge); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit; }
