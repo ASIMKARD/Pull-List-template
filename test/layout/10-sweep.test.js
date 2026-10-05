@@ -1,6 +1,7 @@
 /* The 320 px sweep (session 3's lesson, L-9): every tab, with everything open,
-   at 320, 360 and 390 px, on four datasets. No horizontal overflow, all four
-   tabs fully visible in the bar, no page or console errors. Real fonts. */
+   at 320, 360 and 390 px, on four datasets, and the full fixture in every
+   skin. No horizontal overflow, all four tabs fully visible in the bar, no
+   page or console errors. Real fonts. */
 'use strict';
 const path = require('path');
 const { ROOT, FIX, build, basic, mixed } = require('../lib/helpers');
@@ -11,12 +12,14 @@ const TABS = ['list', 'reading', 'reviews', 'settings'];
 
 module.exports = async function (t) {
   const minimal = build(path.join(FIX, 'minimal', 'dataset.json'), { label: 'layout-minimal' });
-  const sets = [['basic', basic().out], ['mixed', mixed().out], ['minimal', minimal.out], ['starter', ROOT]];
+  const sets = [['basic', basic().out], ['mixed', mixed().out], ['minimal', minimal.out], ['starter', ROOT]]
+    .concat(['newsprint', 'pull', 'night'].map(skin => ['basic in ' + skin, basic().out, skin]));
   try {
-    for (const [name, dir] of sets) {
+    for (const [name, dir, skin] of sets) {
       const srv = await serve(dir);
       for (const w of WIDTHS) {
-        const pg = await open(srv.url, { width: w, reducedMotion: 'reduce' });
+        const storage = skin ? { 'fixture:v3:settings': JSON.stringify({ v: 3, migrated: { format: 'v2' }, skin }) } : undefined;
+        const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage });
         const over = [], cut = [];
         for (const tab of TABS) {
           if (tab === 'list') await openAll(pg.page);

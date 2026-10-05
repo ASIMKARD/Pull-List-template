@@ -138,12 +138,13 @@ iterate `document.styleSheets` and test `el.matches(rule.selectorText)`.
 declaration of `position:relative` turned every sticky offset into a
 displacement: a phantom gap, an overlap and floating text.
 
-### content-visibility — [superseded §1, resolution proposed for session 4]
+### content-visibility — [superseded §1, resolved session 4]
 v2 removed `content-visibility:auto` + `contain-intrinsic-size`: blank unpainted
 rows on iOS, mis-positioned scroll-to-row, wrong estimates. Spec §1 says keep
-the performance guard. **Proposed resolution:** v3 lands collapsed, so render an
-era's rows only when it is first expanded — the guard becomes unnecessary and
-the iOS bugs can't occur. Decide in session 4.
+the performance guard. **Resolved (session 4, open to John's veto):** v3 lands
+collapsed and renders an era's rows only when it is first expanded (90-render:
+5,000 rows render none at landing). The guard is unnecessary, and the iOS bugs
+can't occur. Don't add `content-visibility`.
 
 ### Two stores for one setting — [superseded §2 by design; lesson applies]
 v2 split settings between `state.settings` and `view`; a control that wrote one
