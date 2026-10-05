@@ -148,6 +148,10 @@ Session 4: reduced motion had never worked. A `* { transition: none }` rule has 
 specificity, so every class rule that declares a transition beat it, and a test of the
 CSS text "passed". Every duration now scales with `--motion`, and `test/layout/20-motion`
 measures it.
+After session 4 (John's phone): a depth chip was cut off inside its own scrolling row,
+and Settings rows split their buttons. The page never got wider, so the sweep passed. "No
+page overflow" is not "it fits": `10-sweep` now checks every control against every box
+that clips it.
 
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:

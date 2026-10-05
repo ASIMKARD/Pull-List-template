@@ -223,7 +223,7 @@ v3 replaces by design — the named v3 assertion replaces it.
 | T-92 | classic skin: no filters on Reviews | S3 | re-express → present (98-tabs-settings: the filter panel lives in the Checklist pane only) |
 | T-93 | filters[hidden] is authoritative in CSS (`!important`) | S4 | re-express → present (80-guards: zero !important, and every [hidden] element computes to display:none against the real stylesheet) |
 | T-94 | nothing sticky in tabbed mode either | S4 | re-express → present (one layout; the sticky stack is measured in test/layout/60-stack) |
-| T-95 | depth control is a single nowrap row | S3 | present (99-display) |
+| T-95 | depth control is a single nowrap row | S3 | present (99-display; test/layout/10-sweep measures one line with no chip hidden, 320–390 px, every skin, large text: the chips shrink and counts drop under names) |
 | T-96 | nothing sticky in the classic skin | S4 | re-express → present (skins never change positioning: 80-guards token-only blocks; test/layout/60-stack pins the stack in every skin) |
 | T-97 | layout seg has 3 buttons | S4 | re-express → present (9g-look: one option per configured skin, in order; one skin → no control) |
 | T-98 | skin beacon present in styles.css | S4 | present (80-guards, 9g-look) |
@@ -390,6 +390,7 @@ installed app once online.
 | X-1 | Display mode "layout C": per-row arc labels with no arc headers (Archie's arrangement) | S3 | present (99-display: "Label on each row" arc headings) |
 | X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | present (98-tabs-settings: Import from previous version; 9e-sync: old v2 codes via `qrPrefix`, positions rebuilt with retiredIds) |
 | X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | present (9e-sync: full format keyed on id, versioned, unknown ids ignored and reported, new rows unread) |
+| X-4 | Buttons fit on the phone (John's screenshots, 5 Oct): a Settings row's controls move as one block, beside the label or under it, never split; no control is cut off by a box that clips it | S4 | present (98-tabs-settings: label + one control block; test/layout/10-sweep: no split rows, nothing clipped, every tab, 320–390 px) |
 
 ## B — v2 bugs found while inventorying (don't port them)
 

@@ -233,6 +233,10 @@ module.exports = async function (t) {
   t.ok('all collapsed by default: every head says so and every body is inert', heads().every(h => h.getAttribute('aria-expanded') === 'false') &&
        $$('#settings .sec-body').every(b => b.hasAttribute('inert')) && $$('#settings .sset.open').length === 0);
   t.ok('every head carries a one-line summary', heads().every(h => h.querySelector('.sec-sum').textContent.length > 0));
+  const rows = $$('#settings .srow');
+  t.ok('every Settings row is a label and one block of controls, which moves as a whole (John\'s phone, 5 Oct; measured in test/layout/10-sweep)',
+       rows.length > 10 && rows.every(r => r.children.length === 2 && r.children[0].matches('.slabel') && r.children[1].matches('.sctl')),
+       rows.filter(r => !(r.children.length === 2 && r.children[1].matches('.sctl'))).map(r => r.textContent.slice(0, 30)).join(' | '));
   t.eq('the summaries say what is set', heads().map(h => h.querySelector('.sec-sum').textContent),
        ['Average 15 min · Steady 12 a week', 'Paper skin', 'Badges · Headings · Plain scroll', 'Gestures off', 'Expand, collapse, mark eras and ranges',
         'Quarterly reminder · 0 bookmarks', 'Sync code and backup file', 'Not available here']);
