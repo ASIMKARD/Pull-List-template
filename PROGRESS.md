@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1157 assertions, 0 failed, 25 suites (session 4, step 3). **Layout suite (real Chromium):** 54 checks, 0 failed, 3 suites.
+**Harness:** 1201 assertions, 0 failed, 26 suites (session 4, step 4). **Layout suite (real Chromium):** 66 checks, 0 failed, 4 suites.
 Session 1 ended at 307, session 2 at 617 and session 3 at 1105; CI green on every run.
 
 ---
@@ -1105,4 +1105,99 @@ Branch `claude/keen-wozniak-w7lt6p`, cut from `main` at `d88a32d` (sessions 1–
 - **CLAUDE.md:** the repo map gains `test/layout/`, the "done" checklist names
   `npm run test:layout`, and the jsdom trap records the reduced-motion lesson.
 
-### Step 4 starts with: one token system and the skins (plan step 4)
+
+## Session 4 checkpoint — step 4 done (one token system, four skins, the Look), 5 Oct 2026
+
+### Done
+- **One token block (`styles.css` `:root`).**
+  - It holds numeric inputs (paper hue and saturation; lightness for paper, card, line, edge,
+    track, bar, ink, soft text, accent, wash and states) and derives every colour from them.
+  - New roles: `--edge` (control outlines, 3:1 on paper and card), and `--bar` /
+    `--bar-ink` / `--bar-soft` / `--bar-mark` for the tab bar.
+  - Type, shape and space are tokens too: `--font-meta`, the display and name case and
+    weight, the tab size and fit, `--scale`, `--row-pad`, `--tap`, `--b-min`, `--mark-radius`.
+  - All 43 font sizes are `calc(N px * var(--scale))`.
+- **Four skins (John's answer 1): Paper (the base), Newsprint, Pull and Night.**
+  - Each is a bare `:root[data-skin]` block of inputs: no colour literal and no layout.
+  - **Newsprint:** newsprint paper, Georgia display, a dark tab bar, newspaper red.
+  - **Pull:** the X-Men look — cream paper, Anton capitals for the title, bands and eras,
+    mono metadata, a black tab bar.
+  - **Night:** dark, from v2's signature palette, designed against its surface.
+- **Seven paper swatches.** The same declaration colours the page and the swatch button.
+  "Skin default" uses the skin's own paper.
+- **Era colours.**
+  - Derived per era index in OKLCH, so one lightness reads alike at every hue. The hue steps by
+    the golden angle, so there is no cap.
+  - "One colour" uses the skin's accent hue. Washes are pale.
+  - The era index reaches CSS as `style="--ei:N"`. B-6 (no inline styles) is narrowed to allow
+    custom properties only, with a self-test that `color: red` is still caught.
+- **Settings → Look ◐** (the second section):
+  - skin (only with two or more skins configured);
+  - paper swatches;
+  - era colours (only with two or more eras);
+  - text size, density, button size and marks (box / dot / tick and cross);
+  - a dyslexia-friendly font.
+
+  Each is a root attribute (`data-skin`, `data-paper`, `data-eras`, `data-text`, `data-density`,
+  `data-tap`, `data-marks`, `data-dys`) answered with tokens only. The summary lists what
+  differs from the defaults.
+- **Skins come from the data.** `franchise.skins` (default all four) and `franchise.skin` (a
+  first visit's skin) are in the schema and the build. They are validated, with two new broken
+  cases: `skin-unknown` and `skin-not-offered`. `minimal` declares one skin.
+- **Mark styles** change the glyphs (`glyph()`); screen-reader labels still name the state.
+- **The browser chrome:** the `theme-color` meta follows the skin's paper, falling back to the
+  franchise colour where nothing is computed (F-39).
+- **The skin beacon (F-57):** `--skin-ok: 3` in the stylesheet. A stylesheet with an older or
+  missing beacon gets "The page styles are out of date … Reload", which outranks the other boot
+  toasts.
+- **Guards (80-guards, +9).**
+  - The colour guard is narrowed, not weakened: outside `:root`, a colour function is allowed
+    only when every component is a token. Self-tests prove that `hsl(200 50% 50%)`, a literal
+    alpha, a partly literal `hsl`, `#fff`, `rgb(var…)` and `oklch(.9 .03 var(--h))` are still
+    caught.
+  - Skin, paper and Look blocks must be bare and set custom properties only.
+  - The build and `app.js` know the same skins; every skin and swatch has its block; the
+    beacon matches.
+- **`9g-look` (29 assertions):**
+  - the defaults; one option per configured skin (T-97); seven named swatches; button size has 3
+    options, standard by default (T-54, T-55);
+  - a skin changes no element, class, id or hidden state (T-81, V-5) and keeps the tab (T-83);
+    no trace of the last skin (T-103); round trip (T-116);
+  - all 25 Look options set their attribute and change nothing else;
+  - the summary; mark glyphs for box, dot and tick;
+  - stored in the one store and restored; unknown values fall back;
+  - the skin from config (T-104); two configured skins; one skin → no control;
+  - the beacon: current, older, missing.
+- **`9f-visibility`:** rows for the skin control and the era-colours setting (now 38 controls
+  and 20 capabilities), and a row for the Look controls every tracker has.
+- **`test/layout/40-look` (12 checks, real Chromium):**
+  - **Contrast:** 4 skins × 7 papers. 18 text pairs at 4.5:1 (worst 5.12) and 5 outlines
+    at 3:1.
+  - **Era banners:** 64 eras × 4 skins × split and one colour. All text clears AA on its wash,
+    washes are pale, neighbours differ.
+  - **Reachability (V-5):** 5,328 controls across 4 skins × 390/320 px × default and largest
+    settings. Each is displayed, at least 24 × 24 px, in view, and is the element hit at its
+    centre.
+  - **Overflow:** every skin at 320 px, with default and the largest settings: no overflow and
+    all four tabs in the bar.
+  - **Sizes:** text size (T-45, XM-18); 26 px compact mark (T-56); 44 px large glyph buttons
+    (T-57); the dyslexia font; density changes row height.
+- **Found by measuring:**
+  - Night's control outlines reached only 2.95:1 on the warm and mint papers; `--l-edge` went
+    from 45% to 49%.
+  - The event note's "Complete view adds N issues" button was 17 px tall; every `.linkbtn` now
+    has a 24 px minimum.
+- **Mutation checks**, each with the wrong behaviour put back:
+  - Night era text not designed against its surface → caught;
+  - a skin token collapsing the marks → caught, after the reachability check gained the 24 px
+    target (a 1 px "has a size" check missed it);
+  - theme-color not following → caught;
+  - a skin block with `position` → caught;
+  - a literal colour outside `:root` → 3 failures;
+  - mark style changing nothing → caught;
+  - the beacon never checked → 2 failures.
+- **Inventory:** 49 lines present or re-expressed: V-5, F-39, F-51…F-57, S-1…S-6, S-9, S-20,
+  S-25, T-38…T-45, T-54…T-57, T-81…T-116, T-93, XM-17, XM-18 and D-12 styling.
+- **CLAUDE.md:** the colour trap records how v3 holds it, and the 24 px target rule.
+
+### Step 5 starts with: banners and table view (plan step 5)

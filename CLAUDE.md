@@ -185,6 +185,19 @@ v3: one colour-token block; ramps generated, no cap (60+ eras), and a guard
 asserts exactly one token block. Era tints are pale washes.
 **Design dark skins against the surface.** The first dark skin had 39 of 54
 era colours failing WCAG AA (worst 1.35:1). Measure contrast; don't eyeball.
+**How v3 holds this (session 4):**
+- `:root` holds numeric inputs (hue, saturation, lightness per role) and derives
+  every colour from them. Skins, paper swatches and the other Look settings set
+  inputs only, in bare `:root[data-…]` blocks, and 80-guards rejects anything else.
+- Outside `:root` the only colours allowed are *derived* ones, where every component
+  is a token: an era's wash is `oklch(var(--era-tint-l) var(--era-tint-c) var(--era-h))`,
+  with `--era-h` computed from the era's index (`style="--ei:N"`, a token, not a
+  style). A literal component anywhere is caught.
+- `test/layout/40-look` measures contrast for every skin × paper and for 64 eras.
+  Its first run caught Night's control outlines at 2.95:1 on the warm and mint
+  papers: at the same HSL lightness, a yellowish hue is brighter.
+- Every control must be at least 24 × 24 px (WCAG 2.5.8). Creator names inside a
+  line of credits are the inline exception.
 
 ### A control that saves a value nobody reads — [applies]
 v2's refresh reminder stored an interval for a whole build before anything used

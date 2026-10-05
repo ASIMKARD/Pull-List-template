@@ -8,7 +8,10 @@
   "strapline": "harness fixture · comics only, one era, no extras",
   "span": "2001",
   "theme": "#22303F",
-  "strictCredits": false
+  "strictCredits": false,
+  "skins": [
+   "paper"
+  ]
  },
  "eras": [
   {

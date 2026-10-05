@@ -24,6 +24,7 @@ SCHEMA_VERSION = 1
 FLAG_BITS = {'FB': 1, 'SKIP': 2, 'ALT': 4, 'GAPNOTE': 8, 'RENUM': 16, 'SPECIAL_NUMBERING': 32}
 INERT_FLAGS = {'GAPNOTE', 'RENUM'}
 GRADES = ['major', 'minor', 'cameo']
+SKINS = ['paper', 'newsprint', 'pull', 'night']     # skins styles.css defines (session 4); the first is the base
 COMIC = 'comic'          # every comic counts as one issue, timed by the minutes-per-issue setting
 ROLES = ['core', 'tie-in']
 UNIVERSAL_STRAND = 'All'
@@ -163,6 +164,14 @@ def build(dataset_path, previous_datajs=None):
     if not re.match(r'^[a-z0-9][a-z0-9-]{1,30}$', str(fr.get('key', ''))):
         errs.append('franchise.key must be a lowercase slug (it namespaces storage and the QR prefix)')
     strict_credits = bool(fr.get('strictCredits', False))
+    # skins: which the tracker offers, and the one a first visit opens in
+    skins = fr.get('skins', SKINS)
+    if not isinstance(skins, list) or not skins or any(k not in SKINS for k in skins) or len(set(skins)) != len(skins):
+        errs.append('franchise.skins must be a non-empty list of distinct skins from %s' % ', '.join(SKINS))
+        skins = SKINS
+    skin = fr.get('skin', skins[0])
+    if skin not in skins:
+        errs.append('franchise.skin "%s" must be one of franchise.skins (%s)' % (skin, ', '.join(skins)))
     relevance = fr.get('eventRelevance', fr.get('key'))
 
     # ---- eras / periods ----
@@ -624,9 +633,9 @@ def build(dataset_path, previous_datajs=None):
 
     payload = {
         'schemaVersion': SCHEMA_VERSION,
-        'franchise': {k: canon(fr[k]) for k in ('key', 'wordmark', 'title', 'strapline', 'span', 'theme',
-                                                'background', 'searchUrl', 'dualOrder', 'storage')
-                      if k in fr},
+        'franchise': dict({k: canon(fr[k]) for k in ('key', 'wordmark', 'title', 'strapline', 'span', 'theme',
+                                                     'background', 'searchUrl', 'dualOrder', 'storage')
+                           if k in fr}, skins=skins, skin=skin),
         'eras': [{'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
                   'intro': e.get('intro', '')} for e in eras],
         'periods': [{'id': p.get('id'), 'name': p.get('name', ''), 'label': p.get('label', ''),

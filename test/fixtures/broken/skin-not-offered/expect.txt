@@ -1,0 +1,1 @@
+franchise.skin "pull" must be one of franchise.skins

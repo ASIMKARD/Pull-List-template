@@ -113,7 +113,13 @@ module.exports = async function (t) {
     d4.querySelector('[data-act="collapse-all"]').click();
     t.ok('styles: every hidden element computes to display:none after interaction', leaks().length === 0, leaks().join(', '));
     d4.querySelector('[data-act="expand-all"]').click();
-    t.ok('rendered markup carries no inline style attributes (B-6)', d4.querySelectorAll('[style]').length === 0);
+    /* B-6: no inline styles. A custom property that hands the stylesheet a
+       number (an era's index for its derived colour) is a token, not a style. */
+    const tokensOnly = v => v.split(';').map(x => x.trim()).filter(Boolean).every(x => /^--[\w-]+\s*:\s*[\w.-]+$/.test(x));
+    const styled = [...d4.querySelectorAll('[style]')].filter(el => !tokensOnly(el.getAttribute('style')));
+    t.ok('rendered markup carries no inline styles, only token values (B-6)', styled.length === 0 && d4.querySelectorAll('.era[style]').length > 0,
+         styled.map(el => el.getAttribute('style')).join(' | '));
+    t.ok('the inline-style check still catches a real style', !tokensOnly('color: red') && !tokensOnly('--ei: 3; width: 9px') && tokensOnly('--ei:3'));
     a4.window.close();
   }
 };

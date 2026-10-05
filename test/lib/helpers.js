@@ -59,7 +59,8 @@ function validateIssueIds(ids) {
 
 /* Boot the REAL index.html with the REAL app.js and a generated data.js.
    Local <script src> tags are inlined (jsdom does not fetch file URLs by
-   default). opts.appSrc replaces app.js (mutation self-tests).
+   default). opts.appSrc replaces app.js and opts.cssSrc inlines a given
+   stylesheet (mutation self-tests, the stale-styles beacon).
    Returns { window, document, errors, listeners }. */
 function boot(dataDir, opts) {
   opts = opts || {};
@@ -75,8 +76,8 @@ function boot(dataDir, opts) {
     const src = raw.split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
     return '<script>' + src + '</scr' + 'ipt>';
   });
-  if (opts.css) {
-    const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+  if (opts.css || opts.cssSrc) {
+    const css = opts.cssSrc || fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
     html = html.replace('<link rel="stylesheet" href="./styles.css">', '<style>' + css + '</style>');
   }
   const listeners = [];

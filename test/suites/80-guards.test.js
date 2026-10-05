@@ -77,6 +77,32 @@ function cssBlocks(css) {
   return blocks;
 }
 const COLOUR = /#[0-9a-fA-F]{3,8}\b|\b(rgb|rgba|hsl|hsla|oklch|lab|color-mix)\(/;
+/* A DERIVED colour is a colour function whose every component draws on a
+   token, e.g. an era's wash computed from its index: everything it is made of
+   still comes from :root, so the single source holds. Anything with a literal
+   component (hsl(200 50% 50%), a literal alpha, #fff, rgb()) is not derived. */
+function components(args) {
+  const parts = []; let depth = 0, cur = '';
+  for (const ch of args) {
+    if (ch === '(') depth++;
+    if (ch === ')') depth--;
+    if (depth === 0 && /[\s,/]/.test(ch)) { if (cur.trim()) parts.push(cur.trim()); cur = ''; } else cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+function stripDerived(body) {
+  const re = /\b(hsl|hsla|oklch)\(/g;
+  let out = '', i = 0, m;
+  while ((m = re.exec(body))) {
+    let depth = 1, j = m.index + m[0].length;
+    while (j < body.length && depth) { if (body[j] === '(') depth++; else if (body[j] === ')') depth--; j++; }
+    if (components(body.slice(m.index + m[0].length, j - 1)).every(c => /var\(--/.test(c))) {
+      out += body.slice(i, m.index) + 'DERIVED'; i = j; re.lastIndex = j;
+    }
+  }
+  return out + body.slice(i);
+}
 
 function makeSwContext() {
   const handlers = {}, calls = { addAll: [], skipWaiting: 0, claim: 0, put: 0, respond: [] };
@@ -145,11 +171,39 @@ module.exports = async function (t) {
   t.ok('zero !important in styles.css', !/!\s*important/i.test(cssCode));
   t.ok('the !important guard sees a real declaration', /!\s*important/i.test('a{color:red ! important}'));
   t.ok('zero !important in index.html', !/!important/i.test(read('index.html')));
-  const coloured = cssBlocks(css).filter(b => COLOUR.test(b.body));
-  t.ok('exactly one rule block declares colours', coloured.length === 1, coloured.map(b => b.sel).join(' | '));
+  const coloured = cssBlocks(css).filter(b => COLOUR.test(stripDerived(b.body)));
+  t.ok('exactly one rule block writes a colour (derived colours aside)', coloured.length === 1, coloured.map(b => b.sel).join(' | '));
+  const derived = cssBlocks(css).filter(b => b.sel !== ':root' && COLOUR.test(b.body)).map(b => b.sel);
+  t.ok('derived colours outside :root are drawn from tokens only (' + derived.join(', ') + ')', derived.length >= 2);
+  const caught = x => COLOUR.test(stripDerived(x));
+  t.ok('the derived-colour exemption still catches literals: hsl(200 50% 50%), a literal alpha, a partly literal hsl, #fff, rgb()',
+       caught('a: hsl(200 50% 50%)') && caught('a: hsl(var(--h) var(--s) var(--l) / .5)') && caught('a: hsl(var(--h) 50% 50%)') &&
+       caught('a: #fff') && caught('a: rgb(var(--r) var(--g) var(--b))') && caught('a: oklch(.9 .03 var(--h))'));
+  t.ok('…and lets a token-only formula through (an era wash from its index)',
+       !caught('background: oklch(var(--a) var(--c) calc(var(--h0) + var(--ei, 0) * var(--step)))') && !caught('b: hsl(var(--h) var(--s) var(--l))'));
   t.ok('that block is :root (the single token source)', coloured.length === 1 && coloured[0].sel === ':root');
   t.ok('every colour in it is a custom property', coloured.length === 1 &&
        coloured[0].body.split(';').filter(d => COLOUR.test(d)).every(d => /^\s*--[\w-]+\s*:/.test(d)));
+  // ---- skins and the Look settings are token sets (V-5: they never move or hide a control) ----
+  const LOOK_SEL = /^:root\[data-(skin|paper|eras|text|density|tap|marks|dys)="[\w-]+"\]$|^\.swatch\[data-v="[\w-]+"\]$/;
+  const lookBlocks = cssBlocks(css).filter(b => b.sel.split(',').some(x => LOOK_SEL.test(x.trim()) || /\[data-(skin|paper)=/.test(x)));
+  const decls = b => b.body.split(';').map(x => x.trim()).filter(Boolean);
+  t.ok('skin, paper and Look blocks are bare (no descendant selectors): ' + lookBlocks.length + ' blocks',
+       lookBlocks.length >= 16 && lookBlocks.every(b => b.sel.split(',').every(x => LOOK_SEL.test(x.trim()))), lookBlocks.map(b => b.sel).join(' | '));
+  t.ok('…and set custom properties only: no position, display, visibility, size or order',
+       lookBlocks.every(b => decls(b).every(d => /^--[\w-]+\s*:/.test(d))), lookBlocks.filter(b => !decls(b).every(d => /^--[\w-]+\s*:/.test(d))).map(b => b.sel).join(' | '));
+  const tokenOnly = b => decls(b).every(d => /^--[\w-]+\s*:/.test(d));
+  t.ok('the token-only check sees a real declaration', !tokenOnly({ body: '--a: 1; position: relative' }) && tokenOnly({ body: '--a: 1; --b: var(--c)' }));
+  const buildSkins = (read('tools/build.py').match(/^SKINS = \[([^\]]+)\]/m) || ['', ''])[1].match(/'([\w-]+)'/g).map(x => x.slice(1, -1));
+  const appSkins = Object.keys(JSON.parse(appJs.match(/var SKIN_NAMES = (\{[^}]+\})/)[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"')));
+  t.eq('the build and app.js know the same skins, base first', appSkins, buildSkins);
+  t.eq('every skin but the base has its own token block in styles.css', buildSkins.slice(1).filter(k => !cssBlocks(css).some(b => b.sel === ':root[data-skin="' + k + '"]')), []);
+  const papers = (appJs.match(/var PAPERS = \[([\s\S]*?)\];/)[1].match(/\['([\w-]+)'/g) || []).map(x => x.slice(2, -1));
+  t.eq('every paper swatch but the skin default has its block, colouring the page and its own button',
+       papers.filter(k => k !== 'default' && !cssBlocks(css).some(b => b.sel === ':root[data-paper="' + k + '"], .swatch[data-v="' + k + '"]')), []);
+  t.ok('the stylesheet carries the skin beacon app.js expects (F-57, T-98)',
+       /--skin-ok:\s*(\d+)/.test(css) && css.match(/--skin-ok:\s*(\d+)/)[1] === (appJs.match(/var SKIN_OK = '(\d+)'/) || [])[1]);
+
   t.ok('index.html carries no colour literal outside meta theme-color',
        !COLOUR.test(read('index.html').replace(/<meta name="theme-color"[^>]*>/, '')));
 

@@ -49,7 +49,7 @@ module.exports = async function (t) {
   t.ok('the next boot opens on the remembered tab', visible($('#settings')) && $('#tab-settings').getAttribute('aria-selected') === 'true');
   t.ok('…and the checklist behind it still landed collapsed (no rows rendered)', d.querySelectorAll('.row').length === 0);
   t.eq('Settings is sectioned, at least 4 heads (T-11)', $$('#settings .sset > .seth .sec-name').map(h => h.textContent),
-       ['Reading behaviour', 'Display', 'Touch', 'Bulk actions', 'Data', 'Backup']);
+       ['Reading behaviour', 'Look', 'Display', 'Touch', 'Bulk actions', 'Data', 'Backup']);
   app.window.close();
 
   // ------------------------------------------- pace controls and readout
@@ -229,12 +229,12 @@ module.exports = async function (t) {
   $('#tab-settings').click();
   const heads = () => $$('#settings .sset > .seth > .sec-head');
   t.eq('Settings sections, in order, each with its own icon', heads().map(h => h.querySelector('.sec-name').textContent + ' ' + h.querySelector('.sec-ico').textContent),
-       ['Reading behaviour ◷', 'Display ◧', 'Touch ☝', 'Bulk actions ☑', 'Data ▤', 'Backup ⇄']);
+       ['Reading behaviour ◷', 'Look ◐', 'Display ◧', 'Touch ☝', 'Bulk actions ☑', 'Data ▤', 'Backup ⇄']);
   t.ok('all collapsed by default: every head says so and every body is inert', heads().every(h => h.getAttribute('aria-expanded') === 'false') &&
        $$('#settings .sec-body').every(b => b.hasAttribute('inert')) && $$('#settings .sset.open').length === 0);
   t.ok('every head carries a one-line summary', heads().every(h => h.querySelector('.sec-sum').textContent.length > 0));
   t.eq('the summaries say what is set', heads().map(h => h.querySelector('.sec-sum').textContent),
-       ['Average 15 min · Steady 12 a week', 'Badges · Headings · Plain scroll', 'Gestures off', 'Expand, collapse, mark eras and ranges',
+       ['Average 15 min · Steady 12 a week', 'Paper skin', 'Badges · Headings · Plain scroll', 'Gestures off', 'Expand, collapse, mark eras and ranges',
         'Quarterly reminder · 0 bookmarks', 'Sync code and backup file']);
   const shape = h => [...h.children].map(c => c.className).join(' ') + ' | ' + [...h.querySelector('.sec-t').children].map(c => c.className.split(' ')[0]).join(' ');
   t.ok('one component: Settings heads and filter-panel heads have the same parts', shape(heads()[0]) === shape(d.querySelector('#fsecs .sec-head')),

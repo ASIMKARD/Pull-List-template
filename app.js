@@ -14,7 +14,10 @@
   var FL = D.flagBits;
   var INERT = FL.GAPNOTE | FL.RENUM;
   var CYCLE = ['unread', 'reading', 'read', 'skip'];
-  var GLYPH = { unread: '☐', reading: '◐', read: '✓', skip: '⊘' };
+  /* mark styles (S-5, XM-17): box is the default; tick is the feel-reference build's tick / cross */
+  var GLYPHS = { box: { unread: '☐', reading: '◐', read: '✓', skip: '⊘' },
+                 dot: { unread: '○', reading: '◐', read: '●', skip: '⊘' },
+                 tick: { unread: '', reading: '–', read: '✓', skip: '✗' } };
   var LABELS = {
     comic:  { unread: 'Unread', reading: 'Reading', read: 'Read', skip: 'Skipped' },
     game:   { unread: 'Not started', reading: 'Playing', read: 'Beaten', skip: 'Skipped' },
@@ -127,6 +130,7 @@
       reveal: some(function (i) { return !!D.issues[i][7] && !(D.issues[i][6] & (FL.FB | FL.ALT)); }),
       gapNotes: D.issues.some(function (r) { return !!(r[6] & FL.GAPNOTE); }),
       lookup: !!D.franchise.searchUrl,
+      skins: (D.franchise.skins || []).length > 1,       // the skin control
       legacy: !!(D.franchise.storage && D.franchise.storage.legacy)
     };
   }
@@ -176,6 +180,23 @@
   progress.bookmarks = progress.bookmarks || [];
   var reviews = load('reviews', null) || {};
   var ERA_NAV = ['scroll', 'chips', 'dropdown'];        // era navigation style (XM-8)
+  /* LOOK (session 4): the skin and the other look settings. Each one becomes
+     a root attribute that styles.css answers with tokens only, so none of
+     them can move or hide a control (V-5). Skins come from the data. */
+  var SKIN_NAMES = { paper: 'Paper', newsprint: 'Newsprint', pull: 'Pull', night: 'Night' };
+  var SKINS = (D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  var PAPERS = [['default', 'Skin default'], ['warm', 'Warm'], ['grey', 'Grey'], ['rose', 'Rose'], ['mint', 'Mint'], ['sky', 'Sky'],
+                ['lilac', 'Lilac']];
+  var LOOK = [   // [setting, root attribute, label, options, default]
+    ['eraHues', 'eras', 'Era colours', [['split', 'One per era'], ['mono', 'One colour']], 'split'],
+    ['textSize', 'text', 'Text size', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large']], 'm'],
+    ['density', 'density', 'Density', [['compact', 'Compact'], ['normal', 'Normal'], ['roomy', 'Roomy']], 'normal'],
+    ['tap', 'tap', 'Button size', [['compact', 'Compact'], ['standard', 'Standard'], ['large', 'Large']], 'standard'],
+    ['marks', 'marks', 'Marks', [['box', 'Box'], ['dot', 'Dot'], ['tick', 'Tick and cross']], 'box']
+  ];
+  function lookOf(k) { return LOOK.filter(function (l) { return l[0] === k; })[0]; }
+  function lookOk(l, v) { return l[3].some(function (o) { return o[0] === v; }); }
+  function glyph(st) { return (GLYPHS[settings.marks] || GLYPHS.box)[st]; }
   /* ONE settings store. Defaults are filled in here and nowhere else, so a
      restored snapshot or an imported backup gets exactly the same treatment. */
   function withDefaults(s) {
@@ -199,6 +220,11 @@
     s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
     s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
+    var firstSkin = SKINS.indexOf(D.franchise.skin) === -1 ? SKINS[0] : D.franchise.skin;      // default skin from config (T-104)
+    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin : s.skin;
+    s.paper = PAPERS.some(function (p) { return p[0] === s.paper; }) ? s.paper : 'default';
+    LOOK.forEach(function (l) { if (!lookOk(l, s[l[0]])) s[l[0]] = l[4]; });
+    if (typeof s.dys !== 'boolean') s.dys = false;
     return s;
   }
   var settings = withDefaults(load('settings', null));
@@ -543,7 +569,7 @@
     var label = settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '';
     return '<div class="row" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
-      GLYPH[st] + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
+      glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
       '<span class="badges">' + badges + (rvArc >= 0 ? rvButton(rvArc) : '') + '</span>' + sub + '</div>';
   }
 
@@ -585,7 +611,7 @@
 
   function eraHtml(e, S, fin, hidden) {
     var era = D.eras[e], isOpen = !!open.e[e];
-    return '<section class="era" data-e="' + e + '"' + (hidden ? ' hidden' : '') + '>' +
+    return '<section class="era" data-e="' + e + '" style="--ei:' + e + '"' + (hidden ? ' hidden' : '') + '>' +
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
@@ -958,7 +984,7 @@
     $$('.row[data-i="' + i + '"]').forEach(function (row) {
       row.dataset.s = st;
       var m = row.querySelector('.mark');
-      m.textContent = GLYPH[st];
+      m.textContent = glyph(st);
       m.setAttribute('aria-label', D.issues[i][1] + ' — ' + labelOf(i, st));
     });
   }
@@ -1346,7 +1372,7 @@
 
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
-  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css' };
+  var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css' };
   function applyPrefs() {
     var root = document.documentElement;
     $('.ptools [data-act="next"]').hidden = !settings.showJump;
@@ -1354,6 +1380,46 @@
     root.setAttribute('data-combo', settings.combo ? '1' : '0');
     root.setAttribute('data-reveal', settings.reveal ? '1' : '0');
     root.setAttribute('data-layout', settings.layout);
+    root.setAttribute('data-skin', settings.skin);
+    root.setAttribute('data-paper', settings.paper);
+    LOOK.forEach(function (l) { root.setAttribute('data-' + l[1], settings[l[0]]); });
+    root.setAttribute('data-dys', settings.dys ? '1' : '0');
+    /* the browser's own chrome follows the skin's paper (F-39) */
+    var tc = $('meta[name="theme-color"]'), bg = document.body ? getComputedStyle(document.body).backgroundColor : '';
+    if (tc) tc.setAttribute('content', bg && !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(bg) ? bg : D.franchise.theme);
+  }
+  /* a Look setting: validated, stored in the one store, applied as a root
+     attribute. Mark style also changes the glyphs, so the rows re-render. */
+  function setLook(k, v) {
+    if (k === 'skin') { if (SKINS.indexOf(v) === -1) return; settings.skin = v; }
+    else if (k === 'paper') { if (!PAPERS.some(function (p) { return p[0] === v; })) return; settings.paper = v; }
+    else { var l = lookOf(k); if (!l || !lookOk(l, v)) return; settings[k] = v; }
+    saveSettings(); applyPrefs();
+    if (k === 'marks') { renderList(); if (activeTab === 'reading') renderReading(); }
+    if (activeTab === 'settings') renderSettings();
+  }
+  /* The skin beacon (F-57): styles.css declares the token contract it was
+     written for; a stylesheet from an older build (a stale cache) is caught. */
+  var SKIN_OK = '3';
+  function skinBeacon() {
+    var sheets = document.styleSheets, v = null;
+    if (!sheets.length) return null;                           // nothing loaded to check
+    for (var k = 0; k < sheets.length && v === null; k++) {
+      var rules = null;
+      try { rules = sheets[k].cssRules; } catch (e) { rules = null; }
+      for (var j = 0; rules && j < rules.length; j++) {
+        if (rules[j].selectorText === ':root' && rules[j].style.getPropertyValue('--skin-ok')) { v = rules[j].style.getPropertyValue('--skin-ok').trim(); break; }
+      }
+    }
+    return v;
+  }
+  function checkBeacon() {
+    var v = skinBeacon();
+    if (v === null && !document.styleSheets.length) return false;
+    if (v === SKIN_OK) return false;
+    toast('The page styles are out of date (' + (v ? 'version ' + v : 'missing') + '). Reload to get the current version.', 'Reload',
+      function () { location.reload(); });
+    return true;
   }
   function togglePref(k) {
     if (!PREFS[k]) return;
@@ -1703,7 +1769,7 @@
   function srow(label, control) { return '<div class="srow"><span class="slabel">' + escapeHtml(label) + '</span>' + control + '</div>'; }
   /* Settings sections collapse like the filter panel (decided 4 Oct), each
      head carrying an icon and a live one-line summary of what is set. */
-  var SETTINGS_SECTIONS = { reading: ['◷', 'Reading behaviour'], display: ['◧', 'Display'], touch: ['☝', 'Touch'],
+  var SETTINGS_SECTIONS = { reading: ['◷', 'Reading behaviour'], look: ['◐', 'Look'], display: ['◧', 'Display'], touch: ['☝', 'Touch'],
                             bulk: ['☑', 'Bulk actions'], data: ['▤', 'Data'], backup: ['⇄', 'Backup'] };
   function presetLabel(list, v) {
     for (var k = 0; k < list.length; k++) if (list[k][2] === v) return list[k][1] + ' ';
@@ -1717,6 +1783,16 @@
       if (perFormat()) bits.push('per format');
       if (HAS.events && settings.events === 'complete') bits.push('Complete events');
       if (!settings.showJump) bits.push('no Next unread');
+    } else if (k === 'look') {
+      bits.push(SKIN_NAMES[settings.skin] + ' skin');
+      if (settings.paper !== 'default') bits.push(PAPERS.filter(function (p) { return p[0] === settings.paper; })[0][1] + ' paper');
+      LOOK.forEach(function (l) {
+        if (settings[l[0]] === l[4] || (l[0] === 'eraHues' && !HAS.eras)) return;
+        var o = l[3].filter(function (x) { return x[0] === settings[l[0]]; })[0];
+        bits.push({ eraHues: 'one era colour', textSize: o[1].toLowerCase() + ' text', density: o[1].toLowerCase(), tap: o[1].toLowerCase() + ' buttons',
+                    marks: o[1].toLowerCase() + ' marks' }[l[0]]);
+      });
+      if (settings.dys) bits.push('dyslexia-friendly font');
     } else if (k === 'display') {
       bits.push(settings.badges ? 'Badges' : 'No badges', settings.layout === 'rows' ? 'Labels on rows' : 'Headings');
       if (HAS.eras) bits.push({ scroll: 'Plain scroll', chips: 'Era chips', dropdown: 'Era dropdown' }[settings.eraNav]);
@@ -1776,6 +1852,22 @@
         srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
       (HAS.events ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
       srow('Next unread button', pref('showJump', 'Show it')));
+    var lookSeg = function (k, label, opts, cur) {
+      return '<div class="seg" role="group" aria-label="' + escapeAttr(label) + '">' + opts.map(function (o) {
+        return '<button type="button" class="segbtn" data-act="look" data-k="' + k + '" data-v="' + escapeAttr(o[0]) + '" aria-pressed="' +
+          (o[0] === cur) + '">' + escapeHtml(o[1]) + '</button>';
+      }).join('') + '</div>';
+    };
+    h += sset('look',
+      (HAS.skins ? srow('Skin', lookSeg('skin', 'Skin', SKINS.map(function (k) { return [k, SKIN_NAMES[k]]; }), settings.skin)) : '') +
+      srow('Paper', '<div class="swatches" role="group" aria-label="Paper">' + PAPERS.map(function (p) {
+        return '<button type="button" class="swatch" data-act="look" data-k="paper" data-v="' + p[0] + '" aria-pressed="' + (settings.paper === p[0]) +
+          '" aria-label="' + escapeAttr(p[1] + ' paper') + '" title="' + escapeAttr(p[1]) + '"></button>';
+      }).join('') + '</div>') +
+      LOOK.filter(function (l) { return l[0] !== 'eraHues' || HAS.eras; }).map(function (l) {
+        return srow(l[2], lookSeg(l[0], l[2], l[3], settings[l[0]]));
+      }).join('') +
+      srow('Reading aid', pref('dys', 'Dyslexia-friendly font')));
     h += sset('display',
       srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
         (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '')) +
@@ -1878,6 +1970,7 @@
         saveSettings(); renderSettings();
         break;
       case 'pref': togglePref(b.dataset.k); break;
+      case 'look': setLook(b.dataset.k, b.dataset.v); break;
       case 'layout': settings.layout = b.dataset.v === 'rows' ? 'rows' : 'arcs'; saveSettings(); applyPrefs(); renderList(); renderSettings(); break;
       case 'eranav':
         settings.eraNav = ERA_NAV.indexOf(b.dataset.v) === -1 ? 'scroll' : b.dataset.v;
@@ -2049,7 +2142,8 @@
   applyPrefs();
   showTab(settings.tab);
   var synced = importFromHash();
-  if (migration && legacySummary(migration)) toast(legacySummary(migration));
+  if (checkBeacon()) { /* the stale-styles warning outranks the other boot toasts */ }
+  else if (migration && legacySummary(migration)) toast(legacySummary(migration));
   else if (!synced) checkRefresh();
 
   /* Small public surface for session 3's Settings actions (and the harness). */

@@ -63,7 +63,9 @@ const ROWS = [
   { cap: 'reveal', tab: 'settings', what: 'Tap to reveal notes', has: d => any(d, '[data-act="pref"][data-k="reveal"]') },
   { cap: 'gapNotes', tab: 'settings', what: 'Gap notes toggle', has: d => any(d, '[data-act="pref"][data-k="gapNotes"]') },
   { cap: 'lookup', tab: 'list', what: 'look-up link', has: d => any(d, '#app .b.mu') },
-  { cap: 'legacy', tab: 'settings', what: 'Import from previous version', has: d => any(d, '[data-act="import-legacy"]') }
+  { cap: 'legacy', tab: 'settings', what: 'Import from previous version', has: d => any(d, '[data-act="import-legacy"]') },
+  { cap: 'skins', tab: 'settings', what: 'skin control (more than one skin offered)', has: d => any(d, '[data-act="look"][data-k="skin"]') },
+  { cap: 'eras', tab: 'settings', what: 'era colours setting', has: d => any(d, '[data-act="look"][data-k="eraHues"]') }
 ];
 /* Shown by the data itself rather than a capability: no flag to force. */
 const DATA_ROWS = [
@@ -87,7 +89,10 @@ const ALWAYS = [
   { tab: 'settings', what: 'Touch: swipe and long-press', has: d => any(d, '[data-k="swipe"]') && any(d, '[data-k="press"]') },
   { tab: 'settings', what: 'Bulk: Mark era read / unread', has: d => d.querySelectorAll('[data-act="bulk-era"]').length === 2 },
   { tab: 'settings', what: 'Data: refresh reminder, Clear all progress', has: d => any(d, '[data-act="refresh"]') && any(d, '[data-act="clear-ask"]') },
-  { tab: 'settings', what: 'Backup: sync code, export', has: d => any(d, '[data-act="sync-show"]') && any(d, '[data-act="backup-export"]') }
+  { tab: 'settings', what: 'Backup: sync code, export', has: d => any(d, '[data-act="sync-show"]') && any(d, '[data-act="backup-export"]') },
+  { tab: 'settings', what: 'Look: seven paper swatches, text size, density, button size, marks, dyslexia font',
+    has: d => d.querySelectorAll('.swatch[data-act="look"]').length === 7 && ['textSize', 'density', 'tap', 'marks'].every(k => any(d, '[data-act="look"][data-k="' + k + '"]')) &&
+             any(d, '[data-act="pref"][data-k="dys"]') }
 ];
 /* A capability whose controls live inside another's section is forced
    together with it. */
