@@ -14,7 +14,7 @@ async function shellChecks(t, label, dataDir) {
   t.ok(label + ': document title comes from config', doc.title === D.franchise.title);
   t.ok(label + ': wordmark comes from config', doc.getElementById('wordmark').textContent === D.franchise.wordmark);
   t.ok(label + ': strapline comes from config', doc.getElementById('strapline').textContent === D.franchise.strapline);
-  t.ok(label + ': build tag shows the content hash', doc.getElementById('buildtag').textContent.includes(D.build));
+  t.eq(label + ': the header shows the readable version, not the hash', doc.getElementById('buildtag').textContent, 'v' + D.version);
   t.ok(label + ': theme-color meta comes from config', doc.querySelector('meta[name="theme-color"]').content === D.franchise.theme);
   t.ok(label + ': home-screen title comes from config', doc.querySelector('meta[name="apple-mobile-web-app-title"]').content === D.franchise.wordmark);
   const heads = [...doc.querySelectorAll('.era-head')];

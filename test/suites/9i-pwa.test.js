@@ -56,12 +56,12 @@ module.exports = async function (t) {
   t.eq('the page registers ./sw.js', x.s.state.registered, './sw.js');
   t.ok('every precached file is in the cache: "Ready offline · N of N files saved" (F-35)',
        new RegExp('Ready offline · ' + D.precache.length + ' of ' + D.precache.length + ' files saved').test(offSec(x)) && x.$('#offState').dataset.ready === '1');
-  t.ok('…the summary says so, and the version shows the build', /^Ready offline/.test(x.$('.sset[data-k="offline"] .sec-sum').textContent) &&
-       x.$('#set-offline').textContent.includes('build ' + D.build));
+  t.ok('…the summary says so, and the Version row shows "vN"', /^Ready offline/.test(x.$('.sset[data-k="offline"] .sec-sum').textContent) &&
+       /Version\s*v\d+(?!\d)/.test(x.$('#set-offline').textContent) && x.$('#set-offline').textContent.includes('v' + D.version));
   x.$('[data-act="sw-check"]').click();
   await wait(20);
   t.ok('Check for updates asks the worker (XM-7)', x.s.state.updates === 1);
-  t.eq('…and says when this is the latest', x.$('#toastMsg').textContent, 'You have the latest version (build ' + D.build + ').');
+  t.eq('…and says when this is the latest', x.$('#toastMsg').textContent, 'You have the latest version (v' + D.version + ').');
   x.app.window.close();
   x = await go({ cached: ['./', './index.html', './app.js'] });
   t.ok('a partly filled cache: "Not ready yet · 3 of N", keep the page open while online', /Not ready yet · 3 of \d+ files saved\. Keep this page open while online\./.test(offSec(x)));

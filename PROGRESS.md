@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1299 assertions, 0 failed, 29 suites (after the 5 Oct phone fix). **Layout suite (real Chromium, in CI too):** 231 checks, 0 failed, 8 suites.
+**Harness:** 1334 assertions, 0 failed, 30 suites (session 5, step 1). **Layout suite (real Chromium, in CI too):** 231 checks, 0 failed, 8 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
@@ -1800,3 +1800,33 @@ build starts in a fresh session** (John, 6 Oct).
 Stop cleanly (`CLAUDE.md`). Expected: steps 1–6 in session 5, the pilot in session 6. The build
 session starts with step 1, in `tools/build.py` and a new version test.
 
+
+---
+
+## Session 5 checkpoint — step 1 done (readable versions), 6 Oct 2026
+
+Pre-flight (asked by John before step 1):
+- **dc.fandom.com:** the MediaWiki API answers (`api.php` returned 200 with the wikitext of
+  *Absolute Batman Vol 1 1*). Ordinary wiki pages return 403 with Cloudflare's "Just a
+  moment…" challenge, so research must use the API, not page scraping.
+- **Absolute-v3:** not attached. `list_repos` shows only ASIMKARD/Absolute, and the attempt to
+  attach ASIMKARD/Absolute-v3 was refused by this session's permission check.
+- This branch was fast-forwarded to the plan commit `fe0aad0` from `claude/keen-wozniak-w7lt6p`.
+
+### Done
+| Change | Where |
+|---|---|
+| The build stamps a readable **version** after the hash: the previous `data.js`'s number, + 1 only when the content hash changed; never below `franchise.versionStart`; `versionStart` (default 1) when there is no previous number. It never feeds the hash, so the cache name follows the content only | `tools/build.py` `next_version`, `render_outputs` |
+| `franchise.versionStart` (integer ≥ 1) in the schema and validated by the build; a broken fixture | `schema/dataset.schema.json`, `test/fixtures/broken/version-start-invalid` |
+| The header shows "v1"; About shows "Version 1" with "build <hash>" in small print; the Offline "Version" row and the "latest version" toast say "v1" | `app.js`, `styles.css` `.buildhash` |
+| New suite: first build, unchanged rebuild, +1 on a content change, versionStart lifts but never lowers, the hash and `sw.js` ignore the number, a pre-version `data.js`, bad values, `--check` deterministic and read-only, and the app's header, About and Offline row | `test/suites/21-version` |
+
+All 11 mutations were caught: always +1, never +1, `versionStart` ignored, no max with
+`versionStart`, the version feeding the hash, no validation, the header, About, the Offline row
+and the toast showing the hash, and the version not stamped. (The About one first crashed the
+suite instead of failing; the test now fails cleanly.)
+
+**For BUILD-NOTES (step 6):** after merging two branches, rebuild on `main`; the number continues
+from `main`'s `data.js`.
+
+**Harness:** 1334 assertions (+35), 0 failed, 30 suites. **Layout:** 231 checks, 0 failed, 8 suites.

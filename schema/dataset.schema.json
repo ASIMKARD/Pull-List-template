@@ -131,6 +131,11 @@
      "type": "boolean",
      "description": "Missing credits fail the build (on for new builds, off for migrations)."
     },
+    "versionStart": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "The first readable version number (default 1). A migrated tracker continues its old numbering: the old tracker's last build + 1. After that the build counts up by itself whenever the content hash changes."
+    },
     "eventRelevance": {
      "type": "string",
      "description": "The tag that marks an event chapter essential for this tracker. Defaults to key."

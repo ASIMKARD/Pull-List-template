@@ -1882,7 +1882,8 @@
   function aboutHtml() {
     var c = D.counts;
     return '<h3 class="ssub">About this list</h3><p class="about">' + escapeHtml(D.franchise.title) + ' · ' +
-      c.total.toLocaleString('en-GB') + ' entries · ' + c.core + ' core · ' + c.mandatory + ' mandatory · build ' + escapeHtml(D.build) + '</p>' +
+      c.total.toLocaleString('en-GB') + ' entries · ' + c.core + ' core · ' + c.mandatory + ' mandatory · Version ' + D.version +
+      ' <small class="buildhash">build ' + escapeHtml(D.build) + '</small></p>' +
       (D.legend.length ? '<dl class="legend">' + D.legend.map(function (l) {
         return '<dt>' + escapeHtml(l.term) + '</dt><dd>' + escapeHtml(l.meaning) + '</dd>';
       }).join('') + '</dl>' : '') +
@@ -1974,7 +1975,7 @@
     var st = offlineState();
     return '<p class="offstate" id="offState" data-ready="' + (st.short === 'Ready offline' ? '1' : '0') + '">' + escapeHtml(st.long) + '</p>' +
       srow('Connection', '<span id="netLine">' + (pwa.online === false ? 'Offline: everything still works, and changes stay on this device.' : 'Online') + '</span>') +
-      srow('Version', '<span>build ' + escapeHtml(D.build) + (pwa.update ? ' · a new version is ready' : '') + '</span>') +
+      srow('Version', '<span>v' + D.version + (pwa.update ? ' · a new version is ready' : '') + '</span>') +
       (pwa.supported ? srow('Updates', '<button type="button" class="tool" data-act="sw-check"' + (pwa.checking ? ' disabled' : '') + '>' +
         (pwa.checking ? 'Checking…' : 'Check for updates') + '</button>' +
         (pwa.update ? '<button type="button" class="tool" data-act="sw-reload">Reload now</button>' : '')) : '') +
@@ -2034,7 +2035,7 @@
       pwa.checking = false;
       var w = reg.installing || reg.waiting;
       if (w) { if (report) toast('Downloading the new version…'); follow(w); }
-      else if (report) toast('You have the latest version (build ' + D.build + ').');
+      else if (report) toast('You have the latest version (v' + D.version + ').');
       offlineChanged();
     }, function () {
       pwa.checking = false;
@@ -2307,7 +2308,7 @@
     document.title = f.title;
     $('#wordmark').textContent = f.wordmark;
     $('#strapline').textContent = f.strapline;
-    $('#buildtag').textContent = 'build ' + D.build;
+    $('#buildtag').textContent = 'v' + D.version;                 // readable; the hash is in Settings → About
     var tc = $('meta[name="theme-color"]');
     if (tc) tc.setAttribute('content', f.theme);
     var at = $('meta[name="apple-mobile-web-app-title"]');

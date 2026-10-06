@@ -12,7 +12,8 @@ canonical event files it lists, then:
      altKey YYYYMM·NNN — keys are never hand-written
   3. validates everything (fails loudly, listing every problem)
   4. resolves creator credits and builds the creator index
-  5. writes data.js, sw.js and manifest.json, stamped with one content hash
+  5. writes data.js, sw.js and manifest.json, stamped with one content hash,
+     and a readable version that counts up from the previous data.js
 
 Every field is read BY NAME. Nothing is read by position.
 """
@@ -198,6 +199,11 @@ def build(dataset_path, previous_datajs=None):
         warns.append('icons: %s %s the template\'s placeholder artwork. Replace with the franchise\'s own before the first deploy '
                      '(iOS caches a home-screen icon at install)' % (', '.join(placeholders), 'is' if len(placeholders) == 1 else 'are'))
     relevance = fr.get('eventRelevance', fr.get('key'))
+    # readable versions (decided 4 Oct): a migrated tracker continues its old numbering
+    version_start = fr.get('versionStart', 1)
+    if not isinstance(version_start, int) or isinstance(version_start, bool) or version_start < 1:
+        errs.append('franchise.versionStart must be a whole number, 1 or more (the old tracker\'s last build + 1)')
+        version_start = 1
 
     # ---- eras / periods ----
     eras = need(ds, 'eras', 'dataset', list) or []
@@ -717,7 +723,8 @@ def build(dataset_path, previous_datajs=None):
     }
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
-              'durationsCoverage': dur_coverage, 'creators': len(creator_names)}
+              'durationsCoverage': dur_coverage, 'creators': len(creator_names),
+              'versionStart': version_start}
     return payload, report
 
 
@@ -784,8 +791,20 @@ def manifest_for(fr):
         ]}, indent=2, ensure_ascii=False) + '\n'
 
 
-def render_outputs(payload, shell_root):
-    """data.js, sw.js and manifest.json, all stamped with one content hash."""
+def next_version(build_id, previous, version_start):
+    """The readable version number. It counts up by itself: the previous data.js's
+    number, plus 1 when the content hash changed. Never below versionStart, and
+    versionStart when there is no previous version. Nobody bumps it by hand."""
+    prev = (previous or {}).get('version')
+    if not isinstance(prev, int) or isinstance(prev, bool) or prev < 1:
+        return version_start
+    return max(version_start, prev if previous.get('build') == build_id else prev + 1)
+
+
+def render_outputs(payload, shell_root, version_start=1, previous=None):
+    """data.js, sw.js and manifest.json, all stamped with one content hash.
+    The version is stamped after the hash, so it never feeds it: the cache
+    name follows the content, and the number only follows the cache name."""
     manifest = manifest_for(payload['franchise'])
     h = hashlib.sha256()
     h.update(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), sort_keys=True).encode())
@@ -800,18 +819,19 @@ def render_outputs(payload, shell_root):
         with open(os.path.join(shell_root, rel[2:]), 'rb') as f:
             h.update(rel.encode() + b'\0' + f.read())
     build_id = h.hexdigest()[:12]
+    version = next_version(build_id, previous, version_start)
 
     shell = ['./', './index.html', './app.js', './styles.css', './data.js', './qrcode.js', './manifest.json']
     cache = '%s-%s' % (payload['franchise']['key'], build_id)
     # the page reads its own cache name and file list for Settings -> Offline (F-35)
-    data = dict(payload, build=build_id, cache=cache, precache=shell + statics)
+    data = dict(payload, build=build_id, version=version, cache=cache, precache=shell + statics)
     datajs = 'window.TRACKER_DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
     with open(os.path.join(shell_root, SW_TEMPLATE), encoding='utf-8') as f:
         tpl = f.read()
     sw = (tpl.replace('__CACHE__', cache)
              .replace('__SHELL__', json.dumps(shell))
              .replace('__STATIC__', json.dumps(statics, indent=2)))
-    return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id
+    return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id, version
 
 
 def main(argv):
@@ -831,8 +851,9 @@ def main(argv):
     out = opts.get('--out') or ROOT
     check = bool(opts.get('--check'))
     try:
-        payload, report = build(dataset, previous_datajs=os.path.join(out, 'data.js'))
-        files, build_id = render_outputs(payload, ROOT)
+        previous = os.path.join(out, 'data.js')
+        payload, report = build(dataset, previous_datajs=previous)
+        files, build_id, version = render_outputs(payload, ROOT, report['versionStart'], read_datajs(previous))
     except BuildError as e:
         for msg in e.args[0]:
             print('ERROR ' + msg, file=sys.stderr)
@@ -840,7 +861,7 @@ def main(argv):
         return 1
     for w in report['warnings']:
         print('WARN  ' + w, file=sys.stderr)
-    report['build'] = build_id
+    report['build'], report['version'] = build_id, version
     if opts.get('--report'):
         with open(opts['--report'], 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=1)
@@ -854,14 +875,14 @@ def main(argv):
         if stale:
             print('STALE: %s — run python3 tools/build.py' % ', '.join(stale), file=sys.stderr)
             return 1
-        print('fresh: build %s (%d rows, %d eras)' % (build_id, report['rows'], report['eras']))
+        print('fresh: v%d, build %s (%d rows, %d eras)' % (version, build_id, report['rows'], report['eras']))
         return 0
     os.makedirs(out, exist_ok=True)
     for name, content in files.items():
         with open(os.path.join(out, name), 'w', encoding='utf-8') as f:
             f.write(content)
-    print('built %s: %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%'
-          % (build_id, report['rows'], report['checkable'], report['eras'], len(report['events']),
+    print('built v%d (%s): %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%'
+          % (version, build_id, report['rows'], report['checkable'], report['eras'], len(report['events']),
              report['creators'], report['creditsCoverage'], report['durationsCoverage']))
     return 0
 

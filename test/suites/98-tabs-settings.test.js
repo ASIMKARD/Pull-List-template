@@ -106,8 +106,9 @@ module.exports = async function (t) {
   t.ok('switching it on shows it again', !next().hidden);
 
   // --------------------------------------------- About & legend (F-31)
-  t.ok('About shows the title, counts and build', new RegExp(D.counts.total + ' entries').test($('.about').textContent) &&
-       $('.about').textContent.includes('build ' + D.build));
+  t.ok('About shows the title, counts and "Version N"', new RegExp(D.counts.total + ' entries').test($('.about').textContent) &&
+       $('.about').textContent.includes('Version ' + D.version));
+  t.eq('…with the build hash in small print', $('.about small.buildhash') && $('.about small.buildhash').textContent, 'build ' + D.build);
   t.eq('legend terms come from the data', $$('.legend dt').map(x => x.textContent), D.legend.map(l => l.term));
   t.eq('maintenance notes come from the data', $$('.maint li').map(x => x.textContent), D.maintenance);
   t.ok('no import button when the data declares no previous version', !$('[data-act="import-legacy"]'));

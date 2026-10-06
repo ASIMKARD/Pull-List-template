@@ -315,6 +315,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .confirm .tool { margin-right: 8px; }
 .tool.danger { border-color: var(--danger); color: var(--danger); }
 .about { margin: 4px 0; font-size: calc(14px * var(--scale)); }
+.buildhash { font-size: calc(11px * var(--scale)); color: var(--ink-soft); font-family: var(--font-meta); white-space: nowrap; }
 .legend { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0; font-size: calc(14px * var(--scale)); }
 .legend dd { margin: 0; color: var(--ink-soft); }
 .maint { margin: 6px 0; padding-left: 1.2em; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
