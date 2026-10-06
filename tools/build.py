@@ -422,8 +422,10 @@ def parse_date(s):
     return (y, mo, d)
 
 
-def build(dataset_path, previous_datajs=None):
-    """Returns (payload, report). Raises BuildError listing every problem."""
+def build(dataset_path, previous_datajs=None, keep=None):
+    """Returns (payload, report). Raises BuildError listing every problem.
+    keep (a dict) receives the stitched rows, arcs and eras as soon as they are
+    stitched, even when validation then fails (the verify gate reads them)."""
     errs, warns = [], []
     base = os.path.dirname(os.path.abspath(dataset_path))
     ds = load_json(dataset_path, errs)
@@ -686,6 +688,9 @@ def build(dataset_path, previous_datajs=None):
         events_out.append({'id': eid, 'name': ev.get('name', eid), 'era': ERA[eera], 'arc': ARC.get(arc_id, -1),
                            'essential': n_ess, 'complete': n_all, 'adds': n_all - n_ess,
                            'hash': ev_hash})
+
+    if keep is not None:
+        keep.update(dataset=ds, rows=rows, arcs=arcs, eras=eras, events=events_out)
 
     # ---- per-row validation ----
     ids, iids, titles = {}, {}, {}

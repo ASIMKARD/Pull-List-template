@@ -37,6 +37,11 @@ jobs:
           python3 tools/build.py test/fixtures/no-periods/dataset.json --out "$RUNNER_TEMP/no-periods"
           python3 tools/build.py test/fixtures/minimal/dataset.json --out "$RUNNER_TEMP/minimal"
 
+      - name: Verify gate (Research-Repo's verify.py, pinned in tools/verify.lock) on the template and every fixture
+        run: |
+          python3 tools/verify_gate.py dataset.json test/fixtures/basic/dataset.json test/fixtures/no-periods/dataset.json \
+            test/fixtures/mixed/dataset.json test/fixtures/minimal/dataset.json
+
       - name: Run the harness (fails on any failure, any crash, or zero assertions)
         run: |
           set -o pipefail

@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1408 assertions, 0 failed, 31 suites (session 5, step 3). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
+**Harness:** 1430 assertions, 0 failed, 32 suites (session 5, step 4). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
@@ -1915,3 +1915,31 @@ Seven need your say-so, because a skin may not change them:
    target, so it would need an exception).
 
 **Harness:** 1408 assertions, 0 failed, 31 suites. **Layout:** 267 checks (+9), 0 failed, 9 suites.
+
+---
+
+## Session 5 checkpoint — step 4 done (the verify.py gate), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **The pin.** Research-Repo's `toolkit/verify.py`, copied unchanged. The lock records its commit (`18141dd`, the last change to `verify.py`) and its sha256. The gate refuses to run on any other bytes | `tools/verify.py`, `tools/verify.lock` |
+| **The gate.** It runs, in order: the pin; the build's own validation; `verify.check()` on the stitched dataset; then `check_shown()`, v3's equivalent of `check_built` (which reads v2's `data.js`). `check_shown` walks the order the app shows: numbers within a series rise (ALT, special numbering and inert rows skipped), and series that ran at the same time interleave. Exit 1 = do not ship | `tools/verify_gate.py` |
+| **The adapter** builds `verify.py`'s rows by name: series, vol, num, title, cover, onsale, arc, flags, date_source, mandatory, core and seq. Inert marker rows carry `verify.py`'s own GAP marker and no date. `verify.check()` runs even when the build fails, so its own verdict always shows. `verify.py` keeps findings in module lists, so the gate clears them before each dataset | `tools/verify_gate.py` `adapt` |
+| `build()` takes `keep={}` and fills it with the stitched rows, arcs and eras as soon as they are stitched | `tools/build.py` |
+| **CI** runs the gate on the template and every fixture | `.github/workflows/harness.yml` |
+| **Fixtures the gate stops,** each with its expected line: an interpolated date, backwards numbering (by publication date, fine in the order shown), a duplicate title, and a blocked series (two series that ran together, placed in two eras) | `test/fixtures/gate/` |
+| New suite: the lock and the pin; a drift check against the local Research-Repo copy (same bytes, and its last change to `verify.py` is the pinned commit); an edited copy fails; all five datasets pass; the adapter (61 rows, fields by name, cover and on-sale dates for every row, inert rows, arcs and eras, field order never matters); the four stops; and one dataset's findings never carry into the next | `test/suites/23-verify-gate` |
+
+### Found
+- `verify.check()` sorts rows by date before its "blocked" test, so it can only catch blocking in odd
+  cases. The blocked-series fixture passes it, and only the order shown (`check_shown`) catches it,
+  as the original `check_built` did for v2. A test records this.
+- The first adapter test compared one row with no on-sale date, so reading `onsale` as `cover` went
+  unnoticed. It now compares every row of a copy where 16 rows have an on-sale date.
+
+All 7 mutations are caught (one only after that fix): inert rows without GAP, the module lists not
+cleared, `check_shown` never flagging, the wrong date field, the pin unchecked, `verify.check()`
+skipped when the build fails, and the series read from the title.
+
+**Harness:** 1430 assertions (+22), 0 failed, 32 suites. **Layout:** 267 checks, 0 failed, 9 suites.
