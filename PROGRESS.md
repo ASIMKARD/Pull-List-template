@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1408 assertions, 0 failed, 31 suites (session 5, step 2). **Layout suite (real Chromium, in CI too):** 258 checks, 0 failed, 8 suites.
+**Harness:** 1408 assertions, 0 failed, 31 suites (session 5, step 3). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
@@ -1867,3 +1867,51 @@ Mutations: all 17 code mutations were caught. The 2 layout mutations were caught
 signature tab font (10-sweep: the tabs no longer fit at 320 px) and a pale ink (40-look: 2.32:1).
 
 **Harness:** 1408 assertions (+74), 0 failed, 31 suites. **Layout:** 258 checks (+27), 0 failed, 8 suites.
+
+---
+
+## Session 5 checkpoint — step 3 done (Pull matches X-Men, as far as one layout allows), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| X-Men cloned read-only (`/home/user/X-men`, commit `663fe46`) and served to Chromium at 393 × 852. Its computed styles for the header, tabs, era boxes, the era intro, arc heads, rows and the search box are captured into a reference, with the commit | `test/layout/ref/capture-x-men.js`, `ref/x-men.json` |
+| **One map** says which X-Men element each template element is measured against, and which properties: families, sizes, weights, tracking, case, style, colours, effective backgrounds (what is really behind an element), borders, radii and three boxes. The capture and the test share it | `test/layout/ref/pull-map.js` |
+| **New tokens, bases equal to today's values** (so the other skins are unchanged, and their measurements say so). Colour: per-role hue and saturation for card, line, bar, soft ink, bar text, the search field, an era-body inset (off by default) and a mark outline. Type: title size, tracking and line height, meta size, era name and era meta sizes, intro size and style, arc size and weight, row size and weight, search size | `styles.css` `:root` and the rules that read them |
+| **Pull's inputs**, computed from the reference so every colour derives exactly. Card, inset and line are written relative to the paper, so the seven paper swatches still tint them | `styles.css` `:root[data-skin="pull"]` |
+| `45-pull`: 71 properties exact (sizes within 0.5 px). The list of differences is kept true both ways: an unlisted difference fails, and so does a listed one that has gone. Each difference says why. A fresh capture re-checks the reference whenever a local X-Men copy is present; CI records that it has none | `test/layout/45-pull` |
+
+### Found by measuring
+- Removing Pull's narrower `--tab-fit` made four uppercase tabs scroll 5 px at 320 px with large text
+  (40-look). It is back at 3.7vw, which is still 12.5 px at 393 px.
+- The franchise guard caught "X-Men" in a `styles.css` comment; it now says "the reference tracker".
+- The read mark's outline was first filed as an accessibility conflict. It isn't: X-Men's ink outline
+  passes 3:1. The template simply drew every control outline in one colour. The mark now has its own
+  outline token, and Pull matches it.
+
+All 9 mutations were caught: title size, paper lightness, the era-body inset, the mark outline,
+the search field, row weight, a difference dropped from the list, a difference listed that isn't
+one, and a drifted reference.
+
+### Questions for John (the 9 recorded differences)
+Two are kept on purpose, by the measured contrast rules:
+- **The selected-tab underline.** X-Men's navy is 1.52:1 on its bar. Pull uses the same hue at 44 %
+  lightness, which is 3:1.
+- **The search outline.** X-Men's is 1.53:1. Pull keeps the 3:1 control outline.
+
+Seven need your say-so, because a skin may not change them:
+1. **Era boxes.** X-Men's are solid, hand-picked colours per era, with white text, a folder-tab
+   shape and a darker stats strip. The template's are pale washes generated from the era's index
+   (the pale rule is T-39), in a card. Matching them needs a colour per era in the data, plus an
+   exception to T-39 for Pull; the shape is layout. Options: (a) keep the pale washes in Pull;
+   (b) add an optional `colour` per era and let Pull draw solid era heads with white text (the
+   shape stays the template's); (c) both (b) and the folder-tab shape.
+2. **The tab bar runs edge to edge in X-Men** (393 px wide, from 0). The template's sits inside the
+   16 px page margin (361 px wide, from 16). Options: (a) keep it inset in every skin; (b) edge to
+   edge in every skin (one layout); (c) a layout exception for Pull.
+3. **Mark size and shape.** X-Men's mark is 22 px with a 5 px radius. The template's size belongs to
+   the Button size setting (34 px standard, 26 px compact) and its shape to the Marks setting.
+   Options: (a) leave both to the settings; (b) give "compact" X-Men's 22 px (that's under the 24 px
+   target, so it would need an exception).
+
+**Harness:** 1408 assertions, 0 failed, 31 suites. **Layout:** 267 checks (+9), 0 failed, 9 suites.
