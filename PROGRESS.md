@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1430 assertions, 0 failed, 32 suites (session 5, step 4). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
+**Harness:** 1459 assertions, 0 failed, 33 suites (session 5, step 5). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
@@ -1943,3 +1943,27 @@ cleared, `check_shown` never flagging, the wrong date field, the pin unchecked, 
 skipped when the build fails, and the series read from the title.
 
 **Harness:** 1430 assertions (+22), 0 failed, 32 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+---
+
+## Session 5 checkpoint — step 5 done (the workbook, optional per tracker), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **`build_workbook.py`**: a stdlib-only `.xlsx` writer. Five sheets: Reading Order (26 named columns, in the order the app shows), Arcs, Eras, Creators and Events. Each has one named header row, bold, frozen and filterable (an `autoFilter` plus Excel's `_FilterDatabase` name). Bytes are deterministic: every part stored, not deflated (so no zlib version can change them), fixed timestamps, fixed order, inline strings. `--shuffle-columns SEED` writes the same data in another column order, to test readers | `tools/build_workbook.py` |
+| **Every build writes `workbook.xlsx`** next to `data.js`, and `--check` covers it. The template's is committed (`workbook.xlsx`, 24 KB), so John can download it | `tools/build.py` |
+| **John's addition: the workbook is optional per tracker.** `"deliverables": {"workbook": false}` (Absolute and Dark Nights are web-app-only). The build writes none and says so. `--check` fails if one is left over (e.g. the template's, copied in with the shell), and the next build removes it. `deliverables` is validated (on/off switches only) and in the schema | `tools/build.py`, `schema/dataset.schema.json` |
+| A small harness reader: unzip with node's zlib, then read each sheet **by header name** | `test/lib/xlsx.js` |
+| New suite: written on by default; byte-identical rebuilds; stored parts and a fixed timestamp; well-formed XML; header shape; every Reading Order field read by name and matched against the dataset (61 rows); Arcs, Eras, Creators and Events; the shuffled-column copy reads back the same; `& < > "` and on-sale dates survive; `--check` catches a hand edit. **A tracker with workbooks turned off builds without one**, passes `--check` without one, fails `--check` with a leftover, and the next build removes it. Bad `deliverables` values fail. A session-only openpyxl check opens it | `test/suites/24-workbook` |
+
+Checked once by hand: LibreOffice (headless) opens the basic fixture's workbook and exports all five
+sheets, with 61 Reading Order rows.
+
+All 13 mutations are caught: deflated parts, no bold, no freeze, a filter one row short, a reader that
+assumes a column order, the switch ignored, `--check` ignoring the workbook, a leftover not removed,
+on-sale written as cover, unescaped text, credits from the wrong list, and `deliverables` not
+validated. My first "positional reader" mutation was a no-op (the column letters come out in order
+either way); the real one is caught.
+
+**Harness:** 1459 assertions (+29), 0 failed, 33 suites. **Layout:** 267 checks, 0 failed, 9 suites.

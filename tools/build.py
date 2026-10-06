@@ -14,6 +14,8 @@ canonical event files it lists, then:
   4. resolves creator credits and builds the creator index
   5. writes data.js, sw.js and manifest.json, stamped with one content hash,
      and a readable version that counts up from the previous data.js
+  6. writes workbook.xlsx (tools/build_workbook.py) unless the tracker turns
+     it off with "deliverables": {"workbook": false}
 
 Every field is read BY NAME. Nothing is read by position.
 """
@@ -36,6 +38,8 @@ ROLES = ['core', 'tie-in']
 UNIVERSAL_STRAND = 'All'
 
 SHELL_FILES = ['index.html', 'app.js', 'styles.css', 'qrcode.js', 'manifest.json']
+DELIVERABLES = {'workbook': True}          # on unless dataset.json says "deliverables": {"workbook": false}
+WORKBOOK = 'workbook.xlsx'
 SW_TEMPLATE = os.path.join('tools', 'templates', 'sw.js')
 
 DATE_RX = re.compile(r'^(\d{4})-(\d{2})(?:-(\d{2}))?$')
@@ -444,6 +448,14 @@ def build(dataset_path, previous_datajs=None, keep=None):
 
     if ds.get('schemaVersion') != SCHEMA_VERSION:
         errs.append('schemaVersion must be %d' % SCHEMA_VERSION)
+    # what the build produces besides the app: the workbook is on unless a
+    # tracker turns it off (web-app-only trackers, e.g. Absolute and Dark Nights)
+    deliverables = ds.get('deliverables', {})
+    if not isinstance(deliverables, dict) or any(k not in DELIVERABLES for k in deliverables) or \
+            any(not isinstance(v, bool) for v in deliverables.values()):
+        errs.append('deliverables must be an object of on/off switches: %s' % ', '.join(sorted(DELIVERABLES)))
+        deliverables = {}
+    deliverables = dict(DELIVERABLES, **deliverables)
 
     # ---- franchise ----
     fr = need(ds, 'franchise', 'dataset', dict) or {}
@@ -1025,7 +1037,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
               'durationsCoverage': dur_coverage, 'creators': len(creator_names),
-              'versionStart': version_start}
+              'versionStart': version_start, 'deliverables': deliverables}
     return payload, report
 
 
@@ -1153,8 +1165,13 @@ def main(argv):
     check = bool(opts.get('--check'))
     try:
         previous = os.path.join(out, 'data.js')
-        payload, report = build(dataset, previous_datajs=previous)
+        keep = {}
+        payload, report = build(dataset, previous_datajs=previous, keep=keep)
         files, build_id, version = render_outputs(payload, ROOT, report['versionStart'], read_datajs(previous))
+        binary = {}
+        if report['deliverables']['workbook']:
+            import build_workbook
+            binary[WORKBOOK] = build_workbook.xlsx_bytes(build_workbook.sheets_for(payload, keep))
     except BuildError as e:
         for msg in e.args[0]:
             print('ERROR ' + msg, file=sys.stderr)
@@ -1166,6 +1183,7 @@ def main(argv):
     if opts.get('--report'):
         with open(opts['--report'], 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=1)
+    workbook_off = os.path.join(out, WORKBOOK) if not report['deliverables']['workbook'] else None
     if check:
         stale = []
         for name, content in files.items():
@@ -1173,6 +1191,13 @@ def main(argv):
             cur = open(p, encoding='utf-8').read() if os.path.exists(p) else None
             if cur != content:
                 stale.append(name)
+        for name, content in binary.items():
+            p = os.path.join(out, name)
+            cur = open(p, 'rb').read() if os.path.exists(p) else None
+            if cur != content:
+                stale.append(name)
+        if workbook_off and os.path.exists(workbook_off):
+            stale.append('%s (deliverables.workbook is false: it should not exist)' % WORKBOOK)
         if stale:
             print('STALE: %s — run python3 tools/build.py' % ', '.join(stale), file=sys.stderr)
             return 1
@@ -1182,9 +1207,16 @@ def main(argv):
     for name, content in files.items():
         with open(os.path.join(out, name), 'w', encoding='utf-8') as f:
             f.write(content)
-    print('built v%d (%s): %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%'
+    for name, content in binary.items():
+        with open(os.path.join(out, name), 'wb') as f:
+            f.write(content)
+    if workbook_off and os.path.exists(workbook_off):
+        os.remove(workbook_off)                 # generated, and this tracker has turned it off
+        print('removed %s: deliverables.workbook is false' % WORKBOOK)
+    print('built v%d (%s): %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%%s'
           % (version, build_id, report['rows'], report['checkable'], report['eras'], len(report['events']),
-             report['creators'], report['creditsCoverage'], report['durationsCoverage']))
+             report['creators'], report['creditsCoverage'], report['durationsCoverage'],
+             ', workbook' if binary else ', no workbook (deliverables.workbook is false)'))
     return 0
 
 

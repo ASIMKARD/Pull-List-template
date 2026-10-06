@@ -284,6 +284,16 @@
     }
    }
   },
+  "deliverables": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "What the build produces besides the app. The workbook (workbook.xlsx, generated from this file) is on unless turned off; web-app-only trackers (e.g. Absolute, Dark Nights) set {\"workbook\": false}.",
+   "properties": {
+    "workbook": {
+     "type": "boolean"
+    }
+   }
+  },
   "eras": {
    "type": "array",
    "minItems": 1,
