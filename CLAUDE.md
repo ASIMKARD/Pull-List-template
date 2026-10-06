@@ -3,10 +3,24 @@
 ## Repo rules (read first, every session)
 
 ### Read-only rule
-Only **Pull-List-Template** may be changed. Master-Repo, X-men, Research-Repo and
-every other repo are **read-only**: read them from local copies (clone or pull
-only), and **never** commit, push, create branches, open pull requests on, or
-register them as repo roots.
+Only **Pull-List-Template** may be changed, plus the two exceptions below. Master-Repo,
+X-men, Absolute and every other repo are **read-only**: read them from local copies
+(clone or pull only), and **never** commit, push, create branches, open pull requests
+on, or register them as repo roots.
+
+**Exceptions (John, 6 Oct):**
+- **Absolute-v3** may be edited for the Absolute pilot. The original
+  **ASIMKARD/Absolute** stays read-only. Read its data and saved-progress format from a
+  local copy.
+- **Research-Repo is add-only.**
+  - Each session writes only inside its own new folder,
+    `sessions/<yyyy-mm-dd>-<label>/`, for its research caches, notes and gate reports.
+  - Never remove, rename or change anything outside that folder, including
+    `toolkit/`.
+  - `toolkit/sources.py` hard-codes `../cache`. Point its `CACHE_DIR` at the
+    session folder at run time; never edit the toolkit.
+  - `verify.py` is used as it is. The template keeps a pinned, unchanged copy so
+    that CI can run it.
 
 ### Standing rule from John
 **Never edit any repo without John's explicit say-so.** Pull-List-Template is

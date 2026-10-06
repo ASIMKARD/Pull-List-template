@@ -314,8 +314,8 @@ installed app once online.
 | V-18 | aria roles and labels; `prefers-reduced-motion` | S4 | present (9j-a11y: every control named on every tab with everything open; aria references resolve; valid states; no duplicate ids; the tabs pattern; landmarks; polite live regions; marks named with their state. Reduced motion: test/layout/20-motion) |
 | V-19 | `sw.js` evaluated, not just parsed (guard) | S1 | present (80-guards: sw.js run in a vm, install/activate/fetch exercised) |
 | V-20 | Harness in GitHub Actions on every push; fails on zero assertions | S1 | present (.github/workflows/harness.yml + 00-runner) |
-| V-21 | Harness passes on fixture, fixture without periods, and one real dataset (Absolute pilot, in a fresh repo) | S1/S5 | todo |
-| V-22 | `verify.py` gate (Research-Repo toolkit) wired in | S5 | todo |
+| V-21 | Harness passes on fixture, fixture without periods, and one real dataset (Absolute pilot, in the fresh repo ASIMKARD/Absolute-v3, starting at v8) | S1/S5 | todo |
+| V-22 | `verify.py` gate (Research-Repo toolkit) wired in — a pinned, unchanged copy runs in CI with its Research-Repo commit and hash recorded (John, 6 Oct) | S5 | todo |
 | V-23 | `build_workbook.py` generates the workbook from `dataset.json`, reading by header name | S5 | todo |
 | V-24 | Stable `id` (progress) separate from canonical `issueId`; events dedupe on `issueId`; id-stability check with `retiredIds` | S1 | present (20-build id stability, 30-identity) |
 | V-25 | Canonical events in `events/`, each stating its era in `dataset.json`; drift check by hash | S1 | present (30-identity placement, 50-events hash drift) |
@@ -391,6 +391,10 @@ installed app once online.
 | X-2 | Import old-tracker backups and QR codes via `storage.legacy` (prefix, format, qrPrefix) | S3 | present (98-tabs-settings: Import from previous version; 9e-sync: old v2 codes via `qrPrefix`, positions rebuilt with retiredIds) |
 | X-3 | Sync and backup formats keyed on stable `id`, versioned, tolerant of rows added since (unknown ids ignored, new rows default unread) — replaces v2's positional bitstring that refused any data change | S3 | present (9e-sync: full format keyed on id, versioned, unknown ids ignored and reported, new rows unread) |
 | X-4 | Buttons fit on the phone (John's screenshots, 5 Oct): a Settings row's controls move as one block, beside the label or under it, never split; no control is cut off by a box that clips it | S4 | present (98-tabs-settings: label + one control block; test/layout/10-sweep: no split rows, nothing clipped, every tab, 320–390 px) |
+| X-5 | Readable version numbers (John, 4 Oct): header "vN", About shows the hash in small print; the build counts up from the previous `data.js` when the content hash changes; `franchise.versionStart` continues a migrated tracker's numbering; the cache name still follows the hash | S5 | todo |
+| X-6 | Signature skin slot (John, 6 Oct): one per-tracker skin from config (tokens, fonts, optional scoped look-only stylesheet) passing the same contrast, reachability, overflow and stack tests; demo in a fixture | S5 | todo |
+| X-7 | Skin choice is "last used" per tracker; a first visit uses the old tracker's pick from legacy settings, else the signature skin (John, 6 Oct) | S5 | todo |
+| X-8 | Pull matches X-Men exactly (fonts, sizes, weights, spacing, colours, era boxes), measured side by side at 393 px in real Chromium (John, 6 Oct) | S5 | todo |
 
 ## B — v2 bugs found while inventorying (don't port them)
 
