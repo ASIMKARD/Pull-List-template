@@ -1066,7 +1066,7 @@ def read_datajs(path):
 
 def static_files(shell_root):
     out = []
-    for d in ('fonts', 'icons'):
+    for d in ('fonts', 'icons', 'images'):       # images: a signature skin's background images (IMAGE_DIRS)
         p = os.path.join(shell_root, d)
         if os.path.isdir(p):
             out += ['./%s/%s' % (d, n) for n in sorted(os.listdir(p)) if not n.startswith('.')]

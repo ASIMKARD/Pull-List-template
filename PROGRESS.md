@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1459 assertions, 0 failed, 33 suites (session 5, step 5). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
+**Harness:** 1472 assertions, 0 failed, 34 suites (end of session 5). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
 
@@ -1967,3 +1967,104 @@ validated. My first "positional reader" mutation was a no-op (the column letters
 either way); the real one is caught.
 
 **Harness:** 1459 assertions (+29), 0 failed, 33 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+---
+
+## Session 5 checkpoint — step 6 done (docs and the Skill), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **README**: what the template is, and how to start a tracker in 8 steps (fresh repo, `npm ci`, `dataset.json`, icons, build, the gate, both suites with counts, deploy and verify by hash), plus a map of what's where | `README.md` |
+| **BUILD-NOTES**: the master and what's generated; identity, order and dates; versions (including: after merging two branches, rebuild on `main`); skins, the Look's own tokens, skin choice, the signature slot (what it may hold, how it's delivered and measured), Pull and how to re-capture X-Men; the workbook and turning it off; the gate and how to re-pin `verify.py`; testing | `BUILD-NOTES.md` |
+| **MIGRATING**: a fresh repo, always; copy the template; `storage.legacy` (prefix, format, `qrPrefix`, the skin map; old keys read-only); ids, `retiredIds`, `versionStart`; `deliverables` and the signature skin; dates and the gate; the proof in real Chromium; deploy, verify by hash, the cut-over swap only with John's approval | `MIGRATING.md` |
+| **The Skill**, with the frontmatter a session loads it by: before anything, the loop, where to look, the rules that cost time before, done means… | `.claude/skills/comic-tracker-build/SKILL.md` |
+| `CLAUDE.md`'s repo map lists the new tools, docs and fixtures; the build-tag trap now says "check the version" | `CLAUDE.md` |
+| New suite: every path, command and flag, npm script and dataset key the four docs name must exist (paths 107, commands 25, keys 10), with a self-test that catches each kind of mistake | `test/suites/25-docs` |
+
+### Found by the docs check
+- On its first run, the check found 7 places where my own docs named things that don't exist:
+  - the template root has no `data/eras/` folder (only the basic fixture does);
+  - `events/` holds no `.json` files yet;
+  - bare names like `verify.py`, `broken/` and `.woff2` don't resolve from the repo root.
+
+  All are reworded.
+- **Writing the docs found a real gap.** The signature skin may use background images from `images/`,
+  but the build only precached `fonts/` and `icons/`, so such an image would have been missing
+  offline. `images/` is now precached, and `22-signature` proves it with a real file.
+
+All 5 docs mutations were caught: a renamed file, a flag the tool lacks, a renamed npm script, a
+dataset key the schema lacks, and the Skill losing its name.
+
+**Harness:** 1472 assertions (+13), 0 failed, 34 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+---
+
+## Transfer checkpoint — end of session 5 (versions, skins, Pull, gate, workbook, docs), 6 Oct 2026
+
+### Done (steps 1–6 of the agreed plan; details in the step checkpoints above)
+- **Counts:** the harness went from 1,299 to **1,472 assertions** (34 suites). The layout suite went
+  from 231 to **267 checks** (9 suites). CI was green for steps 1–5 (runs 47–51); step 6's run
+  follows the push of this checkpoint. Run 51 also showed that the committed workbook's bytes are
+  the same under CI's Python 3.12.
+- **New suites:** `21-version`, `22-signature`, `23-verify-gate`, `24-workbook`, `25-docs`, and
+  Chromium `45-pull`.
+- **Readable versions** (X-5); **the signature skin slot** (X-6), with the skin choice from the old
+  tracker's pick (X-7); **Pull matches X-Men** in 71 measured properties (X-8, with 9 recorded
+  differences); **the verify gate** (V-22); **the workbook**, optional per tracker (V-23);
+  **docs and the Skill** (V-28).
+- **John's addition (6 Oct):** `"deliverables": {"workbook": false}` turns the workbook off.
+  - The build writes none, and says so.
+  - `--check` fails on a leftover workbook, and the next build removes it.
+  - `24-workbook` tests that a tracker with workbooks off builds without one.
+  - Absolute-v3 must set it.
+- **Inventory:** every S5 line is present except V-21 (the pilot).
+
+### Pre-flight results for the pilot (checked before step 1)
+- **dc.fandom.com is reachable through its MediaWiki API.**
+  - `https://dc.fandom.com/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&format=json&titles=…`
+    returned 200 with the full wikitext.
+  - Ordinary wiki pages return 403, behind Cloudflare's "Just a moment…" check, so research must
+    use the API. The plan's fallback (v7's cover months for rows audited on 17 Sep) is not needed.
+- **Absolute-v3 is not attached to this session.** `list_repos` shows only ASIMKARD/Absolute.
+  Attaching ASIMKARD/Absolute-v3 was refused by the session's permission check, so I couldn't tell
+  whether GitHub would allow it. Before session 6, John should:
+  - install the Claude GitHub App on Absolute-v3;
+  - start the session with Absolute-v3 and Research-Repo selected;
+  - allow `add_repo` if asked.
+
+### Why the pilot (step 7) didn't start
+The plan starts it only after steps 1–6 and with room to finish 7a–7c, and expected it in session 6.
+It also needs Absolute-v3 attached, and CLAUDE.md says to stop and tell John before the first edit
+to it. Nothing outside this repo was edited. X-men and Research-Repo were only cloned or read.
+
+### Session 6 starts with: the Absolute pilot (V-21), step 7a
+1. **Confirm access first.** Absolute-v3 must be attached with push access. Tell John before the
+   first edit to it.
+2. **First files:**
+   - the template, copied into Absolute-v3 with fresh history (including `.claude/skills/`);
+   - `dataset.json` (key `absolute`, `versionStart` 8, `deliverables.workbook: false`);
+   - `storage.legacy`: prefix `absolute:v1:`, format `v2`, `qrPrefix` `ABSO1:`, and
+     `skins: {field: "layout", map: {abs: "signature", tabs: "signature", pull: "pull"}}`;
+   - a conversion script from the read-only Absolute `dataset.py`: `id`s are the old 9-digit keys,
+     and `issueId`s follow the rule.
+   - Absolute's icons and name. The build warns until `franchise.icons` is set.
+3. **Delete the template's `workbook.xlsx` from the copy,** or let the first build remove it:
+   `--check` flags it while `deliverables.workbook` is false.
+4. **First test:** the harness, the layout suite and `python3 tools/verify_gate.py`, green on
+   Absolute's data (V-21). Then 7b research (through the DC Database API, cached in Research-Repo
+   `sessions/<date>-absolute/`), 7c the gate, 7d the signature skin recreated from the old
+   `[data-skin="abs"]` CSS, 7e the migration proof, 7f deploy.
+5. **Half-made for 7d:** the old `abs` skin uses grid rows, counters, `::before`/`::after` content
+   and padding. The slot refuses all of those, because a skin may not move things. Recreate what is
+   look-only; list the rest for John (the same way as the Pull differences).
+
+### Questions for John
+1. **Pull: era boxes** (step 3 checkpoint, question 1): (a) keep pale washes; (b) an optional colour
+   per era, with solid era heads in Pull; (c) (b) plus the folder-tab shape.
+2. **Pull: the tab bar edge to edge?** (a) inset everywhere, as now; (b) edge to edge everywhere;
+   (c) a Pull-only exception.
+3. **Pull: mark size and shape** stay with the Button size and Marks settings? (a) yes; (b) give
+   compact X-Men's 22 px (below the 24 px target).
+4. **My call (step 2), open to veto:** the signature CSS arrives inside `data.js` instead of a linked
+   `skin.css`. Measured first paint was a tie: 864 vs 868 ms.

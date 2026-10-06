@@ -55,11 +55,14 @@ only at a cut-over swap John approves. (Full text: Master-Repo
 |---|---|
 | `dataset.json`, `data/eras/*.json` | the franchise's data — **the master**. Edit these. |
 | `events/*.json` | canonical shared event definitions (master copy lives here) |
-| `data.js`, `sw.js` cache name, build tag | **generated** by `tools/build.py` — never hand-edit |
+| `data.js`, `sw.js` cache name, version, `workbook.xlsx` | **generated** by `tools/build.py` — never hand-edit |
 | `schema/*.json` | JSON Schema for the data files; the harness validates fixtures against it |
 | `tools/build.py` | stitch + derive keys + validate + emit `data.js` (stdlib only) |
-| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder. Same runner; CI runs it |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`) |
+| `tools/build_workbook.py` | the workbook writer (stdlib; off per tracker with `deliverables.workbook: false`) |
+| `tools/verify_gate.py`, `tools/verify.py`, `tools/verify.lock` | the verify gate; `verify.py` is Research-Repo's, pinned byte for byte — never edit it here |
+| `README.md`, `BUILD-NOTES.md`, `MIGRATING.md`, `.claude/skills/comic-tracker-build/` | start a tracker; conventions; migrating; the Skill. `25-docs` checks every path and command they name |
+| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`). Same runner; CI runs it |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`, `gate/*`) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)
@@ -268,9 +271,10 @@ well cost another 260 ms. Only the display font is preloaded; `test/layout/80-pa
 measures it. Measure before adding a preload.
 
 ### Cache name and build tag — [superseded: automatic in v3]
-v2 required bumping `CACHE` and the build tag together by hand. v3 derives both
-from a content hash at build time. Still: check the build tag on the phone
-before judging anything.
+v2 required bumping `CACHE` and the build tag together by hand. v3 derives the
+cache name from a content hash at build time, and the readable version ("v13")
+counts up by itself (session 5). Still: check the version on the phone before
+judging anything; Settings → About shows the hash.
 
 ### A crashed harness looks like a pass — [applies]
 A crash mid-suite reports fewer passes, not a failure. `test/run.js` fails on

@@ -55,6 +55,20 @@ module.exports = async function (t) {
   t.ok('a look-only stylesheet passes: gradients and colours from tokens, a precached image, borders, shadows, fonts, radii, an input token',
        rich.status === 0, rich.stderr);
 
+  {
+    // a background image of the skin's own lives in images/: allowed, and precached so it works offline
+    const dir = path.join(ROOT, 'images'), made = !fs.existsSync(dir), img = path.join(dir, 'harness-texture.png');
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+      fs.copyFileSync(path.join(ROOT, 'icons', 'icon-192.png'), img);
+      const r = styled(SCOPE + ' .phead { background-image: url(./images/harness-texture.png); }');
+      t.ok('a background image in images/ is accepted and precached (offline)', r.status === 0 && r.D.precache.includes('./images/harness-texture.png'), r.stderr);
+    } finally {
+      fs.rmSync(img, { force: true });
+      if (made) fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
   // ---------------------------------------------------------------- what the build refuses
   const refuse = (what, r, rx) => t.ok(what + ' fails the build', r.status === 1 && rx.test(r.stderr), r.stderr.split('\n')[0]);
   refuse('an unknown token', withSig('sig-x', sig({ tokens: { '--nope': 1 } })), /--nope is not a known input token/);
