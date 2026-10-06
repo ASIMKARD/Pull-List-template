@@ -24,12 +24,12 @@ module.exports = async function (t) {
     .map(el => el.tagName + '.' + el.className + '#' + el.id + (el.hidden ? '[hidden]' : '') + (el.hasAttribute('inert') ? '[inert]' : '')).join('|');
 
   // ------------------------------------------------ first visit
-  t.eq('first visit: Paper skin, the skin\'s own paper, split era colours, medium text, normal density, standard buttons, box marks, no dyslexia font',
-       attrs(), ['paper', 'default', 'split', 'm', 'normal', 'standard', 'box', '0']);
+  t.eq('first visit: the tracker\'s signature skin, the skin\'s own paper, split era colours, medium text, normal density, standard buttons, box marks, no dyslexia font',
+       attrs(), ['signature', 'default', 'split', 'm', 'normal', 'standard', 'box', '0']);
   t.eq('the browser chrome falls back to the franchise colour when no paper is computed (jsdom)', $('meta[name="theme-color"]').content, D.franchise.theme);
   openSettings(app, ['look']);
-  t.eq('the skin control offers one option per configured skin, in order (T-97)', $$('[data-act="look"][data-k="skin"]').map(x => x.dataset.v),
-       ['paper', 'newsprint', 'pull', 'night']);
+  t.eq('the skin control offers the signature skin first, by its own name, then one option per configured skin, in order (T-97)',
+       $$('[data-act="look"][data-k="skin"]').map(x => x.dataset.v + ':' + x.textContent), ['signature:Signal', 'paper:Paper', 'newsprint:Newsprint', 'pull:Pull', 'night:Night']);
   t.eq('seven paper swatches, each named for screen readers (S-4)', $$('.swatch').map(x => x.getAttribute('aria-label')),
        ['Skin default paper', 'Warm paper', 'Grey paper', 'Rose paper', 'Mint paper', 'Sky paper', 'Lilac paper']);
   t.eq('button size has three options (T-54), standard pressed by default (T-55)', $$('[data-act="look"][data-k="tap"]').map(x => x.dataset.v + (x.getAttribute('aria-pressed') === 'true' ? '*' : '')),
@@ -102,12 +102,14 @@ module.exports = async function (t) {
   app = boot(b.out, { storage: { [ns + 'settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' }, skin: 'midnight', paper: 'neon', textSize: 'xl', marks: 'stars', tap: 9, dys: 'yes' }) } });
   d = app.document;
   await wait(20);
-  t.eq('values the template doesn\'t know fall back to the defaults', attrs(), ['paper', 'default', 'split', 'm', 'normal', 'standard', 'box', '0']);
+  t.eq('values the template doesn\'t know fall back to the defaults', attrs(), ['signature', 'default', 'split', 'm', 'normal', 'standard', 'box', '0']);
   app.window.close();
 
   // ------------------------------------------------ skins come from the data (T-104, T-97)
-  const withSkins = (label, fr) => {
+  const withSkins = (label, fr) => {           // without the signature skin unless given
     const dir = copyFixture('basic', label), p = path.join(dir, 'dataset.json'), ds = readJSON(p);
+    delete ds.franchise.signature;
+    delete ds.franchise.storage.legacy.skins;
     Object.assign(ds.franchise, fr);
     writeJSON(p, ds);
     return build(p, { label: label + '-out' });

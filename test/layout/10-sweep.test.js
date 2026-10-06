@@ -66,7 +66,7 @@ async function fit(page) {
 module.exports = async function (t) {
   const minimal = build(path.join(FIX, 'minimal', 'dataset.json'), { label: 'layout-minimal' });
   const sets = [['basic', basic().out], ['mixed', mixed().out], ['minimal', minimal.out], ['starter', ROOT]]
-    .concat(['newsprint', 'pull', 'night'].map(skin => ['basic in ' + skin, basic().out, { skin }]))
+    .concat(['paper', 'newsprint', 'pull', 'night'].map(skin => ['basic in ' + skin, basic().out, { skin }]))   // 'basic' itself opens in its signature skin
     .concat([['basic, large text and buttons', basic().out, { textSize: 'l', tap: 'large' }]]);
   try {
     for (const [name, dir, look] of sets) {

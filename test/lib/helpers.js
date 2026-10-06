@@ -132,9 +132,10 @@ async function typeInto(app, selector, value) {
 
 /* A generated big dataset: nEras eras x perEra rows (5,000 rows by default). */
 let stressCache = null;
-function stress(nEras, perEra) {
+function stress(nEras, perEra, franchise) {
   nEras = nEras || 40; perEra = perEra || 125;
-  if (stressCache && stressCache.key === nEras + 'x' + perEra) return stressCache;
+  const key = nEras + 'x' + perEra + JSON.stringify(franchise || {});
+  if (stressCache && stressCache.key === key) return stressCache;
   const dir = tmpdir('stress5k');
   const eras = [], arcs = [], rows = [];
   for (let e = 0; e < nEras; e++) {
@@ -149,10 +150,10 @@ function stress(nEras, perEra) {
     }
   }
   writeJSON(path.join(dir, 'dataset.json'), {
-    schemaVersion: 1, franchise: { key: 'big', wordmark: 'Big', title: 'Big', strapline: '', span: '', theme: '#000000' },
+    schemaVersion: 1, franchise: Object.assign({ key: 'big', wordmark: 'Big', title: 'Big', strapline: '', span: '', theme: '#000000' }, franchise || {}),
     eras, strands: ['Main'], types: ['MAIN'], tiers: ['All'], media: ['comic'], arcs, rows });
   const b = build(path.join(dir, 'dataset.json'), { label: 'stress5k-out' });
-  stressCache = { key: nEras + 'x' + perEra, out: b.out, status: b.status, stderr: b.stderr, rows: nEras * perEra, eras: nEras, perEra };
+  stressCache = { key, out: b.out, status: b.status, stderr: b.stderr, rows: nEras * perEra, eras: nEras, perEra };
   return stressCache;
 }
 

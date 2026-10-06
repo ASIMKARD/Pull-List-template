@@ -6,7 +6,7 @@
 const { basic } = require('../lib/helpers');
 const { serve, open, openAll, openSettings, closeBrowser } = require('./lib');
 
-const SKINS = ['paper', 'newsprint', 'pull', 'night'];
+const SKINS = ['signature', 'paper', 'newsprint', 'pull', 'night'];     // the basic fixture's demo signature skin first
 const seed = (s) => ({ 'fixture:v3:settings': JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, s)) });
 const geo = () => {
   const g = s => { const e = document.querySelector(s), r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, pos: getComputedStyle(e).position }; };
@@ -27,6 +27,7 @@ module.exports = async function (t) {
         const m = await pg.page.evaluate(geo);
         const at = skin + ' ' + tab + ' @' + w;
         if (m.stack.pos !== 'sticky') pinned.push(at + ': the stack is ' + m.stack.pos);
+        if (await pg.page.evaluate(() => document.documentElement.getAttribute('data-skin')) !== skin) pinned.push(at + ': the page is not in that skin');
         if (m.y < 600 || Math.abs(m.tabs.top) >= 1) pinned.push(at + ': tabs at ' + m.tabs.top + ' after scrolling to ' + m.y);
         if (Math.abs(m.banner.top - m.tabs.bottom) >= 2) under.push(at + ': banner ' + (m.banner.top - m.tabs.bottom).toFixed(1) + ' px from the tabs');
         if (Math.abs(m.h - m.sh) > 0.5) measured.push(at + ': --stack-h ' + m.h + ' vs ' + m.sh);

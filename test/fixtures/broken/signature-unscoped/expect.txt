@@ -1,0 +1,1 @@
+selector '.phead' is not scoped to :root[data-skin="signature"]

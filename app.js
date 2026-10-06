@@ -131,7 +131,7 @@
       reveal: some(function (i) { return !!D.issues[i][7] && !(D.issues[i][6] & (FL.FB | FL.ALT)); }),
       gapNotes: D.issues.some(function (r) { return !!(r[6] & FL.GAPNOTE); }),
       lookup: !!D.franchise.searchUrl,
-      skins: (D.franchise.skins || []).length > 1,       // the skin control
+      skins: (D.franchise.skins || []).length + (D.signature ? 1 : 0) > 1,       // the skin control (the signature skin counts)
       legacy: !!(D.franchise.storage && D.franchise.storage.legacy)
     };
   }
@@ -185,7 +185,20 @@
      a root attribute that styles.css answers with tokens only, so none of
      them can move or hide a control (V-5). Skins come from the data. */
   var SKIN_NAMES = { paper: 'Paper', newsprint: 'Newsprint', pull: 'Pull', night: 'Night' };
-  var SKINS = (D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  /* the tracker's own signature skin (John, 6 Oct), from config: offered first */
+  if (D.signature) SKIN_NAMES.signature = D.signature.name;
+  var SKINS = (D.signature ? ['signature'] : []).concat(D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  /* A first visit opens in the skin picked on the old tracker (its saved
+     settings, read only, through the data's own map), else the signature
+     skin, else the configured default. After that, the last one used. */
+  function firstSkin() {
+    var lg = D.franchise.storage && D.franchise.storage.legacy, map = lg && lg.skins, old = null;
+    if (map) { try { old = JSON.parse(readRaw(lg.prefix + 'settings') || 'null'); } catch (e) { old = null; } }
+    var picked = old && typeof old === 'object' && Object.prototype.hasOwnProperty.call(map.map, old[map.field]) ? map.map[old[map.field]] : null;
+    if (SKINS.indexOf(picked) !== -1) return picked;
+    if (D.signature) return 'signature';
+    return SKINS.indexOf(D.franchise.skin) === -1 ? SKINS[0] : D.franchise.skin;      // default skin from config (T-104)
+  }
   var PAPERS = [['default', 'Skin default'], ['warm', 'Warm'], ['grey', 'Grey'], ['rose', 'Rose'], ['mint', 'Mint'], ['sky', 'Sky'],
                 ['lilac', 'Lilac']];
   var LOOK = [   // [setting, root attribute, label, options, default]
@@ -221,8 +234,7 @@
     s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
     s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
-    var firstSkin = SKINS.indexOf(D.franchise.skin) === -1 ? SKINS[0] : D.franchise.skin;      // default skin from config (T-104)
-    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin : s.skin;
+    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin() : s.skin;
     s.paper = PAPERS.some(function (p) { return p[0] === s.paper; }) ? s.paper : 'default';
     LOOK.forEach(function (l) { if (!lookOk(l, s[l[0]])) s[l[0]] = l[4]; });
     if (typeof s.dys !== 'boolean') s.dys = false;
@@ -1434,8 +1446,12 @@
   /* The skin beacon (F-57): styles.css declares the token contract it was
      written for; a stylesheet from an older build (a stale cache) is caught. */
   var SKIN_OK = '3';
+  function pageSheets() {                                      // the stylesheets the page loaded (not the signature skin's)
+    var sig = $('#skin-signature');
+    return Array.prototype.filter.call(document.styleSheets, function (sh) { return !sig || sh !== sig.sheet; });
+  }
   function skinBeacon() {
-    var sheets = document.styleSheets, v = null;
+    var sheets = pageSheets(), v = null;
     if (!sheets.length) return null;                           // nothing loaded to check
     for (var k = 0; k < sheets.length && v === null; k++) {
       var rules = null;
@@ -1448,7 +1464,7 @@
   }
   function checkBeacon() {
     var v = skinBeacon();
-    if (v === null && !document.styleSheets.length) return false;
+    if (v === null && !pageSheets().length) return false;
     if (v === SKIN_OK) return false;
     toast('The page styles are out of date (' + (v ? 'version ' + v : 'missing') + '). Reload to get the current version.', 'Reload',
       function () { location.reload(); });
@@ -2303,6 +2319,16 @@
   /* ======================================================================
      BOOT
      ====================================================================== */
+  /* The signature skin's CSS comes with the data, already checked by the build
+     (scoped to it, look-only). It applies only once the skin attribute is set,
+     which happens at boot anyway, so it never waits for a stylesheet request. */
+  function applySignature() {
+    if (!D.signature || $('#skin-signature')) return;
+    var st = document.createElement('style');
+    st.id = 'skin-signature';
+    st.textContent = D.signature.css;
+    document.head.appendChild(st);
+  }
   function applyFranchise() {
     var f = D.franchise;
     document.title = f.title;
@@ -2344,6 +2370,7 @@
   }
   if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
 
+  applySignature();
   applyFranchise();
   checkOnline();
   registerSW();

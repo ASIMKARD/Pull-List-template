@@ -1,0 +1,137 @@
+{
+ "schemaVersion": 1,
+ "franchise": {
+  "key": "broken-case",
+  "wordmark": "Broken",
+  "title": "Broken case",
+  "strapline": "one error each",
+  "span": "1990",
+  "theme": "#222222",
+  "strictCredits": false,
+  "signature": {
+   "name": "Demo",
+   "tokens": {
+    "--accent-h": 176
+   },
+   "stylesheet": "signature.css"
+  }
+ },
+ "eras": [
+  {
+   "id": "one",
+   "name": "One",
+   "rank": 5000
+  },
+  {
+   "id": "two",
+   "name": "Two",
+   "rank": 5010
+  }
+ ],
+ "strands": [
+  "Main"
+ ],
+ "types": [
+  "MAIN"
+ ],
+ "tiers": [
+  "Everything"
+ ],
+ "media": [
+  "comic"
+ ],
+ "arcs": [
+  {
+   "id": "a",
+   "name": "A",
+   "era": "one",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  },
+  {
+   "id": "b",
+   "name": "B",
+   "era": "two",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  }
+ ],
+ "rows": [
+  {
+   "issueId": "probe-1990-1",
+   "series": "Probe",
+   "vol": "1990",
+   "num": "1",
+   "title": "Probe (1990) #1",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-01",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "probe-1990-2",
+   "series": "Probe",
+   "vol": "1990",
+   "num": "2",
+   "title": "Probe (1990) #2",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-02",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "probe-1990-3",
+   "series": "Probe",
+   "vol": "1990",
+   "num": "3",
+   "title": "Probe (1990) #3",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1991-01",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "probe-1990-4",
+   "series": "Probe",
+   "vol": "1990",
+   "num": "4",
+   "title": "Probe (1990) #4",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1991-02",
+    "source": "fixture ledger (invented)"
+   }
+  }
+ ]
+}

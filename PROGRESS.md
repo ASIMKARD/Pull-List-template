@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1334 assertions, 0 failed, 30 suites (session 5, step 1). **Layout suite (real Chromium, in CI too):** 231 checks, 0 failed, 8 suites.
+**Harness:** 1408 assertions, 0 failed, 31 suites (session 5, step 2). **Layout suite (real Chromium, in CI too):** 258 checks, 0 failed, 8 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
 
 ---
@@ -1830,3 +1830,40 @@ suite instead of failing; the test now fails cleanly.)
 from `main`'s `data.js`.
 
 **Harness:** 1334 assertions (+35), 0 failed, 30 suites. **Layout:** 231 checks, 0 failed, 8 suites.
+
+---
+
+## Session 5 checkpoint — step 2 done (the signature skin slot), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **`franchise.signature`** `{name, tokens, fonts?, stylesheet?}` in the schema and the build. The build checks it and emits its CSS: `@font-face` rules (swap), one token block scoped to `:root[data-skin="signature"]` (tokens sorted, so input order never matters), then the stylesheet's rules, normalised | `tools/build.py` `signature_skin`, `signature_rules`, `look_value_problem`; `schema/dataset.schema.json` |
+| **What the build refuses.** Tokens must be inputs from `styles.css` `:root`. Every token a Look setting's block sets is read from `styles.css` and refused, as are the page's own (`--fs`, `--stack-h`, `--motion`, `--skin-ok`, `--qr-paper`). Fonts must be a `.woff2` in `fonts/` (precached). Every selector must start with the scope. Only look properties are allowed: colours from tokens, background images (gradients from tokens, or a precached file), borders, radii, shadows and font settings. Position, display, inset, order, flex, grid, float, visibility, z-index, transform, width, height, margin, opacity, content and overflow are refused by name. At-rules, `!important`, literal or named colours, `rgb()`, a literal alpha and transitions also fail | `tools/build.py` |
+| **Delivery:** the CSS comes inside `data.js` and the app adds it once, as `<style id="skin-signature">`, before the first render. The skin beacon only reads the page's own stylesheet | `app.js` `applySignature`, `pageSheets` |
+| **Skin choice.** The signature skin is offered first, under its own name. A first visit takes the old tracker's pick through `storage.legacy.skins` `{field, map}` (read only); an unmapped or unreadable value falls back to the signature skin, else `franchise.skin`. After that, the last skin used. The map is validated against the skins offered. The skin control counts the signature skin (visibility rule) | `app.js` `firstSkin`, `buildHas`; `tools/build.py` |
+| **Demo "Signal"** in the `basic` fixture: tokens, one font face (`Fixture Signal`), a look-only stylesheet, and a legacy map (`sig` / `tabs` → signature, `pull` → Pull) | `test/fixtures/basic/` |
+| Broken fixtures (the plan's guard self-tests): an unscoped selector, a `position`, a literal colour | `test/fixtures/broken/signature-*` |
+| New suite: the demo's CSS, precached font, read-by-name tokens, a rich look-only stylesheet passing, 34 refusals, the app adding the CSS once, the legacy pick (mapped, unmapped, unreadable, last used wins, the old key never written), no signature, signature + one shared skin | `test/suites/22-signature` |
+| **Measured in real Chromium with the shared skins:** the contrast matrix (× 7 papers) and the 64-era washes (the stress set carries the same signature), reachability at 390/320/largest, overflow, the sweep (basic now opens in it; Paper is swept explicitly), the stack, motion, and fonts. Each page checks it really is in the seeded skin | `test/layout/40-look`, `10-sweep`, `60-stack`, `20-motion`, `30-css`, `80-paint` |
+
+### Found by measuring
+- **The demo's teal accent at 28 % lightness failed AA.** Creator names reached only 4.34–4.49:1 and
+  era-banner text failed too. At the same lightness, teal is brighter than blue. The demo is now at
+  24 %; worst text overall is 5.12:1.
+- **A signature token could override a Look setting.** The signature CSS loads after `styles.css`,
+  so a token such as `--era-h0` would have beaten "one era colour". The build now reads every token
+  a Look-setting block sets from `styles.css` and refuses it.
+
+### My call (open to veto): how the signature CSS is delivered
+The plan left this to measurement in `80-paint`. On the 1.6 Mbps link, injected from `data.js` gave
+a median first paint of 864 ms, and a linked `skin.css` gave 868 ms (7 runs each). That's a tie, so I
+chose the delivery with no extra file or request. Its CSS can't get out of step with `data.js`, and a
+tracker without a signature pays nothing. The skin only applies once `app.js` sets `data-skin`
+anyway, so a stylesheet link couldn't apply it any sooner. `80-paint` now asserts one stylesheet
+request and the injected CSS.
+
+Mutations: all 17 code mutations were caught. The 2 layout mutations were caught too: a 34 px
+signature tab font (10-sweep: the tabs no longer fit at 320 px) and a pale ink (40-look: 2.32:1).
+
+**Harness:** 1408 assertions (+74), 0 failed, 31 suites. **Layout:** 258 checks (+27), 0 failed, 8 suites.
