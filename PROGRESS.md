@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1472 assertions, 0 failed, 34 suites (end of session 5). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
+**Harness:** 1475 assertions, 0 failed, 34 suites (session 5, step 7 in progress). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2068,3 +2068,66 @@ to it. Nothing outside this repo was edited. X-men and Research-Repo were only c
    compact X-Men's 22 px (below the 24 px target).
 4. **My call (step 2), open to veto:** the signature CSS arrives inside `data.js` instead of a linked
    `skin.css`. Measured first paint was a tie: 864 vs 868 ms.
+
+---
+
+## Session 5 — step 7 (the Absolute pilot) in progress, 7 Oct 2026
+
+John asked for all seven steps this session, with a change report and his OK before any data is
+written to Absolute-v3.
+
+### Done
+- **The v7 reading is confirmed.** `index.html` reads "build v7", `sw.js` caches as `absolute-v7`, and
+  commit `7304f82` (17 Aug 2026) is the head of ASIMKARD/Absolute's only branch on GitHub. The live
+  site can't be reached from the container. Absolute-v3 starts at v8.
+- **7b research,** in Research-Repo `sessions/2026-10-06-absolute/` (add-only; commit `ecd4857` on
+  `claude/tender-albattani-hxrb3y`):
+  - 142 DC Database pages were fetched through its API, each cached with its revision id;
+  - cover dates come from the pages' Month and Year;
+  - on-sale dates are the pages' stated release dates (Day plus the template's month, cross-checked:
+    136 of 138 fall on a Wednesday);
+  - writer and artist credits for every row;
+  - the crossover chain that places the Wonder Woman 2026 Annual;
+  - collected ranges and Absolute Batman Vol. 3 ("Devil's Workshop");
+  - new titles flagged, not added.
+  - Only dc.fandom.com is reachable from this environment. dc.com, League of Comic Geeks, the Grand
+    Comics Database and Wikipedia are blocked, so there is no second source.
+- **The change report** (`change-report.md`): 134 rows (v7: 123), 11 added, 2 re-dated, 1 moved,
+  26 renumbered only, 0 removed. The draft dataset passes the build (credits strict, 100 %) and the
+  verify gate.
+
+### Waiting on John
+1. **His OK on the change report.** It covers Wonder Woman #11 → November 2025 and Flash #12 → May
+   2026 (with page histories), the Wonder Woman Annual before #16, the July and September blurbs,
+   whether on-sale dates come from the DC Database alone, and the issueId shapes.
+2. **Access to Absolute-v3.** Attaching it fails ("you don't have access to asimkard/absolute-v3"),
+   and a public search finds only ASIMKARD/Absolute. Either:
+   - the repo doesn't exist yet: John creates it;
+   - or it is private without the Claude GitHub App: John grants the app access to it, at
+     https://claude.ai/connect-github.
+
+   Then retry attaching it here, or start a new session with Absolute-v3 selected.
+
+### Where step 7a begins (after both)
+1. Copy the template into Absolute-v3 with fresh history, keeping `.claude/skills/` and dropping
+   `workbook.xlsx`.
+2. Write `dataset.json` from `sessions/2026-10-06-absolute/absolute-v3.dataset.draft.json`, with John's
+   answers applied.
+3. Add `storage.legacy.skins` (`abs` / `tabs` → signature, `pull` → Pull) once the signature skin
+   exists (7d). Add Absolute's icons and name.
+4. First test: `python3 tools/verify_gate.py`, then `node test/run.js` and `npm run test:layout`, on
+   Absolute's data.
+
+### Found while closing this out: one bulk mark was quadratic
+The close-out's harness run failed once: `9c-bulk-touch` marked 5,000 rows read in 1,544 ms, against a
+1.5 s budget. Run alone it took 1,134–1,338 ms, which still passed, but with too little margin.
+- **The profile** showed most of the time in jsdom compiling selectors. `applyMark` queried
+  `.row[data-i="N"]` once per row, so 5,000 rows meant 5,000 full-document queries, each with a new
+  selector, even though no rows were rendered.
+- **The fix:** a bulk action now gathers the rendered rows once (`renderedRows()`), and Undo does
+  the same when it's tapped. The time is now 170–208 ms. A single mark still uses its one query.
+- **New checks in `9c-bulk-touch`:** every rendered row of a bulk-marked arc shows "read" and its
+  glyph, and Undo puts each one back as it was. They pass on the old code (same behaviour, just
+  slower) and catch a map that misses rows.
+
+**Harness:** 1475 assertions (+3), 0 failed, 34 suites. **Layout:** 267 checks, 0 failed, 9 suites.

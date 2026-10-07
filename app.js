@@ -1021,10 +1021,18 @@
   /* applyMark changes one row's state and its rendered row; every mark goes
      through it. setMark is one mark + one refresh; bulkMark is many marks +
      ONE save and ONE refresh. */
-  function applyMark(i, st) {
+  /* Every rendered row, by index, in one query. A bulk action passes this to
+     applyMark: a selector per row is a full-document query each time, and
+     5,000 of them made one bulk mark quadratic. */
+  function renderedRows() {
+    var map = {};
+    $$('.row[data-i]').forEach(function (row) { (map[row.dataset.i] = map[row.dataset.i] || []).push(row); });
+    return map;
+  }
+  function applyMark(i, st, rendered) {
     var id = D.ids[i];
     if (st === 'unread') delete progress.marks[id]; else progress.marks[id] = st;
-    $$('.row[data-i="' + i + '"]').forEach(function (row) {
+    (rendered ? rendered[i] || [] : $$('.row[data-i="' + i + '"]')).forEach(function (row) {
       row.dataset.s = st;
       var m = row.querySelector('.mark');
       m.textContent = glyph(st);
@@ -1047,12 +1055,12 @@
   function counted(i) { return !isInert(i) && planOk(i) && (!browsing() || browseOk(i)); }
   function rowsWhere(pred) { var out = []; for (var i = 0; i < N; i++) if (counted(i) && pred(i)) out.push(i); return out; }
   function bulkMark(list, st, what) {
-    var prev = {}, changed = 0;
+    var prev = {}, changed = 0, rendered = renderedRows();
     list.forEach(function (i) {
       var before = stateOf(i);
       if (before === st) return;
       prev[D.ids[i]] = before;
-      applyMark(i, st);
+      applyMark(i, st, rendered);
       changed++;
     });
     var verb = st === 'unread' ? 'cleared' : 'marked ' + st;
@@ -1060,7 +1068,8 @@
     afterMarks();
     if (activeTab === 'reading') renderReading();
     toast(changed.toLocaleString('en-GB') + ' ' + verb + ' in ' + what + '.', 'Undo', function () {
-      Object.keys(prev).forEach(function (id) { if (ID_I[id] !== undefined) applyMark(ID_I[id], prev[id]); });
+      var now = renderedRows();                     // the rows rendered by the time Undo is tapped
+      Object.keys(prev).forEach(function (id) { if (ID_I[id] !== undefined) applyMark(ID_I[id], prev[id], now); });
       afterMarks();
       if (activeTab === 'reading') renderReading();
       toast('Undone: ' + changed.toLocaleString('en-GB') + ' restored.');
