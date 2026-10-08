@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1484 assertions, 0 failed, 34 suites (session 5, step 7: built and proven, waiting on John's merge into Absolute). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
+**Harness:** 1484 assertions, 0 failed, 34 suites (session 5: all seven steps done; Absolute v8 live). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2132,7 +2132,7 @@ The close-out's harness run failed once: `9c-bulk-touch` marked 5,000 rows read 
 
 **Harness:** 1475 assertions (+3), 0 failed, 34 suites. **Layout:** 267 checks, 0 failed, 9 suites.
 
-## Session 5 — step 7 (the Absolute pilot): built and proven; waiting on John's merge, 8 Oct 2026
+## Session 5 — step 7 done (the Absolute pilot): v8 live, 8 Oct 2026
 
 **Change of plan (John, 8 Oct).** Absolute is upgraded in place on ASIMKARD/Absolute's own `main`, a
 one-off exception recorded in `CLAUDE.md`; Absolute-v3 is no longer needed. The safeguards:
@@ -2206,9 +2206,22 @@ signature; the live domain allowed for checks by hash.
   - **Reopened within 10 minutes of using v7,** the first open can still show v7, from the
     browser's cache. The next open is v8, with everything intact.
 
-### Waiting on John
-1. **Merge the pull request into Absolute's `main`.** It has the results and the screenshots.
-2. **After the merge** (about 100 s for Pages), every served file is verified against the repo by
-   sha256, and the removed v7 files must be gone (404).
-3. **Non-blocking questions:** the signature-skin items listed above; the Pull era boxes; the tab
-   bar edge to edge; the mark size; whether signature CSS should ship inside `data.js`.
+### Live (8 Oct, 12:21 UTC)
+- **John merged ASIMKARD/Absolute#1.** `main` is `36fd088`, a merge commit whose files are identical
+  to the tested commit `ee076da`. Pages served it within a minute.
+- **Every file was verified by sha256** against `main` at https://asimkard.github.io/Absolute/:
+  - 180 of 180 match, and the bare address serves `index.html`;
+  - v7's 5 removed files return 404;
+  - the live `data.js` is version 8, and the cache is `absolute-b0de46364a0d`.
+- **Real Chromium on the live site** reads "v8" in the header, in the Absolute skin, with no errors.
+- **The record** is in Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/live-verify.txt`,
+  with the script `verify-live.sh`.
+- **Absolute's own `PROGRESS.md`** still says "after the merge: verify". Changing it needs John's
+  say-so, since any change to Absolute does now.
+
+### Open with John (non-blocking)
+- **The signature-skin items** that need moving things: era numerals, the row-number gutter, `[X]`
+  marks, the `//` arc prefix, full-width era bars.
+- **From earlier:** the Pull era boxes; the tab bar edge to edge; the mark size; whether signature
+  CSS should ship inside `data.js`.
+- **The template's own pull request:** ASIMKARD/Pull-List-template#5 (this branch).
