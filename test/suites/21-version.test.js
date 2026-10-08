@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { ROOT, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir, boot, wait, openSettings } = require('../lib/helpers');
+const { ROOT, BUILD, ROOT_DATASET, build, loadData, readJSON, writeJSON, copyFixture, tmpdir, boot, wait, openSettings } = require('../lib/helpers');
 
 const read = (dir, f) => fs.readFileSync(path.join(dir, f), 'utf8');
 const cacheName = dir => (read(dir, 'sw.js').match(/const CACHE = '([^']+)'/) || [])[1];
@@ -16,8 +16,10 @@ module.exports = async function (t) {
   // ---- the first build uses versionStart (default 1) ----
   const root = build(path.join(ROOT, 'dataset.json'), { label: 'v-root' });
   const R = loadData(root.out);
-  t.eq('the template demo starts at v1 (no versionStart)', R.version, 1);
-  t.ok('the report and the build line both name the version', root.report && root.report.version === 1 && /^built v1 \(/.test(root.stdout), root.stdout);
+  const start = ROOT_DATASET.franchise.versionStart || 1;
+  t.eq('the root dataset starts at its versionStart (v' + start + '; the template demo has none, so v1)', R.version, start);
+  t.ok('the report and the build line both name the version', root.report && root.report.version === start &&
+       new RegExp('^built v' + start + ' \\(').test(root.stdout), root.stdout);
 
   const dir = copyFixture('minimal', 'v-min');
   const ds = path.join(dir, 'dataset.json');

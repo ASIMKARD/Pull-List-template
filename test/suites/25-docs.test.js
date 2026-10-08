@@ -5,12 +5,16 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { ROOT, readJSON } = require('../lib/helpers');
+const { ROOT, ROOT_DATASET, IS_TEMPLATE, readJSON } = require('../lib/helpers');
 
 const DOCS = ['README.md', 'BUILD-NOTES.md', 'MIGRATING.md', '.claude/skills/comic-tracker-build/SKILL.md'];
 /* Named on purpose but not in this repo: Research-Repo's toolkit path, the
    pilot's repo, and the optional images folder a signature skin may add. */
 const ELSEWHERE = new Set(['toolkit/verify.py', 'ASIMKARD/Absolute-v3', 'images/']);
+/* A tracker keeps these docs as they are. Two things they name live only in the
+   template: its parity checklist, and the workbook a web-app-only tracker doesn't write. */
+const TEMPLATE_ONLY = new Set(IS_TEMPLATE ? [] : ['FEATURE-INVENTORY.md']
+  .concat((ROOT_DATASET.deliverables || {}).workbook === false ? ['workbook.xlsx'] : []));
 const EXT = /\.(json|py|js|md|css|html|xlsx|woff2|png|yml)$/;
 
 function spans(text) {
@@ -54,7 +58,7 @@ function check(text) {
     if (/\s|:|<|^-|^\.\.|^https?/.test(s) || !/^[\w.\-*/]+$/.test(s)) continue;
     if (!(s.includes('/') || EXT.test(s))) continue;
     out.paths.push(s);
-    if (!ELSEWHERE.has(s) && !glob(s)) out.missing.push('path ' + s);
+    if (!ELSEWHERE.has(s) && !TEMPLATE_ONLY.has(s) && !glob(s)) out.missing.push('path ' + s);
   }
   return out;
 }
@@ -73,8 +77,9 @@ module.exports = async function (t) {
   const skill = fs.readFileSync(path.join(ROOT, DOCS[3]), 'utf8');
   t.ok('the Skill has the frontmatter a session loads it by (name comic-tracker-build, a description)',
        /^---\nname: comic-tracker-build\ndescription: .{40,}\n---\n/.test(skill));
+  const readme = fs.existsSync(path.join(ROOT, 'README.md')) ? fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8') : '';
   t.ok('the README points at all three docs and the Skill', ['BUILD-NOTES.md', 'MIGRATING.md', 'CLAUDE.md', '.claude/skills/comic-tracker-build/SKILL.md']
-       .every(x => fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8').includes('`' + x + '`')));
+       .every(x => readme.includes('`' + x + '`')));
   // the checker itself catches each kind of mistake
   const bad = check([
     'See `tools/nope.py` and `test/fixtures/none/` and `data/eras/*.yaml`.', '```', 'python3 tools/build.py --no-such-flag', 'node test/gone.js',

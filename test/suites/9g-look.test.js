@@ -145,8 +145,8 @@ module.exports = async function (t) {
   app.window.close();
   app = boot(b.out, { cssSrc: css.replace(/--skin-ok:\s*\d+/, '--skin-ok: 2'), storage: seen });
   await wait(20);
-  t.ok('an older stylesheet (a stale cache) is caught: "out of date", with Reload',
-       /styles are out of date \(version 2\)/.test(app.document.querySelector('#toastMsg').textContent) && app.document.querySelector('#toastAct').textContent === 'Reload');
+  t.ok('an older stylesheet (a stale cache) is caught before the app starts: loaded again where no cache holds it, then the app starts over (9i-pwa)',
+       !!app.document.querySelector('link[rel="stylesheet"][href^="./styles.css?r="]') && /Updating to the latest version/.test(app.document.getElementById('app').textContent));
   app.window.close();
   app = boot(b.out, { cssSrc: css.replace(/\s*--skin-ok:\s*\d+;[^\n]*/, ''), storage: seen });
   await wait(20);

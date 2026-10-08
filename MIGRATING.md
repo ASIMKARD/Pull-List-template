@@ -3,19 +3,29 @@
 Moving a tracker people already use onto the v3 template, without losing a
 single mark, bookmark, review or skin choice. The Absolute pilot is the first.
 
-## 1. A fresh repo, always
+## 1. A fresh repo, unless John says otherwise
 
-- **Stop and ask John first.** He creates a fresh repo (Absolute's is
-  ASIMKARD/Absolute-v3). The migration goes there.
-- The original stays untouched, for comparison and rollback. Read it from a
-  local read-only copy; never commit to it.
-- v3 takes over the original address only at a **cut-over swap John approves**
+- **Stop and ask John first.** Normally he creates a fresh repo and the
+  migration goes there. The original stays untouched, for comparison and
+  rollback; read it from a local read-only copy and never commit to it. v3
+  takes over the original address only at a **cut-over swap John approves**
   (step 8).
+- **In place, as a one-off (Absolute, 8 Oct).** John approved upgrading
+  ASIMKARD/Absolute on its own `main`. Because `main` is live:
+  - the last old commit is tagged first (`v7-final`): the one-step rollback;
+  - nothing reaches `main` until everything passes on the tracker's own data
+    (step 6) and the in-place proof passes (step 7);
+  - v8 reaches `main` through one pull request John merges;
+  - that first deploy replaces every file and removes the old tracker's own
+    (its generator, tests and scripts), so nothing stale is left serving.
 
 ## 2. Copy the template in
 
-Copy this template into the fresh repo with fresh history, then give it the
-tracker's own name, theme, icons and data (`README.md`, "Start a tracker").
+Copy this template into the fresh repo with fresh history (in place: over the
+old files, removing them), then give it the tracker's own name, theme, icons
+and data (`README.md`, "Start a tracker"). Leave out what is only the
+template's: its `PROGRESS.md`, `FEATURE-INVENTORY.md` and demo `dataset.json`.
+The tracker gets its own `README.md`, `CLAUDE.md` and `PROGRESS.md`.
 Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
 `<key>:v3:`, so the old keys are never touched.
 
@@ -61,19 +71,30 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
 
 - Every row's dates come from a named source (for DC, the DC Database through
   its API), cached in Research-Repo's session folder. Never interpolate.
-- Run `python3 tools/verify_gate.py` and both suites until they're clean.
+- Run `python3 tools/verify_gate.py` and both suites on the tracker's own data
+  until they're clean. The suites check the repo's own dataset as it is:
+  `test/layout/45-root.test.js` measures it in every skin it offers (contrast
+  on every paper, its era banners, every control reachable), and
+  `test/layout/10-sweep.test.js` sweeps it at 320, 360 and 390 px.
 
 ## 7. Prove it in real Chromium
 
-On the same origin as the old tracker: mark rows, add bookmarks, write a review
-and pick a skin in the old copy; open the v3 build; everything carries over. An
-old QR code imports. The old keys are byte-for-byte unchanged.
+On the same origin and path as the old tracker: mark rows, add bookmarks, write
+a review and pick a skin in the old copy; open the v3 build; everything carries
+over. An old QR code imports. The old keys are byte-for-byte unchanged.
+
+In place, serve the old build, let its service worker take control, then serve
+the new build over the top at the same address and reload. It must open as the
+new version with every mark, bookmark, review and the skin intact; the new
+worker takes over, deletes the old one's cache (`absolute-v7`) and leaves other
+trackers' caches on the origin alone.
 
 ## 8. Deploy, verify, swap
 
-- Deploy the fresh repo to GitHub Pages. Wait about 100 s, check the version in
-  the header, and verify changed files **by hash** against the live URL, never
-  by HTTP 200.
+- Deploy to GitHub Pages (`.nojekyll`, so files are served as they are). Wait
+  about 100 s, check the version in the header, and verify **every** file by
+  hash against the live URL, never by HTTP 200. In place, the old tracker's
+  removed files must be gone (404).
 - John checks it on his phone.
-- The cut-over swap (v3 takes the original address) happens only when John
-  approves it.
+- For a fresh repo, the cut-over swap (v3 takes the original address) happens
+  only when John approves it.

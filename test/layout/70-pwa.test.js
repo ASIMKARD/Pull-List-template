@@ -3,21 +3,33 @@
    skipWaiting + clients.claim, every precached path exists, and every fetch
    path ends in a real Response (iOS shows a blank page otherwise). */
 'use strict';
+const fs = require('fs');
+const path = require('path');
 const { basic } = require('../lib/helpers');
-const { serve, open, openSettings, closeBrowser } = require('./lib');
+const { serve, open, openSettings, closeBrowser, poll } = require('./lib');
 
 const seed = { 'fixture:v3:settings': JSON.stringify({ v: 3, migrated: { format: 'v2' } }) };
 
 module.exports = async function (t) {
   try {
     const b = basic(), srv = await serve(b.out);
-    const pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed });
+    /* One GitHub Pages user site holds every tracker, and they share one cache
+       storage. Seed it the way a phone has it: another tracker's v2 and v3
+       caches, and this tracker's own v2 cache, before this worker arrives. */
+    const OTHERS = ['spider-man-v12', 'idw-sonic-0123456789ab'], OWN_OLD = 'fixture-v7';
+    srv.override('/blank.html', '<!doctype html><title>blank</title>');
+    const pg = await open(srv.url + 'blank.html', { width: 390, reducedMotion: 'reduce', storage: seed });
     const page = pg.page;
+    await page.evaluate(async names => { for (const n of names) await (await caches.open(n)).put('/seeded', new Response(n)); }, OTHERS.concat(OWN_OLD));
+    await page.goto(srv.url);
     await page.waitForFunction(() => navigator.serviceWorker && navigator.serviceWorker.controller, null, { timeout: 15000 });
-    const info = await page.evaluate(async () => ({ keys: await caches.keys(), n: (await (await caches.open(window.TRACKER_DATA.cache)).keys()).length,
+    await poll(page, o => caches.has(o).then(h => !h), OWN_OLD, 5000);
+    const info = await page.evaluate(async () => ({ keys: (await caches.keys()).sort(), n: (await (await caches.open(window.TRACKER_DATA.cache)).keys()).length,
       want: window.TRACKER_DATA.precache.length, cache: window.TRACKER_DATA.cache }));
     t.ok('the worker installs, claims the page and fills its cache: every precached file, fonts and icons included (F-59, D-2)',
-         info.keys.length === 1 && info.keys[0] === info.cache && info.n >= info.want, JSON.stringify(info));
+         info.keys.includes(info.cache) && info.n >= info.want, JSON.stringify(info));
+    t.eq('…and on a shared origin it removes only its own earlier cache: other trackers\' caches stay',
+         info.keys, OTHERS.concat(info.cache).sort());
     await openSettings(page);
     await page.waitForFunction(() => document.querySelector('#offState') && document.querySelector('#offState').dataset.ready === '1', null, { timeout: 5000 });
     t.ok('Settings → Offline reports it: "Ready offline · N of N files saved" (F-35)',
@@ -64,10 +76,60 @@ module.exports = async function (t) {
     await page.waitForFunction(() => /A new version is ready/.test(document.querySelector('#toastMsg').textContent), null, { timeout: 15000 });
     t.ok('Check for updates finds the new worker; once it is active: "A new version is ready" with Reload',
          (await page.textContent('#toastAct')) === 'Reload' && !!(await page.$('[data-act="sw-reload"]')));
-    await page.waitForFunction(async n => (await caches.keys()).join() === n, nextCache, { timeout: 5000 }).catch(() => null);
-    t.eq('…and the old cache is gone: only the new one remains', await page.evaluate(() => caches.keys()), [nextCache]);
+    await poll(page, async n => (await caches.keys()).includes(n) && (await caches.keys()).length === 3, nextCache, 5000);
+    t.eq('…and the old cache is gone: only the new one remains (beside the other trackers\')', await page.evaluate(async () => (await caches.keys()).sort()), OTHERS.concat(nextCache).sort());
     t.eq('no page errors (update)', pg.errors.filter(e => !/Failed to load resource/.test(e)), []);
     await pg.close();
     await srv.close();
+
+    // ------------------------------------------------ a deploy on GitHub Pages' caching (the Absolute upgrade proof, 8 Oct)
+    /* Pages sends max-age=600: for 10 minutes after a deploy the browser's HTTP
+       cache still holds the previous one. The new worker must store the new
+       files, never the old ones, so the next open is the new deploy. */
+    const gp = await serve(b.out, { pages: true });
+    const p2 = await open(gp.url, { width: 390, reducedMotion: 'reduce', storage: seed });
+    await p2.page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 });
+    await p2.page.reload();                                   // a second visit: every file is in the HTTP cache, fresh for 10 minutes
+    await p2.page.waitForSelector('.era-head', { state: 'attached' });
+    const dataA = gp.file('/data.js'), verA = await p2.page.evaluate(() => window.TRACKER_DATA.version), cacheB = 'fixture-deploy2';
+    const dataB = dataA.replace('"version":' + verA + ',', '"version":' + (verA + 1) + ',').replace(/"cache":"[^"]+"/, '"cache":"' + cacheB + '"');
+    gp.override('/data.js', dataB);
+    gp.override('/sw.js', gp.file('/sw.js').replace(/const CACHE = '[^']+';/, "const CACHE = '" + cacheB + "';"));
+    await p2.page.reload();
+    // the old cache goes only at the new worker's activation, after its install stored every file
+    const cacheA = gp.file('/sw.js').match(/const CACHE = '([^']+)'/)[1];
+    const swapped = await poll(p2.page, async ([nb, na]) => { const k = await caches.keys(); return k.includes(nb) && !k.includes(na); }, [cacheB, cacheA]);
+    const stored = await p2.page.evaluate(async n => { const c = await caches.open(n), out = {};
+      for (const u of ['./data.js', './index.html', './app.js', './styles.css']) { const r = await c.match(u); out[u] = r ? await r.text() : null; }
+      return out; }, cacheB);
+    t.ok('on GitHub Pages\' caching (max-age=600) a deploy\'s new worker stores the new files, never the old ones still in the HTTP cache',
+         swapped && stored['./data.js'] === dataB && stored['./index.html'] === gp.file('/index.html') && stored['./app.js'] === gp.file('/app.js'),
+         JSON.stringify({ swapped, data: (stored['./data.js'] || '').slice(0, 40) }));
+    t.eq('no page errors (a deploy on Pages caching)', p2.errors.filter(e => !/Failed to load resource/.test(e)), []);
+    await p2.close();
+    await gp.close();
+
+    // ------------------------------------------------ an older build's data.js: recovered in place, never a loop
+    const gs = await serve(b.out, { pages: true });
+    gs.override('/data.js', 'window.TRACKER_DATA = {"franchise":{"key":"old"},"issues":[]};');
+    const p3 = await open(gs.url, { width: 390, reducedMotion: 'reduce', storage: seed });
+    await p3.page.waitForFunction(() => /halfway through an update/.test(document.getElementById('app').textContent), null, { timeout: 10000 }).catch(() => null);
+    await p3.page.evaluate(() => { window.__stay = 1; });
+    await new Promise(r => setTimeout(r, 1500));
+    const held = await p3.page.evaluate(() => ({ stay: window.__stay === 1, nav: performance.getEntriesByType('navigation')[0].type,
+      retried: [...document.querySelectorAll('script[src*="data.js?r="]')].length, text: document.getElementById('app').textContent }));
+    t.ok('an older data.js the server still sends: one fresh load, then a message; no reload, no loop', held.stay && held.nav === 'navigate' &&
+         held.retried === 1 && /halfway through an update/.test(held.text), JSON.stringify(held));
+    gs.override('/data.js', fs.readFileSync(path.join(b.out, 'data.js'), 'utf8'));
+    const p4 = await p3.ctx.newPage(), e4 = [];
+    p4.on('pageerror', e => e4.push(e.message));
+    await p4.goto(gs.url);
+    const ok4 = await p4.waitForSelector('.era-head', { state: 'attached', timeout: 10000 }).then(() => true, () => false);
+    const r4 = await p4.evaluate(() => ({ nav: performance.getEntriesByType('navigation')[0].type, retried: document.querySelectorAll('script[src*="data.js?r="]').length,
+      version: window.TRACKER_DATA && window.TRACKER_DATA.version, beacon: getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim() }));
+    t.ok('…once the new one is deployed, a page that still gets the old one from a cache recovers in place and opens normally',
+         ok4 && e4.length === 0 && r4.version === 1 && r4.beacon === '3', JSON.stringify(Object.assign({ ok4, e4 }, r4)));
+    await p3.close();
+    await gs.close();
   } finally { await closeBrowser(); }
 };

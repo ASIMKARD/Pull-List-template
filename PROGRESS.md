@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1475 assertions, 0 failed, 34 suites (session 5, step 7 in progress). **Layout suite (real Chromium, in CI too):** 267 checks, 0 failed, 9 suites.
+**Harness:** 1484 assertions, 0 failed, 34 suites (session 5, step 7: built and proven, waiting on John's merge into Absolute). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2131,3 +2131,84 @@ The close-out's harness run failed once: `9c-bulk-touch` marked 5,000 rows read 
   slower) and catch a map that misses rows.
 
 **Harness:** 1475 assertions (+3), 0 failed, 34 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+## Session 5 — step 7 (the Absolute pilot): built and proven; waiting on John's merge, 8 Oct 2026
+
+**Change of plan (John, 8 Oct).** Absolute is upgraded in place on ASIMKARD/Absolute's own `main`, a
+one-off exception recorded in `CLAUDE.md`; Absolute-v3 is no longer needed. The safeguards:
+- `v7-final` tags v7 (`7304f82`). John created it, since this session can't push tags; it is
+  confirmed on `7304f82`.
+- Nothing reaches `main` until everything passes on Absolute's own data and the in-place proof
+  passes.
+- v8 reaches `main` through one pull request that John merges (this session can't push `main`).
+- The first deploy replaces every file, and every file is verified live by hash.
+
+John's answers (8 Oct): the change report "OK as drafted"; all four shared skins plus the
+signature; the live domain allowed for checks by hash.
+
+### Done (template)
+- **The service worker leaves other trackers' caches alone.** Every tracker on one Pages site
+  shares one cache storage, and v2's worker deleted everyone's. Now it deletes only `<key>-v<N>`
+  and `<key>-<12 hex>` (80-guards, 70-pwa).
+- **GitHub Pages' 10-minute caching**, found by the upgrade proof (`CLAUDE.md` has the trap):
+  - **The precache** now goes past the HTTP cache (`cache: 'reload'`). Before, v8's worker stored
+    v7's files under its own name.
+  - **The shell** is always checked with the server (`cache: 'no-cache'`; a 304 when unchanged).
+  - **`app.js` checks** the data's shape and the stylesheet's beacon before reading anything. On a
+    mismatch it loads both again at `?r=<time>` and starts over, once; it never loops. Before,
+    Chromium's memory cache handed v8's `app.js` v7's `data.js` on a reload, and it crashed.
+  - **Tests:** 80-guards (vm), 9i-pwa (jsdom), and 70-pwa against a server that sends Pages'
+    headers (`serve(dir, { pages: true })`). Every one was proved by putting its bug back.
+  - **F-57:** an older stylesheet is now reloaded and the app starts over (9g-look). A stylesheet
+    with no beacon at all still gets the toast.
+- **The suites run on any tracker's data.** `ROOT_DATASET` and `IS_TEMPLATE` are in
+  `test/lib/helpers.js`.
+  - 21-version uses the root's own `versionStart`.
+  - 25-docs allows `FEATURE-INVENTORY.md`, and `workbook.xlsx` when the workbook is off.
+  - 93-storage boots the minimal fixture.
+  - 9i-pwa checks a tracker's icons are its own.
+  - 10-sweep sweeps the root in every skin it offers, and with large text and buttons.
+  - **The new `test/layout/45-root`** measures the repo's own dataset in every skin it offers:
+    contrast on every paper, its era banners, and every control's reachability. It was proved with
+    v7's grey, unstyled banner text and undersized buttons.
+- **`test/layout/lib.js` `poll()`.** `page.waitForFunction` returns at once on an async check, so
+  two older 70-pwa waits had never waited.
+- **`MIGRATING.md`** now covers the in-place path, the Pages caching and `45-root`.
+
+### Done (Absolute, branch `claude/tender-albattani-hxrb3y`)
+- **The template, copied in.** v7's own files are gone:
+  - removed: `dataset.py`, `gen.py`, `test.js`, `deploy.sh`, `README.md`, `icons/favicon.png`;
+  - replaced: v7's `index.html`, `styles.css`, `data.js`, `sw.js` and `manifest.json`;
+  - `qrcode.js` and `fonts/` were byte-identical already.
+- **Its own files:** `dataset.json` (the approved draft), `signature.css`, `README.md`,
+  `CLAUDE.md`, `PROGRESS.md`, `.nojekyll`, and its own icons.
+- **The signature skin "Absolute"** is v7's "absolute" look, rebuilt as tokens and look-only rules:
+  - a black page, with a red rule under the header;
+  - mono uppercase labels and tabs, with a red underline;
+  - red era bars with black type, and Anton row titles;
+  - square controls, solid red when pressed.
+
+  Contrast is at least 4.58:1 everywhere (v7's own red on black). v7's dim grey (3.3:1) was
+  lightened to pass.
+- **What it couldn't carry** (each one would move something), listed for John: the big era
+  numerals, the row-number gutter, the bracketed `[X]` marks, the `//` arc prefix and full-width
+  era bars.
+- **v8 on Absolute's data:** gate passed; harness 1483, 0 failed; layout 349, 0 failed (10 suites).
+- **The in-place proof** (Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/`): 42 of 42.
+  - **v7, used in Chromium:** 5 marks, a bookmark, a review and the "classic" skin. The proof
+    server sends Pages' own headers.
+  - **One reload opens v8,** with all of them intact; the skin becomes Pull.
+  - **The handover:** v8's worker is in control 2.8 s later. `absolute-v7` is deleted, the other
+    trackers' caches are kept, and v8's cache holds v8's files byte for byte.
+  - **Offline,** it opens as v8 with everything there. v7's keys are byte for byte unchanged.
+  - **An old `ABSO1:` code** imports on a second device.
+  - **v7's "absolute" skin** and a never-picked skin both open in Absolute.
+  - **Reopened within 10 minutes of using v7,** the first open can still show v7, from the
+    browser's cache. The next open is v8, with everything intact.
+
+### Waiting on John
+1. **Merge the pull request into Absolute's `main`.** It has the results and the screenshots.
+2. **After the merge** (about 100 s for Pages), every served file is verified against the repo by
+   sha256, and the removed v7 files must be gone (404).
+3. **Non-blocking questions:** the signature-skin items listed above; the Pull era boxes; the tab
+   bar edge to edge; the mark size; whether signature CSS should ship inside `data.js`.

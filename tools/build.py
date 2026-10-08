@@ -1141,7 +1141,7 @@ def render_outputs(payload, shell_root, version_start=1, previous=None):
     datajs = 'window.TRACKER_DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
     with open(os.path.join(shell_root, SW_TEMPLATE), encoding='utf-8') as f:
         tpl = f.read()
-    sw = (tpl.replace('__CACHE__', cache)
+    sw = (tpl.replace('__CACHE__', cache).replace('__KEY__', payload['franchise']['key'])
              .replace('__SHELL__', json.dumps(shell))
              .replace('__STATIC__', json.dumps(statics, indent=2)))
     return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id, version

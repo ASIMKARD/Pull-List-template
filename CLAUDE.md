@@ -4,14 +4,27 @@
 
 ### Read-only rule
 Only **Pull-List-Template** may be changed, plus the two exceptions below. Master-Repo,
-X-men, Absolute and every other repo are **read-only**: read them from local copies
+X-men and every other repo are **read-only**: read them from local copies
 (clone or pull only), and **never** commit, push, create branches, open pull requests
 on, or register them as repo roots.
 
-**Exceptions (John, 6 Oct):**
-- **Absolute-v3** may be edited for the Absolute pilot. The original
-  **ASIMKARD/Absolute** stays read-only. Read its data and saved-progress format from a
-  local copy.
+**Exceptions (John, 6 Oct; the Absolute one changed 8 Oct):**
+- **ASIMKARD/Absolute: a one-off exception for the pilot (John, 8 Oct).** v8 replaces v7 in
+  place on its `main` branch; Absolute-v3 is no longer needed. This applies to Absolute
+  only. The repo-safety rule below still holds for every other repo. The safeguards,
+  because `main` is live:
+  1. Before the first change, v7's commit (`7304f82`) is tagged `v7-final`: the one-step
+     rollback. This session can't push tags or `main`, so John creates the tag, and v8
+     reaches `main` through one pull request that John merges.
+  2. Nothing reaches `main` until it all passes on Absolute's own data: the harness, the
+     layout suite, the verify gate, and the migration proof in real Chromium.
+  3. The upgrade is tested in place. In Chromium, load v7, mark issues, add a bookmark and
+     a review, and pick a skin. Then serve v8 over it and reload. It must open as v8 with
+     everything intact, and the v7 service worker and its `absolute-v7` cache must hand
+     over cleanly.
+  4. The first deploy replaces everything (fonts, icons, manifest and `qrcode.js`
+     included) and removes v7's old files. Every file is verified live by hash after
+     the merge.
 - **Research-Repo is add-only.**
   - Each session writes only inside its own new folder,
     `sessions/<yyyy-mm-dd>-<label>/`, for its research caches, notes and gate reports.
@@ -24,11 +37,12 @@ on, or register them as repo roots.
 
 ### Standing rule from John
 **Never edit any repo without John's explicit say-so.** Pull-List-Template is
-approved for the v3 work. Before the first edit to any other repo — including
-the Absolute pilot in session 5 — **stop and tell John**, so he can create a
-fresh repo first. Migrations always go into the fresh repo; the original stays
-untouched for comparison and rollback, and v3 takes over the original address
-only at a cut-over swap John approves. (Full text: Master-Repo
+approved for the v3 work. Before the first edit to any other repo, **stop and tell
+John**, so he can create a fresh repo first. (The Absolute pilot is the one
+exception: John approved upgrading ASIMKARD/Absolute in place, 8 Oct; see above.)
+Every other migration goes into a fresh repo; the original stays untouched for
+comparison and rollback, and v3 takes over the original address only at a cut-over
+swap John approves. (Full text: Master-Repo
 `starter/STANDARDS.md`, "Repo safety".)
 
 ### Working method
@@ -262,6 +276,32 @@ it. Add the setting and the code that acts on it in the same change, or not at a
 - Playwright's `setOffline` doesn't reach the service worker's own fetches, so an
   "offline" test can quietly pass through the server. Take the test server down
   instead (`test/layout/lib.js` `down()`), as `test/layout/70-pwa` does.
+- Every tracker on one GitHub Pages site shares one cache storage. A worker
+  deletes only its own old caches (`<key>-v<N>`, `<key>-<12 hex>`). v2's deleted
+  everyone's.
+
+### GitHub Pages caches every file for 10 minutes — [applies]
+Pages sends `max-age=600`. The Absolute upgrade proof (session 5) caught three
+consequences, and a test server that sends `no-store` had hidden all of them:
+- **A new worker can precache the old deploy.** `addAll` goes through the
+  browser's HTTP cache, so the worker stored v7's files under v8's cache name.
+  It now precaches with `cache: 'reload'` and fetches the shell with
+  `cache: 'no-cache'` (a 304 when nothing changed).
+- **A reload can mix two builds.** Within those minutes Chromium takes scripts
+  and styles from its memory cache, and the worker never sees the request. v8's
+  `app.js` met v7's `data.js` and crashed. `app.js` now checks the data's shape
+  and the stylesheet's `--skin-ok` before anything reads them. On a mismatch it
+  loads both again at `?r=<time>` and starts over, once; if they're still stale
+  it says so and never loops.
+- **Within those minutes, the first reopen can still show the old build.** The
+  old worker serves its own page from the HTTP cache. The new worker takes over
+  behind it, and the next open is the new build. Nothing a new worker does can
+  reach that page; `WindowClient.navigate()` closes it in headless Chromium, so
+  it isn't used.
+
+Test with `serve(dir, { pages: true })` (`test/layout/lib.js`), which sends
+Pages' headers. `page.waitForFunction` doesn't wait for an async check: its
+promise counts as true at once. Use `poll()` from the same file.
 
 ### Preloading isn't free — [applies]
 A preloaded font competes for bandwidth with the render-blocking stylesheet. On a

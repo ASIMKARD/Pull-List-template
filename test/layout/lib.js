@@ -42,8 +42,12 @@ async function closeBrowser() { if (browserP) { const b = await browserP.catch((
    override(path, text) serves different content for one path (a deploy);
    down(true) drops every request, so even the service worker's own fetches
    fail (Playwright's setOffline doesn't reach the worker); delay(test, ms)
-   holds back the paths a test matches (a slow network for one file). */
-function serve(dataDir) {
+   holds back the paths a test matches (a slow network for one file).
+   { pages: true } sends GitHub Pages' caching headers: max-age=600, an ETag
+   and Last-Modified, and 304 for a matching If-None-Match, so the browser's
+   HTTP cache holds the previous deploy the way a phone's does. */
+function serve(dataDir, opts) {
+  opts = opts || {};
   const overrides = {}, delays = [];
   let isDown = false;
   return new Promise(resolve => {
@@ -55,16 +59,19 @@ function serve(dataDir) {
       if (hold) { setTimeout(send, hold); return; }
       send();
       function send() {
-      if (overrides[f] !== undefined) {
-        res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'text/plain', 'cache-control': 'no-store' });
-        return res.end(overrides[f]);
-      }
+      if (overrides[f] !== undefined) return reply(TYPES[path.extname(f)] || 'text/plain', Buffer.from(overrides[f]));
       const gen = ['/data.js', '/sw.js', '/manifest.json'].includes(f) && dataDir && fs.existsSync(path.join(dataDir, f));
       const p = gen ? path.join(dataDir, f) : path.join(ROOT, f);
       if (!p.startsWith(ROOT) && !gen) { res.writeHead(403); return res.end(); }
       if (!fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
-      res.writeHead(200, { 'content-type': TYPES[path.extname(p)] || 'application/octet-stream', 'cache-control': 'no-store' });
-      fs.createReadStream(p).pipe(res);
+      reply(TYPES[path.extname(p)] || 'application/octet-stream', fs.readFileSync(p));
+      }
+      function reply(type, body) {
+        if (!opts.pages) { res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' }); return res.end(body); }
+        const etag = '"' + require('crypto').createHash('sha1').update(body).digest('hex').slice(0, 16) + '"';
+        const h = { 'content-type': type, 'cache-control': 'max-age=600', etag, 'last-modified': 'Thu, 08 Oct 2026 09:00:00 GMT' };
+        if (req.headers['if-none-match'] === etag) { res.writeHead(304, h); return res.end(); }
+        res.writeHead(200, h); res.end(body);
       }
     });
     server.listen(0, '127.0.0.1', () => resolve({ url: 'http://localhost:' + server.address().port + '/', close: () => new Promise(r => server.close(r)),
@@ -164,4 +171,16 @@ async function eachTab(page, fn) {
   }
 }
 
-module.exports = { browser, closeBrowser, serve, open, openAll, openSettings, rulesFor, reachability, eachTab };
+/* Poll an async in-page check until it is true (or ms pass); returns whether it
+   came true. page.waitForFunction takes an async check's promise as truthy and
+   returns at once, so a check that awaits (caches, registrations) needs this. */
+async function poll(page, fn, arg, ms) {
+  const until = Date.now() + (ms || 15000);
+  for (;;) {
+    if (await page.evaluate(fn, arg)) return true;
+    if (Date.now() > until) return false;
+    await new Promise(r => setTimeout(r, 100));
+  }
+}
+
+module.exports = { browser, closeBrowser, serve, open, openAll, openSettings, rulesFor, reachability, eachTab, poll };

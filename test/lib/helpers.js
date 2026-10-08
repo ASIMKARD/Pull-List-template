@@ -176,5 +176,12 @@ function mixed() {
   return mixedCache;
 }
 
-module.exports = { ROOT, FIX, BUILD, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
+/* The repo's own dataset. In the template it is the demo (key "starter"); in a
+   tracker built from the template it is that tracker's data, and the suites
+   check it as it is. A few checks only make sense in one of the two (the
+   template's placeholder icons, its parity checklist); IS_TEMPLATE says which. */
+const ROOT_DATASET = readJSON(path.join(ROOT, 'dataset.json'));
+const IS_TEMPLATE = ROOT_DATASET.franchise.key === 'starter';
+
+module.exports = { ROOT, FIX, BUILD, ROOT_DATASET, IS_TEMPLATE, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
                    validateIssueIds, boot, wait, openSections, openSettings, typeInto, stress, basic, noPeriods, mixed };

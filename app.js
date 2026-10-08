@@ -8,9 +8,11 @@
      waits);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
-(function () {
+(function start() {
   'use strict';
   var D = window.TRACKER_DATA;
+  var SKIN_OK = '3';            // the skin beacon (F-57): the token contract styles.css must declare
+  if (staleShell()) return;
   var N = D.issues.length;
   var FL = D.flagBits;
   var INERT = FL.GAPNOTE | FL.RENUM;
@@ -1453,8 +1455,8 @@
     if (activeTab === 'settings') renderSettings();
   }
   /* The skin beacon (F-57): styles.css declares the token contract it was
-     written for; a stylesheet from an older build (a stale cache) is caught. */
-  var SKIN_OK = '3';
+     written for (SKIN_OK, at the top); a stylesheet from an older build (a
+     stale cache) is caught. */
   function pageSheets() {                                      // the stylesheets the page loaded (not the signature skin's)
     var sig = $('#skin-signature');
     return Array.prototype.filter.call(document.styleSheets, function (sh) { return !sig || sh !== sig.sheet; });
@@ -1477,6 +1479,40 @@
     if (v === SKIN_OK) return false;
     toast('The page styles are out of date (' + (v ? 'version ' + v : 'missing') + '). Reload to get the current version.', 'Reload',
       function () { location.reload(); });
+    return true;
+  }
+  /* A stale mix (the first in-place migration's upgrade proof, 8 Oct). GitHub
+     Pages lets a browser keep every file for 10 minutes, and within them a
+     reload takes scripts and styles from the browser's caches (its memory
+     cache never even asks the service worker), so after a deploy this app.js
+     can arrive with an older data.js or styles.css. Before anything reads the
+     data: if it isn't the shape this app reads, or the stylesheet's beacon is
+     another build's, load both again at an address no cache holds and start
+     over, once. If they are still stale, say so; never loop. */
+  function staleShell() {
+    var beacon = '';
+    try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && typeof D.version === 'number';
+    if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
+    var app = document.getElementById('app'), stamp = Date.now();
+    if (window.__shellRetried) {
+      if (app) { app.setAttribute('aria-busy', 'false'); app.textContent = 'This page is halfway through an update. Close it and open it again in a few minutes.'; }
+      return true;
+    }
+    window.__shellRetried = true;
+    if (app) app.textContent = 'Updating to the latest version…';
+    var css = document.createElement('link'), js = document.createElement('script'), left = 2;
+    css.rel = 'stylesheet'; css.href = './styles.css?r=' + stamp;
+    js.src = './data.js?r=' + stamp;
+    var done = function () {
+      if (--left) return;
+      Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"]'), function (l) { if (l !== css) l.remove(); });
+      start();
+    };
+    once(css, ['load', 'error'], done);
+    once(js, ['load', 'error'], done);
+    document.head.appendChild(css);
+    document.head.appendChild(js);
     return true;
   }
   function togglePref(k) {
