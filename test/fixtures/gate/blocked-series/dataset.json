@@ -1,0 +1,390 @@
+{
+ "schemaVersion": 1,
+ "franchise": {
+  "key": "gate-case",
+  "wordmark": "Broken",
+  "title": "Broken case",
+  "strapline": "one error each",
+  "span": "1990",
+  "theme": "#222222",
+  "strictCredits": false
+ },
+ "eras": [
+  {
+   "id": "one",
+   "name": "One",
+   "rank": 5000
+  },
+  {
+   "id": "two",
+   "name": "Two",
+   "rank": 5010
+  }
+ ],
+ "strands": [
+  "Main"
+ ],
+ "types": [
+  "MAIN"
+ ],
+ "tiers": [
+  "Everything"
+ ],
+ "media": [
+  "comic"
+ ],
+ "arcs": [
+  {
+   "id": "a",
+   "name": "A",
+   "era": "one",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  },
+  {
+   "id": "b",
+   "name": "B",
+   "era": "two",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "credits": {
+    "writers": [
+     "Avery Quill"
+    ],
+    "artists": [
+     "Cass Delune"
+    ]
+   }
+  }
+ ],
+ "rows": [
+  {
+   "issueId": "alpha-1990-1",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "1",
+   "title": "Alpha (1990) #1",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-01",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-1",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "1",
+   "title": "Beta (1990) #1",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-01",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-2",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "2",
+   "title": "Alpha (1990) #2",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-02",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-2",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "2",
+   "title": "Beta (1990) #2",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-02",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-3",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "3",
+   "title": "Alpha (1990) #3",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-03",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-3",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "3",
+   "title": "Beta (1990) #3",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-03",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-4",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "4",
+   "title": "Alpha (1990) #4",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-04",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-4",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "4",
+   "title": "Beta (1990) #4",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-04",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-5",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "5",
+   "title": "Alpha (1990) #5",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-05",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-5",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "5",
+   "title": "Beta (1990) #5",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-05",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-6",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "6",
+   "title": "Alpha (1990) #6",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-06",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-6",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "6",
+   "title": "Beta (1990) #6",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-06",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-7",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "7",
+   "title": "Alpha (1990) #7",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-07",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-7",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "7",
+   "title": "Beta (1990) #7",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-07",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-8",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "8",
+   "title": "Alpha (1990) #8",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-08",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-8",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "8",
+   "title": "Beta (1990) #8",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-08",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-9",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "9",
+   "title": "Alpha (1990) #9",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-09",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-9",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "9",
+   "title": "Beta (1990) #9",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-09",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-10",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "10",
+   "title": "Alpha (1990) #10",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-10",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-10",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "10",
+   "title": "Beta (1990) #10",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-10",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-11",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "11",
+   "title": "Alpha (1990) #11",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-11",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-11",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "11",
+   "title": "Beta (1990) #11",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-11",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "alpha-1990-12",
+   "series": "Alpha",
+   "vol": "1990",
+   "num": "12",
+   "title": "Alpha (1990) #12",
+   "era": "one",
+   "arc": "a",
+   "date": {
+    "cover": "1990-12",
+    "source": "fixture ledger (invented)"
+   }
+  },
+  {
+   "issueId": "beta-1990-12",
+   "series": "Beta",
+   "vol": "1990",
+   "num": "12",
+   "title": "Beta (1990) #12",
+   "era": "two",
+   "arc": "b",
+   "date": {
+    "cover": "1990-12",
+    "source": "fixture ledger (invented)"
+   }
+  }
+ ]
+}

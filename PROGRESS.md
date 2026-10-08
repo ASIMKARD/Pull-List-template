@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1299 assertions, 0 failed, 29 suites (after the 5 Oct phone fix). **Layout suite (real Chromium, in CI too):** 231 checks, 0 failed, 8 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105 and session 4 at 1298 (+ 153 layout checks).
+**Harness:** 1484 assertions, 0 failed, 34 suites (session 5: all seven steps done; Absolute v8 live). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
 
@@ -1591,3 +1591,637 @@ Settings → Display, Touch and Bulk actions, and Checklist → Filters → Read
 393 px phone the depth chips stay on one line, as before. If iOS text runs a little wider, the
 counts drop under the names instead of being cut off.
 
+---
+
+## Session 5 plan (agreed 6 Oct 2026): versions, signature skins, Pull, gate, workbook, docs, Absolute pilot
+
+This planning session changed docs only (this file, `CLAUDE.md`, `FEATURE-INVENTORY.md`). **The
+build starts in a fresh session** (John, 6 Oct).
+
+### Decided 6 Oct (John) — do not reopen
+1. **Readable version numbers come first** (decided 4 Oct).
+   - The header shows "v13", not the hash. Settings → About shows the version, with the hash
+     in small print for debugging.
+   - The number counts up by itself. The build reads the previous `data.js`: if the content
+     hash changed, the version is the previous number + 1; otherwise it stays the same.
+     `--check` stays deterministic. Nobody bumps anything by hand.
+   - The hash keeps its real job: the service-worker cache name still changes whenever the
+     content does.
+   - Migrated trackers continue their old numbering through `franchise.versionStart`, the old
+     tracker's last build + 1. The template demo starts at v1.
+2. **Absolute-v3 starts at v8.** The local read-only copy of ASIMKARD/Absolute is at commit
+   7304f82 (17 Aug, "…(build v7)"): `index.html` shows "build v7" and `sw.js` caches as
+   `absolute-v7`. The live site can't be reached from the container, so the number comes from
+   the repo. John confirmed v8.
+3. **Dates come from the DC Database.** John adds `dc.fandom.com` to the environment's allowed
+   domains before the build session. If it still can't be reached there:
+   - rows that existed at the 17 Sep audit keep v7's cover months, with source
+     "DC Database via Absolute v7, audited 17 Sep";
+   - only the rows added since are sourced, by web search.
+4. **Research-Repo is add-only:** one new folder per session, nothing removed or changed.
+   `CLAUDE.md` → Read-only rule has the details.
+5. **`verify.py` runs in CI as a pinned copy.** It is copied unchanged into `tools/`, with its
+   Research-Repo commit and sha256 recorded. CI runs it on every push, and a session check
+   flags any drift from Research-Repo.
+6. **A signature skin slot.** Each tracker can define one skin of its own in its config:
+   - a name, colour and size tokens, fonts, and an optional stylesheet scoped to that skin
+     (textures, banner styling, shapes);
+   - it uses the same token system and passes the same contrast, every-control-reachable,
+     overflow and stack tests as the shared skins;
+   - a skin changes how things look, never where they are;
+   - the template ships a demo signature skin in a fixture to prove the slot works.
+7. **The skin choice is "last used", remembered per tracker.** On a first visit, the app uses
+   the skin picked on the old tracker (from its legacy settings) if there is one, otherwise
+   the tracker's signature skin. For Absolute's old `layout` value:
+   - `abs` → the signature skin;
+   - `pull` → Pull;
+   - `tabs` → the signature skin. It was v2's default, saved even when nobody chose it, so it
+     doesn't count as a pick.
+8. **Pull must match X-Men exactly:** era boxes, fonts, sizes, weights, spacing and colours.
+   - Serve the local read-only X-men copy in Chromium at 393 px.
+   - Measure the computed styles of the header, tabs, era boxes, arc heads and rows, and build
+     Pull to match.
+   - Add side-by-side measured comparison tests.
+   - Anything that can't match without moving a control: list the differences and ask John.
+     Never break the one-layout rule.
+9. **Absolute keeps its signature look.** Its signature skin recreates the live `abs` skin from
+   the read-only Absolute copy.
+10. **Absolute's scope stays locked** (kickoff pack). Titles launched since the spec (Cassandra
+    Cain; the Sept 2026 Teen Titans, Legion and Doom Patrol wave) are flagged, not added.
+
+### Before the build session (John)
+- **Network:** add `dc.fandom.com` under Allowed domains (the environment menu → Edit →
+  Network access → Custom; keep the default package-manager list). Steps:
+  https://code.claude.com/docs/en/cloud-environments#network-access
+- **Absolute-v3:** this session couldn't attach it. GitHub said "you don't have access to
+  asimkard/absolute-v3". Install the Claude GitHub App on it from
+  https://claude.ai/connect-github, then select Absolute-v3 and Research-Repo when you start
+  the build session.
+- **This branch** (`claude/keen-wozniak-w7lt6p`, docs only): merge it, or start the build
+  session from it.
+- **GitHub Pages on Absolute-v3:** only needed for 7f.
+
+### What this session found (for the build session)
+- **Absolute's saved progress is template v2's format,** which v3's importer already reads:
+  - `absolute:v1:progress` holds `{p: {key: state}, b: [keys]}`;
+  - `absolute:v1:reviews` is keyed by issue key;
+  - `absolute:v1:settings` holds `layout` (`abs` / `tabs` / `pull`);
+  - the QR prefix is `ABSO1:`, packing 2 bits per row in key order, with `d` = count-first-last.
+  - v3 uses `absolute:v3:*`, so the old keys are never touched.
+- **Absolute v7's data:** 123 issues, 23 month-named arcs and 2 eras.
+  - Each row has a 9-digit key (cover month plus a sequence number) and no individual dates
+    or credits.
+  - The FCBD 2025 special is placed by the "+2" convention and flagged "Derived".
+- **The verify gate's data model differs from v3's.** `verify.py` expects
+  `rows: [{series, vol, num, title, cover, onsale, arc, flags, date_source}]`. The adapter
+  builds those fields from v3's `issueId`, `title` and `date`.
+  - `check_built` reads v2's `data.js`, so v3 needs its own equivalent for the order the app
+    actually shows.
+- **Research-Repo** holds only `toolkit/`. The 17 Sep cache wasn't restored, so pages are
+  fetched fresh and cached in the session folder.
+
+### Steps — each ends committed, pushed and green (harness, layout suite, CI), with a checkpoint here
+1. **Readable versions** (template).
+   - `tools/build.py`:
+     - version = max(`versionStart`, previous + 1 if the hash changed, else previous);
+     - with no previous version, it is `versionStart` (default 1);
+     - the version is stamped into `data.js` after the hash, so it never feeds the hash.
+   - The schema gets `franchise.versionStart` (an integer ≥ 1).
+   - `app.js`:
+     - the header shows "v13";
+     - About shows "Version 13", with "build <hash>" in small print;
+     - the Offline row and the "latest version" toast use "v13".
+   - **Tests:**
+     - an unchanged rebuild keeps the number;
+     - a content change adds exactly 1;
+     - the first build uses `versionStart`, and raising `versionStart` lifts the number;
+     - `--check` is deterministic;
+     - the cache name changes with the content but not with the version;
+     - the header shows "v13" (a fixture built with `versionStart` 13);
+     - About shows the hash;
+     - mutations for each.
+   - BUILD-NOTES: after merging two branches, rebuild on `main`. The number continues from
+     `main`'s `data.js`.
+2. **The signature skin slot** (template).
+   - The schema gets `franchise.signature`: `{name, tokens, fonts?, stylesheet?}`.
+   - **The build validates it:**
+     - tokens must be known inputs;
+     - fonts must exist, and are precached;
+     - every stylesheet selector is scoped to `:root[data-skin="signature"]`;
+     - only look properties are allowed: colours derived from tokens, background images,
+       borders, radii, shadows and font settings. Position, display, inset, order, flex, grid,
+       float, visibility, z-index, transform, width, height and margin are refused.
+   - **Proposed delivery:** a generated `skin.css` linked after `styles.css`. `80-paint`
+     measures it; if it costs first paint, the CSS goes inline instead.
+   - A demo signature skin in the `basic` fixture. The contrast matrix, reachability, the
+     sweep, the stack and motion all include it. Guard self-tests: an unscoped selector, a
+     `position` and a literal colour each fail the build.
+   - **Skin choice:**
+     - last used, from the per-tracker settings store;
+     - first visit: the legacy map (`storage.legacy.skins`: a field plus a value → skin map,
+       data-driven), else the signature skin, else `franchise.skin`.
+   - The skin control appears with two or more skins (the visibility rule).
+3. **Pull matches X-Men** (template).
+   - Clone X-men read-only and capture computed styles at 393 px into
+     `test/layout/ref/x-men.json`, recording X-Men's commit. Elements: header, tabs, era
+     boxes, arc heads and rows. Properties: fonts, sizes, weights, line heights, spacing,
+     colours, borders and radii.
+   - Build Pull through tokens, adding new tokens where needed.
+   - `test/layout/45-pull` compares Pull with the reference side by side: colours, fonts and
+     weights must be exact; sizes within ±0.5 px. A session-only re-capture checks the
+     reference against a fresh X-Men copy.
+   - Differences that would move a control are listed and asked about, never built.
+4. **The `verify.py` gate.**
+   - A pinned `tools/verify.py` (byte-identical) and `tools/verify.lock` (commit and sha256).
+   - `tools/verify_gate.py` adapts the stitched v3 dataset, and checks the order the app shows
+     (series ascend; concurrent series interleave).
+   - CI runs it.
+   - **Tests:**
+     - the adapter on every fixture;
+     - broken fixtures fail: an interpolated date, backwards numbering, a duplicate title and a
+       blocked series;
+     - a drift check against Research-Repo when a local copy is present.
+5. **`build_workbook.py`.**
+   - A stdlib-only `.xlsx` writer with deterministic bytes.
+   - Sheets: Reading Order, Arcs, Eras, Creators and Events. Headers are named, frozen and
+     filterable.
+   - The harness reads the workbook back by header name, including with the columns shuffled,
+     and matches it against the dataset.
+   - Committed, so John can download it.
+6. **Docs and the Skill.**
+   - `README.md`: start a tracker in steps.
+   - `BUILD-NOTES.md`: the conventions, including versions, skins and the signature slot.
+   - `MIGRATING.md`:
+     - a fresh repo;
+     - the legacy prefix, format, `qrPrefix` and skin map;
+     - `retiredIds` and `versionStart`;
+     - the cut-over swap and checking a deploy by hash.
+   - `.claude/skills/comic-tracker-build/SKILL.md`.
+   - A harness check that every command and path the docs name exists.
+7. **The Absolute pilot in Absolute-v3** (expected in session 6). Start it only when steps 1–6
+   are done and there is room to finish 7a–7c.
+   - **7a. Repo.**
+     - The template copied in with fresh history, plus Absolute's own icons and name.
+     - Key `absolute`, `versionStart` 8, and `storage.legacy`: prefix `absolute:v1:`, format
+       `v2`, `qrPrefix` `ABSO1:` and the skin map.
+     - `dataset.json` converted from `dataset.py` by a script. `id`s are the old 9-digit keys,
+       and `issueId`s follow the rule.
+     - The harness, the layout suite and CI are green on Absolute's data (V-21).
+   - **7b. Research,** cached in Research-Repo's session folder:
+     - every row's cover and on-sale dates, each with its source;
+     - writer and artist per arc, by checkpoints;
+     - the Absolute Wonder Woman 2026 Annual between #15 and #16;
+     - Superman's and Flash's collected ranges, sourced rather than inferred;
+     - the title of Absolute Batman Vol. 3;
+     - existing titles brought up to date (e.g. Absolute Catwoman #3, 26 Aug 2026);
+     - new titles flagged, not added.
+   - **7c. Gate.**
+     - `verify.py` and the build pass.
+     - `id`s stay stable: removed rows go to `retiredIds`, so old QR codes still line up.
+   - **7d. The signature skin.** Recreated from the old `[data-skin="abs"]` CSS and fonts, and
+     measured side by side against the old copy at 393 px.
+   - **7e. A migration proof in real Chromium.**
+     - Mark rows, bookmarks, a review and a skin in the old copy.
+     - Open Absolute-v3 on the same origin: everything carries over.
+     - An old `ABSO1:` code imports.
+     - The old keys are untouched.
+   - **7f. Deploy.**
+     - Pages on Absolute-v3, verified by hash.
+     - John checks it on the phone.
+     - The cut-over swap happens only when John approves.
+
+### Half-made decisions (my proposals, settled during the build)
+- How the signature CSS is delivered: a generated `skin.css` or inline. Decided by
+  measurement in `80-paint`.
+- Which new tokens Pull needs. The X-Men measurements decide.
+- The workbook is committed. It is generated, and `--check` covers it.
+
+### Session-length rule
+Stop cleanly (`CLAUDE.md`). Expected: steps 1–6 in session 5, the pilot in session 6. The build
+session starts with step 1, in `tools/build.py` and a new version test.
+
+
+---
+
+## Session 5 checkpoint — step 1 done (readable versions), 6 Oct 2026
+
+Pre-flight (asked by John before step 1):
+- **dc.fandom.com:** the MediaWiki API answers (`api.php` returned 200 with the wikitext of
+  *Absolute Batman Vol 1 1*). Ordinary wiki pages return 403 with Cloudflare's "Just a
+  moment…" challenge, so research must use the API, not page scraping.
+- **Absolute-v3:** not attached. `list_repos` shows only ASIMKARD/Absolute, and the attempt to
+  attach ASIMKARD/Absolute-v3 was refused by this session's permission check.
+- This branch was fast-forwarded to the plan commit `fe0aad0` from `claude/keen-wozniak-w7lt6p`.
+
+### Done
+| Change | Where |
+|---|---|
+| The build stamps a readable **version** after the hash: the previous `data.js`'s number, + 1 only when the content hash changed; never below `franchise.versionStart`; `versionStart` (default 1) when there is no previous number. It never feeds the hash, so the cache name follows the content only | `tools/build.py` `next_version`, `render_outputs` |
+| `franchise.versionStart` (integer ≥ 1) in the schema and validated by the build; a broken fixture | `schema/dataset.schema.json`, `test/fixtures/broken/version-start-invalid` |
+| The header shows "v1"; About shows "Version 1" with "build <hash>" in small print; the Offline "Version" row and the "latest version" toast say "v1" | `app.js`, `styles.css` `.buildhash` |
+| New suite: first build, unchanged rebuild, +1 on a content change, versionStart lifts but never lowers, the hash and `sw.js` ignore the number, a pre-version `data.js`, bad values, `--check` deterministic and read-only, and the app's header, About and Offline row | `test/suites/21-version` |
+
+All 11 mutations were caught: always +1, never +1, `versionStart` ignored, no max with
+`versionStart`, the version feeding the hash, no validation, the header, About, the Offline row
+and the toast showing the hash, and the version not stamped. (The About one first crashed the
+suite instead of failing; the test now fails cleanly.)
+
+**For BUILD-NOTES (step 6):** after merging two branches, rebuild on `main`; the number continues
+from `main`'s `data.js`.
+
+**Harness:** 1334 assertions (+35), 0 failed, 30 suites. **Layout:** 231 checks, 0 failed, 8 suites.
+
+---
+
+## Session 5 checkpoint — step 2 done (the signature skin slot), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **`franchise.signature`** `{name, tokens, fonts?, stylesheet?}` in the schema and the build. The build checks it and emits its CSS: `@font-face` rules (swap), one token block scoped to `:root[data-skin="signature"]` (tokens sorted, so input order never matters), then the stylesheet's rules, normalised | `tools/build.py` `signature_skin`, `signature_rules`, `look_value_problem`; `schema/dataset.schema.json` |
+| **What the build refuses.** Tokens must be inputs from `styles.css` `:root`. Every token a Look setting's block sets is read from `styles.css` and refused, as are the page's own (`--fs`, `--stack-h`, `--motion`, `--skin-ok`, `--qr-paper`). Fonts must be a `.woff2` in `fonts/` (precached). Every selector must start with the scope. Only look properties are allowed: colours from tokens, background images (gradients from tokens, or a precached file), borders, radii, shadows and font settings. Position, display, inset, order, flex, grid, float, visibility, z-index, transform, width, height, margin, opacity, content and overflow are refused by name. At-rules, `!important`, literal or named colours, `rgb()`, a literal alpha and transitions also fail | `tools/build.py` |
+| **Delivery:** the CSS comes inside `data.js` and the app adds it once, as `<style id="skin-signature">`, before the first render. The skin beacon only reads the page's own stylesheet | `app.js` `applySignature`, `pageSheets` |
+| **Skin choice.** The signature skin is offered first, under its own name. A first visit takes the old tracker's pick through `storage.legacy.skins` `{field, map}` (read only); an unmapped or unreadable value falls back to the signature skin, else `franchise.skin`. After that, the last skin used. The map is validated against the skins offered. The skin control counts the signature skin (visibility rule) | `app.js` `firstSkin`, `buildHas`; `tools/build.py` |
+| **Demo "Signal"** in the `basic` fixture: tokens, one font face (`Fixture Signal`), a look-only stylesheet, and a legacy map (`sig` / `tabs` → signature, `pull` → Pull) | `test/fixtures/basic/` |
+| Broken fixtures (the plan's guard self-tests): an unscoped selector, a `position`, a literal colour | `test/fixtures/broken/signature-*` |
+| New suite: the demo's CSS, precached font, read-by-name tokens, a rich look-only stylesheet passing, 34 refusals, the app adding the CSS once, the legacy pick (mapped, unmapped, unreadable, last used wins, the old key never written), no signature, signature + one shared skin | `test/suites/22-signature` |
+| **Measured in real Chromium with the shared skins:** the contrast matrix (× 7 papers) and the 64-era washes (the stress set carries the same signature), reachability at 390/320/largest, overflow, the sweep (basic now opens in it; Paper is swept explicitly), the stack, motion, and fonts. Each page checks it really is in the seeded skin | `test/layout/40-look`, `10-sweep`, `60-stack`, `20-motion`, `30-css`, `80-paint` |
+
+### Found by measuring
+- **The demo's teal accent at 28 % lightness failed AA.** Creator names reached only 4.34–4.49:1 and
+  era-banner text failed too. At the same lightness, teal is brighter than blue. The demo is now at
+  24 %; worst text overall is 5.12:1.
+- **A signature token could override a Look setting.** The signature CSS loads after `styles.css`,
+  so a token such as `--era-h0` would have beaten "one era colour". The build now reads every token
+  a Look-setting block sets from `styles.css` and refuses it.
+
+### My call (open to veto): how the signature CSS is delivered
+The plan left this to measurement in `80-paint`. On the 1.6 Mbps link, injected from `data.js` gave
+a median first paint of 864 ms, and a linked `skin.css` gave 868 ms (7 runs each). That's a tie, so I
+chose the delivery with no extra file or request. Its CSS can't get out of step with `data.js`, and a
+tracker without a signature pays nothing. The skin only applies once `app.js` sets `data-skin`
+anyway, so a stylesheet link couldn't apply it any sooner. `80-paint` now asserts one stylesheet
+request and the injected CSS.
+
+Mutations: all 17 code mutations were caught. The 2 layout mutations were caught too: a 34 px
+signature tab font (10-sweep: the tabs no longer fit at 320 px) and a pale ink (40-look: 2.32:1).
+
+**Harness:** 1408 assertions (+74), 0 failed, 31 suites. **Layout:** 258 checks (+27), 0 failed, 8 suites.
+
+---
+
+## Session 5 checkpoint — step 3 done (Pull matches X-Men, as far as one layout allows), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| X-Men cloned read-only (`/home/user/X-men`, commit `663fe46`) and served to Chromium at 393 × 852. Its computed styles for the header, tabs, era boxes, the era intro, arc heads, rows and the search box are captured into a reference, with the commit | `test/layout/ref/capture-x-men.js`, `ref/x-men.json` |
+| **One map** says which X-Men element each template element is measured against, and which properties: families, sizes, weights, tracking, case, style, colours, effective backgrounds (what is really behind an element), borders, radii and three boxes. The capture and the test share it | `test/layout/ref/pull-map.js` |
+| **New tokens, bases equal to today's values** (so the other skins are unchanged, and their measurements say so). Colour: per-role hue and saturation for card, line, bar, soft ink, bar text, the search field, an era-body inset (off by default) and a mark outline. Type: title size, tracking and line height, meta size, era name and era meta sizes, intro size and style, arc size and weight, row size and weight, search size | `styles.css` `:root` and the rules that read them |
+| **Pull's inputs**, computed from the reference so every colour derives exactly. Card, inset and line are written relative to the paper, so the seven paper swatches still tint them | `styles.css` `:root[data-skin="pull"]` |
+| `45-pull`: 71 properties exact (sizes within 0.5 px). The list of differences is kept true both ways: an unlisted difference fails, and so does a listed one that has gone. Each difference says why. A fresh capture re-checks the reference whenever a local X-Men copy is present; CI records that it has none | `test/layout/45-pull` |
+
+### Found by measuring
+- Removing Pull's narrower `--tab-fit` made four uppercase tabs scroll 5 px at 320 px with large text
+  (40-look). It is back at 3.7vw, which is still 12.5 px at 393 px.
+- The franchise guard caught "X-Men" in a `styles.css` comment; it now says "the reference tracker".
+- The read mark's outline was first filed as an accessibility conflict. It isn't: X-Men's ink outline
+  passes 3:1. The template simply drew every control outline in one colour. The mark now has its own
+  outline token, and Pull matches it.
+
+All 9 mutations were caught: title size, paper lightness, the era-body inset, the mark outline,
+the search field, row weight, a difference dropped from the list, a difference listed that isn't
+one, and a drifted reference.
+
+### Questions for John (the 9 recorded differences)
+Two are kept on purpose, by the measured contrast rules:
+- **The selected-tab underline.** X-Men's navy is 1.52:1 on its bar. Pull uses the same hue at 44 %
+  lightness, which is 3:1.
+- **The search outline.** X-Men's is 1.53:1. Pull keeps the 3:1 control outline.
+
+Seven need your say-so, because a skin may not change them:
+1. **Era boxes.** X-Men's are solid, hand-picked colours per era, with white text, a folder-tab
+   shape and a darker stats strip. The template's are pale washes generated from the era's index
+   (the pale rule is T-39), in a card. Matching them needs a colour per era in the data, plus an
+   exception to T-39 for Pull; the shape is layout. Options: (a) keep the pale washes in Pull;
+   (b) add an optional `colour` per era and let Pull draw solid era heads with white text (the
+   shape stays the template's); (c) both (b) and the folder-tab shape.
+2. **The tab bar runs edge to edge in X-Men** (393 px wide, from 0). The template's sits inside the
+   16 px page margin (361 px wide, from 16). Options: (a) keep it inset in every skin; (b) edge to
+   edge in every skin (one layout); (c) a layout exception for Pull.
+3. **Mark size and shape.** X-Men's mark is 22 px with a 5 px radius. The template's size belongs to
+   the Button size setting (34 px standard, 26 px compact) and its shape to the Marks setting.
+   Options: (a) leave both to the settings; (b) give "compact" X-Men's 22 px (that's under the 24 px
+   target, so it would need an exception).
+
+**Harness:** 1408 assertions, 0 failed, 31 suites. **Layout:** 267 checks (+9), 0 failed, 9 suites.
+
+---
+
+## Session 5 checkpoint — step 4 done (the verify.py gate), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **The pin.** Research-Repo's `toolkit/verify.py`, copied unchanged. The lock records its commit (`18141dd`, the last change to `verify.py`) and its sha256. The gate refuses to run on any other bytes | `tools/verify.py`, `tools/verify.lock` |
+| **The gate.** It runs, in order: the pin; the build's own validation; `verify.check()` on the stitched dataset; then `check_shown()`, v3's equivalent of `check_built` (which reads v2's `data.js`). `check_shown` walks the order the app shows: numbers within a series rise (ALT, special numbering and inert rows skipped), and series that ran at the same time interleave. Exit 1 = do not ship | `tools/verify_gate.py` |
+| **The adapter** builds `verify.py`'s rows by name: series, vol, num, title, cover, onsale, arc, flags, date_source, mandatory, core and seq. Inert marker rows carry `verify.py`'s own GAP marker and no date. `verify.check()` runs even when the build fails, so its own verdict always shows. `verify.py` keeps findings in module lists, so the gate clears them before each dataset | `tools/verify_gate.py` `adapt` |
+| `build()` takes `keep={}` and fills it with the stitched rows, arcs and eras as soon as they are stitched | `tools/build.py` |
+| **CI** runs the gate on the template and every fixture | `.github/workflows/harness.yml` |
+| **Fixtures the gate stops,** each with its expected line: an interpolated date, backwards numbering (by publication date, fine in the order shown), a duplicate title, and a blocked series (two series that ran together, placed in two eras) | `test/fixtures/gate/` |
+| New suite: the lock and the pin; a drift check against the local Research-Repo copy (same bytes, and its last change to `verify.py` is the pinned commit); an edited copy fails; all five datasets pass; the adapter (61 rows, fields by name, cover and on-sale dates for every row, inert rows, arcs and eras, field order never matters); the four stops; and one dataset's findings never carry into the next | `test/suites/23-verify-gate` |
+
+### Found
+- `verify.check()` sorts rows by date before its "blocked" test, so it can only catch blocking in odd
+  cases. The blocked-series fixture passes it, and only the order shown (`check_shown`) catches it,
+  as the original `check_built` did for v2. A test records this.
+- The first adapter test compared one row with no on-sale date, so reading `onsale` as `cover` went
+  unnoticed. It now compares every row of a copy where 16 rows have an on-sale date.
+
+All 7 mutations are caught (one only after that fix): inert rows without GAP, the module lists not
+cleared, `check_shown` never flagging, the wrong date field, the pin unchecked, `verify.check()`
+skipped when the build fails, and the series read from the title.
+
+**Harness:** 1430 assertions (+22), 0 failed, 32 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+---
+
+## Session 5 checkpoint — step 5 done (the workbook, optional per tracker), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **`build_workbook.py`**: a stdlib-only `.xlsx` writer. Five sheets: Reading Order (26 named columns, in the order the app shows), Arcs, Eras, Creators and Events. Each has one named header row, bold, frozen and filterable (an `autoFilter` plus Excel's `_FilterDatabase` name). Bytes are deterministic: every part stored, not deflated (so no zlib version can change them), fixed timestamps, fixed order, inline strings. `--shuffle-columns SEED` writes the same data in another column order, to test readers | `tools/build_workbook.py` |
+| **Every build writes `workbook.xlsx`** next to `data.js`, and `--check` covers it. The template's is committed (`workbook.xlsx`, 24 KB), so John can download it | `tools/build.py` |
+| **John's addition: the workbook is optional per tracker.** `"deliverables": {"workbook": false}` (Absolute and Dark Nights are web-app-only). The build writes none and says so. `--check` fails if one is left over (e.g. the template's, copied in with the shell), and the next build removes it. `deliverables` is validated (on/off switches only) and in the schema | `tools/build.py`, `schema/dataset.schema.json` |
+| A small harness reader: unzip with node's zlib, then read each sheet **by header name** | `test/lib/xlsx.js` |
+| New suite: written on by default; byte-identical rebuilds; stored parts and a fixed timestamp; well-formed XML; header shape; every Reading Order field read by name and matched against the dataset (61 rows); Arcs, Eras, Creators and Events; the shuffled-column copy reads back the same; `& < > "` and on-sale dates survive; `--check` catches a hand edit. **A tracker with workbooks turned off builds without one**, passes `--check` without one, fails `--check` with a leftover, and the next build removes it. Bad `deliverables` values fail. A session-only openpyxl check opens it | `test/suites/24-workbook` |
+
+Checked once by hand: LibreOffice (headless) opens the basic fixture's workbook and exports all five
+sheets, with 61 Reading Order rows.
+
+All 13 mutations are caught: deflated parts, no bold, no freeze, a filter one row short, a reader that
+assumes a column order, the switch ignored, `--check` ignoring the workbook, a leftover not removed,
+on-sale written as cover, unescaped text, credits from the wrong list, and `deliverables` not
+validated. My first "positional reader" mutation was a no-op (the column letters come out in order
+either way); the real one is caught.
+
+**Harness:** 1459 assertions (+29), 0 failed, 33 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+---
+
+## Session 5 checkpoint — step 6 done (docs and the Skill), 6 Oct 2026
+
+### Done
+| Change | Where |
+|---|---|
+| **README**: what the template is, and how to start a tracker in 8 steps (fresh repo, `npm ci`, `dataset.json`, icons, build, the gate, both suites with counts, deploy and verify by hash), plus a map of what's where | `README.md` |
+| **BUILD-NOTES**: the master and what's generated; identity, order and dates; versions (including: after merging two branches, rebuild on `main`); skins, the Look's own tokens, skin choice, the signature slot (what it may hold, how it's delivered and measured), Pull and how to re-capture X-Men; the workbook and turning it off; the gate and how to re-pin `verify.py`; testing | `BUILD-NOTES.md` |
+| **MIGRATING**: a fresh repo, always; copy the template; `storage.legacy` (prefix, format, `qrPrefix`, the skin map; old keys read-only); ids, `retiredIds`, `versionStart`; `deliverables` and the signature skin; dates and the gate; the proof in real Chromium; deploy, verify by hash, the cut-over swap only with John's approval | `MIGRATING.md` |
+| **The Skill**, with the frontmatter a session loads it by: before anything, the loop, where to look, the rules that cost time before, done means… | `.claude/skills/comic-tracker-build/SKILL.md` |
+| `CLAUDE.md`'s repo map lists the new tools, docs and fixtures; the build-tag trap now says "check the version" | `CLAUDE.md` |
+| New suite: every path, command and flag, npm script and dataset key the four docs name must exist (paths 107, commands 25, keys 10), with a self-test that catches each kind of mistake | `test/suites/25-docs` |
+
+### Found by the docs check
+- On its first run, the check found 7 places where my own docs named things that don't exist:
+  - the template root has no `data/eras/` folder (only the basic fixture does);
+  - `events/` holds no `.json` files yet;
+  - bare names like `verify.py`, `broken/` and `.woff2` don't resolve from the repo root.
+
+  All are reworded.
+- **Writing the docs found a real gap.** The signature skin may use background images from `images/`,
+  but the build only precached `fonts/` and `icons/`, so such an image would have been missing
+  offline. `images/` is now precached, and `22-signature` proves it with a real file.
+
+All 5 docs mutations were caught: a renamed file, a flag the tool lacks, a renamed npm script, a
+dataset key the schema lacks, and the Skill losing its name.
+
+**Harness:** 1472 assertions (+13), 0 failed, 34 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+---
+
+## Transfer checkpoint — end of session 5 (versions, skins, Pull, gate, workbook, docs), 6 Oct 2026
+
+### Done (steps 1–6 of the agreed plan; details in the step checkpoints above)
+- **Counts:** the harness went from 1,299 to **1,472 assertions** (34 suites). The layout suite went
+  from 231 to **267 checks** (9 suites). CI was green for steps 1–5 (runs 47–51); step 6's run
+  follows the push of this checkpoint. Run 51 also showed that the committed workbook's bytes are
+  the same under CI's Python 3.12.
+- **New suites:** `21-version`, `22-signature`, `23-verify-gate`, `24-workbook`, `25-docs`, and
+  Chromium `45-pull`.
+- **Readable versions** (X-5); **the signature skin slot** (X-6), with the skin choice from the old
+  tracker's pick (X-7); **Pull matches X-Men** in 71 measured properties (X-8, with 9 recorded
+  differences); **the verify gate** (V-22); **the workbook**, optional per tracker (V-23);
+  **docs and the Skill** (V-28).
+- **John's addition (6 Oct):** `"deliverables": {"workbook": false}` turns the workbook off.
+  - The build writes none, and says so.
+  - `--check` fails on a leftover workbook, and the next build removes it.
+  - `24-workbook` tests that a tracker with workbooks off builds without one.
+  - Absolute-v3 must set it.
+- **Inventory:** every S5 line is present except V-21 (the pilot).
+
+### Pre-flight results for the pilot (checked before step 1)
+- **dc.fandom.com is reachable through its MediaWiki API.**
+  - `https://dc.fandom.com/api.php?action=query&prop=revisions&rvprop=content&rvslots=main&format=json&titles=…`
+    returned 200 with the full wikitext.
+  - Ordinary wiki pages return 403, behind Cloudflare's "Just a moment…" check, so research must
+    use the API. The plan's fallback (v7's cover months for rows audited on 17 Sep) is not needed.
+- **Absolute-v3 is not attached to this session.** `list_repos` shows only ASIMKARD/Absolute.
+  Attaching ASIMKARD/Absolute-v3 was refused by the session's permission check, so I couldn't tell
+  whether GitHub would allow it. Before session 6, John should:
+  - install the Claude GitHub App on Absolute-v3;
+  - start the session with Absolute-v3 and Research-Repo selected;
+  - allow `add_repo` if asked.
+
+### Why the pilot (step 7) didn't start
+The plan starts it only after steps 1–6 and with room to finish 7a–7c, and expected it in session 6.
+It also needs Absolute-v3 attached, and CLAUDE.md says to stop and tell John before the first edit
+to it. Nothing outside this repo was edited. X-men and Research-Repo were only cloned or read.
+
+### Session 6 starts with: the Absolute pilot (V-21), step 7a
+1. **Confirm access first.** Absolute-v3 must be attached with push access. Tell John before the
+   first edit to it.
+2. **First files:**
+   - the template, copied into Absolute-v3 with fresh history (including `.claude/skills/`);
+   - `dataset.json` (key `absolute`, `versionStart` 8, `deliverables.workbook: false`);
+   - `storage.legacy`: prefix `absolute:v1:`, format `v2`, `qrPrefix` `ABSO1:`, and
+     `skins: {field: "layout", map: {abs: "signature", tabs: "signature", pull: "pull"}}`;
+   - a conversion script from the read-only Absolute `dataset.py`: `id`s are the old 9-digit keys,
+     and `issueId`s follow the rule.
+   - Absolute's icons and name. The build warns until `franchise.icons` is set.
+3. **Delete the template's `workbook.xlsx` from the copy,** or let the first build remove it:
+   `--check` flags it while `deliverables.workbook` is false.
+4. **First test:** the harness, the layout suite and `python3 tools/verify_gate.py`, green on
+   Absolute's data (V-21). Then 7b research (through the DC Database API, cached in Research-Repo
+   `sessions/<date>-absolute/`), 7c the gate, 7d the signature skin recreated from the old
+   `[data-skin="abs"]` CSS, 7e the migration proof, 7f deploy.
+5. **Half-made for 7d:** the old `abs` skin uses grid rows, counters, `::before`/`::after` content
+   and padding. The slot refuses all of those, because a skin may not move things. Recreate what is
+   look-only; list the rest for John (the same way as the Pull differences).
+
+### Questions for John
+1. **Pull: era boxes** (step 3 checkpoint, question 1): (a) keep pale washes; (b) an optional colour
+   per era, with solid era heads in Pull; (c) (b) plus the folder-tab shape.
+2. **Pull: the tab bar edge to edge?** (a) inset everywhere, as now; (b) edge to edge everywhere;
+   (c) a Pull-only exception.
+3. **Pull: mark size and shape** stay with the Button size and Marks settings? (a) yes; (b) give
+   compact X-Men's 22 px (below the 24 px target).
+4. **My call (step 2), open to veto:** the signature CSS arrives inside `data.js` instead of a linked
+   `skin.css`. Measured first paint was a tie: 864 vs 868 ms.
+
+---
+
+## Session 5 — step 7 (the Absolute pilot) in progress, 7 Oct 2026
+
+John asked for all seven steps this session, with a change report and his OK before any data is
+written to Absolute-v3.
+
+### Done
+- **The v7 reading is confirmed.** `index.html` reads "build v7", `sw.js` caches as `absolute-v7`, and
+  commit `7304f82` (17 Aug 2026) is the head of ASIMKARD/Absolute's only branch on GitHub. The live
+  site can't be reached from the container. Absolute-v3 starts at v8.
+- **7b research,** in Research-Repo `sessions/2026-10-06-absolute/` (add-only; commit `ecd4857` on
+  `claude/tender-albattani-hxrb3y`):
+  - 142 DC Database pages were fetched through its API, each cached with its revision id;
+  - cover dates come from the pages' Month and Year;
+  - on-sale dates are the pages' stated release dates (Day plus the template's month, cross-checked:
+    136 of 138 fall on a Wednesday);
+  - writer and artist credits for every row;
+  - the crossover chain that places the Wonder Woman 2026 Annual;
+  - collected ranges and Absolute Batman Vol. 3 ("Devil's Workshop");
+  - new titles flagged, not added.
+  - Only dc.fandom.com is reachable from this environment. dc.com, League of Comic Geeks, the Grand
+    Comics Database and Wikipedia are blocked, so there is no second source.
+- **The change report** (`change-report.md`): 134 rows (v7: 123), 11 added, 2 re-dated, 1 moved,
+  26 renumbered only, 0 removed. The draft dataset passes the build (credits strict, 100 %) and the
+  verify gate.
+
+### Waiting on John
+1. **His OK on the change report.** It covers Wonder Woman #11 → November 2025 and Flash #12 → May
+   2026 (with page histories), the Wonder Woman Annual before #16, the July and September blurbs,
+   whether on-sale dates come from the DC Database alone, and the issueId shapes.
+2. **Access to Absolute-v3.** Attaching it fails ("you don't have access to asimkard/absolute-v3"),
+   and a public search finds only ASIMKARD/Absolute. Either:
+   - the repo doesn't exist yet: John creates it;
+   - or it is private without the Claude GitHub App: John grants the app access to it, at
+     https://claude.ai/connect-github.
+
+   Then retry attaching it here, or start a new session with Absolute-v3 selected.
+
+### Where step 7a begins (after both)
+1. Copy the template into Absolute-v3 with fresh history, keeping `.claude/skills/` and dropping
+   `workbook.xlsx`.
+2. Write `dataset.json` from `sessions/2026-10-06-absolute/absolute-v3.dataset.draft.json`, with John's
+   answers applied.
+3. Add `storage.legacy.skins` (`abs` / `tabs` → signature, `pull` → Pull) once the signature skin
+   exists (7d). Add Absolute's icons and name.
+4. First test: `python3 tools/verify_gate.py`, then `node test/run.js` and `npm run test:layout`, on
+   Absolute's data.
+
+### Found while closing this out: one bulk mark was quadratic
+The close-out's harness run failed once: `9c-bulk-touch` marked 5,000 rows read in 1,544 ms, against a
+1.5 s budget. Run alone it took 1,134–1,338 ms, which still passed, but with too little margin.
+- **The profile** showed most of the time in jsdom compiling selectors. `applyMark` queried
+  `.row[data-i="N"]` once per row, so 5,000 rows meant 5,000 full-document queries, each with a new
+  selector, even though no rows were rendered.
+- **The fix:** a bulk action now gathers the rendered rows once (`renderedRows()`), and Undo does
+  the same when it's tapped. The time is now 170–208 ms. A single mark still uses its one query.
+- **New checks in `9c-bulk-touch`:** every rendered row of a bulk-marked arc shows "read" and its
+  glyph, and Undo puts each one back as it was. They pass on the old code (same behaviour, just
+  slower) and catch a map that misses rows.
+
+**Harness:** 1475 assertions (+3), 0 failed, 34 suites. **Layout:** 267 checks, 0 failed, 9 suites.
+
+## Session 5 — step 7 done (the Absolute pilot): v8 live, 8 Oct 2026
+
+**Change of plan (John, 8 Oct).** Absolute is upgraded in place on ASIMKARD/Absolute's own `main`, a
+one-off exception recorded in `CLAUDE.md`; Absolute-v3 is no longer needed. The safeguards:
+- `v7-final` tags v7 (`7304f82`). John created it, since this session can't push tags; it is
+  confirmed on `7304f82`.
+- Nothing reaches `main` until everything passes on Absolute's own data and the in-place proof
+  passes.
+- v8 reaches `main` through one pull request that John merges (this session can't push `main`).
+- The first deploy replaces every file, and every file is verified live by hash.
+
+John's answers (8 Oct): the change report "OK as drafted"; all four shared skins plus the
+signature; the live domain allowed for checks by hash.
+
+### Done (template)
+- **The service worker leaves other trackers' caches alone.** Every tracker on one Pages site
+  shares one cache storage, and v2's worker deleted everyone's. Now it deletes only `<key>-v<N>`
+  and `<key>-<12 hex>` (80-guards, 70-pwa).
+- **GitHub Pages' 10-minute caching**, found by the upgrade proof (`CLAUDE.md` has the trap):
+  - **The precache** now goes past the HTTP cache (`cache: 'reload'`). Before, v8's worker stored
+    v7's files under its own name.
+  - **The shell** is always checked with the server (`cache: 'no-cache'`; a 304 when unchanged).
+  - **`app.js` checks** the data's shape and the stylesheet's beacon before reading anything. On a
+    mismatch it loads both again at `?r=<time>` and starts over, once; it never loops. Before,
+    Chromium's memory cache handed v8's `app.js` v7's `data.js` on a reload, and it crashed.
+  - **Tests:** 80-guards (vm), 9i-pwa (jsdom), and 70-pwa against a server that sends Pages'
+    headers (`serve(dir, { pages: true })`). Every one was proved by putting its bug back.
+  - **F-57:** an older stylesheet is now reloaded and the app starts over (9g-look). A stylesheet
+    with no beacon at all still gets the toast.
+- **The suites run on any tracker's data.** `ROOT_DATASET` and `IS_TEMPLATE` are in
+  `test/lib/helpers.js`.
+  - 21-version uses the root's own `versionStart`.
+  - 25-docs allows `FEATURE-INVENTORY.md`, and `workbook.xlsx` when the workbook is off.
+  - 93-storage boots the minimal fixture.
+  - 9i-pwa checks a tracker's icons are its own.
+  - 10-sweep sweeps the root in every skin it offers, and with large text and buttons.
+  - **The new `test/layout/45-root`** measures the repo's own dataset in every skin it offers:
+    contrast on every paper, its era banners, and every control's reachability. It was proved with
+    v7's grey, unstyled banner text and undersized buttons.
+- **`test/layout/lib.js` `poll()`.** `page.waitForFunction` returns at once on an async check, so
+  two older 70-pwa waits had never waited.
+- **`MIGRATING.md`** now covers the in-place path, the Pages caching and `45-root`.
+
+### Done (Absolute, branch `claude/tender-albattani-hxrb3y`)
+- **The template, copied in.** v7's own files are gone:
+  - removed: `dataset.py`, `gen.py`, `test.js`, `deploy.sh`, `README.md`, `icons/favicon.png`;
+  - replaced: v7's `index.html`, `styles.css`, `data.js`, `sw.js` and `manifest.json`;
+  - `qrcode.js` and `fonts/` were byte-identical already.
+- **Its own files:** `dataset.json` (the approved draft), `signature.css`, `README.md`,
+  `CLAUDE.md`, `PROGRESS.md`, `.nojekyll`, and its own icons.
+- **The signature skin "Absolute"** is v7's "absolute" look, rebuilt as tokens and look-only rules:
+  - a black page, with a red rule under the header;
+  - mono uppercase labels and tabs, with a red underline;
+  - red era bars with black type, and Anton row titles;
+  - square controls, solid red when pressed.
+
+  Contrast is at least 4.58:1 everywhere (v7's own red on black). v7's dim grey (3.3:1) was
+  lightened to pass.
+- **What it couldn't carry** (each one would move something), listed for John: the big era
+  numerals, the row-number gutter, the bracketed `[X]` marks, the `//` arc prefix and full-width
+  era bars.
+- **v8 on Absolute's data:** gate passed; harness 1483, 0 failed; layout 349, 0 failed (10 suites).
+- **The in-place proof** (Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/`): 42 of 42.
+  - **v7, used in Chromium:** 5 marks, a bookmark, a review and the "classic" skin. The proof
+    server sends Pages' own headers.
+  - **One reload opens v8,** with all of them intact; the skin becomes Pull.
+  - **The handover:** v8's worker is in control 2.8 s later. `absolute-v7` is deleted, the other
+    trackers' caches are kept, and v8's cache holds v8's files byte for byte.
+  - **Offline,** it opens as v8 with everything there. v7's keys are byte for byte unchanged.
+  - **An old `ABSO1:` code** imports on a second device.
+  - **v7's "absolute" skin** and a never-picked skin both open in Absolute.
+  - **Reopened within 10 minutes of using v7,** the first open can still show v7, from the
+    browser's cache. The next open is v8, with everything intact.
+
+### Live (8 Oct, 12:21 UTC)
+- **John merged ASIMKARD/Absolute#1.** `main` is `36fd088`, a merge commit whose files are identical
+  to the tested commit `ee076da`. Pages served it within a minute.
+- **Every file was verified by sha256** against `main` at https://asimkard.github.io/Absolute/:
+  - 180 of 180 match, and the bare address serves `index.html`;
+  - v7's 5 removed files return 404;
+  - the live `data.js` is version 8, and the cache is `absolute-b0de46364a0d`.
+- **Real Chromium on the live site** reads "v8" in the header, in the Absolute skin, with no errors.
+- **The record** is in Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/live-verify.txt`,
+  with the script `verify-live.sh`.
+- **Absolute's own `PROGRESS.md`** still says "after the merge: verify". Changing it needs John's
+  say-so, since any change to Absolute does now.
+
+### Open with John (non-blocking)
+- **The signature-skin items** that need moving things: era numerals, the row-number gutter, `[X]`
+  marks, the `//` arc prefix, full-width era bars.
+- **From earlier:** the Pull era boxes; the tab bar edge to edge; the mark size; whether signature
+  CSS should ship inside `data.js`.
+- **The template's own pull request:** ASIMKARD/Pull-List-template#5 (this branch).

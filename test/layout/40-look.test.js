@@ -13,10 +13,11 @@
    - Sizes: the title follows text size (T-45); button size gives a 26 px mark
      at compact (T-56) and 44 px glyph buttons at large (T-57). */
 'use strict';
-const { basic, stress } = require('../lib/helpers');
+const path = require('path');
+const { FIX, basic, stress, readJSON } = require('../lib/helpers');
 const { serve, open, openAll, openSettings, reachability, closeBrowser } = require('./lib');
 
-const SKINS = ['paper', 'newsprint', 'pull', 'night'];
+const SKINS = ['signature', 'paper', 'newsprint', 'pull', 'night'];     // the basic fixture's demo signature skin first
 const PAPERS = ['default', 'warm', 'grey', 'rose', 'mint', 'sky', 'lilac'];
 const LARGEST = { textSize: 'l', tap: 'large', density: 'roomy', dys: true };
 const seed = (key, s) => ({ [key + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, s)) });
@@ -71,13 +72,15 @@ module.exports = async function (t) {
             if (!el) { out.push([what, 0, 'missing']); continue; }
             out.push([what, window.__ratio(window.__rgb(getComputedStyle(el)[prop]), window.__bg(el.parentElement)), 3]);
           }
-          return { out, meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor };
+          return { out, meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
+                   skin: document.documentElement.getAttribute('data-skin') };
         }, [PAGE_LIB.toString(), TEXT, EDGE]);
         for (const [what, ratio, need] of r.out) {
           if (need === 'missing' || ratio < need) fails.push(skin + '/' + paper + ': ' + what + ' ' + (need === 'missing' ? 'missing' : ratio.toFixed(2) + ' < ' + need));
           if (need === 4.5 && ratio < worst.r) worst = { r: ratio, at: skin + '/' + paper + ' ' + what };
         }
         if (r.meta !== r.body) theme.push(skin + '/' + paper + ': ' + r.meta + ' vs ' + r.body);
+        if (r.skin !== skin) fails.push(skin + '/' + paper + ': the page is in ' + r.skin);
         if (pg.errors.length) fails.push(skin + '/' + paper + ': errors ' + pg.errors.join(' | '));
         await pg.close();
       }
@@ -87,7 +90,9 @@ module.exports = async function (t) {
     t.eq('the browser chrome (theme-color) follows each skin\'s paper (F-39)', theme, []);
 
     // ------------------------------------------------ era washes: 64 eras, every skin, split and one colour
-    const big = stress(64, 2), bsrv = await serve(big.out);
+    const sig = readJSON(path.join(FIX, 'basic', 'dataset.json')).franchise.signature;
+    sig.stylesheet = path.join(FIX, 'basic', sig.stylesheet);              // the same demo signature skin, 64 eras
+    const big = stress(64, 2, { signature: sig }), bsrv = await serve(big.out);
     const eraFails = [], pale = [];
     for (const skin of SKINS) {
       for (const eraHues of ['split', 'mono']) {
@@ -95,6 +100,7 @@ module.exports = async function (t) {
         const r = await pg.page.evaluate(lib => {
           eval('(' + lib + ')')();
           const heads = [...document.querySelectorAll('.era-head')];
+          window.__skin = document.documentElement.getAttribute('data-skin');
           return heads.map(h => {
             const bg = window.__rgb(getComputedStyle(h).backgroundColor);
             const parts = [h.querySelector('.bname'), h.querySelector('.byears'), h.querySelector('.bcount'), h.querySelector('.bleft'), h.querySelector('.bfinish')].filter(Boolean);
@@ -102,6 +108,8 @@ module.exports = async function (t) {
           });
         }, PAGE_LIB.toString());
         if (r.length !== 64) eraFails.push(skin + '/' + eraHues + ': ' + r.length + ' era banners');
+        const inSkin = await pg.page.evaluate(() => window.__skin);
+        if (inSkin !== skin) eraFails.push(skin + '/' + eraHues + ': the page is in ' + inSkin);
         r.forEach((e, i) => { if (e.min < 4.5) eraFails.push(skin + '/' + eraHues + ' era ' + i + ': ' + e.min.toFixed(2)); });
         const dark = skin === 'night';
         r.forEach((e, i) => { if (dark ? e.lum > 0.08 : e.lum < 0.7) pale.push(skin + '/' + eraHues + ' era ' + i + ' luminance ' + e.lum.toFixed(2)); });
@@ -113,7 +121,7 @@ module.exports = async function (t) {
         await pg.close();
       }
     }
-    t.eq('era banners, 64 eras × 4 skins × split and one colour: every text on its wash clears 4.5:1, neighbours differ, one colour is one colour (D-12, T-38)', eraFails, []);
+    t.eq('era banners, 64 eras × ' + SKINS.length + ' skins × split and one colour: every text on its wash clears 4.5:1, neighbours differ, one colour is one colour (D-12, T-38)', eraFails, []);
     t.eq('…and the washes are pale (luminance ≥ 0.7, or ≤ 0.08 on the dark skin; T-39)', pale, []);
     await bsrv.close();
 
@@ -128,6 +136,7 @@ module.exports = async function (t) {
           else if (tab === 'settings') await openSettings(pg.page);
           else await pg.page.click('#tab-' + tab);
           const r = await reachability(pg.page);
+          if (tab === 'list' && await pg.page.evaluate(() => document.documentElement.getAttribute('data-skin')) !== skin) unreachable.push(skin + ': the page is not in that skin');
           counted += r.n;
           r.bad.forEach(x => unreachable.push(skin + ' @' + w + (extra.tap ? ' largest' : '') + ' ' + tab + ': ' + x));
         }

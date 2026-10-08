@@ -8,9 +8,11 @@
      waits);
    - ONE settings store; progress is keyed on the stable row id;
    - lands collapsed; an era's rows render only when it is first opened. */
-(function () {
+(function start() {
   'use strict';
   var D = window.TRACKER_DATA;
+  var SKIN_OK = '3';            // the skin beacon (F-57): the token contract styles.css must declare
+  if (staleShell()) return;
   var N = D.issues.length;
   var FL = D.flagBits;
   var INERT = FL.GAPNOTE | FL.RENUM;
@@ -131,7 +133,7 @@
       reveal: some(function (i) { return !!D.issues[i][7] && !(D.issues[i][6] & (FL.FB | FL.ALT)); }),
       gapNotes: D.issues.some(function (r) { return !!(r[6] & FL.GAPNOTE); }),
       lookup: !!D.franchise.searchUrl,
-      skins: (D.franchise.skins || []).length > 1,       // the skin control
+      skins: (D.franchise.skins || []).length + (D.signature ? 1 : 0) > 1,       // the skin control (the signature skin counts)
       legacy: !!(D.franchise.storage && D.franchise.storage.legacy)
     };
   }
@@ -185,7 +187,20 @@
      a root attribute that styles.css answers with tokens only, so none of
      them can move or hide a control (V-5). Skins come from the data. */
   var SKIN_NAMES = { paper: 'Paper', newsprint: 'Newsprint', pull: 'Pull', night: 'Night' };
-  var SKINS = (D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  /* the tracker's own signature skin (John, 6 Oct), from config: offered first */
+  if (D.signature) SKIN_NAMES.signature = D.signature.name;
+  var SKINS = (D.signature ? ['signature'] : []).concat(D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  /* A first visit opens in the skin picked on the old tracker (its saved
+     settings, read only, through the data's own map), else the signature
+     skin, else the configured default. After that, the last one used. */
+  function firstSkin() {
+    var lg = D.franchise.storage && D.franchise.storage.legacy, map = lg && lg.skins, old = null;
+    if (map) { try { old = JSON.parse(readRaw(lg.prefix + 'settings') || 'null'); } catch (e) { old = null; } }
+    var picked = old && typeof old === 'object' && Object.prototype.hasOwnProperty.call(map.map, old[map.field]) ? map.map[old[map.field]] : null;
+    if (SKINS.indexOf(picked) !== -1) return picked;
+    if (D.signature) return 'signature';
+    return SKINS.indexOf(D.franchise.skin) === -1 ? SKINS[0] : D.franchise.skin;      // default skin from config (T-104)
+  }
   var PAPERS = [['default', 'Skin default'], ['warm', 'Warm'], ['grey', 'Grey'], ['rose', 'Rose'], ['mint', 'Mint'], ['sky', 'Sky'],
                 ['lilac', 'Lilac']];
   var LOOK = [   // [setting, root attribute, label, options, default]
@@ -221,8 +236,7 @@
     s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
     s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
-    var firstSkin = SKINS.indexOf(D.franchise.skin) === -1 ? SKINS[0] : D.franchise.skin;      // default skin from config (T-104)
-    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin : s.skin;
+    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin() : s.skin;
     s.paper = PAPERS.some(function (p) { return p[0] === s.paper; }) ? s.paper : 'default';
     LOOK.forEach(function (l) { if (!lookOk(l, s[l[0]])) s[l[0]] = l[4]; });
     if (typeof s.dys !== 'boolean') s.dys = false;
@@ -1009,10 +1023,18 @@
   /* applyMark changes one row's state and its rendered row; every mark goes
      through it. setMark is one mark + one refresh; bulkMark is many marks +
      ONE save and ONE refresh. */
-  function applyMark(i, st) {
+  /* Every rendered row, by index, in one query. A bulk action passes this to
+     applyMark: a selector per row is a full-document query each time, and
+     5,000 of them made one bulk mark quadratic. */
+  function renderedRows() {
+    var map = {};
+    $$('.row[data-i]').forEach(function (row) { (map[row.dataset.i] = map[row.dataset.i] || []).push(row); });
+    return map;
+  }
+  function applyMark(i, st, rendered) {
     var id = D.ids[i];
     if (st === 'unread') delete progress.marks[id]; else progress.marks[id] = st;
-    $$('.row[data-i="' + i + '"]').forEach(function (row) {
+    (rendered ? rendered[i] || [] : $$('.row[data-i="' + i + '"]')).forEach(function (row) {
       row.dataset.s = st;
       var m = row.querySelector('.mark');
       m.textContent = glyph(st);
@@ -1035,12 +1057,12 @@
   function counted(i) { return !isInert(i) && planOk(i) && (!browsing() || browseOk(i)); }
   function rowsWhere(pred) { var out = []; for (var i = 0; i < N; i++) if (counted(i) && pred(i)) out.push(i); return out; }
   function bulkMark(list, st, what) {
-    var prev = {}, changed = 0;
+    var prev = {}, changed = 0, rendered = renderedRows();
     list.forEach(function (i) {
       var before = stateOf(i);
       if (before === st) return;
       prev[D.ids[i]] = before;
-      applyMark(i, st);
+      applyMark(i, st, rendered);
       changed++;
     });
     var verb = st === 'unread' ? 'cleared' : 'marked ' + st;
@@ -1048,7 +1070,8 @@
     afterMarks();
     if (activeTab === 'reading') renderReading();
     toast(changed.toLocaleString('en-GB') + ' ' + verb + ' in ' + what + '.', 'Undo', function () {
-      Object.keys(prev).forEach(function (id) { if (ID_I[id] !== undefined) applyMark(ID_I[id], prev[id]); });
+      var now = renderedRows();                     // the rows rendered by the time Undo is tapped
+      Object.keys(prev).forEach(function (id) { if (ID_I[id] !== undefined) applyMark(ID_I[id], prev[id], now); });
       afterMarks();
       if (activeTab === 'reading') renderReading();
       toast('Undone: ' + changed.toLocaleString('en-GB') + ' restored.');
@@ -1432,10 +1455,14 @@
     if (activeTab === 'settings') renderSettings();
   }
   /* The skin beacon (F-57): styles.css declares the token contract it was
-     written for; a stylesheet from an older build (a stale cache) is caught. */
-  var SKIN_OK = '3';
+     written for (SKIN_OK, at the top); a stylesheet from an older build (a
+     stale cache) is caught. */
+  function pageSheets() {                                      // the stylesheets the page loaded (not the signature skin's)
+    var sig = $('#skin-signature');
+    return Array.prototype.filter.call(document.styleSheets, function (sh) { return !sig || sh !== sig.sheet; });
+  }
   function skinBeacon() {
-    var sheets = document.styleSheets, v = null;
+    var sheets = pageSheets(), v = null;
     if (!sheets.length) return null;                           // nothing loaded to check
     for (var k = 0; k < sheets.length && v === null; k++) {
       var rules = null;
@@ -1448,10 +1475,44 @@
   }
   function checkBeacon() {
     var v = skinBeacon();
-    if (v === null && !document.styleSheets.length) return false;
+    if (v === null && !pageSheets().length) return false;
     if (v === SKIN_OK) return false;
     toast('The page styles are out of date (' + (v ? 'version ' + v : 'missing') + '). Reload to get the current version.', 'Reload',
       function () { location.reload(); });
+    return true;
+  }
+  /* A stale mix (the first in-place migration's upgrade proof, 8 Oct). GitHub
+     Pages lets a browser keep every file for 10 minutes, and within them a
+     reload takes scripts and styles from the browser's caches (its memory
+     cache never even asks the service worker), so after a deploy this app.js
+     can arrive with an older data.js or styles.css. Before anything reads the
+     data: if it isn't the shape this app reads, or the stylesheet's beacon is
+     another build's, load both again at an address no cache holds and start
+     over, once. If they are still stale, say so; never loop. */
+  function staleShell() {
+    var beacon = '';
+    try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && typeof D.version === 'number';
+    if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
+    var app = document.getElementById('app'), stamp = Date.now();
+    if (window.__shellRetried) {
+      if (app) { app.setAttribute('aria-busy', 'false'); app.textContent = 'This page is halfway through an update. Close it and open it again in a few minutes.'; }
+      return true;
+    }
+    window.__shellRetried = true;
+    if (app) app.textContent = 'Updating to the latest version…';
+    var css = document.createElement('link'), js = document.createElement('script'), left = 2;
+    css.rel = 'stylesheet'; css.href = './styles.css?r=' + stamp;
+    js.src = './data.js?r=' + stamp;
+    var done = function () {
+      if (--left) return;
+      Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"]'), function (l) { if (l !== css) l.remove(); });
+      start();
+    };
+    once(css, ['load', 'error'], done);
+    once(js, ['load', 'error'], done);
+    document.head.appendChild(css);
+    document.head.appendChild(js);
     return true;
   }
   function togglePref(k) {
@@ -1882,7 +1943,8 @@
   function aboutHtml() {
     var c = D.counts;
     return '<h3 class="ssub">About this list</h3><p class="about">' + escapeHtml(D.franchise.title) + ' · ' +
-      c.total.toLocaleString('en-GB') + ' entries · ' + c.core + ' core · ' + c.mandatory + ' mandatory · build ' + escapeHtml(D.build) + '</p>' +
+      c.total.toLocaleString('en-GB') + ' entries · ' + c.core + ' core · ' + c.mandatory + ' mandatory · Version ' + D.version +
+      ' <small class="buildhash">build ' + escapeHtml(D.build) + '</small></p>' +
       (D.legend.length ? '<dl class="legend">' + D.legend.map(function (l) {
         return '<dt>' + escapeHtml(l.term) + '</dt><dd>' + escapeHtml(l.meaning) + '</dd>';
       }).join('') + '</dl>' : '') +
@@ -1974,7 +2036,7 @@
     var st = offlineState();
     return '<p class="offstate" id="offState" data-ready="' + (st.short === 'Ready offline' ? '1' : '0') + '">' + escapeHtml(st.long) + '</p>' +
       srow('Connection', '<span id="netLine">' + (pwa.online === false ? 'Offline: everything still works, and changes stay on this device.' : 'Online') + '</span>') +
-      srow('Version', '<span>build ' + escapeHtml(D.build) + (pwa.update ? ' · a new version is ready' : '') + '</span>') +
+      srow('Version', '<span>v' + D.version + (pwa.update ? ' · a new version is ready' : '') + '</span>') +
       (pwa.supported ? srow('Updates', '<button type="button" class="tool" data-act="sw-check"' + (pwa.checking ? ' disabled' : '') + '>' +
         (pwa.checking ? 'Checking…' : 'Check for updates') + '</button>' +
         (pwa.update ? '<button type="button" class="tool" data-act="sw-reload">Reload now</button>' : '')) : '') +
@@ -2034,7 +2096,7 @@
       pwa.checking = false;
       var w = reg.installing || reg.waiting;
       if (w) { if (report) toast('Downloading the new version…'); follow(w); }
-      else if (report) toast('You have the latest version (build ' + D.build + ').');
+      else if (report) toast('You have the latest version (v' + D.version + ').');
       offlineChanged();
     }, function () {
       pwa.checking = false;
@@ -2302,12 +2364,22 @@
   /* ======================================================================
      BOOT
      ====================================================================== */
+  /* The signature skin's CSS comes with the data, already checked by the build
+     (scoped to it, look-only). It applies only once the skin attribute is set,
+     which happens at boot anyway, so it never waits for a stylesheet request. */
+  function applySignature() {
+    if (!D.signature || $('#skin-signature')) return;
+    var st = document.createElement('style');
+    st.id = 'skin-signature';
+    st.textContent = D.signature.css;
+    document.head.appendChild(st);
+  }
   function applyFranchise() {
     var f = D.franchise;
     document.title = f.title;
     $('#wordmark').textContent = f.wordmark;
     $('#strapline').textContent = f.strapline;
-    $('#buildtag').textContent = 'build ' + D.build;
+    $('#buildtag').textContent = 'v' + D.version;                 // readable; the hash is in Settings → About
     var tc = $('meta[name="theme-color"]');
     if (tc) tc.setAttribute('content', f.theme);
     var at = $('meta[name="apple-mobile-web-app-title"]');
@@ -2343,6 +2415,7 @@
   }
   if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
 
+  applySignature();
   applyFranchise();
   checkOnline();
   registerSW();

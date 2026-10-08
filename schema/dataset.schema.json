@@ -122,6 +122,34 @@
         "qrPrefix": {
          "type": "string",
          "description": "Old QR / sync-code prefix (import arrives in session 3)."
+        },
+        "skins": {
+         "type": "object",
+         "required": [
+          "field",
+          "map"
+         ],
+         "additionalProperties": false,
+         "description": "The old tracker's skin pick, read once on a first visit: a field of its saved settings (prefix + 'settings') and a map from its values to this tracker's skins. A value it doesn't list falls back to the signature skin, else franchise.skin.",
+         "properties": {
+          "field": {
+           "type": "string",
+           "pattern": "^[\\w-]+$"
+          },
+          "map": {
+           "type": "object",
+           "minProperties": 1,
+           "additionalProperties": {
+            "enum": [
+             "signature",
+             "paper",
+             "newsprint",
+             "pull",
+             "night"
+            ]
+           }
+          }
+         }
         }
        }
       }
@@ -130,6 +158,11 @@
     "strictCredits": {
      "type": "boolean",
      "description": "Missing credits fail the build (on for new builds, off for migrations)."
+    },
+    "versionStart": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "The first readable version number (default 1). A migrated tracker continues its old numbering: the old tracker's last build + 1. After that the build counts up by itself whenever the content hash changes."
     },
     "eventRelevance": {
      "type": "string",
@@ -158,6 +191,81 @@
      ],
      "description": "The skin a first visit opens in (default: the first of skins). Must be one of skins."
     },
+    "signature": {
+     "type": "object",
+     "required": [
+      "name",
+      "tokens"
+     ],
+     "additionalProperties": false,
+     "description": "The tracker's own skin (one per tracker): offered first in the skin control, and a first visit opens in it. It changes how things look, never where they are: the build checks every token, font and stylesheet rule.",
+     "properties": {
+      "name": {
+       "type": "string",
+       "minLength": 1,
+       "maxLength": 24,
+       "description": "The name in the skin control."
+      },
+      "tokens": {
+       "type": "object",
+       "minProperties": 1,
+       "propertyNames": {
+        "pattern": "^--[a-z0-9-]+$"
+       },
+       "additionalProperties": {
+        "type": [
+         "number",
+         "string"
+        ]
+       },
+       "description": "Input tokens from styles.css :root (not the ones Look settings own), e.g. {\"--accent-h\": 176}."
+      },
+      "fonts": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "required": [
+         "family",
+         "file"
+        ],
+        "additionalProperties": false,
+        "properties": {
+         "family": {
+          "type": "string"
+         },
+         "file": {
+          "type": "string",
+          "pattern": "^fonts/[\\w.-]+\\.woff2$"
+         },
+         "weight": {
+          "enum": [
+           100,
+           200,
+           300,
+           400,
+           500,
+           600,
+           700,
+           800,
+           900
+          ]
+         },
+         "style": {
+          "enum": [
+           "normal",
+           "italic"
+          ]
+         }
+        }
+       },
+       "description": "@font-face rules for the skin; each file is a .woff2 in fonts/, so it is precached."
+      },
+      "stylesheet": {
+       "type": "string",
+       "description": "A look-only stylesheet, relative to dataset.json. Every selector starts with :root[data-skin=\"signature\"]; only colours from tokens, background images, borders, radii, shadows and font settings."
+      }
+     }
+    },
     "icons": {
      "type": "object",
      "additionalProperties": false,
@@ -173,6 +281,16 @@
       }
      },
      "description": "PNG paths in the repo for the 192 px, 512 px and maskable icons (default: icons/icon-*.png). The template's placeholders warn."
+    }
+   }
+  },
+  "deliverables": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "What the build produces besides the app. The workbook (workbook.xlsx, generated from this file) is on unless turned off; web-app-only trackers (e.g. Absolute, Dark Nights) set {\"workbook\": false}.",
+   "properties": {
+    "workbook": {
+     "type": "boolean"
     }
    }
   },

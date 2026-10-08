@@ -2,7 +2,7 @@
    transition. Measured through the browser's own animation list, so the
    result doesn't depend on how fast the machine is. */
 'use strict';
-const { mixed } = require('../lib/helpers');
+const { mixed, basic } = require('../lib/helpers');
 const { serve, open, closeBrowser } = require('./lib');
 
 /* Elements with any non-zero transition or animation duration. */
@@ -50,5 +50,20 @@ module.exports = async function (t) {
     t.eq('no page errors (reduced motion)', pg.errors, []);
     await pg.close();
     await srv.close();
+
+    // ------------------------------------------------ the signature skin can't bring motion back
+    const ssrv = await serve(basic().out);
+    pg = await open(ssrv.url, { width: 390, reducedMotion: 'reduce' });
+    await pg.page.evaluate(() => { document.querySelector('[data-act="panel"]').click(); document.querySelector('.ptools [data-act="expand-all"]').click(); });
+    t.eq('the signature skin, reduced motion: the page is in it, and nothing anywhere moves',
+         [await pg.page.evaluate(() => document.documentElement.getAttribute('data-skin')), await pg.page.evaluate(moving)], ['signature', []]);
+    await pg.close();
+    pg = await open(ssrv.url, { width: 390 });
+    await pg.page.click('#tab-settings');
+    r = await toggle(pg.page, '.sec-head[data-g="s"][data-k="display"]', '#set-display');
+    t.ok('…and with motion allowed, its sections still animate (one component)', r.anims.includes('grid-template-rows') && Math.abs(r.end - r.content) <= 1, JSON.stringify(r));
+    t.eq('no page errors (signature skin motion)', pg.errors, []);
+    await pg.close();
+    await ssrv.close();
   } finally { await closeBrowser(); }
 };

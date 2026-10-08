@@ -1,0 +1,7 @@
+{
+ "source": "ASIMKARD/Research-Repo",
+ "path": "toolkit/verify.py",
+ "commit": "18141dde3f1244d293f2ec09e45319c488199e83",
+ "sha256": "fc4dc8fb02d222701be227a4b69af176d889f27f81fa3f86f5b75c20b8821977",
+ "note": "tools/verify.py is this file, byte for byte. Never edit it: change it in Research-Repo, then re-pin (copy, update commit and sha256)."
+}

@@ -19,11 +19,50 @@
    "legacy": {
     "prefix": "fixture-old:v1:",
     "format": "v2",
-    "qrPrefix": "FIXT1:"
+    "qrPrefix": "FIXT1:",
+    "skins": {
+     "field": "layout",
+     "map": {
+      "sig": "signature",
+      "pull": "pull",
+      "tabs": "signature"
+     }
+    }
    }
   },
   "strictCredits": false,
-  "eventRelevance": "fixture"
+  "eventRelevance": "fixture",
+  "signature": {
+   "name": "Signal",
+   "tokens": {
+    "--base-paper-h": 200,
+    "--base-paper-s": "20%",
+    "--ink-h": 210,
+    "--accent-h": 176,
+    "--accent-s": "72%",
+    "--l-accent": "24%",
+    "--l-bar-mark": "24%",
+    "--font-display": "'Fixture Signal', var(--font-mono)",
+    "--display-weight": 500,
+    "--display-case": "uppercase",
+    "--name-case": "uppercase",
+    "--name-track": ".04em",
+    "--tab-case": "uppercase",
+    "--tab-track": ".05em",
+    "--tab-fit": "3.7vw",
+    "--radius": "0px",
+    "--radius-sm": "0px",
+    "--era-mono-h": 200
+   },
+   "fonts": [
+    {
+     "family": "Fixture Signal",
+     "file": "fonts/ibm-plex-mono-500-latin.woff2",
+     "weight": 500
+    }
+   ],
+   "stylesheet": "signature.css"
+  }
  },
  "eras": [
   {

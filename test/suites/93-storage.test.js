@@ -1,6 +1,7 @@
 /* One namespaced store, and the read-only legacy migration (John's change 2). */
 'use strict';
-const { ROOT, loadData, boot, wait, basic } = require('../lib/helpers');
+const path = require('path');
+const { FIX, build, loadData, boot, wait, basic } = require('../lib/helpers');
 
 const OLD = 'fixture-old:v1:';
 const V2_PROGRESS = JSON.stringify({ p: { '198706004': 'read', 'fixture-hero-1980-1': 'reading', 'fixture-hero-1980-2': 'skip',
@@ -96,11 +97,12 @@ module.exports = async function (t) {
   t.ok('the oldest v2 shape is read too', JSON.parse(app5.window.localStorage.getItem(ns + 'progress')).marks['fixture-hero-1980-5'] === 'read');
   app5.window.close();
 
-  // ---- no legacy config: nothing is read ----
-  const root = boot(ROOT, { storage: seed });
+  // ---- no legacy config: nothing is read (the minimal fixture has none) ----
+  const mb = build(path.join(FIX, 'minimal', 'dataset.json'), { label: 'storage-minimal' }), mk = loadData(mb.out).franchise.key + ':v3:';
+  const plain = boot(mb.out, { storage: seed });
   await wait(20);
-  root.window.dispatchEvent(new root.window.Event('pagehide'));
-  const rs = JSON.parse(root.window.localStorage.getItem('starter:v3:settings'));
-  t.ok('without storage.legacy no migration runs', !rs.migrated && root.window.localStorage.getItem('starter:v3:progress') === null);
-  root.window.close();
+  plain.window.dispatchEvent(new plain.window.Event('pagehide'));
+  const rs = JSON.parse(plain.window.localStorage.getItem(mk + 'settings'));
+  t.ok('without storage.legacy no migration runs', !rs.migrated && plain.window.localStorage.getItem(mk + 'progress') === null);
+  plain.window.close();
 };

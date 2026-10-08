@@ -1,6 +1,7 @@
 /* The 320 px sweep (session 3's lesson, L-9): every tab, with everything open,
-   at 320, 360 and 390 px, on four datasets, the full fixture in every skin and
-   with large text and large buttons. No horizontal overflow, all four tabs
+   at 320, 360 and 390 px, on four datasets, the full fixture and the repo's own
+   dataset (the demo, or a tracker's real data) in every skin it offers and with
+   large text and large buttons. No horizontal overflow, all four tabs
    fully visible in the bar, no page or console errors. Real fonts.
 
    Buttons fit (John's phone, 5 Oct): page overflow alone missed a depth chip
@@ -10,7 +11,7 @@
    controls together, and the depth chips stay on one line (T-95). */
 'use strict';
 const path = require('path');
-const { ROOT, FIX, build, basic, mixed } = require('../lib/helpers');
+const { ROOT, FIX, ROOT_DATASET, IS_TEMPLATE, build, basic, mixed } = require('../lib/helpers');
 const { serve, open, openAll, openSettings, closeBrowser } = require('./lib');
 
 const WIDTHS = [320, 360, 390];
@@ -65,14 +66,19 @@ async function fit(page) {
 
 module.exports = async function (t) {
   const minimal = build(path.join(FIX, 'minimal', 'dataset.json'), { label: 'layout-minimal' });
-  const sets = [['basic', basic().out], ['mixed', mixed().out], ['minimal', minimal.out], ['starter', ROOT]]
-    .concat(['newsprint', 'pull', 'night'].map(skin => ['basic in ' + skin, basic().out, { skin }]))
-    .concat([['basic, large text and buttons', basic().out, { textSize: 'l', tap: 'large' }]]);
+  const FK = 'fixture', RF = ROOT_DATASET.franchise, RK = RF.key, rn = IS_TEMPLATE ? 'starter' : RK;
+  // the root opens in its signature skin if it has one, else the first it offers; then every other skin it offers
+  const rootSkins = (RF.skins || ['paper', 'newsprint', 'pull', 'night']).filter((s, i) => RF.signature || i > 0);
+  const sets = [['basic', basic().out], ['mixed', mixed().out], ['minimal', minimal.out], [rn, ROOT]]
+    .concat(['paper', 'newsprint', 'pull', 'night'].map(skin => ['basic in ' + skin, basic().out, { skin }, FK]))   // 'basic' itself opens in its signature skin
+    .concat([['basic, large text and buttons', basic().out, { textSize: 'l', tap: 'large' }, FK]])
+    .concat(rootSkins.map(skin => [rn + ' in ' + skin, ROOT, { skin }, RK]))
+    .concat([[rn + ', large text and buttons', ROOT, { textSize: 'l', tap: 'large' }, RK]]);
   try {
-    for (const [name, dir, look] of sets) {
+    for (const [name, dir, look, key] of sets) {
       const srv = await serve(dir);
       for (const w of WIDTHS) {
-        const storage = look ? { 'fixture:v3:settings': JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, look)) } : undefined;
+        const storage = look ? { [key + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, look)) } : undefined;
         const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage });
         const over = [], cut = [], clipped = [], split = [], depth = [];
         let hasDepth = false;

@@ -12,7 +12,10 @@ canonical event files it lists, then:
      altKey YYYYMM·NNN — keys are never hand-written
   3. validates everything (fails loudly, listing every problem)
   4. resolves creator credits and builds the creator index
-  5. writes data.js, sw.js and manifest.json, stamped with one content hash
+  5. writes data.js, sw.js and manifest.json, stamped with one content hash,
+     and a readable version that counts up from the previous data.js
+  6. writes workbook.xlsx (tools/build_workbook.py) unless the tracker turns
+     it off with "deliverables": {"workbook": false}
 
 Every field is read BY NAME. Nothing is read by position.
 """
@@ -35,6 +38,8 @@ ROLES = ['core', 'tie-in']
 UNIVERSAL_STRAND = 'All'
 
 SHELL_FILES = ['index.html', 'app.js', 'styles.css', 'qrcode.js', 'manifest.json']
+DELIVERABLES = {'workbook': True}          # on unless dataset.json says "deliverables": {"workbook": false}
+WORKBOOK = 'workbook.xlsx'
 SW_TEMPLATE = os.path.join('tools', 'templates', 'sw.js')
 
 DATE_RX = re.compile(r'^(\d{4})-(\d{2})(?:-(\d{2}))?$')
@@ -46,6 +51,286 @@ ID_RX = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*$')
 
 class BuildError(Exception):
     pass
+
+
+# --------------------------------------------------------------------------
+# the signature skin slot (John, 6 Oct): one skin of the tracker's own, from
+# config. It uses the same token system as the shared skins and changes how
+# things look, never where they are, so the build refuses anything else.
+# --------------------------------------------------------------------------
+SIGNATURE = 'signature'
+SIG_SCOPE = ':root[data-skin="signature"]'
+# :root tokens a skin may not set. Every token a Look setting's block sets
+# (paper, era colours, text size, density, buttons, marks, the dyslexia font)
+# is read from styles.css: the signature's CSS comes later, so setting one would
+# override the person's choice. These the page itself owns:
+RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
+COLOUR_PROPS = {'color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color',
+                'border-left-color', 'text-decoration-color', 'caret-color', 'accent-color'}
+LOOK_PROPS = COLOUR_PROPS | {
+    'background-image', 'background-size', 'background-position', 'background-repeat', 'background-blend-mode',
+    'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-width', 'border-style',
+    'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width',
+    'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style',
+    'border-radius', 'border-top-left-radius', 'border-top-right-radius', 'border-bottom-left-radius', 'border-bottom-right-radius',
+    'box-shadow', 'text-shadow',
+    'font-family', 'font-weight', 'font-style', 'font-size', 'font-variant', 'font-variant-numeric', 'font-feature-settings',
+    'font-stretch', 'letter-spacing', 'word-spacing', 'line-height', 'text-transform',
+    'text-decoration', 'text-decoration-line', 'text-decoration-style', 'text-decoration-thickness', 'text-underline-offset'}
+# named so the message says why: these move things or hide them
+MOVES = re.compile(r'^(position|display|inset.*|top|right|bottom|left|order|flex.*|grid.*|float|clear|visibility|z-index|'
+                   r'transform.*|translate|rotate|scale|width|height|min-width|max-width|min-height|max-height|margin.*|'
+                   r'opacity|content|overflow.*|clip.*)$')
+LOOK_WORDS = {'none', 'inherit', 'initial', 'unset', 'transparent', 'currentcolor', 'solid', 'dashed', 'dotted', 'double',
+              'groove', 'ridge', 'inset', 'outset', 'hidden', 'normal', 'bold', 'bolder', 'lighter', 'italic', 'oblique',
+              'small-caps', 'tabular-nums', 'lining-nums', 'oldstyle-nums', 'uppercase', 'lowercase', 'capitalize',
+              'underline', 'overline', 'line-through', 'wavy', 'auto', 'from-font', 'repeat', 'no-repeat', 'repeat-x',
+              'repeat-y', 'space', 'round', 'cover', 'contain', 'center', 'to', 'at', 'circle', 'ellipse', 'closest-side',
+              'farthest-corner', 'multiply', 'screen', 'overlay', 'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy',
+              'system-ui', 'ui-monospace', 'ui-serif', 'ui-sans-serif', 'condensed', 'expanded', 'semi-condensed',
+              'semi-expanded', 'light', 'dark', 'top', 'bottom', 'left', 'right'}
+LOOK_FUNCS = {'var', 'calc', 'min', 'max', 'clamp', 'hsl', 'hsla', 'oklch', 'linear-gradient', 'radial-gradient',
+              'repeating-linear-gradient', 'repeating-radial-gradient', 'url'}
+COLOUR_FUNCS = {'hsl', 'hsla', 'oklch'}
+IMAGE_DIRS = ('fonts/', 'icons/', 'images/')      # precached by the service worker
+
+
+def css_args(body):
+    """Top-level components of a function's arguments (split on space, comma, slash)."""
+    parts, depth, cur = [], 0, ''
+    for ch in body:
+        if ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+        if depth == 0 and ch in ' \t,/':
+            if cur.strip():
+                parts.append(cur.strip())
+            cur = ''
+        else:
+            cur += ch
+    if cur.strip():
+        parts.append(cur.strip())
+    return parts
+
+
+def look_value_problem(value, prop, tokens_ok, shell_root):
+    """None when a value only draws on tokens, numbers and look keywords; else why not."""
+    if '!' in value:
+        return '!important is not allowed'
+    if re.search(r'[;{}<>@\\]', value):
+        return 'not a plain value'
+    if '#' in value:
+        return 'a literal colour (%s): derive colours from tokens' % value
+    i, n = 0, len(value)
+    while i < n:
+        c = value[i]
+        if c in ' \t,/+*-' and not (c == '-' and i + 1 < n and (value[i + 1].isalpha() or value[i + 1] == '-')):
+            i += 1
+            continue
+        if c in '"\'':
+            j = value.find(c, i + 1)
+            if j < 0:
+                return 'an unclosed string'
+            if prop != 'font-family' and not prop.startswith('--'):
+                return 'a string outside font-family'
+            i = j + 1
+            continue
+        m = re.match(r'(\d*\.?\d+)(%|[a-z]+)?', value[i:])
+        if m and (c.isdigit() or c == '.'):
+            i += m.end()
+            continue
+        m = re.match(r'-?-?[a-zA-Z][\w-]*', value[i:])
+        if not m:
+            return 'unexpected %r' % c
+        word, j = m.group(0), i + m.end()
+        if j < n and value[j] == '(':
+            depth, k = 1, j + 1
+            while k < n and depth:
+                depth += {'(': 1, ')': -1}.get(value[k], 0)
+                k += 1
+            inner, fn = value[j + 1:k - 1], word.lower()
+            if fn not in LOOK_FUNCS:
+                return '%s() is not allowed (a literal colour, or not a look value)' % fn
+            if fn == 'var':
+                name, _, fallback = inner.partition(',')
+                if not re.match(r'^--[\w-]+$', name.strip()):
+                    return 'var() needs a token name'
+                prob = look_value_problem(fallback, prop, tokens_ok, shell_root) if fallback.strip() else None
+                if prob:
+                    return prob
+                i = k
+                continue
+            elif fn in COLOUR_FUNCS:
+                if not all('var(--' in a for a in css_args(inner)):
+                    return 'a literal colour (%s(%s)): every component must be a token' % (fn, inner)
+            elif fn == 'url':
+                if prop != 'background-image':
+                    return 'url() only in background-image'
+                ref = inner.strip().strip('"\'')
+                ref = ref[2:] if ref.startswith('./') else ref
+                if not ref.startswith(IMAGE_DIRS) or '..' in ref or not os.path.isfile(os.path.join(shell_root, ref)):
+                    return 'url(%s) must name a file in %s (precached)' % (inner, ', '.join(IMAGE_DIRS))
+                i = k
+                continue
+            prob = look_value_problem(inner, prop, tokens_ok, shell_root) if inner.strip() else None
+            if prob:
+                return prob
+            i = k
+            continue
+        if word.lower() not in LOOK_WORDS:
+            return '%r is not a look keyword (a named colour? quote font names)' % word
+        i = j
+    return None
+
+
+def root_inputs(shell_root):
+    """The :root input tokens a skin may set, read from styles.css: every custom
+    property in the :root block except derived colours and setting-owned ones."""
+    try:
+        with open(os.path.join(shell_root, 'styles.css'), encoding='utf-8') as f:
+            css = re.sub(r'/\*[\s\S]*?\*/', '', f.read())
+    except OSError:
+        return set()
+    m = re.search(r'(?:^|\})\s*:root\s*\{([^}]*)\}', css)
+    if not m:
+        return set()
+    owned = set(RUNTIME_TOKENS)
+    for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', css):
+        if any(re.match(r'^:root\[data-(?!skin=)[\w-]+="[\w-]+"\]$', x.strip()) for x in sel.split(',')):
+            owned |= set(re.findall(r'(--[\w-]+)\s*:', body))
+    out = set()
+    for decl in m.group(1).split(';'):
+        if ':' not in decl:
+            continue
+        name, val = (x.strip() for x in decl.split(':', 1))
+        if name.startswith('--') and name not in owned and not re.search(r'#|\b(hsl|hsla|oklch|rgb|rgba)\(', val):
+            out.add(name)
+    return out
+
+
+def signature_skin(sig, base, shell_root, errs):
+    """Validate franchise.signature and return {'name', 'css'} (css: @font-face
+    rules, the token block, then the scoped look-only rules), or None."""
+    w = 'franchise.signature'
+    if not isinstance(sig, dict):
+        errs.append('%s must be an object {name, tokens, fonts?, stylesheet?}' % w)
+        return None
+    name = sig.get('name')
+    if not isinstance(name, str) or not name.strip() or len(name) > 24:
+        errs.append('%s.name must be a short name for the skin control (1-24 characters)' % w)
+    inputs = root_inputs(shell_root)
+    tokens = sig.get('tokens')
+    lines = []
+    if not isinstance(tokens, dict) or not tokens:
+        errs.append('%s.tokens must set at least one input token, e.g. {"--accent-h": 160}' % w)
+        tokens = {}
+    for k in sorted(tokens):
+        v = tokens[k]
+        if k not in inputs:
+            errs.append('%s.tokens: %s is not a known input token (styles.css :root, less the ones Look settings own)' % (w, k))
+            continue
+        if isinstance(v, bool) or not isinstance(v, (int, float, str)):
+            errs.append('%s.tokens.%s must be a number or a string' % (w, k))
+            continue
+        v = str(v)
+        prob = look_value_problem(v, k, inputs, shell_root)
+        if prob:
+            errs.append('%s.tokens.%s: %s' % (w, k, prob))
+        lines.append('  %s: %s;' % (k, v))
+    faces = []
+    fonts = sig.get('fonts', [])
+    if not isinstance(fonts, list):
+        errs.append('%s.fonts must be a list of {family, file, weight?, style?}' % w)
+        fonts = []
+    for i, f in enumerate(fonts):
+        fw = '%s.fonts[%d]' % (w, i)
+        if not isinstance(f, dict):
+            errs.append('%s must be an object' % fw)
+            continue
+        fam, file = f.get('family'), f.get('file')
+        if not isinstance(fam, str) or not re.match(r'^[A-Za-z0-9][A-Za-z0-9 -]{0,40}$', fam):
+            errs.append('%s.family must be a plain font name' % fw)
+        if not isinstance(file, str) or not re.match(r'^fonts/[\w.-]+\.woff2$', file) or not os.path.isfile(os.path.join(shell_root, file)):
+            errs.append('%s.file must be a .woff2 in fonts/ (precached): %r' % (fw, file))
+        weight, style = f.get('weight', 400), f.get('style', 'normal')
+        if weight not in (100, 200, 300, 400, 500, 600, 700, 800, 900):
+            errs.append('%s.weight must be 100-900 in steps of 100' % fw)
+        if style not in ('normal', 'italic'):
+            errs.append('%s.style must be normal or italic' % fw)
+        faces.append("@font-face { font-family: '%s'; font-style: %s; font-weight: %s; font-display: swap;\n"
+                     "  src: url('./%s') format('woff2'); }" % (fam, style, weight, file))
+    rules = []
+    rel = sig.get('stylesheet')
+    if rel is not None:
+        if not isinstance(rel, str):
+            errs.append('%s.stylesheet must be a path to a .css file' % w)
+        else:
+            try:
+                with open(os.path.join(base, rel), encoding='utf-8') as f:
+                    css = f.read()
+            except OSError:
+                errs.append('%s.stylesheet: missing file %s' % (w, rel))
+                css = ''
+            rules = signature_rules(css, rel, inputs, shell_root, errs)
+    css = '\n'.join(faces + ['%s {\n%s\n}' % (SIG_SCOPE, '\n'.join(lines))] + rules) + '\n'
+    return {'name': name, 'css': css}
+
+
+def signature_rules(css, rel, inputs, shell_root, errs):
+    """The signature stylesheet, checked rule by rule and re-emitted normalised:
+    every selector scoped to the signature skin, only look properties."""
+    src = re.sub(r'/\*[\s\S]*?\*/', '', css)
+    out, i = [], 0
+    while True:
+        open_ = src.find('{', i)
+        if open_ < 0:
+            if src[i:].strip():
+                errs.append('%s: text after the last rule' % rel)
+            break
+        sel = ' '.join(src[i:open_].split())
+        close = src.find('}', open_)
+        if close < 0:
+            errs.append('%s: unclosed rule %s' % (rel, sel))
+            break
+        body = src[open_ + 1:close]
+        i = close + 1
+        if sel.startswith('@') or '{' in body:
+            errs.append('%s: %s — at-rules and nesting are not allowed (fonts go in signature.fonts)' % (rel, sel))
+            continue
+        parts = [p.strip() for p in sel.split(',')]
+        bad = [p for p in parts if not re.match(r'^' + re.escape(SIG_SCOPE) + r'(\[data-[\w-]+="[\w-]+"\])*(\s+\S.*)?$', p)]
+        if bad or not sel:
+            errs.append('%s: selector %r is not scoped to %s' % (rel, (bad or [sel])[0], SIG_SCOPE))
+            continue
+        decls = []
+        for d in body.split(';'):
+            if not d.strip():
+                continue
+            if ':' not in d:
+                errs.append('%s: %s: %r is not a declaration' % (rel, sel, d.strip()))
+                continue
+            prop, val = d.split(':', 1)
+            prop, val = prop.strip().lower(), ' '.join(val.split())
+            where = '%s: %s { %s }' % (rel, sel, prop)
+            if prop.startswith('--'):
+                if prop not in inputs:
+                    errs.append('%s: not a known input token' % where)
+                    continue
+            elif MOVES.match(prop):
+                errs.append('%s: refused — a skin changes how things look, never where they are' % where)
+                continue
+            elif prop not in LOOK_PROPS:
+                errs.append('%s: not a look property (colours from tokens, background images, borders, radii, '
+                            'shadows and font settings)' % where)
+                continue
+            prob = look_value_problem(val, prop, inputs, shell_root)
+            if prob:
+                errs.append('%s: %s' % (where, prob))
+                continue
+            decls.append('  %s: %s;' % (prop, val))
+        out.append('%s {\n%s\n}' % (',\n'.join(parts), '\n'.join(decls)))
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -141,8 +426,10 @@ def parse_date(s):
     return (y, mo, d)
 
 
-def build(dataset_path, previous_datajs=None):
-    """Returns (payload, report). Raises BuildError listing every problem."""
+def build(dataset_path, previous_datajs=None, keep=None):
+    """Returns (payload, report). Raises BuildError listing every problem.
+    keep (a dict) receives the stitched rows, arcs and eras as soon as they are
+    stitched, even when validation then fails (the verify gate reads them)."""
     errs, warns = [], []
     base = os.path.dirname(os.path.abspath(dataset_path))
     ds = load_json(dataset_path, errs)
@@ -161,6 +448,14 @@ def build(dataset_path, previous_datajs=None):
 
     if ds.get('schemaVersion') != SCHEMA_VERSION:
         errs.append('schemaVersion must be %d' % SCHEMA_VERSION)
+    # what the build produces besides the app: the workbook is on unless a
+    # tracker turns it off (web-app-only trackers, e.g. Absolute and Dark Nights)
+    deliverables = ds.get('deliverables', {})
+    if not isinstance(deliverables, dict) or any(k not in DELIVERABLES for k in deliverables) or \
+            any(not isinstance(v, bool) for v in deliverables.values()):
+        errs.append('deliverables must be an object of on/off switches: %s' % ', '.join(sorted(DELIVERABLES)))
+        deliverables = {}
+    deliverables = dict(DELIVERABLES, **deliverables)
 
     # ---- franchise ----
     fr = need(ds, 'franchise', 'dataset', dict) or {}
@@ -177,6 +472,21 @@ def build(dataset_path, previous_datajs=None):
     skin = fr.get('skin', skins[0])
     if skin not in skins:
         errs.append('franchise.skin "%s" must be one of franchise.skins (%s)' % (skin, ', '.join(skins)))
+    # the signature skin (John, 6 Oct): offered first, and a first visit opens in it
+    signature = signature_skin(fr['signature'], base, ROOT, errs) if 'signature' in fr else None
+    offered = ([SIGNATURE] if signature else []) + skins
+    # an old tracker's skin pick, read once on a first visit: a field of its saved settings + value -> skin
+    legacy = (fr.get('storage') or {}).get('legacy') or {}
+    if 'skins' in legacy:
+        ls = legacy['skins']
+        if (not isinstance(ls, dict) or not isinstance(ls.get('field'), str) or not re.match(r'^[\w-]+$', ls['field'])
+                or not isinstance(ls.get('map'), dict) or not ls['map']):
+            errs.append('franchise.storage.legacy.skins must be {field, map: {old value: skin}}')
+        else:
+            for old_v, sk in sorted(ls['map'].items()):
+                if sk not in offered:
+                    errs.append('franchise.storage.legacy.skins.map: %r maps to %r, which this tracker does not offer (%s)'
+                                % (old_v, sk, ', '.join(offered)))
     # icons: from config (D-13), every one a real PNG of its size; placeholders warn
     icons = dict(DEFAULT_ICONS)
     cfg_icons = fr.get('icons', {})
@@ -198,6 +508,11 @@ def build(dataset_path, previous_datajs=None):
         warns.append('icons: %s %s the template\'s placeholder artwork. Replace with the franchise\'s own before the first deploy '
                      '(iOS caches a home-screen icon at install)' % (', '.join(placeholders), 'is' if len(placeholders) == 1 else 'are'))
     relevance = fr.get('eventRelevance', fr.get('key'))
+    # readable versions (decided 4 Oct): a migrated tracker continues its old numbering
+    version_start = fr.get('versionStart', 1)
+    if not isinstance(version_start, int) or isinstance(version_start, bool) or version_start < 1:
+        errs.append('franchise.versionStart must be a whole number, 1 or more (the old tracker\'s last build + 1)')
+        version_start = 1
 
     # ---- eras / periods ----
     eras = need(ds, 'eras', 'dataset', list) or []
@@ -385,6 +700,9 @@ def build(dataset_path, previous_datajs=None):
         events_out.append({'id': eid, 'name': ev.get('name', eid), 'era': ERA[eera], 'arc': ARC.get(arc_id, -1),
                            'essential': n_ess, 'complete': n_all, 'adds': n_all - n_ess,
                            'hash': ev_hash})
+
+    if keep is not None:
+        keep.update(dataset=ds, rows=rows, arcs=arcs, eras=eras, events=events_out)
 
     # ---- per-row validation ----
     ids, iids, titles = {}, {}, {}
@@ -661,6 +979,7 @@ def build(dataset_path, previous_datajs=None):
         'franchise': dict({k: canon(fr[k]) for k in ('key', 'wordmark', 'title', 'strapline', 'span', 'theme',
                                                      'background', 'searchUrl', 'dualOrder', 'storage')
                            if k in fr}, skins=skins, skin=skin, icons={k: './' + v for k, v in sorted(icons.items())}),
+        'signature': signature,
         'eras': [{'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
                   'intro': e.get('intro', '')} for e in eras],
         'periods': [{'id': p.get('id'), 'name': p.get('name', ''), 'label': p.get('label', ''),
@@ -717,7 +1036,8 @@ def build(dataset_path, previous_datajs=None):
     }
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
-              'durationsCoverage': dur_coverage, 'creators': len(creator_names)}
+              'durationsCoverage': dur_coverage, 'creators': len(creator_names),
+              'versionStart': version_start, 'deliverables': deliverables}
     return payload, report
 
 
@@ -746,7 +1066,7 @@ def read_datajs(path):
 
 def static_files(shell_root):
     out = []
-    for d in ('fonts', 'icons'):
+    for d in ('fonts', 'icons', 'images'):       # images: a signature skin's background images (IMAGE_DIRS)
         p = os.path.join(shell_root, d)
         if os.path.isdir(p):
             out += ['./%s/%s' % (d, n) for n in sorted(os.listdir(p)) if not n.startswith('.')]
@@ -784,8 +1104,20 @@ def manifest_for(fr):
         ]}, indent=2, ensure_ascii=False) + '\n'
 
 
-def render_outputs(payload, shell_root):
-    """data.js, sw.js and manifest.json, all stamped with one content hash."""
+def next_version(build_id, previous, version_start):
+    """The readable version number. It counts up by itself: the previous data.js's
+    number, plus 1 when the content hash changed. Never below versionStart, and
+    versionStart when there is no previous version. Nobody bumps it by hand."""
+    prev = (previous or {}).get('version')
+    if not isinstance(prev, int) or isinstance(prev, bool) or prev < 1:
+        return version_start
+    return max(version_start, prev if previous.get('build') == build_id else prev + 1)
+
+
+def render_outputs(payload, shell_root, version_start=1, previous=None):
+    """data.js, sw.js and manifest.json, all stamped with one content hash.
+    The version is stamped after the hash, so it never feeds it: the cache
+    name follows the content, and the number only follows the cache name."""
     manifest = manifest_for(payload['franchise'])
     h = hashlib.sha256()
     h.update(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), sort_keys=True).encode())
@@ -800,18 +1132,19 @@ def render_outputs(payload, shell_root):
         with open(os.path.join(shell_root, rel[2:]), 'rb') as f:
             h.update(rel.encode() + b'\0' + f.read())
     build_id = h.hexdigest()[:12]
+    version = next_version(build_id, previous, version_start)
 
     shell = ['./', './index.html', './app.js', './styles.css', './data.js', './qrcode.js', './manifest.json']
     cache = '%s-%s' % (payload['franchise']['key'], build_id)
     # the page reads its own cache name and file list for Settings -> Offline (F-35)
-    data = dict(payload, build=build_id, cache=cache, precache=shell + statics)
+    data = dict(payload, build=build_id, version=version, cache=cache, precache=shell + statics)
     datajs = 'window.TRACKER_DATA=' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n'
     with open(os.path.join(shell_root, SW_TEMPLATE), encoding='utf-8') as f:
         tpl = f.read()
-    sw = (tpl.replace('__CACHE__', cache)
+    sw = (tpl.replace('__CACHE__', cache).replace('__KEY__', payload['franchise']['key'])
              .replace('__SHELL__', json.dumps(shell))
              .replace('__STATIC__', json.dumps(statics, indent=2)))
-    return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id
+    return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id, version
 
 
 def main(argv):
@@ -831,8 +1164,14 @@ def main(argv):
     out = opts.get('--out') or ROOT
     check = bool(opts.get('--check'))
     try:
-        payload, report = build(dataset, previous_datajs=os.path.join(out, 'data.js'))
-        files, build_id = render_outputs(payload, ROOT)
+        previous = os.path.join(out, 'data.js')
+        keep = {}
+        payload, report = build(dataset, previous_datajs=previous, keep=keep)
+        files, build_id, version = render_outputs(payload, ROOT, report['versionStart'], read_datajs(previous))
+        binary = {}
+        if report['deliverables']['workbook']:
+            import build_workbook
+            binary[WORKBOOK] = build_workbook.xlsx_bytes(build_workbook.sheets_for(payload, keep))
     except BuildError as e:
         for msg in e.args[0]:
             print('ERROR ' + msg, file=sys.stderr)
@@ -840,10 +1179,11 @@ def main(argv):
         return 1
     for w in report['warnings']:
         print('WARN  ' + w, file=sys.stderr)
-    report['build'] = build_id
+    report['build'], report['version'] = build_id, version
     if opts.get('--report'):
         with open(opts['--report'], 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=1)
+    workbook_off = os.path.join(out, WORKBOOK) if not report['deliverables']['workbook'] else None
     if check:
         stale = []
         for name, content in files.items():
@@ -851,18 +1191,32 @@ def main(argv):
             cur = open(p, encoding='utf-8').read() if os.path.exists(p) else None
             if cur != content:
                 stale.append(name)
+        for name, content in binary.items():
+            p = os.path.join(out, name)
+            cur = open(p, 'rb').read() if os.path.exists(p) else None
+            if cur != content:
+                stale.append(name)
+        if workbook_off and os.path.exists(workbook_off):
+            stale.append('%s (deliverables.workbook is false: it should not exist)' % WORKBOOK)
         if stale:
             print('STALE: %s — run python3 tools/build.py' % ', '.join(stale), file=sys.stderr)
             return 1
-        print('fresh: build %s (%d rows, %d eras)' % (build_id, report['rows'], report['eras']))
+        print('fresh: v%d, build %s (%d rows, %d eras)' % (version, build_id, report['rows'], report['eras']))
         return 0
     os.makedirs(out, exist_ok=True)
     for name, content in files.items():
         with open(os.path.join(out, name), 'w', encoding='utf-8') as f:
             f.write(content)
-    print('built %s: %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%'
-          % (build_id, report['rows'], report['checkable'], report['eras'], len(report['events']),
-             report['creators'], report['creditsCoverage'], report['durationsCoverage']))
+    for name, content in binary.items():
+        with open(os.path.join(out, name), 'wb') as f:
+            f.write(content)
+    if workbook_off and os.path.exists(workbook_off):
+        os.remove(workbook_off)                 # generated, and this tracker has turned it off
+        print('removed %s: deliverables.workbook is false' % WORKBOOK)
+    print('built v%d (%s): %d rows (%d checkable), %d eras, %d events, %d creators, credits %.1f%%, durations %.1f%%%s'
+          % (version, build_id, report['rows'], report['checkable'], report['eras'], len(report['events']),
+             report['creators'], report['creditsCoverage'], report['durationsCoverage'],
+             ', workbook' if binary else ', no workbook (deliverables.workbook is false)'))
     return 0
 
 

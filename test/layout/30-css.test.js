@@ -3,13 +3,14 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { ROOT, basic } = require('../lib/helpers');
+const { ROOT, basic, loadData } = require('../lib/helpers');
 const { serve, open, rulesFor, closeBrowser } = require('./lib');
 
 module.exports = async function (t) {
   try {
     const srv = await serve(basic().out);
-    const pg = await open(srv.url, { width: 390 });
+    // the shared fonts are checked in Paper; the basic fixture's signature skin brings one more face (below)
+    const pg = await open(srv.url, { width: 390, storage: { 'fixture:v3:settings': JSON.stringify({ v: 3, migrated: { format: 'v2' }, skin: 'paper' }) } });
     const { page } = pg;
 
     // ------------------------------------------------ the rule finder
@@ -28,9 +29,11 @@ module.exports = async function (t) {
     });
     const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
     const declared = (css.match(/@font-face/g) || []).length;
-    t.ok('every @font-face in styles.css is known to the page (' + declared + ')', faces.length === declared && declared === 12, JSON.stringify(faces));
-    t.eq('…and every font file loads (no 404s)', faces.filter(f => f.status !== 'loaded').map(f => f.family + ' ' + f.weight), []);
-    t.eq('the three families are Anton, IBM Plex Sans and IBM Plex Mono', [...new Set(faces.map(f => f.family))].sort(), ['Anton', 'IBM Plex Mono', 'IBM Plex Sans']);
+    const shared = faces.filter(f => f.family !== 'Fixture Signal');
+    t.ok('every @font-face in styles.css is known to the page (' + declared + '), plus the signature skin\'s one',
+         shared.length === declared && declared === 12 && faces.length === 13, JSON.stringify(faces));
+    t.eq('…and every font file loads (no 404s), the signature skin\'s too', faces.filter(f => f.status !== 'loaded').map(f => f.family + ' ' + f.weight), []);
+    t.eq('the three shared families are Anton, IBM Plex Sans and IBM Plex Mono', [...new Set(shared.map(f => f.family))].sort(), ['Anton', 'IBM Plex Mono', 'IBM Plex Sans']);
     const used = await page.evaluate(() => ({
       body: getComputedStyle(document.body).fontFamily, title: getComputedStyle(document.querySelector('.ptitle')).fontFamily,
       bodyOk: document.fonts.check('400 15px "IBM Plex Sans"'), titleOk: document.fonts.check('400 28px Anton')
@@ -41,6 +44,17 @@ module.exports = async function (t) {
     t.eq('every vendored font file has an @font-face (none shipped unused)', files.filter(f => css.indexOf('./fonts/' + f) === -1), []);
     t.eq('no page errors (fonts)', pg.errors, []);
     await pg.close();
+    // the signature skin's own face, from config: declared once, loaded, and setting the title
+    const sg = await open(srv.url, { width: 390 });
+    const sig = await sg.page.evaluate(async () => {
+      await document.fonts.ready;
+      return { skin: document.documentElement.getAttribute('data-skin'), title: getComputedStyle(document.querySelector('.ptitle')).fontFamily,
+               loaded: document.fonts.check('500 28px "Fixture Signal"'), n: [...document.fonts].filter(f => f.family.replace(/"/g, '') === 'Fixture Signal').length };
+    });
+    t.ok('in the signature skin the title is set in its own face, declared once and loaded (' + loadData(basic().out).signature.name + ')',
+         sig.skin === 'signature' && /^"?Fixture Signal/.test(sig.title) && sig.loaded && sig.n === 1, JSON.stringify(sig));
+    t.eq('no page errors (signature fonts)', sg.errors, []);
+    await sg.close();
     await srv.close();
   } finally { await closeBrowser(); }
 };

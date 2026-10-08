@@ -91,7 +91,7 @@ const ALWAYS = [
   { tab: 'settings', what: 'Bulk: Mark era read / unread', has: d => d.querySelectorAll('[data-act="bulk-era"]').length === 2 },
   { tab: 'settings', what: 'Data: refresh reminder, Clear all progress', has: d => any(d, '[data-act="refresh"]') && any(d, '[data-act="clear-ask"]') },
   { tab: 'settings', what: 'Backup: sync code, export', has: d => any(d, '[data-act="sync-show"]') && any(d, '[data-act="backup-export"]') },
-  { tab: 'settings', what: 'Offline: readiness, connection, version', has: d => any(d, '#offState') && any(d, '#netLine') && /build /.test(text(d, '#set-offline')) },
+  { tab: 'settings', what: 'Offline: readiness, connection, version', has: d => any(d, '#offState') && any(d, '#netLine') && /Version\s*v\d+/.test(text(d, '#set-offline')) },
   { tab: 'settings', what: 'Look: seven paper swatches, text size, density, button size, marks, dyslexia font',
     has: d => d.querySelectorAll('.swatch[data-act="look"]').length === 7 && ['textSize', 'density', 'tap', 'marks'].every(k => any(d, '[data-act="look"][data-k="' + k + '"]')) &&
              any(d, '[data-act="pref"][data-k="dys"]') }

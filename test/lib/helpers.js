@@ -132,9 +132,10 @@ async function typeInto(app, selector, value) {
 
 /* A generated big dataset: nEras eras x perEra rows (5,000 rows by default). */
 let stressCache = null;
-function stress(nEras, perEra) {
+function stress(nEras, perEra, franchise) {
   nEras = nEras || 40; perEra = perEra || 125;
-  if (stressCache && stressCache.key === nEras + 'x' + perEra) return stressCache;
+  const key = nEras + 'x' + perEra + JSON.stringify(franchise || {});
+  if (stressCache && stressCache.key === key) return stressCache;
   const dir = tmpdir('stress5k');
   const eras = [], arcs = [], rows = [];
   for (let e = 0; e < nEras; e++) {
@@ -149,10 +150,10 @@ function stress(nEras, perEra) {
     }
   }
   writeJSON(path.join(dir, 'dataset.json'), {
-    schemaVersion: 1, franchise: { key: 'big', wordmark: 'Big', title: 'Big', strapline: '', span: '', theme: '#000000' },
+    schemaVersion: 1, franchise: Object.assign({ key: 'big', wordmark: 'Big', title: 'Big', strapline: '', span: '', theme: '#000000' }, franchise || {}),
     eras, strands: ['Main'], types: ['MAIN'], tiers: ['All'], media: ['comic'], arcs, rows });
   const b = build(path.join(dir, 'dataset.json'), { label: 'stress5k-out' });
-  stressCache = { key: nEras + 'x' + perEra, out: b.out, status: b.status, stderr: b.stderr, rows: nEras * perEra, eras: nEras, perEra };
+  stressCache = { key, out: b.out, status: b.status, stderr: b.stderr, rows: nEras * perEra, eras: nEras, perEra };
   return stressCache;
 }
 
@@ -175,5 +176,12 @@ function mixed() {
   return mixedCache;
 }
 
-module.exports = { ROOT, FIX, BUILD, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
+/* The repo's own dataset. In the template it is the demo (key "starter"); in a
+   tracker built from the template it is that tracker's data, and the suites
+   check it as it is. A few checks only make sense in one of the two (the
+   template's placeholder icons, its parity checklist); IS_TEMPLATE says which. */
+const ROOT_DATASET = readJSON(path.join(ROOT, 'dataset.json'));
+const IS_TEMPLATE = ROOT_DATASET.franchise.key === 'starter';
+
+module.exports = { ROOT, FIX, BUILD, ROOT_DATASET, IS_TEMPLATE, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
                    validateIssueIds, boot, wait, openSections, openSettings, typeInto, stress, basic, noPeriods, mixed };

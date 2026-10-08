@@ -41,6 +41,17 @@
   /* accent and states */
   --accent-h: 215; --accent-s: 54%; --l-accent: 40%; --l-accent-ink: 100%; --l-wash: 93%; --l-bar-mark: 40%;
   --l-good: 32%; --l-danger: 40%; --l-shadow: 10%;
+  /* per-role hue and saturation (session 5, for Pull). Each follows the
+     paper or the ink unless a skin says otherwise, so the other skins and the
+     paper swatches are unchanged */
+  --card-h: var(--paper-h); --card-s: var(--paper-s);
+  --line-h: var(--paper-h); --line-s: calc(var(--paper-s) * .5);
+  --bar-h: var(--paper-h); --bar-s: var(--paper-s);
+  --field-h: var(--paper-h); --field-s: var(--paper-s); --l-field: var(--l-paper);    /* the search box */
+  --inset-h: var(--paper-h); --inset-s: var(--paper-s); --l-inset: var(--l-paper); --inset-a: 0;   /* an open era's body: none by default */
+  --soft-h: var(--ink-h); --soft-s: calc(var(--ink-s) * .5);
+  --bar-soft-h: var(--ink-h); --bar-soft-s: calc(var(--ink-s) * .5);
+  --mark-edge-s: calc(var(--ink-s) * .5); --l-mark-edge: var(--l-edge);          /* a mark's outline: a control outline unless a skin says otherwise */
   /* era ramp (OKLCH, so one lightness reads the same at every hue): pale
      tints, readable text, hue stepped by the golden angle — no cap on eras */
   --era-h0: 30; --era-step: 137.508; --era-mono-h: 258;
@@ -49,16 +60,19 @@
 
   /* ---- COLOURS: the one place colour is written ---- */
   --paper: hsl(var(--paper-h) var(--paper-s) var(--l-paper));
-  --card: hsl(var(--paper-h) var(--paper-s) var(--l-card));
-  --line: hsl(var(--paper-h) calc(var(--paper-s) * .5) var(--l-line));       /* dividers, card outlines */
+  --card: hsl(var(--card-h) var(--card-s) var(--l-card));
+  --line: hsl(var(--line-h) var(--line-s) var(--l-line));                     /* dividers, card outlines */
   --edge: hsl(var(--ink-h) calc(var(--ink-s) * .5) var(--l-edge));          /* control outlines: 3:1 on paper and card */
+  --mark-edge: hsl(var(--ink-h) var(--mark-edge-s) var(--l-mark-edge));
   --track: hsl(var(--paper-h) calc(var(--paper-s) * .8) var(--l-track));
-  --bar: hsl(var(--paper-h) var(--paper-s) var(--l-bar));                   /* the tab bar */
+  --bar: hsl(var(--bar-h) var(--bar-s) var(--l-bar));                       /* the tab bar */
   --bar-ink: hsl(var(--ink-h) var(--ink-s) var(--l-bar-ink));
-  --bar-soft: hsl(var(--ink-h) calc(var(--ink-s) * .5) var(--l-bar-soft));
+  --bar-soft: hsl(var(--bar-soft-h) var(--bar-soft-s) var(--l-bar-soft));
   --bar-mark: hsl(var(--accent-h) var(--accent-s) var(--l-bar-mark));
   --ink: hsl(var(--ink-h) var(--ink-s) var(--l-ink));
-  --ink-soft: hsl(var(--ink-h) calc(var(--ink-s) * .5) var(--l-soft));
+  --ink-soft: hsl(var(--soft-h) var(--soft-s) var(--l-soft));
+  --field: hsl(var(--field-h) var(--field-s) var(--l-field));
+  --inset: hsl(var(--inset-h) var(--inset-s) var(--l-inset) / var(--inset-a));
   --accent: hsl(var(--accent-h) var(--accent-s) var(--l-accent));
   --accent-ink: hsl(var(--accent-h) var(--accent-s) var(--l-accent-ink));
   --accent-wash: hsl(var(--accent-h) var(--accent-s) var(--l-wash));
@@ -75,6 +89,10 @@
   --display-weight: 400; --display-case: none;    /* the title and band names */
   --name-font: var(--font-body); --name-weight: 600; --name-case: none; --name-track: 0;   /* era names */
   --tab-size: 15px; --tab-fit: 4.2vw; --tab-case: none; --tab-track: 0;   /* four tabs fit at 320 px */
+  /* type sizes per element (session 5, for Pull); each is multiplied by --scale */
+  --title-size: 28px; --title-track: .02em; --title-lh: normal; --meta-size: 13px;
+  --era-name-size: 17px; --era-meta-size: 13px; --intro-size: 14px; --intro-style: normal;
+  --arc-size: 15px; --arc-weight: 700; --row-size: 15px; --row-weight: 400; --search-size: 15px;
   --body-track: 0; --word-space: 0;
   --scale: 1;                                      /* text size (S-3): every font size is multiplied by it */
   --fs: calc(15px * var(--scale));
@@ -101,14 +119,31 @@
   --radius: 4px; --radius-sm: 3px;
 }
 :root[data-skin="pull"] {
-  --base-paper-h: 39; --base-paper-s: 30%;
-  --l-paper: 89%; --l-card: 96%; --l-line: 76%; --l-edge: 46%; --l-track: 81%; --l-bar: 7%;
-  --ink-h: 40; --ink-s: 16%; --l-ink: 8%; --l-soft: 34%; --l-bar-ink: 96%; --l-bar-soft: 76%;
-  --accent-h: 353; --accent-s: 70%; --l-accent: 38%; --l-wash: 92%; --l-bar-mark: 64%;
+  /* Pull matches the reference tracker (John, 6 Oct): every value below is
+     measured from it at 393 px (test/layout/ref/), turned into inputs so each
+     colour derives exactly. Card, inset and line follow the paper, so the
+     paper swatches still tint them. Two reference colours fail a contrast rule
+     and stay accessible: the selected-tab underline (1.52:1 on the bar there;
+     here its navy hue at 3:1) and the search outline (1.53:1; here --edge).
+     --tab-fit keeps four uppercase tabs in the bar at 320 px with large text. */
+  --base-paper-h: 43.6364; --base-paper-s: 18.6441%; --l-paper: 88.4314%;
+  --card-h: calc(var(--paper-h) + 3.0303); --card-s: calc(var(--paper-s) * 1.37922); --l-card: 93.1373%;
+  --inset-h: calc(var(--paper-h) + .3636); --inset-s: calc(var(--paper-s) * .99327); --l-inset: 84.1176%; --inset-a: 1;
+  --line-h: calc(var(--paper-h) + 1.3636); --line-s: calc(var(--paper-s) * .83807); --l-line: 74.902%;
+  --field-h: var(--card-h); --field-s: var(--card-s); --l-field: var(--l-card);
+  --l-edge: 46%; --l-track: 81%; --mark-edge-s: var(--ink-s); --l-mark-edge: var(--l-ink);
+  --ink-h: 46.6667; --ink-s: 20%; --l-ink: 8.8235%;
+  --soft-h: 46.1538; --soft-s: 8.0745%; --l-soft: 31.5686%;
+  --bar-h: var(--ink-h); --bar-s: var(--ink-s); --l-bar: 8.8235%;
+  --bar-soft-h: 45; --bar-soft-s: 17.2414%; --l-bar-soft: 77.2549%; --l-bar-ink: 100%;
+  --accent-h: 212.7273; --accent-s: 54.0984%; --l-accent: 23.9216%; --l-wash: 92%; --l-bar-mark: 44%;
   --era-tint-l: .93; --era-tint-c: .05; --era-ink-l: .38; --era-ink-c: .11; --era-mono-h: 20;
-  --font-meta: var(--font-mono); --display-case: uppercase;
-  --name-font: var(--font-display); --name-weight: 400; --name-case: uppercase; --name-track: .03em;
-  --tab-case: uppercase; --tab-track: .04em; --tab-fit: 3.7vw;
+  --font-meta: var(--font-mono); --display-case: uppercase; --display-weight: 700;
+  --title-size: 24px; --title-track: .5px; --title-lh: 1.45; --meta-size: 12px;
+  --name-font: var(--font-display); --name-weight: 400; --name-case: uppercase; --name-track: .4px;
+  --era-name-size: 19px; --era-meta-size: 11px; --intro-size: 12.5px; --intro-style: italic;
+  --arc-size: 13.5px; --arc-weight: 600; --row-size: 13px; --row-weight: 500; --search-size: 14px;
+  --tab-size: 12.5px; --tab-fit: 3.7vw; --tab-case: uppercase; --tab-track: .3px;
   --radius: 8px;
 }
 :root[data-skin="night"] {
@@ -154,8 +189,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ---- progress header ---- */
 .phead { padding: 16px 16px 8px; }
-.ptitle { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); text-transform: var(--display-case); letter-spacing: .02em; font-size: calc(28px * var(--scale)); }
-.pmeta { margin: 4px 0 10px; color: var(--ink-soft); font-size: calc(13px * var(--scale)); font-family: var(--font-meta); }
+.ptitle { margin: 0; font-family: var(--font-display); font-weight: var(--display-weight); text-transform: var(--display-case); letter-spacing: var(--title-track);
+  font-size: calc(var(--title-size) * var(--scale)); line-height: var(--title-lh); }
+.pmeta { margin: 4px 0 10px; color: var(--ink-soft); font-size: calc(var(--meta-size) * var(--scale)); font-family: var(--font-meta); }
 .pstats, .bstats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: calc(13px * var(--scale)); color: var(--ink-soft); font-family: var(--font-meta); }
 .pstats { margin: 6px 0 0; }
 .pdone, .bdone { color: var(--good); font-weight: 600; }
@@ -177,7 +213,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .fcount { color: var(--accent); font-size: calc(13px * var(--scale)); }
 .search {
   flex: 1; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--edge); border-radius: var(--radius-sm);
-  background: var(--paper); color: var(--ink); font: inherit;
+  background: var(--field); color: var(--ink); font: inherit; font-size: calc(var(--search-size) * var(--scale));
 }
 .fshow { margin: 0; padding: 0 12px 10px; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .fhead { display: flex; align-items: center; padding: 0 12px; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
@@ -225,20 +261,22 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .era { --era-h: calc(var(--era-h0) + var(--ei, 0) * var(--era-step)); }
 .era-head { background: oklch(var(--era-tint-l) var(--era-tint-c) var(--era-h)); color: oklch(var(--era-ink-l) var(--era-ink-c) var(--era-h)); }
 .bhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-.bname { font-family: var(--name-font); font-weight: var(--name-weight); text-transform: var(--name-case); letter-spacing: var(--name-track); font-size: calc(17px * var(--scale)); }
+.bname { font-family: var(--name-font); font-weight: var(--name-weight); text-transform: var(--name-case); letter-spacing: var(--name-track); font-size: calc(var(--era-name-size) * var(--scale)); }
 .band-head .bname { font-family: var(--font-display); font-weight: var(--display-weight); text-transform: var(--display-case); font-size: calc(22px * var(--scale)); letter-spacing: .02em; }
-.byears { color: var(--ink-soft); font-size: calc(13px * var(--scale)); font-family: var(--font-meta); }
+.byears { color: var(--ink-soft); font-size: calc(var(--era-meta-size) * var(--scale)); font-family: var(--font-meta); }
+.era-head .bstats { font-size: calc(var(--era-meta-size) * var(--scale)); }
+.era-body { background: var(--inset); }
 .bfinish { color: var(--accent); }
 .bfiltered, .pfiltered {
   padding: 0 8px; border: 1px dashed var(--accent); border-radius: 999px; color: var(--accent); font-size: calc(12px * var(--scale));
 }
 .buntimed, .puntimed { font-style: italic; }
-.band-intro, .era-intro { margin: 8px 4px; color: var(--ink-soft); font-size: calc(14px * var(--scale)); }
+.band-intro, .era-intro { margin: 8px 4px; color: var(--ink-soft); font-size: calc(var(--intro-size) * var(--scale)); font-style: var(--intro-style); }
 
 /* ---- arcs and rows ---- */
 .arc { margin: 10px 0 0; overflow: hidden; }   /* a swiped row slides under the card edge, not past it */
 .arc-head { padding: 4px 4px 6px; }
-.arc-head h3 { margin: 0; font-size: calc(15px * var(--scale)); }
+.arc-head h3 { margin: 0; font-size: calc(var(--arc-size) * var(--scale)); font-weight: var(--arc-weight); }
 .arc-meta { font-family: var(--font-meta); }
 .arc-meta, .credits, .blurb { display: block; margin: 2px 0 0; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .row {
@@ -248,7 +286,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .row.inert { color: var(--ink-soft); font-style: italic; }
 .row.flash { outline: 2px solid var(--accent); outline-offset: -2px; }
 .mark, .mark-inert {
-  width: var(--tap); height: var(--tap); flex: none; border: 1px solid var(--edge); border-radius: var(--mark-radius);
+  width: var(--tap); height: var(--tap); flex: none; border: 1px solid var(--mark-edge); border-radius: var(--mark-radius);
   background: var(--paper); font-family: var(--font-mono); font-size: calc(var(--tap-glyph) * var(--scale)); line-height: 1;
 }
 .mark-inert { display: inline-flex; align-items: center; justify-content: center; border-style: dashed; }
@@ -256,6 +294,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .row[data-s="reading"] .mark { border-color: var(--accent); color: var(--accent); }
 .row[data-s="skip"] .title { color: var(--ink-soft); text-decoration: line-through; }
 .title { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
+.row .title { font-size: calc(var(--row-size) * var(--scale)); font-weight: var(--row-weight); }
 .badges { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .b {
   min-height: var(--b-min); padding: 2px 8px; border: 1px solid var(--edge); border-radius: 999px;
@@ -315,6 +354,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .confirm .tool { margin-right: 8px; }
 .tool.danger { border-color: var(--danger); color: var(--danger); }
 .about { margin: 4px 0; font-size: calc(14px * var(--scale)); }
+.buildhash { font-size: calc(11px * var(--scale)); color: var(--ink-soft); font-family: var(--font-meta); white-space: nowrap; }
 .legend { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0; font-size: calc(14px * var(--scale)); }
 .legend dd { margin: 0; color: var(--ink-soft); }
 .maint { margin: 6px 0; padding-left: 1.2em; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }

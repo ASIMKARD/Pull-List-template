@@ -104,16 +104,17 @@ function stripDerived(body) {
   return out + body.slice(i);
 }
 
-function makeSwContext() {
-  const handlers = {}, calls = { addAll: [], skipWaiting: 0, claim: 0, put: 0, respond: [] };
+function makeSwContext(existing) {
+  const handlers = {}, calls = { addAll: [], skipWaiting: 0, claim: 0, put: 0, respond: [], deleted: [], fetch: [] };
   const cache = {
     addAll: list => { calls.addAll.push(list); return Promise.resolve(); },
     put: () => { calls.put++; return Promise.resolve(); },
     keys: () => Promise.resolve([])
   };
   class Response { constructor(body, init) { this.body = body; this.status = (init && init.status) || 200; this.type = 'basic'; } clone() { return this; } }
+  class Request { constructor(url, init) { this.url = url; this.cache = (init && init.cache) || 'default'; } }
   const ctx = {
-    URL, Promise, Response, console,
+    URL, Promise, Response, Request, console,
     self: {
       addEventListener: (type, fn) => { handlers[type] = fn; },
       skipWaiting: () => { calls.skipWaiting++; return Promise.resolve(); },
@@ -121,11 +122,11 @@ function makeSwContext() {
     },
     caches: {
       open: () => Promise.resolve(cache),
-      keys: () => Promise.resolve(['old-cache']),
-      delete: () => Promise.resolve(true),
+      keys: () => Promise.resolve(existing || ['old-cache']),
+      delete: k => { calls.deleted.push(k); return Promise.resolve(true); },
       match: () => Promise.resolve(undefined)
     },
-    fetch: () => Promise.reject(new Error('offline'))
+    fetch: (req, init) => { calls.fetch.push({ url: req.url || req, cache: (init && init.cache) || req.cache || 'default' }); return Promise.reject(new Error('offline')); }
   };
   return { ctx, handlers, calls };
 }
@@ -246,7 +247,12 @@ module.exports = async function (t) {
   // ---- service worker: EVALUATED, not just parsed ----
   const D = loadData(ROOT);
   const sw = read('sw.js');
-  const { ctx, handlers, calls } = makeSwContext();
+  /* Every tracker on one origin (one GitHub Pages user site) shares one cache
+     storage: the worker may only remove this tracker's own earlier caches. */
+  const K = D.franchise.key, CUR = K + '-' + D.build;
+  const OWN_OLD = [K + '-v7', K + '-0123456789ab'];
+  const OTHERS = ['spider-man-v12', 'idw-sonic-0123456789ab', K + 'x-v3', K + '-notes', K + '-v7-extra', K + '-0123456789AB', 'workbox-precache-v2'];
+  const { ctx, handlers, calls } = makeSwContext([CUR].concat(OWN_OLD, OTHERS));
   let evalErr = null;
   try { vm.runInNewContext(sw, ctx, { filename: 'sw.js' }); } catch (e) { evalErr = e; }
   t.ok('sw.js evaluates without throwing (catches TDZ errors node --check misses)', !evalErr, evalErr && evalErr.message);
@@ -255,7 +261,7 @@ module.exports = async function (t) {
     let wait = null;
     handlers.install({ waitUntil: p => { wait = p; } });
     await wait;
-    const list = calls.addAll[0] || [];
+    const reqs = calls.addAll[0] || [], list = reqs.map(r => typeof r === 'string' ? r : r.url);
     t.ok('install precaches the shell', ['./', './index.html', './app.js', './styles.css', './data.js', './qrcode.js', './manifest.json']
          .every(p => list.includes(p)));
     t.ok('install precaches all 12 fonts (defect 2)', list.filter(p => /^\.\/fonts\/.+\.woff2$/.test(p)).length === 12);
@@ -263,16 +269,25 @@ module.exports = async function (t) {
     const missing = list.filter(p => p !== './' && !fs.existsSync(path.join(ROOT, p)));
     t.ok('every precached path exists on disk (addAll rejects on one 404)', missing.length === 0, missing.join(', '));
     t.ok('install calls skipWaiting', calls.skipWaiting === 1);
+    /* GitHub Pages: max-age=600. A precache through the browser's HTTP cache can store the previous
+       deploy's files under the new cache name (the Absolute upgrade proof, 8 Oct). */
+    t.ok('install precaches every file past the browser\'s HTTP cache (cache: \'reload\')', reqs.length > 0 && reqs.every(r => r && r.cache === 'reload'),
+         reqs.filter(r => !r || r.cache !== 'reload').map(r => r && r.url || r).join(', '));
     let aw = null;
     handlers.activate({ waitUntil: p => { aw = p; } });
     await aw;
     t.ok('activate claims clients', calls.claim === 1);
+    t.eq('activate removes only this tracker\'s own earlier caches (' + OWN_OLD.join(', ') + '): another tracker\'s, and anything else, stay',
+         calls.deleted.slice().sort(), OWN_OLD.slice().sort());
     for (const [url, kind] of [['https://x.local/app/index.html', 'shell'], ['https://x.local/app/fonts/anton-400-latin.woff2', 'font']]) {
       let resp = null;
       handlers.fetch({ request: { method: 'GET', url }, respondWith: p => { resp = p; } });
       const r = resp ? await resp : null;
       t.ok('offline ' + kind + ' request still resolves to a real Response (never undefined)', !!r && typeof r.status === 'number');
     }
+    const shellFetch = calls.fetch.find(f => /index\.html$/.test(f.url));
+    t.ok('a shell request is always checked with the server (cache: \'no-cache\'), never served stale from the HTTP cache',
+         !!shellFetch && shellFetch.cache === 'no-cache', JSON.stringify(shellFetch));
     t.ok('cache name derives from franchise.key + content hash', sw.includes("'" + D.franchise.key + '-' + D.build + "'"));
   }
 

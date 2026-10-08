@@ -1,0 +1,121 @@
+{
+ "source": "ASIMKARD/X-men",
+ "commit": "663fe467908021815c86aa21fb9c76e4f28403e3",
+ "width": 393,
+ "styles": {
+  "page background": {
+   "backgroundColor": "rgba(231, 228, 220, 1)"
+  },
+  "title": {
+   "fontFamily": "Anton",
+   "fontSize": "24px",
+   "fontWeight": "700",
+   "letterSpacing": "0.5px",
+   "textTransform": "uppercase",
+   "color": "rgba(27, 25, 18, 1)",
+   "lineHeight": "1.45"
+  },
+  "subtitle": {
+   "fontFamily": "IBM Plex Mono",
+   "fontSize": "12px",
+   "fontWeight": "400",
+   "letterSpacing": "0px",
+   "textTransform": "none",
+   "color": "rgba(87, 84, 74, 1)"
+  },
+  "tab bar": {
+   "backgroundColor": "rgba(27, 25, 18, 1)"
+  },
+  "tab": {
+   "fontFamily": "IBM Plex Sans",
+   "fontSize": "12.5px",
+   "fontWeight": "600",
+   "letterSpacing": "0.3px",
+   "textTransform": "uppercase",
+   "color": "rgba(207, 202, 187, 1)"
+  },
+  "selected tab": {
+   "fontFamily": "IBM Plex Sans",
+   "fontSize": "12.5px",
+   "fontWeight": "600",
+   "letterSpacing": "0.3px",
+   "textTransform": "uppercase",
+   "color": "rgba(255, 255, 255, 1)",
+   "borderBottomColor": "rgba(28, 58, 94, 1)",
+   "borderBottomWidth": "3px"
+  },
+  "era name": {
+   "fontFamily": "Anton",
+   "fontSize": "19px",
+   "fontWeight": "400",
+   "letterSpacing": "0.4px",
+   "textTransform": "uppercase",
+   "color": "rgba(255, 255, 255, 1)"
+  },
+  "era years": {
+   "fontFamily": "IBM Plex Mono",
+   "fontSize": "11px",
+   "fontWeight": "400",
+   "letterSpacing": "0px",
+   "textTransform": "none",
+   "color": "rgba(255, 255, 255, 1)"
+  },
+  "era stats": {
+   "fontFamily": "IBM Plex Mono",
+   "fontSize": "11px",
+   "fontWeight": "400",
+   "letterSpacing": "0px",
+   "textTransform": "none"
+  },
+  "era intro": {
+   "fontFamily": "IBM Plex Sans",
+   "fontSize": "12.5px",
+   "fontWeight": "400",
+   "letterSpacing": "0px",
+   "textTransform": "none",
+   "color": "rgba(87, 84, 74, 1)",
+   "fontStyle": "italic"
+  },
+  "arc name": {
+   "fontFamily": "IBM Plex Sans",
+   "fontSize": "13.5px",
+   "fontWeight": "600",
+   "letterSpacing": "0px",
+   "textTransform": "none",
+   "color": "rgba(27, 25, 18, 1)"
+  },
+  "row title": {
+   "fontFamily": "IBM Plex Sans",
+   "fontSize": "13px",
+   "fontWeight": "500",
+   "letterSpacing": "0px",
+   "textTransform": "none",
+   "color": "rgba(27, 25, 18, 1)"
+  },
+  "row": {
+   "effectiveBackground": "rgba(242, 240, 233, 1)",
+   "borderBottomColor": "rgba(201, 196, 181, 1)"
+  },
+  "era body": {
+   "effectiveBackground": "rgba(222, 218, 207, 1)"
+  },
+  "search box": {
+   "fontFamily": "IBM Plex Sans",
+   "fontSize": "14px",
+   "color": "rgba(27, 25, 18, 1)",
+   "backgroundColor": "rgba(242, 240, 233, 1)",
+   "borderTopColor": "rgba(201, 196, 181, 1)",
+   "borderTopLeftRadius": "6px"
+  },
+  "tab bar box": {
+   "boxLeft": "0px",
+   "boxWidth": "393px"
+  },
+  "read mark": {
+   "boxWidth": "22px",
+   "boxHeight": "22px",
+   "borderTopLeftRadius": "5px",
+   "borderTopColor": "rgba(27, 25, 18, 1)"
+  }
+ }
+}
