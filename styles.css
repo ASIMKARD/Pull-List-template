@@ -399,12 +399,13 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 
 /* ---- table view (F-49, S-7): one line per issue, half the height (L-7),
    never wider than the screen (L-8). Targets stay at least 24 px. ---- */
-:root[data-table="1"] .row { flex-wrap: nowrap; gap: 6px; padding-top: 0; padding-bottom: 0; }
+:root[data-table="1"] .row { flex-wrap: nowrap; gap: 4px; padding: 0 4px; }   /* tight: four 24 px targets and the title share a 320 px row */
 :root[data-table="1"] .row .mark { width: var(--tap-dense); height: var(--tap-dense); font-size: calc(14px * var(--scale)); }
 :root[data-table="1"] .title { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-table="1"] .subnote, :root[data-table="1"] .blurb, :root[data-table="1"] .era-intro, :root[data-table="1"] .band-intro { display: none; }
-:root[data-table="1"] .badges { flex: none; flex-wrap: nowrap; gap: 3px; }
-:root[data-table="1"] .row .b { min-height: var(--tap-dense); min-width: var(--tap-dense); padding: 0 5px; justify-content: center; }
+:root[data-table="1"] .badges { flex: none; flex-wrap: nowrap; gap: 2px; }
+:root[data-table="1"] .row .b { min-height: var(--tap-dense); min-width: var(--tap-dense); padding: 0 3px; justify-content: center; }
+:root[data-table="1"] .row .b.core { min-width: 0; padding: 0 2px; }   /* a label, not a target: room for the per-issue ✎ at 320 px */
 :root[data-table="1"] .row .b-t { display: none; }      /* badge words fold away; glyphs and accessible names stay */
 
 /* ---- reading tab ---- */

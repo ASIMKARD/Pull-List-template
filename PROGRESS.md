@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1484 assertions, 0 failed, 34 suites (session 5: all seven steps done; Absolute v8 live). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
+**Harness:** 1517 assertions, 0 failed, 35 suites (session 6, step 1 done). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2225,3 +2225,86 @@ signature; the live domain allowed for checks by hash.
 - **From earlier:** the Pull era boxes; the tab bar edge to edge; the mark size; whether signature
   CSS should ship inside `data.js`.
 - **The template's own pull request:** ASIMKARD/Pull-List-template#5 (this branch).
+
+## Session 6 plan (agreed 8 Oct 2026): per-issue reviews, signature decorations, Absolute v9
+
+John approved edits to ASIMKARD/Absolute for v9, through a branch and one pull request, as for v8.
+The safeguards are the same: everything passes on Absolute's data first; an in-place v8 → v9
+proof in Chromium; every file verified live by hash after the merge.
+
+1. **Per-issue reviews (template).** The per-arc model came from a wrong assumption: the old
+   trackers kept a review per issue.
+   - Reviews are keyed by row id, with a ✎ on every row, and the Reviews tab lists them in
+     reading order.
+   - Sync and backup move to v4; v3 (per arc) and v2 (per issue) still read.
+   - A one-time upgrade for trackers whose reviews were per arc.
+2. **Signature decorations (template).** Pseudo-element content, counters, glyph marks,
+   prefixes and full-bleed bars are allowed. Anything that moves, hides or reorders a control is
+   still refused. Reachability, overflow, contrast, tap size and the stack must pass across the
+   skin.
+3. **Absolute v9.** v7's five touches, compared side by side with v7's screenshots, then all
+   the tests on Absolute's data.
+4. **The v8 → v9 proof,** one PR, and the live check by hash.
+
+**John's decisions (8 Oct) for the upgrade from per-arc reviews:**
+- a review written in v8 goes on its arc's first issue (and so does each review of an old
+  v3-format code or backup);
+- a migrated review that was then edited: v7's originals are restored on every issue, and the
+  edited review is kept too, on the first issue;
+- a migrated review that was then deleted stays deleted.
+
+My call within the second decision: when the first issue also has a v7 original, the edited text
+goes after it, and the stars are the edited review's (the latest choice).
+
+## Session 6 checkpoint — step 1 done (per-issue reviews), 8 Oct 2026
+
+### Done
+- **The store.** Reviews live under `<key>:v3:issue-reviews`, keyed by row id. The per-arc
+  `reviews` key of earlier builds is read once and never written, so a rollback to v8 finds
+  v8's reviews as v8 left them.
+- **The ✎ is on every row,** in both layouts, named for its issue. Arc heads no longer carry one.
+  - The editor opens under the row.
+  - The Reviews tab lists reviews in reading order, each with its arc and era, and tapping one
+    jumps to the issue.
+  - Reviews the list has no issue for are still kept and listed.
+- **The legacy (v2) import is exact, per issue,** with nothing merged. Old QR and sync codes
+  (`ABSO1:` and the like) import per issue too.
+- **Sync and backup are v4,** with reviews keyed by row id.
+  - A v3 code or backup (reviews per arc) still reads; each arc's review goes to the arc's first
+    issue.
+  - A newer format is refused, and says so.
+- **The one-time upgrade** (`upgradeArcReviews`) runs at the first boot without the new store. It
+  recomputes the old migration's merge from the untouched old keys, step for step, and applies
+  John's decisions. It is recorded in `settings.reviewsUpgraded` and reported once in a toast.
+- **Table view** at 320 px: with a ✎ on every row, a row can carry four 24 px targets.
+  - Table view's own spacing is 2 px tighter, and the ★ core label (not a target) shrinks.
+  - Every title still keeps at least half its row (50-table); every target is still 24 px or
+    more.
+- **Tests:**
+  - 9b-reviews: the per-issue editor and the tab;
+  - 93-storage: the exact v2 import, and a re-run that never overwrites an edited review;
+  - 9k-review-upgrade, new: every case of the upgrade, a whole list returned exactly, a tracker
+    with no old version, and a fresh tracker;
+  - 9e-sync: v4 round-trips, old v3 codes and backup files, a newer format refused.
+
+  Each new check was proved by putting its bug back:
+  - every review treated as untouched;
+  - no restore;
+  - deleted reviews brought back;
+  - v3 reviews not moved to issues.
+- **The docs:** FEATURE-INVENTORY (F-3, F-8, F-30, T-53, D-4) and MIGRATING.
+
+**Harness:** 1517 assertions (+33), 0 failed, 35 suites. **Layout:** 349 checks, 0 failed, 10 suites.
+
+### Step 2 begins with: signature decorations
+- **First file:** `tools/build.py` (`signature_rules`, `MOVES`, `LOOK_PROPS`).
+- **First test:** `test/suites/22-signature.test.js`.
+- **The design:**
+  - Rows get `data-n` and eras get `data-n`, zero-padded reading positions for numbering;
+  - rows, era heads and arc heads become `position: relative`, as anchors (only `.stack` is
+    sticky);
+  - a `--row-gutter` token reserves a right gutter in rows;
+  - `content` is allowed only on `::before` and `::after`. The build appends `/ ""` (screen
+    readers skip it, with a fallback for older Safari) and `pointer-events: none`;
+  - a new Chromium check: no decoration covers a control, and every decoration's text clears
+    contrast.

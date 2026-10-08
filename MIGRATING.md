@@ -40,7 +40,12 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
 
 - `prefix` and `format`: where and how the old tracker kept progress. Format
   `v2` is template v2's: `{p: {key: state}, b: [keys]}` plus reviews keyed by
-  issue. The import runs once, on the first visit, and fills gaps only.
+  issue, which come over per issue, exactly. The import runs once, on the first
+  visit, and fills gaps only.
+- A tracker whose first v3 build kept reviews per arc (before 8 Oct) is
+  upgraded once, at its next visit: reviews the migration merged and nobody
+  touched go back to the old per-issue originals; one written or edited on v3
+  is kept, on its arc's first issue; one deleted stays deleted.
 - `qrPrefix`: old QR and sync codes still import; their positions are rebuilt
   from the legacy ids plus `retiredIds`.
 - `skins`: the old tracker's skin pick, read once on a first visit: the field
