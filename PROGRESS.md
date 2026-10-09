@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1517 assertions, 0 failed, 35 suites (session 6, step 1 done). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
+**Harness:** 1539 assertions, 0 failed, 35 suites (session 6, step 2 done). **Layout suite (real Chromium, in CI too):** 351 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2308,3 +2308,57 @@ goes after it, and the stars are the edited review's (the latest choice).
     readers skip it, with a fallback for older Safari) and `pointer-events: none`;
   - a new Chromium check: no decoration covers a control, and every decoration's text clears
     contrast.
+
+## Session 6 checkpoint — step 2 done (signature decorations), 9 Oct 2026
+
+### Done
+- **The build** (`signature_rules`) still refuses everything that moves, hides or reorders a
+  control: display, visibility, opacity, order, flex, grid, z-index, transform, margins, and
+  width, height and offsets on ordinary elements. The new allowances:
+  - **Decorations:** a rule whose every selector ends in `::before` or `::after` may have
+    `content` and may be placed absolutely, with offsets, width, height, `text-align` and
+    `white-space`.
+  - **Content** takes quoted text, `attr(data-n)` and `counter()`s. `url()`, other attributes,
+    unknown counter styles and a hand-written `/` alternative are refused.
+  - **Counters** (`counter-reset`, `counter-increment`, `counter-set`) may run on any rule.
+  - **To every decoration the build adds** `pointer-events: none` and an empty alternative,
+    `content: X / ""`. Older browsers keep the first `content` line.
+- **The template:**
+  - rows and era names carry `data-n`, their reading position, zero-padded;
+  - rows, era heads, band heads and arc heads are anchors (`position: relative`; only `.stack` is
+    sticky);
+  - the new `--row-gutter` token reserves room at a row's right end.
+- **The demo skin "Signal"** decorates: row numbers in a 24 px gutter (none in table view), a
+  `›` arc prefix, era numerals, and `[ ] [/] [X] [-]` marks. So 10-sweep, 40-look and 60-stack
+  run across decorations in the template's own CI.
+- **The new `test/layout/55-decor`** runs at 320, 390 and 1024 px, with default, largest and
+  table view. Every decoration must be silent to screen readers, take no taps, and clear
+  contrast. One placed absolutely must be anchored, stay on screen, and cover no control or
+  title. It was proved with five bugs put back:
+  - no gutter (row numbers covering titles);
+  - no `pointer-events: none`;
+  - no screen-reader alternative;
+  - rows not anchored;
+  - faint row numbers (1.48:1).
+- **22-signature (+22 checks):**
+  - what passes;
+  - 15 refusals;
+  - the build's additions on every rule;
+  - `data-n` on rows (inert rows too) and on era names.
+- **60-validation:** the broken fixture `signature-position` now expects the more specific
+  refusal.
+- **Docs:** BUILD-NOTES (decorations); FEATURE-INVENTORY X-9 (per-issue reviews) and X-10
+  (decorations).
+
+**Harness:** 1539 assertions (+22), 0 failed, 35 suites. **Layout:** 351 checks (+2), 0 failed, 11 suites.
+
+### Step 3 begins with: Absolute v9
+- **First:** copy the template into ASIMKARD/Absolute's session branch, restarted from `main`.
+- **Then `signature.css`:** v7's five touches:
+  - the big era numbers: `.era-head .bname::before`, `attr(data-n)`, mono, 26 px;
+  - the row-number gutter: `.row::after`, with `--row-gutter`;
+  - the `[ ] [/] [X] [-]` marks;
+  - the `//` arc prefix;
+  - full-width era bars: `box-shadow` either side.
+- **First tests:** `test/layout/55-decor` and `45-root` on Absolute's data, then screenshots side
+  by side with v7's (Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/screens/`).

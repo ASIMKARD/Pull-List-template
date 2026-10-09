@@ -1,1 +1,1 @@
-refused — a skin changes how things look, never where they are
+refused — only a ::before or ::after decoration may have position

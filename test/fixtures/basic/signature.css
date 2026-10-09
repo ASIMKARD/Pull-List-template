@@ -16,3 +16,21 @@
 :root[data-skin="signature"] .tab[aria-selected="true"] {
   font-weight: 600;
 }
+
+/* Decorations (session 6): content on ::before and ::after only, never moving a
+   control. The build adds pointer-events: none and an empty alternative for
+   screen readers to every one. */
+:root[data-skin="signature"] .row::after {
+  content: attr(data-n);
+  position: absolute; top: var(--row-pad); right: 6px;
+  font-family: var(--font-mono); font-size: calc(10px * var(--scale)); line-height: 1.6;
+  color: var(--ink-soft);
+}
+:root[data-skin="signature"][data-table="1"] .row::after { content: none; }
+:root[data-skin="signature"] .arc-head h3::before { content: "› "; color: var(--accent); }
+:root[data-skin="signature"] .era-head .bname::before { content: attr(data-n) " "; font-family: var(--font-mono); }
+:root[data-skin="signature"] .row .mark { font-size: 0; }
+:root[data-skin="signature"] .row .mark::after { content: "[ ]"; font-family: var(--font-mono); font-size: calc(13px * var(--scale)); }
+:root[data-skin="signature"] .row[data-s="reading"] .mark::after { content: "[/]"; }
+:root[data-skin="signature"] .row[data-s="read"] .mark::after { content: "[X]"; }
+:root[data-skin="signature"] .row[data-s="skip"] .mark::after { content: "[-]"; }

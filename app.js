@@ -650,10 +650,14 @@
       : '<p class="evnote">Complete view: ' + n + ' more than Essential</p>';
   }
 
+  /* reading positions for a skin's decorations (content: attr(data-n)), zero-padded
+     so a monospace column lines up: rows to the list's width, eras to two digits */
+  var ROW_W = Math.max(2, String(N).length), ERA_W = Math.max(2, String(D.eras.length).length);
+  function padN(n, w) { var s = String(n); while (s.length < w) s = '0' + s; return s; }
   function rowHtml(i) {
     var r = D.issues[i], flags = r[6], id = D.ids[i];
     if (flags & INERT) {
-      return '<div class="row inert" data-i="' + i + '" data-id="' + escapeAttr(id) + '">' +
+      return '<div class="row inert" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '">' +
         '<span class="mark-inert" aria-hidden="true">' + (flags & FL.RENUM ? '⟳' : '↷') + '</span>' +
         '<span class="title">' + escapeHtml(r[1]) + '</span>' +
         (r[7] ? '<p class="subnote">' + escapeHtml(r[7]) + '</p>' : '') + '</div>';
@@ -674,7 +678,7 @@
     if (hasSub && settings.reveal) badges += '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>';
     var sub = hasSub ? '<p class="subnote"' + (settings.reveal ? ' hidden' : '') + '>' + escapeHtml(r[7]) + '</p>' : '';
     var label = settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '';
-    return '<div class="row" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
+    return '<div class="row" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
       glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
       '<span class="badges">' + badges + '</span>' + sub + '</div>';
@@ -718,7 +722,7 @@
     var era = D.eras[e], isOpen = !!open.e[e];
     return '<section class="era" data-e="' + e + '" style="--ei:' + e + '"' + (hidden ? ' hidden' : '') + '>' +
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
-      '<span class="bhead"><span class="bname">' + escapeHtml(era.name) + '</span>' +
+      '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
       statsHtml(S.era[e], fin) + '</button>' +
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
