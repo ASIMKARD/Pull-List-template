@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1539 assertions, 0 failed, 35 suites (session 6, step 3 done). **Layout suite (real Chromium, in CI too):** 351 checks, 0 failed, 11 suites.
+**Harness:** 1547 assertions, 0 failed, 35 suites (session 6, step 4: the template's stamped links). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2399,3 +2399,40 @@ Research-Repo `sessions/2026-10-09-absolute-v9/upgrade-proof/proof.js`:
   - v8's per-arc store is byte for byte unchanged;
   - v9's worker is in control.
 - **Then:** offline, and a v8 sync code imported into v9.
+
+## Session 6 checkpoint — step 4, template side (one reload shows a new build), 9 Oct 2026
+
+### Found by the v8 → v9 proof
+The first run passed 20 of 28. After v9 was deployed over v8, one plain reload still showed v8:
+- the page itself was fresh;
+- but Chromium reused v8's `app.js` and `data.js` from its memory cache (Pages' 10 minutes),
+  and the worker never saw those requests;
+- the data's shape hadn't changed, so the stale-shell check couldn't tell.
+
+The next open was v9, with every review restored as decided (offline, and on a second device).
+But "one reload opens v9" is what John asked for.
+
+### Done
+- **The build stamps `index.html`'s links** to `styles.css`, `data.js` and `app.js` with its hash
+  (`?v=<build>`), so every build has new addresses that no cache holds:
+  - the stamp never feeds the hash;
+  - `--check` catches a stale stamp;
+  - a build into another folder (`--out`) leaves `index.html` alone;
+  - an `index.html` without one of the links fails the build.
+- **The worker:** offline, it answers a stamped address from the copy it stored without one
+  (`ignoreSearch`).
+- **Tests:**
+  - `21-version`: stamping, measured in a copy of the repo (+7);
+  - `80-guards`: the worker's offline answer for a stamped `app.js` (+1);
+  - `70-pwa`, in Chromium, on Pages' caching: one plain reload after a deploy opens the new
+    build. The same reload without the stamps shows the old build: the check can fail (+2).
+    It was 3 of 3 both ways before it went in.
+- **Mutation-proved:**
+  - the stamp fed into the hash: caught (rebuild not byte-identical; `--check`);
+  - no `ignoreSearch`: caught by `80-guards`, and by `70-pwa`'s offline boot.
+- **Docs:** the `CLAUDE.md` Pages trap (a fourth consequence) and repo map; `BUILD-NOTES`;
+  `README`.
+
+### Next: Absolute
+- Copy the template's files in, and rebuild from v8's generated files (still v9).
+- Rerun the gate and both suites on its data, then the v8 → v9 proof.

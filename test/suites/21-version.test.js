@@ -125,4 +125,42 @@ module.exports = async function (t) {
   t.ok('Settings → Offline shows "v13"', /Version\s*v13(?!\d)/.test($('#set-offline').textContent), $('#set-offline').textContent);
   t.ok('no runtime errors (versions)', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
+
+  // ---- index.html links the files each build changes at that build (9 Oct) ----
+  /* Within Pages' 10 minutes Chromium reused a reloaded page's app.js and data.js
+     from its memory cache: the v8 -> v9 proof's reload showed v8. Stamped links
+     are new addresses for every build (measured in Chromium by 70-pwa). */
+  const RD = loadData(ROOT), html = read(ROOT, 'index.html'), STAMPED = ['styles.css', 'data.js', 'app.js'];
+  t.eq('index.html links ' + STAMPED.join(', ') + ' at this build (?v=' + RD.build + ')',
+       STAMPED.map(f => (html.match(new RegExp('(?:href|src)="\\./' + f.replace('.', '\\.') + '(\\?v=[0-9a-f]{12})?"', 'g')) || []).join(' ')),
+       STAMPED.map(f => (f === 'styles.css' ? 'href' : 'src') + '="./' + f + '?v=' + RD.build + '"'));
+  {
+    // a root build in a copy of this repo: the shell's files copied, its folders linked
+    const shell = tmpdir('v-shell'), GEN = ['data.js', 'sw.js', 'manifest.json', 'workbook.xlsx', 'index.html'];
+    for (const e of fs.readdirSync(ROOT)) {
+      if (['.git', 'node_modules', 'test'].concat(GEN).includes(e)) continue;
+      if (fs.statSync(path.join(ROOT, e)).isDirectory()) fs.symlinkSync(path.join(ROOT, e), path.join(shell, e));
+      else fs.copyFileSync(path.join(ROOT, e), path.join(shell, e));
+    }
+    const plain = html.replace(/\?v=[0-9a-f]{12}/g, '');
+    fs.writeFileSync(path.join(shell, 'index.html'), plain);
+    const run = (args, cwd) => spawnSync('python3', [path.join(shell, 'tools', 'build.py')].concat(args || []), { encoding: 'utf8', cwd: cwd || shell });
+    const r1 = run();
+    const SD = r1.status === 0 && loadData(shell), stamped = read(shell, 'index.html');
+    t.ok('a root build stamps index.html\'s three links with its build', r1.status === 0 && STAMPED.every(f => stamped.includes('/' + f + '?v=' + SD.build + '"')) &&
+         stamped.replace(/\?v=[0-9a-f]{12}/g, '') === plain, r1.stderr);
+    t.ok('…and the stamp never feeds the hash: an unstamped copy of this repo builds the same hash as the repo', SD && SD.build === RD.build, SD && SD.build + ' vs ' + RD.build);
+    t.ok('…a rebuild is byte-identical, and --check passes', (run(), read(shell, 'index.html') === stamped) && run(['--check']).status === 0);
+    fs.writeFileSync(path.join(shell, 'index.html'), stamped.replace('app.js?v=' + SD.build, 'app.js?v=0123456789ab'));
+    const st = run(['--check']);
+    t.ok('a stale stamp: --check says STALE: index.html, and writes nothing', st.status === 1 && /STALE: index\.html/.test(st.stderr) &&
+         read(shell, 'index.html').includes('app.js?v=0123456789ab'), st.stderr);
+    fs.writeFileSync(path.join(shell, 'index.html'), stamped);
+    const other = tmpdir('v-shell-out'), ro = run([path.join(shell, 'dataset.json'), '--out', other]);
+    t.ok('a build into another folder leaves the shell\'s index.html alone and writes none there', ro.status === 0 &&
+         read(shell, 'index.html') === stamped && !fs.existsSync(path.join(other, 'index.html')), ro.stderr);
+    fs.writeFileSync(path.join(shell, 'index.html'), plain.replace(/<script defer src="\.\/app\.js"><\/script>/, ''));
+    const rm = run();
+    t.ok('an index.html without a link to stamp fails the build, saying which', rm.status === 1 && /index\.html: no link to app\.js to stamp with the build/.test(rm.stderr), rm.stderr);
+  }
 };

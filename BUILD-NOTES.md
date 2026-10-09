@@ -9,6 +9,10 @@ are in `schema/dataset.schema.json`.
 - `dataset.json` (plus its per-era files and `events/`) is the only thing
   you edit. `python3 tools/build.py` stitches it, derives the keys, validates
   everything and writes `data.js`, `sw.js`, `manifest.json` and `workbook.xlsx`.
+  It also stamps `index.html`'s links to `styles.css`, `data.js` and `app.js`
+  with the build's hash (`?v=<build>`): a new build has new addresses, so a
+  reload can't reuse the last build's files from a cache. The stamp never feeds
+  the hash.
 - `python3 tools/build.py --check` rebuilds in memory and fails on any stale
   generated file. CI runs it; so does `test/suites/20-build.test.js`.
 - Every field is read **by name**, never by position: the build, the gate's

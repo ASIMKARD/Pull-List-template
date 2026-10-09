@@ -41,6 +41,12 @@ SHELL_FILES = ['index.html', 'app.js', 'styles.css', 'qrcode.js', 'manifest.json
 DELIVERABLES = {'workbook': True}          # on unless dataset.json says "deliverables": {"workbook": false}
 WORKBOOK = 'workbook.xlsx'
 SW_TEMPLATE = os.path.join('tools', 'templates', 'sw.js')
+# index.html's links to the files that change with every build carry the build's
+# hash (?v=…), so a new build has new addresses no cache can hold. Within Pages'
+# 10 minutes, Chromium reused the old build's app.js and data.js from its memory
+# cache across a plain reload, without asking the worker (the v8 -> v9 proof, 9 Oct).
+STAMPED = ('styles.css', 'data.js', 'app.js')
+STAMP_RX = re.compile(r'((?:href|src)="\./(?:%s))(?:\?v=[0-9a-f]{12})?(?=")' % '|'.join(re.escape(f) for f in STAMPED))
 
 DATE_RX = re.compile(r'^(\d{4})-(\d{2})(?:-(\d{2}))?$')
 ISSUE_ID_RX = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
@@ -1195,10 +1201,18 @@ def next_version(build_id, previous, version_start):
     return max(version_start, prev if previous.get('build') == build_id else prev + 1)
 
 
+def stamp_index(html, build_id=None):
+    """index.html with each STAMPED link carrying ?v=<build_id>, or with no
+    stamp at all (build_id None): the form the content hash reads, so the stamp
+    never feeds the hash it is made from."""
+    return STAMP_RX.sub(lambda m: m.group(1) + ('?v=' + build_id if build_id else ''), html)
+
+
 def render_outputs(payload, shell_root, version_start=1, previous=None):
-    """data.js, sw.js and manifest.json, all stamped with one content hash.
-    The version is stamped after the hash, so it never feeds it: the cache
-    name follows the content, and the number only follows the cache name."""
+    """data.js, sw.js and manifest.json, all stamped with one content hash, and
+    index.html with its links stamped with it. The version is stamped after the
+    hash, so it never feeds it: the cache name follows the content, and the
+    number only follows the cache name."""
     manifest = manifest_for(payload['franchise'])
     h = hashlib.sha256()
     h.update(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), sort_keys=True).encode())
@@ -1207,7 +1221,10 @@ def render_outputs(payload, shell_root, version_start=1, previous=None):
         p = os.path.join(shell_root, rel)
         if os.path.exists(p):
             with open(p, 'rb') as f:
-                h.update(rel.encode() + b'\0' + f.read())
+                body = f.read()
+            if rel == 'index.html':
+                body = stamp_index(body.decode('utf-8')).encode('utf-8')
+            h.update(rel.encode() + b'\0' + body)
     statics = static_files(shell_root)
     for rel in statics:
         with open(os.path.join(shell_root, rel[2:]), 'rb') as f:
@@ -1225,7 +1242,17 @@ def render_outputs(payload, shell_root, version_start=1, previous=None):
     sw = (tpl.replace('__CACHE__', cache).replace('__KEY__', payload['franchise']['key'])
              .replace('__SHELL__', json.dumps(shell))
              .replace('__STATIC__', json.dumps(statics, indent=2)))
-    return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id, version
+    files = {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}
+    index = os.path.join(shell_root, 'index.html')
+    if os.path.exists(index):
+        with open(index, encoding='utf-8') as f:
+            html = f.read()
+        stamped = stamp_index(html, build_id)
+        missing = [n for n in STAMPED if '/%s?v=%s"' % (n, build_id) not in stamped]
+        if missing:
+            raise BuildError(['index.html: no link to %s to stamp with the build' % ', '.join(missing)])
+        files['index.html'] = stamped
+    return files, build_id, version
 
 
 def main(argv):
@@ -1249,6 +1276,8 @@ def main(argv):
         keep = {}
         payload, report = build(dataset, previous_datajs=previous, keep=keep)
         files, build_id, version = render_outputs(payload, ROOT, report['versionStart'], read_datajs(previous))
+        if os.path.realpath(out) != os.path.realpath(ROOT):
+            files.pop('index.html', None)       # another output folder takes the shell as it is
         binary = {}
         if report['deliverables']['workbook']:
             import build_workbook
