@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1547 assertions, 0 failed, 35 suites (session 6 done; Absolute v9 live). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
+**Harness:** 1547 assertions, 0 failed, 35 suites (session 6 done; Absolute v9 live; session 7's decisions recorded). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2475,8 +2475,23 @@ But "one reload opens v9" is what John asked for.
 - **Absolute's own `PROGRESS.md`** still says "after the merge: verify". Changing it needs John's
   say-so, as any change to Absolute does.
 
-### Open with John (non-blocking)
-- **Pull requests to open:** the template branch (session 6) and Research-Repo's session folder.
-  This session doesn't open them unless John asks.
-- **Session 5's questions,** still open: the Pull era boxes; the tab bar edge to edge; the mark
-  size; signature CSS inside `data.js` (see "Questions for John" in session 5's checkpoint).
+### After session 6 (John, 9 Oct)
+- **Pull requests, opened at John's request:**
+  - this branch into the template's `main`;
+  - Research-Repo's session folder: ASIMKARD/Research-Repo#2.
+- **Absolute's `PROGRESS.md` marks v9 live and verified.** This is a docs-only change John
+  approved, through a pull request as before: ASIMKARD/Absolute#3.
+- **Session 5's four questions are answered:** see "Session 7: decisions" below.
+
+## Session 7: decisions (John, 9 Oct 2026) — do not reopen
+These answer "Questions for John" in the transfer checkpoint at the end of session 5.
+1. **Pull's era boxes** (question 1, option (c)):
+   - solid colours with white text;
+   - X-Men's folder-tab shape;
+   - plus an optional colour per era in the data.
+2. **The tab bar is edge to edge in Pull only** (question 2, option (c)). Every other skin keeps
+   it inset.
+3. **The read mark keeps the accessible 24 px minimum** (question 3, option (a)). It stays with
+   the Button size and Marks settings, and does not take compact X-Men's 22 px.
+4. **Signature-skin styles stay inside `data.js`** (question 4, my call from session 5, step 2,
+   confirmed). There is no linked `skin.css`.
