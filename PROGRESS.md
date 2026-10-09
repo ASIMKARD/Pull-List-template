@@ -2433,6 +2433,22 @@ But "one reload opens v9" is what John asked for.
 - **Docs:** the `CLAUDE.md` Pages trap (a fourth consequence) and repo map; `BUILD-NOTES`;
   `README`.
 
-### Next: Absolute
-- Copy the template's files in, and rebuild from v8's generated files (still v9).
-- Rerun the gate and both suites on its data, then the v8 → v9 proof.
+### Absolute v9: proved, and in a pull request
+- **The template's files** (`3858f57`) were copied into Absolute's session branch and rebuilt
+  from v8's generated files: v9, build `bd988f4e80f7`. All 81 shared files match the
+  template; `index.html` differs only by its stamp.
+- **On Absolute's data:** gate passed; harness 1546, 0 failed; layout 354, 0 failed; CI green.
+- **The v8 → v9 in-place proof: 28 of 28, twice** (Research-Repo
+  `sessions/2026-10-09-absolute-v9/upgrade-proof/`):
+  - one plain reload opens v9 with everything intact;
+  - the reviews come back per issue in every case John decided;
+  - v8's stores and v7's keys are unchanged;
+  - v9's worker takes over in 2.8 s (15 s in the first run);
+  - it works offline, and on a second device.
+- **The proof narrowed one trap.** Only a v2 worker's first reopen can show the old build: a v3
+  worker checks the page with the server. `CLAUDE.md` says so now.
+- **ASIMKARD/Absolute#2** is open into `main`, for John to merge.
+
+### Step 4 ends with: the live check, after John merges
+Wait about 100 s for Pages. Then verify every file on `main` against
+https://asimkard.github.io/Absolute/ by sha256, and check the header reads v9.

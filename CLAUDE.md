@@ -301,11 +301,12 @@ consequences, and a test server that sends `no-store` had hidden all of them:
   and the same reload without the stamps (it shows the old build). Offline, the
   worker answers a stamped address from the copy it stored without one
   (`ignoreSearch`). Never hand-edit a stamp: `--check` catches a stale one.
-- **Within those minutes, the first reopen can still show the old build.** The
-  old worker serves its own page from the HTTP cache. The new worker takes over
-  behind it, and the next open is the new build. Nothing a new worker does can
-  reach that page; `WindowClient.navigate()` closes it in headless Chromium, so
-  it isn't used.
+- **From a v2 worker, the first reopen can still show the old build.** Within
+  those minutes v7's worker served its own page from the HTTP cache. The new
+  worker takes over behind it, and the next open is the new build. Nothing a new
+  worker does can reach that page; `WindowClient.navigate()` closes it in headless
+  Chromium, so it isn't used. A v3 worker checks the page with the server, so
+  from v8 on one reload shows the new build (the v8 → v9 proof, 28 of 28).
 
 Test with `serve(dir, { pages: true })` (`test/layout/lib.js`), which sends
 Pages' headers. `page.waitForFunction` doesn't wait for an async check: its
