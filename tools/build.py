@@ -41,6 +41,12 @@ SHELL_FILES = ['index.html', 'app.js', 'styles.css', 'qrcode.js', 'manifest.json
 DELIVERABLES = {'workbook': True}          # on unless dataset.json says "deliverables": {"workbook": false}
 WORKBOOK = 'workbook.xlsx'
 SW_TEMPLATE = os.path.join('tools', 'templates', 'sw.js')
+# index.html's links to the files that change with every build carry the build's
+# hash (?v=…), so a new build has new addresses no cache can hold. Within Pages'
+# 10 minutes, Chromium reused the old build's app.js and data.js from its memory
+# cache across a plain reload, without asking the worker (the v8 -> v9 proof, 9 Oct).
+STAMPED = ('styles.css', 'data.js', 'app.js')
+STAMP_RX = re.compile(r'((?:href|src)="\./(?:%s))(?:\?v=[0-9a-f]{12})?(?=")' % '|'.join(re.escape(f) for f in STAMPED))
 
 DATE_RX = re.compile(r'^(\d{4})-(\d{2})(?:-(\d{2}))?$')
 ISSUE_ID_RX = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
@@ -88,7 +94,23 @@ LOOK_WORDS = {'none', 'inherit', 'initial', 'unset', 'transparent', 'currentcolo
               'repeat-y', 'space', 'round', 'cover', 'contain', 'center', 'to', 'at', 'circle', 'ellipse', 'closest-side',
               'farthest-corner', 'multiply', 'screen', 'overlay', 'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy',
               'system-ui', 'ui-monospace', 'ui-serif', 'ui-sans-serif', 'condensed', 'expanded', 'semi-condensed',
-              'semi-expanded', 'light', 'dark', 'top', 'bottom', 'left', 'right'}
+              'semi-expanded', 'light', 'dark', 'top', 'bottom', 'left', 'right', 'nowrap', 'pre', 'start', 'end'}
+# Decorations (John, 8 Oct): a signature skin may add content of its own on
+# ::before and ::after (quoted text, attr(data-n), counters), use counters
+# anywhere, and place a pseudo-element absolutely against its host (rows and
+# heads are anchors in styles.css). A decoration never takes a tap and is
+# silent to screen readers: the build adds pointer-events: none and an empty
+# alternative (content: X / "") to every one. It still may not move, hide or
+# reorder a control: everything else in MOVES stays refused, everywhere.
+PSEUDO_RX = re.compile(r'::(before|after)$')
+DECOR_PROPS = {'content', 'position', 'top', 'right', 'bottom', 'left', 'inset', 'width', 'height', 'text-align', 'white-space'}
+COUNTER_PROPS = {'counter-reset', 'counter-increment', 'counter-set'}
+CONTENT_ATTRS = {'data-n'}          # rows and era names carry their reading position, zero-padded
+LIST_STYLES = {'decimal', 'decimal-leading-zero', 'lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha', 'none'}
+_STR = r'(?:"[^"\\\n{};]*"|\'[^\'\\\n{};]*\')'
+CONTENT_PART = re.compile(r'\s*(?:(' + _STR + r')|attr\(\s*([\w-]+)\s*\)|counter\(\s*([a-z][\w-]*)\s*(?:,\s*([a-z-]+)\s*)?\)'
+                          r'|counters\(\s*([a-z][\w-]*)\s*,\s*' + _STR + r'\s*(?:,\s*([a-z-]+)\s*)?\))')
+COUNTER_VALUE = re.compile(r'^(?:none|[a-z][\w-]*(?:\s+-?\d+)?(?:\s+[a-z][\w-]*(?:\s+-?\d+)?)*)$')
 LOOK_FUNCS = {'var', 'calc', 'min', 'max', 'clamp', 'hsl', 'hsla', 'oklch', 'linear-gradient', 'radial-gradient',
               'repeating-linear-gradient', 'repeating-radial-gradient', 'url'}
 COLOUR_FUNCS = {'hsl', 'hsla', 'oklch'}
@@ -181,6 +203,37 @@ def look_value_problem(value, prop, tokens_ok, shell_root):
         if word.lower() not in LOOK_WORDS:
             return '%r is not a look keyword (a named colour? quote font names)' % word
         i = j
+    return None
+
+
+def content_problem(value):
+    """None when a decoration's content is quoted text, attr(data-n) and
+    counters, in any sequence; else why not."""
+    if value in ('none', 'normal'):
+        return None
+    pos, n = 0, len(value)
+    if not value.strip():
+        return 'empty content'
+    while pos < n:
+        m = CONTENT_PART.match(value, pos)
+        if not m:
+            return 'content may hold only quoted text, attr(data-n) and counter()s (no url(), no "/": the build adds the empty alternative)'
+        if m.group(2) and m.group(2) not in CONTENT_ATTRS:
+            return 'attr(%s): only %s' % (m.group(2), ', '.join(sorted(CONTENT_ATTRS)))
+        for style in (m.group(4), m.group(6)):
+            if style and style not in LIST_STYLES:
+                return 'counter style %r: one of %s' % (style, ', '.join(sorted(LIST_STYLES)))
+        pos = m.end()
+        if pos < n and not value[pos:].strip():
+            break
+    return None
+
+
+def counter_problem(value):
+    if not COUNTER_VALUE.match(value):
+        return 'a counter list: names, each with an optional whole number'
+    if any(w in ('inherit', 'initial', 'unset') for w in value.split()):
+        return 'not a counter name'
     return None
 
 
@@ -303,7 +356,7 @@ def signature_rules(css, rel, inputs, shell_root, errs):
         if bad or not sel:
             errs.append('%s: selector %r is not scoped to %s' % (rel, (bad or [sel])[0], SIG_SCOPE))
             continue
-        decls = []
+        decls, decor = [], all(PSEUDO_RX.search(p) for p in parts)
         for d in body.split(';'):
             if not d.strip():
                 continue
@@ -313,10 +366,42 @@ def signature_rules(css, rel, inputs, shell_root, errs):
             prop, val = d.split(':', 1)
             prop, val = prop.strip().lower(), ' '.join(val.split())
             where = '%s: %s { %s }' % (rel, sel, prop)
+            if prop in COUNTER_PROPS:
+                prob = counter_problem(val)
+                if prob:
+                    errs.append('%s: %s' % (where, prob))
+                else:
+                    decls.append('  %s: %s;' % (prop, val))
+                continue
+            if decor and prop in DECOR_PROPS:
+                if prop == 'content':
+                    prob = content_problem(val)
+                    if prob:
+                        errs.append('%s: %s' % (where, prob))
+                    elif val in ('none', 'normal'):
+                        decls.append('  content: %s;' % val)
+                    else:                                   # older browsers keep the first; the rest read it silently
+                        decls.append('  content: %s;\n  content: %s / "";' % (val, val))
+                    continue
+                if prop == 'position':
+                    if val != 'absolute':
+                        errs.append('%s: a decoration is placed absolutely or not at all (position: absolute)' % where)
+                    else:
+                        decls.append('  position: absolute;')
+                    continue
+                prob = look_value_problem(val, prop, inputs, shell_root)
+                if prob:
+                    errs.append('%s: %s' % (where, prob))
+                else:
+                    decls.append('  %s: %s;' % (prop, val))
+                continue
             if prop.startswith('--'):
                 if prop not in inputs:
                     errs.append('%s: not a known input token' % where)
                     continue
+            elif prop in DECOR_PROPS and prop in ('content', 'position'):
+                errs.append('%s: refused — only a ::before or ::after decoration may have %s' % (where, prop))
+                continue
             elif MOVES.match(prop):
                 errs.append('%s: refused — a skin changes how things look, never where they are' % where)
                 continue
@@ -329,6 +414,8 @@ def signature_rules(css, rel, inputs, shell_root, errs):
                 errs.append('%s: %s' % (where, prob))
                 continue
             decls.append('  %s: %s;' % (prop, val))
+        if decor:
+            decls.append('  pointer-events: none;')               # a decoration never takes a tap
         out.append('%s {\n%s\n}' % (',\n'.join(parts), '\n'.join(decls)))
     return out
 
@@ -1114,10 +1201,18 @@ def next_version(build_id, previous, version_start):
     return max(version_start, prev if previous.get('build') == build_id else prev + 1)
 
 
+def stamp_index(html, build_id=None):
+    """index.html with each STAMPED link carrying ?v=<build_id>, or with no
+    stamp at all (build_id None): the form the content hash reads, so the stamp
+    never feeds the hash it is made from."""
+    return STAMP_RX.sub(lambda m: m.group(1) + ('?v=' + build_id if build_id else ''), html)
+
+
 def render_outputs(payload, shell_root, version_start=1, previous=None):
-    """data.js, sw.js and manifest.json, all stamped with one content hash.
-    The version is stamped after the hash, so it never feeds it: the cache
-    name follows the content, and the number only follows the cache name."""
+    """data.js, sw.js and manifest.json, all stamped with one content hash, and
+    index.html with its links stamped with it. The version is stamped after the
+    hash, so it never feeds it: the cache name follows the content, and the
+    number only follows the cache name."""
     manifest = manifest_for(payload['franchise'])
     h = hashlib.sha256()
     h.update(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), sort_keys=True).encode())
@@ -1126,7 +1221,10 @@ def render_outputs(payload, shell_root, version_start=1, previous=None):
         p = os.path.join(shell_root, rel)
         if os.path.exists(p):
             with open(p, 'rb') as f:
-                h.update(rel.encode() + b'\0' + f.read())
+                body = f.read()
+            if rel == 'index.html':
+                body = stamp_index(body.decode('utf-8')).encode('utf-8')
+            h.update(rel.encode() + b'\0' + body)
     statics = static_files(shell_root)
     for rel in statics:
         with open(os.path.join(shell_root, rel[2:]), 'rb') as f:
@@ -1144,7 +1242,17 @@ def render_outputs(payload, shell_root, version_start=1, previous=None):
     sw = (tpl.replace('__CACHE__', cache).replace('__KEY__', payload['franchise']['key'])
              .replace('__SHELL__', json.dumps(shell))
              .replace('__STATIC__', json.dumps(statics, indent=2)))
-    return {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}, build_id, version
+    files = {'data.js': datajs, 'sw.js': sw, 'manifest.json': manifest}
+    index = os.path.join(shell_root, 'index.html')
+    if os.path.exists(index):
+        with open(index, encoding='utf-8') as f:
+            html = f.read()
+        stamped = stamp_index(html, build_id)
+        missing = [n for n in STAMPED if '/%s?v=%s"' % (n, build_id) not in stamped]
+        if missing:
+            raise BuildError(['index.html: no link to %s to stamp with the build' % ', '.join(missing)])
+        files['index.html'] = stamped
+    return files, build_id, version
 
 
 def main(argv):
@@ -1168,6 +1276,8 @@ def main(argv):
         keep = {}
         payload, report = build(dataset, previous_datajs=previous, keep=keep)
         files, build_id, version = render_outputs(payload, ROOT, report['versionStart'], read_datajs(previous))
+        if os.path.realpath(out) != os.path.realpath(ROOT):
+            files.pop('index.html', None)       # another output folder takes the shell as it is
         binary = {}
         if report['deliverables']['workbook']:
             import build_workbook

@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1484 assertions, 0 failed, 34 suites (session 5: all seven steps done; Absolute v8 live). **Layout suite (real Chromium, in CI too):** 349 checks, 0 failed, 10 suites.
+**Harness:** 1547 assertions, 0 failed, 35 suites (session 6 done; Absolute v9 live; session 7's decisions recorded). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2225,3 +2225,273 @@ signature; the live domain allowed for checks by hash.
 - **From earlier:** the Pull era boxes; the tab bar edge to edge; the mark size; whether signature
   CSS should ship inside `data.js`.
 - **The template's own pull request:** ASIMKARD/Pull-List-template#5 (this branch).
+
+## Session 6 plan (agreed 8 Oct 2026): per-issue reviews, signature decorations, Absolute v9
+
+John approved edits to ASIMKARD/Absolute for v9, through a branch and one pull request, as for v8.
+The safeguards are the same: everything passes on Absolute's data first; an in-place v8 → v9
+proof in Chromium; every file verified live by hash after the merge.
+
+1. **Per-issue reviews (template).** The per-arc model came from a wrong assumption: the old
+   trackers kept a review per issue.
+   - Reviews are keyed by row id, with a ✎ on every row, and the Reviews tab lists them in
+     reading order.
+   - Sync and backup move to v4; v3 (per arc) and v2 (per issue) still read.
+   - A one-time upgrade for trackers whose reviews were per arc.
+2. **Signature decorations (template).** Pseudo-element content, counters, glyph marks,
+   prefixes and full-bleed bars are allowed. Anything that moves, hides or reorders a control is
+   still refused. Reachability, overflow, contrast, tap size and the stack must pass across the
+   skin.
+3. **Absolute v9.** v7's five touches, compared side by side with v7's screenshots, then all
+   the tests on Absolute's data.
+4. **The v8 → v9 proof,** one PR, and the live check by hash.
+
+**John's decisions (8 Oct) for the upgrade from per-arc reviews:**
+- a review written in v8 goes on its arc's first issue (and so does each review of an old
+  v3-format code or backup);
+- a migrated review that was then edited: v7's originals are restored on every issue, and the
+  edited review is kept too, on the first issue;
+- a migrated review that was then deleted stays deleted.
+
+My call within the second decision: when the first issue also has a v7 original, the edited text
+goes after it, and the stars are the edited review's (the latest choice).
+
+## Session 6 checkpoint — step 1 done (per-issue reviews), 8 Oct 2026
+
+### Done
+- **The store.** Reviews live under `<key>:v3:issue-reviews`, keyed by row id. The per-arc
+  `reviews` key of earlier builds is read once and never written, so a rollback to v8 finds
+  v8's reviews as v8 left them.
+- **The ✎ is on every row,** in both layouts, named for its issue. Arc heads no longer carry one.
+  - The editor opens under the row.
+  - The Reviews tab lists reviews in reading order, each with its arc and era, and tapping one
+    jumps to the issue.
+  - Reviews the list has no issue for are still kept and listed.
+- **The legacy (v2) import is exact, per issue,** with nothing merged. Old QR and sync codes
+  (`ABSO1:` and the like) import per issue too.
+- **Sync and backup are v4,** with reviews keyed by row id.
+  - A v3 code or backup (reviews per arc) still reads; each arc's review goes to the arc's first
+    issue.
+  - A newer format is refused, and says so.
+- **The one-time upgrade** (`upgradeArcReviews`) runs at the first boot without the new store. It
+  recomputes the old migration's merge from the untouched old keys, step for step, and applies
+  John's decisions. It is recorded in `settings.reviewsUpgraded` and reported once in a toast.
+- **Table view** at 320 px: with a ✎ on every row, a row can carry four 24 px targets.
+  - Table view's own spacing is 2 px tighter, and the ★ core label (not a target) shrinks.
+  - Every title still keeps at least half its row (50-table); every target is still 24 px or
+    more.
+- **Tests:**
+  - 9b-reviews: the per-issue editor and the tab;
+  - 93-storage: the exact v2 import, and a re-run that never overwrites an edited review;
+  - 9k-review-upgrade, new: every case of the upgrade, a whole list returned exactly, a tracker
+    with no old version, and a fresh tracker;
+  - 9e-sync: v4 round-trips, old v3 codes and backup files, a newer format refused.
+
+  Each new check was proved by putting its bug back:
+  - every review treated as untouched;
+  - no restore;
+  - deleted reviews brought back;
+  - v3 reviews not moved to issues.
+- **The docs:** FEATURE-INVENTORY (F-3, F-8, F-30, T-53, D-4) and MIGRATING.
+
+**Harness:** 1517 assertions (+33), 0 failed, 35 suites. **Layout:** 349 checks, 0 failed, 10 suites.
+
+### Step 2 begins with: signature decorations
+- **First file:** `tools/build.py` (`signature_rules`, `MOVES`, `LOOK_PROPS`).
+- **First test:** `test/suites/22-signature.test.js`.
+- **The design:**
+  - Rows get `data-n` and eras get `data-n`, zero-padded reading positions for numbering;
+  - rows, era heads and arc heads become `position: relative`, as anchors (only `.stack` is
+    sticky);
+  - a `--row-gutter` token reserves a right gutter in rows;
+  - `content` is allowed only on `::before` and `::after`. The build appends `/ ""` (screen
+    readers skip it, with a fallback for older Safari) and `pointer-events: none`;
+  - a new Chromium check: no decoration covers a control, and every decoration's text clears
+    contrast.
+
+## Session 6 checkpoint — step 2 done (signature decorations), 9 Oct 2026
+
+### Done
+- **The build** (`signature_rules`) still refuses everything that moves, hides or reorders a
+  control: display, visibility, opacity, order, flex, grid, z-index, transform, margins, and
+  width, height and offsets on ordinary elements. The new allowances:
+  - **Decorations:** a rule whose every selector ends in `::before` or `::after` may have
+    `content` and may be placed absolutely, with offsets, width, height, `text-align` and
+    `white-space`.
+  - **Content** takes quoted text, `attr(data-n)` and `counter()`s. `url()`, other attributes,
+    unknown counter styles and a hand-written `/` alternative are refused.
+  - **Counters** (`counter-reset`, `counter-increment`, `counter-set`) may run on any rule.
+  - **To every decoration the build adds** `pointer-events: none` and an empty alternative,
+    `content: X / ""`. Older browsers keep the first `content` line.
+- **The template:**
+  - rows and era names carry `data-n`, their reading position, zero-padded;
+  - rows, era heads, band heads and arc heads are anchors (`position: relative`; only `.stack` is
+    sticky);
+  - the new `--row-gutter` token reserves room at a row's right end.
+- **The demo skin "Signal"** decorates: row numbers in a 24 px gutter (none in table view), a
+  `›` arc prefix, era numerals, and `[ ] [/] [X] [-]` marks. So 10-sweep, 40-look and 60-stack
+  run across decorations in the template's own CI.
+- **The new `test/layout/55-decor`** runs at 320, 390 and 1024 px, with default, largest and
+  table view. Every decoration must be silent to screen readers, take no taps, and clear
+  contrast. One placed absolutely must be anchored, stay on screen, and cover no control or
+  title. It was proved with five bugs put back:
+  - no gutter (row numbers covering titles);
+  - no `pointer-events: none`;
+  - no screen-reader alternative;
+  - rows not anchored;
+  - faint row numbers (1.48:1).
+- **22-signature (+22 checks):**
+  - what passes;
+  - 15 refusals;
+  - the build's additions on every rule;
+  - `data-n` on rows (inert rows too) and on era names.
+- **60-validation:** the broken fixture `signature-position` now expects the more specific
+  refusal.
+- **Docs:** BUILD-NOTES (decorations); FEATURE-INVENTORY X-9 (per-issue reviews) and X-10
+  (decorations).
+
+**Harness:** 1539 assertions (+22), 0 failed, 35 suites. **Layout:** 351 checks (+2), 0 failed, 11 suites.
+
+### Step 3 begins with: Absolute v9
+- **First:** copy the template into ASIMKARD/Absolute's session branch, restarted from `main`.
+- **Then `signature.css`:** v7's five touches:
+  - the big era numbers: `.era-head .bname::before`, `attr(data-n)`, mono, 26 px;
+  - the row-number gutter: `.row::after`, with `--row-gutter`;
+  - the `[ ] [/] [X] [-]` marks;
+  - the `//` arc prefix;
+  - full-width era bars: `box-shadow` either side.
+- **First tests:** `test/layout/55-decor` and `45-root` on Absolute's data, then screenshots side
+  by side with v7's (Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/screens/`).
+
+## Session 6 checkpoint — step 3 done (Absolute v9 built and checked on its own data), 9 Oct 2026
+
+### Done
+- **Absolute's session branch, restarted from `main` (v8):**
+  - the template's files copied in;
+  - its skin given v7's five touches, as decorations;
+  - its version: v9 (the build counted up from v8's `data.js`).
+- **The five touches:**
+  - **big era numbers:** mono 26 px, dark wine on the red bar (3.7:1, large text);
+  - **the row-number gutter:** `001` to `134`, down the right edge, in a 26 px `--row-gutter`;
+    none in table view;
+  - **the marks:** `[ ] [/] [X] [-]`, borderless, in mono 13 px. They fit on one line at every
+    tap size (26, 34 and 44 px marks);
+  - **the arc prefix:** a red `//`;
+  - **full-width era bars:** a `box-shadow` either side.
+- **Side by side with v7** at 390 px, with the same marks: Research-Repo
+  `sessions/2026-10-09-absolute-v9/screens/`. v9 keeps everything readable, where v7's read and
+  skipped rows and its row numbers were near-invisible wine on black.
+- **One template test refined: 45-root's "mark outline".** When a mark's outline is invisible and
+  it draws a glyph, the glyph is what shows the control and its state (WCAG 1.4.11), so the glyph
+  must clear 3:1. A mark with neither still fails. Proved both ways: a faint glyph (1.17:1) and no
+  glyph (1.00:1).
+- **On Absolute's data:** gate passed; harness 1538, 0 failed; layout 352, 0 failed (with
+  55-decor and 45-root on its skin).
+
+### Step 4 begins with: the v8 → v9 in-place proof
+Research-Repo `sessions/2026-10-09-absolute-v9/upgrade-proof/proof.js`:
+- **v8 is the real `main`.** It's used through its UI: marks, a bookmark and the skin, with
+  reviews in every case of John's decisions, written as v8 itself made them.
+- **Then v9 at the same address,** with one reload.
+- **After the reload:**
+  - everything is intact;
+  - the reviews are restored per issue as decided;
+  - v8's per-arc store is byte for byte unchanged;
+  - v9's worker is in control.
+- **Then:** offline, and a v8 sync code imported into v9.
+
+## Session 6 checkpoint — step 4, template side (one reload shows a new build), 9 Oct 2026
+
+### Found by the v8 → v9 proof
+The first run passed 20 of 28. After v9 was deployed over v8, one plain reload still showed v8:
+- the page itself was fresh;
+- but Chromium reused v8's `app.js` and `data.js` from its memory cache (Pages' 10 minutes),
+  and the worker never saw those requests;
+- the data's shape hadn't changed, so the stale-shell check couldn't tell.
+
+The next open was v9, with every review restored as decided (offline, and on a second device).
+But "one reload opens v9" is what John asked for.
+
+### Done
+- **The build stamps `index.html`'s links** to `styles.css`, `data.js` and `app.js` with its hash
+  (`?v=<build>`), so every build has new addresses that no cache holds:
+  - the stamp never feeds the hash;
+  - `--check` catches a stale stamp;
+  - a build into another folder (`--out`) leaves `index.html` alone;
+  - an `index.html` without one of the links fails the build.
+- **The worker:** offline, it answers a stamped address from the copy it stored without one
+  (`ignoreSearch`).
+- **Tests:**
+  - `21-version`: stamping, measured in a copy of the repo (+7);
+  - `80-guards`: the worker's offline answer for a stamped `app.js` (+1);
+  - `70-pwa`, in Chromium, on Pages' caching: one plain reload after a deploy opens the new
+    build. The same reload without the stamps shows the old build: the check can fail (+2).
+    It was 3 of 3 both ways before it went in.
+- **Mutation-proved:**
+  - the stamp fed into the hash: caught (rebuild not byte-identical; `--check`);
+  - no `ignoreSearch`: caught by `80-guards`, and by `70-pwa`'s offline boot.
+- **Docs:** the `CLAUDE.md` Pages trap (a fourth consequence) and repo map; `BUILD-NOTES`;
+  `README`.
+
+### Absolute v9: proved, and in a pull request
+- **The template's files** (`3858f57`) were copied into Absolute's session branch and rebuilt
+  from v8's generated files: v9, build `bd988f4e80f7`. All 81 shared files match the
+  template; `index.html` differs only by its stamp.
+- **On Absolute's data:** gate passed; harness 1546, 0 failed; layout 354, 0 failed; CI green.
+- **The v8 → v9 in-place proof: 28 of 28, twice** (Research-Repo
+  `sessions/2026-10-09-absolute-v9/upgrade-proof/`):
+  - one plain reload opens v9 with everything intact;
+  - the reviews come back per issue in every case John decided;
+  - v8's stores and v7's keys are unchanged;
+  - v9's worker takes over in 2.8 s (15 s in the first run);
+  - it works offline, and on a second device.
+- **The proof narrowed one trap.** Only a v2 worker's first reopen can show the old build: a v3
+  worker checks the page with the server. `CLAUDE.md` says so now.
+- **ASIMKARD/Absolute#2** is open into `main`, for John to merge.
+
+## Transfer checkpoint — end of session 6: Absolute v9 is live, 9 Oct 2026
+
+### Done (all 4 steps)
+- **Template** (this branch: steps 1–4, no pull request yet):
+  - per-issue reviews;
+  - signature decorations;
+  - the glyph-mark contrast rule;
+  - one reload shows a new build.
+
+  Harness 1547 and layout 353, both 0 failed; CI green.
+- **Absolute v9 is live.** John merged ASIMKARD/Absolute#2 as `2c03d99`.
+  - Pages served v9's worker about 25 s after the merge.
+  - `verify-live.sh 2c03d99`: 182 files match `main` by sha256, and the bare address serves
+    `index.html`. 5 dot-files are skipped, since Pages doesn't serve them.
+  - v7's 5 removed files still return 404.
+  - The live `data.js` is version 9, and the cache is `absolute-bd988f4e80f7`.
+  - Real Chromium on the live site, with TLS verification on, reads "v9" in the header, in the
+    Absolute skin, with no errors.
+- **Research-Repo** `sessions/2026-10-09-absolute-v9/` (pushed on its session branch, no pull
+  request yet):
+  - the upgrade proof and its report;
+  - the v7 vs v9 screenshots;
+  - the live check.
+- **Absolute's own `PROGRESS.md`** still says "after the merge: verify". Changing it needs John's
+  say-so, as any change to Absolute does.
+
+### After session 6 (John, 9 Oct)
+- **Pull requests, opened at John's request:**
+  - this branch into the template's `main`;
+  - Research-Repo's session folder: ASIMKARD/Research-Repo#2.
+- **Absolute's `PROGRESS.md` marks v9 live and verified.** This is a docs-only change John
+  approved, through a pull request as before: ASIMKARD/Absolute#3.
+- **Session 5's four questions are answered:** see "Session 7: decisions" below.
+
+## Session 7: decisions (John, 9 Oct 2026) — do not reopen
+These answer "Questions for John" in the transfer checkpoint at the end of session 5.
+1. **Pull's era boxes** (question 1, option (c)):
+   - solid colours with white text;
+   - X-Men's folder-tab shape;
+   - plus an optional colour per era in the data.
+2. **The tab bar is edge to edge in Pull only** (question 2, option (c)). Every other skin keeps
+   it inset.
+3. **The read mark keeps the accessible 24 px minimum** (question 3, option (a)). It stays with
+   the Button size and Marks settings, and does not take compact X-Men's 22 px.
+4. **Signature-skin styles stay inside `data.js`** (question 4, my call from session 5, step 2,
+   confirmed). There is no linked `skin.css`.

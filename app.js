@@ -181,7 +181,14 @@
   var progress = load('progress', null) || { marks: {}, bookmarks: [] };
   progress.marks = progress.marks || {};
   progress.bookmarks = progress.bookmarks || [];
-  var reviews = load('reviews', null) || {};
+  /* Reviews, one per issue (John, 8 Oct; F-3), keyed by row id. Builds before
+     8 Oct kept one per arc under 'reviews': that key is read once, by
+     upgradeArcReviews() at boot, and never written again, so a rollback to such
+     a build finds its reviews as it left them. */
+  var REVIEWS_KEY = 'issue-reviews';
+  var reviews = load(REVIEWS_KEY, null);
+  var reviewsFresh = !reviews || typeof reviews !== 'object';   // no per-issue store yet: the one-time upgrade runs at boot
+  if (reviewsFresh) reviews = {};
   var ERA_NAV = ['scroll', 'chips', 'dropdown'];        // era navigation style (XM-8)
   /* LOOK (session 4): the skin and the other look settings. Each one becomes
      a root attribute that styles.css answers with tokens only, so none of
@@ -321,26 +328,88 @@
       if (ID_I[id] !== undefined && progress.bookmarks.indexOf(id) === -1) { progress.bookmarks.push(id); res.bookmarks++; }
     });
     var unmatched = load('legacy-unmatched', null) || { reviews: {} };
-    var merged = {};
-    Object.keys(old.reviews).forEach(function (k) {
-      var r = old.reviews[k] || {}, i = ID_I[String(k)];
-      if (i === undefined) {                                   // kept, never silently dropped
+    Object.keys(old.reviews).forEach(function (k) {             // per issue, exactly as the old tracker kept them
+      var r = old.reviews[k] || {}, id = String(k), i = ID_I[id];
+      if (!(+r.r) && !r.t) return;
+      if (i === undefined || isInert(i)) {                     // kept, never silently dropped
         if (!unmatched.reviews[k]) { unmatched.reviews[k] = r; res.unmatchedReviews++; }
         return;
       }
-      var arcId = D.arcs[D.issues[i][2]].id;
-      if (reviews[arcId] && !merged[arcId]) return;            // never overwrite a v3 review
-      var cur = merged[arcId] || { r: 0, t: '' };
-      cur.r = Math.max(cur.r, +r.r || 0);
-      cur.t = [cur.t, r.t || ''].filter(Boolean).join('\n\n');
-      if (!merged[arcId]) res.reviews++;
-      merged[arcId] = cur;
-      reviews[arcId] = cur;
+      if (reviews[id]) return;                                 // never overwrite a v3 review
+      reviews[id] = { r: +r.r || 0, t: String(r.t || '') }; res.reviews++;
     });
     if (res.unmatchedReviews) save('legacy-unmatched', unmatched);
     if (res.marks || res.bookmarks) saveProgress();
-    if (res.reviews) save('reviews', reviews);
+    if (res.reviews) save(REVIEWS_KEY, reviews);
     return res;
+  }
+  /* The one-time upgrade from per-arc reviews (builds before 8 Oct), as John
+     decided (8 Oct). Those builds' migration merged each old per-issue review
+     into its arc (best stars, texts joined in key order). The old keys were
+     never written, so that merge is computed again, step for step, and
+     compared with each arc review:
+     - equal: the migration made it and nobody touched it. It is replaced by
+       the old per-issue originals, exactly;
+     - no old reviews behind it: the person wrote it. It moves to the arc's
+       first issue;
+     - different: migrated, then edited. The originals are restored and the
+       edited review is kept on the arc's first issue (after any original
+       there, with its stars as the latest choice);
+     - gone although the merge would have made one: deleted. It stays deleted.
+     An arc review this list has no arc for is kept with the unmatched ones. */
+  function firstRowOfArc(a) {
+    for (var i = ARC_FIRST[a]; i >= 0 && i < N; i++) if (D.issues[i][2] === a && !isInert(i)) return i;
+    return -1;
+  }
+  function putReview(id, rv, latest) {
+    var r = +rv.r || 0, t = String(rv.t || ''), have = reviews[id];
+    if (!have) { reviews[id] = { r: r, t: t }; return; }
+    if (have.r === r && have.t === t) return;
+    reviews[id] = { r: latest && r ? r : (have.r || r), t: [have.t, t].filter(Boolean).join('\n\n') };
+  }
+  function upgradeArcReviews() {
+    var arcRv = load('reviews', null);
+    if (!arcRv || typeof arcRv !== 'object' || Array.isArray(arcRv)) return null;
+    var res = { restored: 0, moved: 0, edited: 0, deleted: 0, kept: 0 };
+    var cfg = D.franchise.storage && D.franchise.storage.legacy;
+    var old = cfg && LEGACY_READERS[cfg.format] ? LEGACY_READERS[cfg.format](cfg.prefix).reviews : {};
+    var merged = {}, originals = {};
+    Object.keys(old).forEach(function (k) {                     // the old migration, step for step
+      var r = old[k] || {}, i = ID_I[String(k)];
+      if (i === undefined) return;
+      var arcId = D.arcs[D.issues[i][2]].id, cur = merged[arcId] || { r: 0, t: '' };
+      cur.r = Math.max(cur.r, +r.r || 0);
+      cur.t = [cur.t, r.t || ''].filter(Boolean).join('\n\n');
+      merged[arcId] = cur;
+      if ((+r.r || r.t) && !isInert(i)) (originals[arcId] = originals[arcId] || []).push([String(k), r]);
+    });
+    var unmatched = load('legacy-unmatched', null) || { reviews: {} }, unmatchedNew = 0;
+    var arcs = Object.keys(arcRv).concat(Object.keys(merged).filter(function (k) { return !(k in arcRv); }));
+    arcs.forEach(function (arcId) {
+      var cur = arcRv[arcId], mig = merged[arcId], a = ARC_I[arcId];
+      if (cur && (typeof cur !== 'object' || (!(+cur.r) && !cur.t))) cur = null;
+      if (!cur) { if (mig) res.deleted++; return; }
+      var first = a === undefined ? -1 : firstRowOfArc(a);
+      if (first < 0) {
+        if (!unmatched.reviews[arcId]) { unmatched.reviews[arcId] = cur; unmatchedNew++; }
+        res.kept++; return;
+      }
+      var same = !!mig && (+cur.r || 0) === mig.r && String(cur.t || '') === mig.t;
+      if (mig) (originals[arcId] || []).forEach(function (o) { putReview(o[0], o[1], false); res.restored++; });
+      if (same) return;
+      putReview(D.ids[first], cur, true);
+      if (mig) res.edited++; else res.moved++;
+    });
+    if (unmatchedNew) save('legacy-unmatched', unmatched);
+    return res;
+  }
+  function upgradeSummary(res) {
+    if (!res) return '';
+    var bits = [];
+    if (res.restored) bits.push(res.restored + ' brought back exactly as they were before');
+    var mv = res.moved + res.edited;
+    if (mv) bits.push(mv + (mv === 1 ? ' moved to the first issue of its arc' : ' moved to the first issue of their arcs'));
+    return bits.length ? 'Reviews now belong to issues: ' + bits.join(', ') + '.' : '';
   }
   function legacySummary(res) {
     var bits = [];
@@ -581,10 +650,14 @@
       : '<p class="evnote">Complete view: ' + n + ' more than Essential</p>';
   }
 
-  function rowHtml(i, rvArc) {
+  /* reading positions for a skin's decorations (content: attr(data-n)), zero-padded
+     so a monospace column lines up: rows to the list's width, eras to two digits */
+  var ROW_W = Math.max(2, String(N).length), ERA_W = Math.max(2, String(D.eras.length).length);
+  function padN(n, w) { var s = String(n); while (s.length < w) s = '0' + s; return s; }
+  function rowHtml(i) {
     var r = D.issues[i], flags = r[6], id = D.ids[i];
     if (flags & INERT) {
-      return '<div class="row inert" data-i="' + i + '" data-id="' + escapeAttr(id) + '">' +
+      return '<div class="row inert" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '">' +
         '<span class="mark-inert" aria-hidden="true">' + (flags & FL.RENUM ? '⟳' : '↷') + '</span>' +
         '<span class="title">' + escapeHtml(r[1]) + '</span>' +
         (r[7] ? '<p class="subnote">' + escapeHtml(r[7]) + '</p>' : '') + '</div>';
@@ -597,7 +670,7 @@
     if (flags & FL.ALT) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" data-note="' +
       escapeAttr(r[7] || 'A separate continuity from the main line.') + '">alt</button>';
     badges += '<button type="button" class="b bm" data-act="bm" aria-pressed="' + bm + '" aria-label="Bookmark ' +
-      escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
+      escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>' + rvButton(i);
     if (HAS.lookup) badges += '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl +
       encodeURIComponent(r[1])) + '" target="_blank" rel="noopener" aria-label="' + escapeAttr('Look up ' + r[1]) + '"><span class="b-t">look up </span>↗</a>';
     var hasSub = r[7] && !(flags & (FL.FB | FL.ALT));
@@ -605,10 +678,10 @@
     if (hasSub && settings.reveal) badges += '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>';
     var sub = hasSub ? '<p class="subnote"' + (settings.reveal ? ' hidden' : '') + '>' + escapeHtml(r[7]) + '</p>' : '';
     var label = settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '';
-    return '<div class="row" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
+    return '<div class="row" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
       glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
-      '<span class="badges">' + badges + (rvArc >= 0 ? rvButton(rvArc) : '') + '</span>' + sub + '</div>';
+      '<span class="badges">' + badges + '</span>' + sub + '</div>';
   }
 
   function eraBodyHtml(e) {
@@ -616,9 +689,7 @@
     if (settings.layout === 'rows') {                         // layout C (X-1): per-row arc labels, no arc heads
       orderedEraRows(e).forEach(function (i) {
         if ((filt ? !matches(i) : !inView(i)) || (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE))) return;
-        var a = D.issues[i][2], first = a !== curArc && !isInert(i);
-        if (first) curArc = a;
-        html += rowHtml(i, first ? a : -1);                    // no arc heads: the ✎ rides on the run's first row
+        html += rowHtml(i);
       });
       return (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
     }
@@ -636,7 +707,7 @@
           (again ? ' · cont.' : '') + '</h3>' + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') +
           (cred ? '<p class="credits">' + cred + '</p>' : '') + (again ? '' : eventNote(a)) +
           (arc.b && !again && arc.b !== D.eras[e].intro ? '<p class="blurb">' + escapeHtml(arc.b) + '</p>' : '') +
-          '<div class="arc-acts">' + rvButton(a) +
+          '<div class="arc-acts">' +
           '<button type="button" class="b" data-act="arc-mark" data-a="' + a + '" data-st="read">Mark arc read</button>' +
           '<button type="button" class="b" data-act="arc-mark" data-a="' + a + '" data-st="unread">Mark arc unread</button></div></div>';
       }
@@ -651,7 +722,7 @@
     var era = D.eras[e], isOpen = !!open.e[e];
     return '<section class="era" data-e="' + e + '" style="--ei:' + e + '"' + (hidden ? ' hidden' : '') + '>' +
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
-      '<span class="bhead"><span class="bname">' + escapeHtml(era.name) + '</span>' +
+      '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
       statsHtml(S.era[e], fin) + '</button>' +
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
@@ -1171,60 +1242,60 @@
   }
 
   /* ======================================================================
-     REVIEWS — one per arc (the session-2 migration maps old per-issue
-     reviews onto arcs): 1–5 stars and text. The ✎ button (.b.rv, D-4) sits
-     on the arc head; in layout C, on the first row of the arc's run.
+     REVIEWS — one per issue (John, 8 Oct; F-3): 1–5 stars and text, keyed
+     by row id. The ✎ button (.b.rv, D-4) sits on every row; the Reviews tab
+     lists them in reading order.
      ====================================================================== */
   function stars(n) { return '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n); }
-  function rvTag(rv) { return rv ? (rv.r ? ' ' + '★'.repeat(rv.r) : ' noted') : ' review'; }
-  function rvLabel(a) {
-    var rv = reviews[D.arcs[a].id];
-    return 'Review ' + D.arcs[a].n + (rv ? (rv.r ? ' (' + rv.r + ' of 5 stars)' : ' (notes)') : '');
+  function rvTag(rv) { return rv ? (rv.r ? ' ' + '★'.repeat(rv.r) : ' noted') : ''; }
+  function rvLabel(i) {
+    var rv = reviews[D.ids[i]];
+    return 'Review ' + D.issues[i][1] + (rv ? (rv.r ? ' (' + rv.r + ' of 5 stars)' : ' (notes)') : '');
   }
-  function rvButton(a) {
-    return '<button type="button" class="b rv" data-act="rv" data-a="' + a + '" aria-expanded="false" aria-label="' +
-      escapeAttr(rvLabel(a)) + '">✎<span class="b-t">' + escapeHtml(rvTag(reviews[D.arcs[a].id])) + '</span></button>';
+  function rvInner(i) {
+    var tag = rvTag(reviews[D.ids[i]]);
+    return '✎' + (tag ? '<span class="b-t">' + escapeHtml(tag) + '</span>' : '');
   }
-  function reviewEditorHtml(a) {
-    var arc = D.arcs[a], cur = reviews[arc.id] || { r: 0, t: '' }, h = '';
+  function rvButton(i) {
+    return '<button type="button" class="b rv" data-act="rv" data-i="' + i + '" aria-expanded="false" aria-label="' +
+      escapeAttr(rvLabel(i)) + '">' + rvInner(i) + '</button>';
+  }
+  function reviewEditorHtml(i) {
+    var title = D.issues[i][1], cur = reviews[D.ids[i]] || { r: 0, t: '' }, h = '';
     for (var n = 1; n <= 5; n++) {
-      h += '<button type="button" class="star" data-act="rv-star" data-a="' + a + '" data-n="' + n + '" aria-pressed="' + (n <= cur.r) +
+      h += '<button type="button" class="star" data-act="rv-star" data-i="' + i + '" data-n="' + n + '" aria-pressed="' + (n <= cur.r) +
         '" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>';
     }
-    return '<div class="review" data-a="' + a + '"><div class="stars" role="group" aria-label="Rating for ' + escapeAttr(arc.n) + '">' + h +
-      '</div><textarea class="rvtext" data-a="' + a + '" rows="3" placeholder="Notes on ' + escapeAttr(arc.n) + '" aria-label="Notes on ' +
-      escapeAttr(arc.n) + '">' + escapeHtml(cur.t || '') + '</textarea></div>';
+    return '<div class="review" data-i="' + i + '"><div class="stars" role="group" aria-label="Rating for ' + escapeAttr(title) + '">' + h +
+      '</div><textarea class="rvtext" data-i="' + i + '" rows="3" placeholder="Notes on ' + escapeAttr(title) + '" aria-label="Notes on ' +
+      escapeAttr(title) + '">' + escapeHtml(cur.t || '') + '</textarea></div>';
   }
   function toggleReview(btn) {
-    var host = btn.closest('.arc-head') || btn.closest('.row'), next = host.nextElementSibling;
+    var host = btn.closest('.row'), next = host.nextElementSibling;
     if (next && next.classList.contains('review')) { next.remove(); btn.setAttribute('aria-expanded', 'false'); return; }
-    host.insertAdjacentHTML('afterend', reviewEditorHtml(+btn.dataset.a));
+    host.insertAdjacentHTML('afterend', reviewEditorHtml(+btn.dataset.i));
     btn.setAttribute('aria-expanded', 'true');
     host.nextElementSibling.querySelector('textarea').focus();
   }
   /* Stars or text (undefined = leave as is). Clearing both deletes the review. */
-  function commitReview(a, r, t) {
-    var id = D.arcs[a].id, cur = reviews[id] || { r: 0, t: '' };
+  function commitReview(i, r, t) {
+    var id = D.ids[i], cur = reviews[id] || { r: 0, t: '' };
     if (r !== undefined) cur.r = r;
     if (t !== undefined) cur.t = t;
     if (!cur.r && !cur.t) delete reviews[id]; else reviews[id] = cur;
-    save('reviews', reviews);
-    $$('.b.rv[data-a="' + a + '"]').forEach(function (b) {
-      b.innerHTML = '✎<span class="b-t">' + escapeHtml(rvTag(reviews[id])) + '</span>';
-      b.setAttribute('aria-label', rvLabel(a));
+    save(REVIEWS_KEY, reviews);
+    $$('.b.rv[data-i="' + i + '"]').forEach(function (b) {
+      b.innerHTML = rvInner(i);
+      b.setAttribute('aria-label', rvLabel(i));
     });
-    $$('.review[data-a="' + a + '"] .star').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.n <= cur.r ? 'true' : 'false'); });
+    $$('.review[data-i="' + i + '"] .star').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.n <= cur.r ? 'true' : 'false'); });
   }
-  /* The Reviews tab (F-3): sorted by each arc's first key, tap to jump. Old
-     reviews the migration could not match are listed, never dropped. */
-  function firstInView(a) {
-    for (var i = ARC_FIRST[a]; i >= 0 && i < N; i++) if (D.issues[i][2] === a && !isInert(i) && inView(i)) return i;
-    return -1;
-  }
+  /* The Reviews tab (F-3): in reading order, tap to jump. Reviews this list
+     has no issue for are listed, never dropped. */
   function renderReviews() {
-    var known = Object.keys(reviews).filter(function (id) { return ARC_I[id] !== undefined; })
-      .sort(function (x, y) { return ARC_FIRST[ARC_I[x]] - ARC_FIRST[ARC_I[y]]; });
-    var orphans = Object.keys(reviews).filter(function (id) { return ARC_I[id] === undefined; });
+    var mine = function (id) { return ID_I[id] !== undefined && !isInert(ID_I[id]); };
+    var known = Object.keys(reviews).filter(mine).sort(function (x, y) { return ID_I[x] - ID_I[y]; });
+    var orphans = Object.keys(reviews).filter(function (id) { return !mine(id); });
     var legacy = (load('legacy-unmatched', null) || { reviews: {} }).reviews || {};
     var item = function (name, rv, extra) {
       return '<li class="rev-item"><div class="rev-top">' + name +
@@ -1233,14 +1304,14 @@
     };
     var h = '<h2 class="pane-h">Reviews' + (known.length ? ' · ' + known.length : '') + '</h2>';
     h += known.length ? '<ol class="revlist">' + known.map(function (id) {
-      var a = ARC_I[id], first = ARC_FIRST[a];
-      return item('<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-a="' + a + '">' + escapeHtml(D.arcs[a].n) + '</button>',
-        reviews[id], first >= 0 ? '<span class="rev-era">' + escapeHtml(D.eras[D.issueEra[first]].name) + '</span>' : '');
-    }).join('') + '</ol>' : '<p class="muted">No reviews yet. Tap ✎ on any arc to rate it.</p>';
+      var i = ID_I[id];
+      return item('<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-id="' + escapeAttr(id) + '">' + escapeHtml(D.issues[i][1]) + '</button>',
+        reviews[id], '<span class="rev-era">' + escapeHtml(D.arcs[D.issues[i][2]].n) + ' · ' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>');
+    }).join('') + '</ol>' : '<p class="muted">No reviews yet. Tap ✎ on any issue to rate it.</p>';
     var kept = orphans.map(function (id) { return [id, reviews[id]]; })
       .concat(Object.keys(legacy).map(function (k) { return [k, legacy[k] || {}]; }));
     if (kept.length) {
-      h += '<h3 class="ssub">Kept from the previous version</h3><p class="muted">These could not be matched to an arc in this list. ' +
+      h += '<h3 class="ssub">Kept from the previous version</h3><p class="muted">These could not be matched to an issue in this list. ' +
         'They are kept, never dropped.</p><ul class="revlist kept">' + kept.map(function (k) {
           return item('<span class="rev-name">' + escapeHtml(k[0]) + '</span>', { r: +k[1].r || 0, t: k[1].t || '' });
         }).join('') + '</ul>';
@@ -1397,7 +1468,7 @@
     settings = withDefaults(s.settings);
     filtersFromSettings();
     F.q = q; F.creator = cr;                                   // search text is session-only
-    saveProgress(); save('reviews', reviews); saveSettings();
+    saveProgress(); save(REVIEWS_KEY, reviews); saveSettings();
     rerenderAll();
   }
   function rerenderAll() {
@@ -1627,19 +1698,33 @@
   }
   function qrText() { return location.href.split('#')[0] + '#sync=' + packQR(); }
 
-  /* ---- the full, id-keyed format ---- */
+  /* ---- the full, id-keyed format. v4 (8 Oct) keys reviews by row id; v3
+     keyed them by arc, and a v3 code or backup still reads, each arc's review
+     going to the arc's first issue (John, 8 Oct). ---- */
+  var FULL_V = 4;
   function fullBody() {
-    return { v: 3, key: D.franchise.key, dataVersion: D.dataVersion, at: Date.now(),
+    return { v: FULL_V, key: D.franchise.key, dataVersion: D.dataVersion, at: Date.now(),
              marks: progress.marks, bookmarks: progress.bookmarks, reviews: reviews, settings: settings };
   }
-  function fullCode() { return TAG + 's3.' + utf8ToB64url(JSON.stringify(fullBody())); }
+  function fullCode() { return TAG + 's4.' + utf8ToB64url(JSON.stringify(fullBody())); }
+  function arcReviewsToIssues(byArc) {
+    var out = {};
+    Object.keys(byArc).forEach(function (arcId) {
+      var r = byArc[arcId], a = ARC_I[arcId], first = a === undefined ? -1 : firstRowOfArc(a);
+      if (first >= 0 && r && typeof r === 'object') out[D.ids[first]] = { r: +r.r || 0, t: String(r.t || '') };
+    });
+    return out;
+  }
   function bodyData(body) {
-    if (!body || typeof body !== 'object' || body.v !== 3) throw new Error('That is not a backup from this version of the tracker.');
+    if (!body || typeof body !== 'object' || (body.v !== 3 && body.v !== 4)) {
+      throw new Error(body && body.v > FULL_V ? 'That backup is from a newer version of the tracker: update this one first.'
+                                               : 'That is not a backup from this version of the tracker.');
+    }
     if (body.key !== D.franchise.key) throw new Error('That backup is from a different tracker.');
-    var marks = {};
+    var marks = {}, rv = body.reviews && typeof body.reviews === 'object' ? body.reviews : {};
     Object.keys(body.marks || {}).forEach(function (id) { if (CYCLE.indexOf(body.marks[id]) > 0) marks[id] = body.marks[id]; });
     return { marks: marks, bookmarks: (Array.isArray(body.bookmarks) ? body.bookmarks : []).map(String),
-             reviews: body.reviews && typeof body.reviews === 'object' ? body.reviews : {}, settings: body.settings || null };
+             reviews: body.v === 3 ? arcReviewsToIssues(rv) : rv, settings: body.settings || null };
   }
 
   /* ---- old (v2) codes: positions in v2's key order. Migrated rows keep
@@ -1662,11 +1747,10 @@
       if (v && ID_I[id] !== undefined && !isInert(ID_I[id])) out.marks[id] = SNAME[v];
     });
     (body.b || []).forEach(function (k) { if (ID_I[String(k)] !== undefined) out.bookmarks.push(String(k)); });
-    Object.keys(body.r || {}).forEach(function (k) {                 // per-issue reviews map onto arcs, as the migration does
+    Object.keys(body.r || {}).forEach(function (k) {                 // per-issue reviews, exactly
       var i = ID_I[String(k)], r = body.r[k] || {};
-      if (i === undefined) return;
-      var arcId = D.arcs[D.issues[i][2]].id, cur = out.reviews[arcId] || { r: 0, t: '' };
-      out.reviews[arcId] = { r: Math.max(cur.r, +r.r || 0), t: [cur.t, r.t || ''].filter(Boolean).join('\n\n') };
+      if (i === undefined || isInert(i) || (!(+r.r) && !r.t)) return;
+      out.reviews[String(k)] = { r: +r.r || 0, t: String(r.t || '') };
     });
     return out;
   }
@@ -1677,7 +1761,7 @@
     var link = text.match(/#sync=(.+)$/);
     if (link) text = decodeURIComponent(link[1]);
     if (text.indexOf(TAG + 'q3.') === 0) return { kind: 'qr', data: unpackQR(text.slice(TAG.length + 3)) };
-    if (text.indexOf(TAG + 's3.') === 0) {
+    if (text.indexOf(TAG + 's4.') === 0 || text.indexOf(TAG + 's3.') === 0) {
       var body;
       try { body = JSON.parse(b64urlToUtf8(text.slice(TAG.length + 3))); } catch (e) { throw new Error('That code is damaged: copy it again.'); }
       return { kind: 'full', data: bodyData(body) };
@@ -1709,13 +1793,13 @@
     (data.bookmarks || []).forEach(function (id) {
       if (ID_I[id] !== undefined && progress.bookmarks.indexOf(id) === -1) { progress.bookmarks.push(id); res.bookmarks++; }
     });
-    Object.keys(data.reviews || {}).forEach(function (arcId) {
-      var r = data.reviews[arcId];
-      if (ARC_I[arcId] === undefined || reviews[arcId] || !r || (!r.r && !r.t)) return;
-      reviews[arcId] = { r: +r.r || 0, t: String(r.t || '') }; res.reviews++;
+    Object.keys(data.reviews || {}).forEach(function (id) {
+      var r = data.reviews[id], i = ID_I[id];
+      if (i === undefined || isInert(i) || reviews[id] || !r || (!r.r && !r.t)) return;
+      reviews[id] = { r: +r.r || 0, t: String(r.t || '') }; res.reviews++;
     });
     afterMarks();
-    save('reviews', reviews);
+    save(REVIEWS_KEY, reviews);
     renderPinbar();
     if (activeTab === 'reading') renderReading();
     return res;
@@ -1737,7 +1821,7 @@
     if (parsed.kind === 'full') {
       reviews = JSON.parse(JSON.stringify(data.reviews));
       if (data.settings) { settings = withDefaults(JSON.parse(JSON.stringify(data.settings))); filtersFromSettings(); F.q = q; F.creator = cr; }
-      save('reviews', reviews);
+      save(REVIEWS_KEY, reviews);
     }
     saveProgress(); saveSettings();
     rerenderAll();
@@ -2223,11 +2307,11 @@
       case 'bulk-era': bulkEra(bulkSel.era, bulkSel.era, b.dataset.st === 'unread' ? 'unread' : 'read'); break;
       case 'bulk-range': bulkEra(bulkSel.from, bulkSel.to, 'read'); break;
       case 'rv-star': {
-        var ra = +b.dataset.a, rn = +b.dataset.n, rcur = reviews[D.arcs[ra].id];
-        commitReview(ra, rcur && rcur.r === rn ? 0 : rn);
+        var ri = +b.dataset.i, rn = +b.dataset.n, rcur = reviews[D.ids[ri]];
+        commitReview(ri, rcur && rcur.r === rn ? 0 : rn);
         break;
       }
-      case 'rv-jump': { var fi = firstInView(+b.dataset.a); if (fi >= 0) jumpToIssue(D.ids[fi]); break; }
+      case 'rv-jump': jumpToIssue(b.dataset.id); break;
       case 'rd-done': readerMark('read'); break;
       case 'rd-skip': readerMark('skip'); break;
       case 'rd-prev': readerStep(-1); break;
@@ -2351,7 +2435,7 @@
   var inputTimer = null;
   function onInput(ev) {
     var id = ev.target.id;
-    if (ev.target.classList.contains('rvtext')) { commitReview(+ev.target.dataset.a, undefined, ev.target.value); return; }
+    if (ev.target.classList.contains('rvtext')) { commitReview(+ev.target.dataset.i, undefined, ev.target.value); return; }
     if (id !== 'q' && id !== 'cq') return;
     clearTimeout(inputTimer);
     inputTimer = setTimeout(function () {
@@ -2419,10 +2503,15 @@
   applyFranchise();
   checkOnline();
   registerSW();
-  var migration = null;
+  var migration = null, reviewUpgrade = null;
   if (D.franchise.storage && D.franchise.storage.legacy && !settings.migrated) {
     migration = importLegacy();
     settings.migrated = { format: D.franchise.storage.legacy.format, at: Date.now(), result: migration };
+  }
+  if (reviewsFresh) {                                         // once: per-arc reviews of an earlier build become per-issue
+    reviewUpgrade = upgradeArcReviews();
+    if (reviewUpgrade) settings.reviewsUpgraded = { at: Date.now(), result: reviewUpgrade };
+    save(REVIEWS_KEY, reviews);
   }
   saveSettings();
   renderPanel();
@@ -2432,6 +2521,7 @@
   var synced = importFromHash();
   if (checkBeacon()) { /* the stale-styles warning outranks the other boot toasts */ }
   else if (migration && legacySummary(migration)) toast(legacySummary(migration));
+  else if (upgradeSummary(reviewUpgrade)) toast(upgradeSummary(reviewUpgrade));
   else if (!synced) checkRefresh();
 
   /* Small public surface for session 3's Settings actions (and the harness). */

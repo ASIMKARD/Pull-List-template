@@ -36,14 +36,15 @@ module.exports = async function (t) {
   t.eq('marks copied for every id that exists', Object.keys(prog.marks).sort(), ['198706004', 'fixture-hero-1980-1', 'fixture-hero-1980-2', 'fixture-hero-1980-3']);
   t.ok('mark states carried over exactly', prog.marks['198706004'] === 'read' && prog.marks['fixture-hero-1980-1'] === 'reading' && prog.marks['fixture-hero-1980-2'] === 'skip');
   t.eq('bookmarks copied (unknown ids skipped)', prog.bookmarks, ['198706004']);
-  const rv = JSON.parse(after[ns + 'reviews']);
-  t.ok('reviews are mapped to arcs', !!rv['kestrel-run'] && !!rv.origins);
-  t.ok('a review moves to its arc intact', rv['kestrel-run'].r === 4 && rv['kestrel-run'].t === 'Great tie-in.');
-  t.ok('two issue reviews in one arc merge (best stars, both texts kept)', rv.origins.r === 5 && /Slow start\.\n\nBetter\./.test(rv.origins.t));
+  const rv = JSON.parse(after[ns + 'issue-reviews']);
+  t.eq('reviews come over per issue, exactly as the old tracker kept them (John, 8 Oct)', rv,
+       { '198706004': { r: 4, t: 'Great tie-in.' }, 'fixture-hero-1980-1': { r: 3, t: 'Slow start.' }, 'fixture-hero-1980-2': { r: 5, t: 'Better.' } });
+  t.ok('…two reviews in one arc stay two reviews, nothing merged', D.issues[D.ids.indexOf('fixture-hero-1980-1')][2] === D.issues[D.ids.indexOf('fixture-hero-1980-2')][2]);
+  t.ok('…and no per-arc store is written', !(ns + 'reviews' in after));
   const um = JSON.parse(after[ns + 'legacy-unmatched'] || 'null');
   t.ok('an unmatchable review is kept, not dropped', !!um && um.reviews['gone-1999-1'] && um.reviews['gone-1999-1'].t === 'An issue that no longer exists.');
   const toast = d.querySelector('#toastMsg').textContent;
-  t.ok('the toast reports what came over', /Brought over 4 marks, 1 bookmark, 2 reviews/.test(toast), toast);
+  t.ok('the toast reports what came over', /Brought over 4 marks, 1 bookmark, 3 reviews/.test(toast), toast);
   t.ok('the toast reports the unmatched review', /1 review could not be matched/.test(toast), toast);
   t.ok('the header reflects the migrated marks', /^2 \//.test(d.querySelector('#pprog .pcount').textContent));
   const settings = JSON.parse(after[ns + 'settings']);
@@ -51,7 +52,7 @@ module.exports = async function (t) {
 
   // ---- one store, namespaced ----
   const v3keys = Object.keys(after).filter(k => k.startsWith(ns)).map(k => k.slice(ns.length)).sort();
-  t.eq('the v3 store is progress, reviews, settings (+ kept legacy leftovers)', v3keys, ['legacy-unmatched', 'progress', 'reviews', 'settings']);
+  t.eq('the v3 store is progress, issue reviews, settings (+ kept legacy leftovers)', v3keys, ['issue-reviews', 'legacy-unmatched', 'progress', 'settings']);
   t.ok('settings, filters, pace and panel state live in ONE settings object (T-46 re-expressed)',
        settings.filters && settings.pace && Array.isArray(settings.panelOpen) && settings.order);
   t.ok('pace defaults: 15 min/issue, 12 issues/week', settings.pace.minutes === 15 && settings.pace.weekly === 12);
@@ -75,7 +76,10 @@ module.exports = async function (t) {
   t.ok('setup: the v3 store has a newer mark for 198706004', p3.marks['198706004'] === 'read');
   app2.window.close();
   p3.marks['198706004'] = 'skip';                           // newer than the old 'read'
-  const s4 = Object.assign({}, v3only, { [ns + 'progress']: JSON.stringify(p3) });
+  const r3 = JSON.parse(v3only[ns + 'issue-reviews']);
+  r3['fixture-hero-1980-1'] = { r: 1, t: 'Changed my mind.' };      // edited in v3
+  delete r3['198706004'];                                         // deleted in v3: the re-run fills it again
+  const s4 = Object.assign({}, v3only, { [ns + 'progress']: JSON.stringify(p3), [ns + 'issue-reviews']: JSON.stringify(r3) });
   const app3 = boot(b.out, { storage: s4 });
   await wait(20);
   const res = app3.window.PullList.importLegacy();
@@ -86,8 +90,9 @@ module.exports = async function (t) {
   t.ok('re-run does not duplicate bookmarks', p4.bookmarks.filter(x => x === '198706004').length === 1);
   t.ok('re-run leaves the old keys byte-identical', app3.window.localStorage.getItem(OLD + 'progress') === V2_PROGRESS &&
        app3.window.localStorage.getItem(OLD + 'reviews') === V2_REVIEWS);
-  const rv4 = JSON.parse(app3.window.localStorage.getItem(ns + 'reviews'));
-  t.ok('re-run never overwrites an existing v3 review', rv4.origins.r === 5);
+  const rv4 = JSON.parse(app3.window.localStorage.getItem(ns + 'issue-reviews'));
+  t.eq('re-run never overwrites an existing v3 review, and fills the gaps', [rv4['fixture-hero-1980-1'], rv4['198706004'], res.reviews],
+       [{ r: 1, t: 'Changed my mind.' }, { r: 4, t: 'Great tie-in.' }, 1]);
   app3.window.close();
 
   // ---- the oldest v2 shape (a bare {key: state} map) ----

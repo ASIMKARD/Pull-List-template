@@ -124,7 +124,9 @@ function makeSwContext(existing) {
       open: () => Promise.resolve(cache),
       keys: () => Promise.resolve(existing || ['old-cache']),
       delete: k => { calls.deleted.push(k); return Promise.resolve(true); },
-      match: () => Promise.resolve(undefined)
+      // one stored file, ./app.js as the install stores it (no stamp)
+      match: (req, o) => { const u = new URL(req.url || req, 'https://x.local/app/sw.js'); if (o && o.ignoreSearch) u.search = '';
+                           return Promise.resolve(u.href === 'https://x.local/app/app.js' ? new Response('stored app.js') : undefined); }
     },
     fetch: (req, init) => { calls.fetch.push({ url: req.url || req, cache: (init && init.cache) || req.cache || 'default' }); return Promise.reject(new Error('offline')); }
   };
@@ -284,6 +286,13 @@ module.exports = async function (t) {
       handlers.fetch({ request: { method: 'GET', url }, respondWith: p => { resp = p; } });
       const r = resp ? await resp : null;
       t.ok('offline ' + kind + ' request still resolves to a real Response (never undefined)', !!r && typeof r.status === 'number');
+    }
+    {
+      let resp = null;
+      handlers.fetch({ request: { method: 'GET', url: 'https://x.local/app/app.js?v=0123456789ab' }, respondWith: p => { resp = p; } });
+      const r = resp ? await resp : null;
+      t.ok('offline, index.html\'s stamped app.js?v=… is answered by the app.js the install stored (never the page, never a 503)',
+           !!r && r.status === 200 && r.body === 'stored app.js', r && JSON.stringify(r));
     }
     const shellFetch = calls.fetch.find(f => /index\.html$/.test(f.url));
     t.ok('a shell request is always checked with the server (cache: \'no-cache\'), never served stale from the HTTP cache',

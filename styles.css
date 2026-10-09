@@ -98,6 +98,7 @@
   --fs: calc(15px * var(--scale));
   --radius: 10px; --radius-sm: 6px; --gap: 10px;
   --row-pad: 8px;                                  /* density (S-2) */
+  --row-gutter: 0px;                               /* space a signature skin reserves at a row's right end for a decoration (session 6) */
   --tap: 34px; --tap-glyph: 18px; --b-min: 30px;   /* button size (S-20) */
   --tap-dense: 24px;                               /* table view's targets: never under 24 px, 44 px with large buttons */
   --mark-radius: var(--radius-sm);                 /* mark style (S-5) */
@@ -280,7 +281,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .arc-meta { font-family: var(--font-meta); }
 .arc-meta, .credits, .blurb { display: block; margin: 2px 0 0; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .row {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: var(--row-pad) 6px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: var(--row-pad) calc(6px + var(--row-gutter)) var(--row-pad) 6px;
   border-bottom: 1px solid var(--line); background: var(--card);
 }
 .row.inert { color: var(--ink-soft); font-style: italic; }
@@ -313,6 +314,10 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .stack { position: sticky; top: 0; z-index: 10; background: var(--paper); padding-bottom: var(--gap); }
 /* a jump (next unread, a bookmark, an era chip) lands below the stack, not under it */
 .row, .arc, .era, .band { scroll-margin-top: calc(var(--stack-h) + 8px); }
+/* decoration anchors (session 6): a signature skin may pin a ::before or ::after
+   against these. None of them is sticky (only .stack is), so relative positioning
+   here moves nothing (the sticky trap, CLAUDE.md). */
+.row, .band-head, .era-head, .arc-head { position: relative; }
 
 /* ---- tabs and panes ---- */
 .tabs { display: flex; gap: 0; margin: 0 16px; border-bottom: 1px solid var(--line); overflow-x: auto;
@@ -399,12 +404,13 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 
 /* ---- table view (F-49, S-7): one line per issue, half the height (L-7),
    never wider than the screen (L-8). Targets stay at least 24 px. ---- */
-:root[data-table="1"] .row { flex-wrap: nowrap; gap: 6px; padding-top: 0; padding-bottom: 0; }
+:root[data-table="1"] .row { flex-wrap: nowrap; gap: 4px; padding: 0 4px; }   /* tight: four 24 px targets and the title share a 320 px row */
 :root[data-table="1"] .row .mark { width: var(--tap-dense); height: var(--tap-dense); font-size: calc(14px * var(--scale)); }
 :root[data-table="1"] .title { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-table="1"] .subnote, :root[data-table="1"] .blurb, :root[data-table="1"] .era-intro, :root[data-table="1"] .band-intro { display: none; }
-:root[data-table="1"] .badges { flex: none; flex-wrap: nowrap; gap: 3px; }
-:root[data-table="1"] .row .b { min-height: var(--tap-dense); min-width: var(--tap-dense); padding: 0 5px; justify-content: center; }
+:root[data-table="1"] .badges { flex: none; flex-wrap: nowrap; gap: 2px; }
+:root[data-table="1"] .row .b { min-height: var(--tap-dense); min-width: var(--tap-dense); padding: 0 3px; justify-content: center; }
+:root[data-table="1"] .row .b.core { min-width: 0; padding: 0 2px; }   /* a label, not a target: room for the per-issue ✎ at 320 px */
 :root[data-table="1"] .row .b-t { display: none; }      /* badge words fold away; glyphs and accessible names stay */
 
 /* ---- reading tab ---- */

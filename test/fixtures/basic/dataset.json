@@ -52,7 +52,8 @@
     "--tab-fit": "3.7vw",
     "--radius": "0px",
     "--radius-sm": "0px",
-    "--era-mono-h": 200
+    "--era-mono-h": 200,
+    "--row-gutter": "24px"
    },
    "fonts": [
     {

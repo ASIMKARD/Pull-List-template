@@ -9,6 +9,10 @@ are in `schema/dataset.schema.json`.
 - `dataset.json` (plus its per-era files and `events/`) is the only thing
   you edit. `python3 tools/build.py` stitches it, derives the keys, validates
   everything and writes `data.js`, `sw.js`, `manifest.json` and `workbook.xlsx`.
+  It also stamps `index.html`'s links to `styles.css`, `data.js` and `app.js`
+  with the build's hash (`?v=<build>`): a new build has new addresses, so a
+  reload can't reuse the last build's files from a cache. The stamp never feeds
+  the hash.
 - `python3 tools/build.py --check` rebuilds in memory and fails on any stale
   generated file. CI runs it; so does `test/suites/20-build.test.js`.
 - Every field is read **by name**, never by position: the build, the gate's
@@ -78,8 +82,28 @@ One skin of the tracker's own, from `franchise.signature`:
   tokens, or a file in `fonts/`, `icons/` or `images/`), borders, radii,
   shadows and font settings. Position, display, inset, order, flex, grid,
   float, visibility, z-index, transform, width, height, margin, opacity,
-  content and overflow are refused by name; so are at-rules, `!important`,
-  literal or named colours and transitions.
+  content and overflow are refused by name (but see decorations, below); so
+  are at-rules, `!important`, literal or named colours and transitions.
+- Decorations (John, 8 Oct): a rule whose every selector ends in `::before` or
+  `::after` may also have `content` and may be placed absolutely.
+  - `content` takes quoted text, `attr(data-n)` and `counter()`s.
+  - Rows and era names carry `data-n`, their reading position, zero-padded.
+  - Placement: `position: absolute`, the offsets, `width`, `height`,
+    `text-align` and `white-space`.
+  - Rows, era heads, band heads and arc heads are the anchors.
+  - The `--row-gutter` token reserves room at a row's right end.
+  - Counters (`counter-reset`, `counter-increment`, `counter-set`) may run on
+    any rule.
+  - The build adds `pointer-events: none` and an empty alternative
+    (`content: X / ""`) to every decoration, so it never takes a tap and
+    screen readers skip it.
+  - Glyph marks are `font-size: 0` on `.mark` with a `.mark::after` per state.
+  - Full-width bars are a `box-shadow` either side.
+  - Everything that moves, hides or reorders a control stays refused on a
+    pseudo-element too.
+  - `test/layout/55-decor.test.js` checks every decoration in real Chromium:
+    it covers no control or title, stays on screen, clears contrast and
+    takes no taps.
 - The build writes the checked CSS into `data.js`, and the app adds it once as
   `<style id="skin-signature">`. Measured against a linked file: a tie on
   first paint, and no extra request this way.

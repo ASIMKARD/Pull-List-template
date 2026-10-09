@@ -178,8 +178,8 @@ module.exports = async function (t) {
   // ----------------------------- Clear all progress: confirm + undo (F-32)
   const marks = { 'mixed-hero-1990-1': 'read', 'mixed-hero-1990-2': 'reading', 'mixed-quest-1990': 'skip' };
   const before = { marks, bookmarks: ['mixed-hero-1990-3'] };
-  const revs = { opening: { r: 4, t: 'Great start.' } };
-  app = boot(mx.out, { now: NOW, storage: { [ns + 'progress']: JSON.stringify(before), [ns + 'reviews']: JSON.stringify(revs) } });
+  const revs = { 'mixed-hero-1990-1': { r: 4, t: 'Great start.' } };
+  app = boot(mx.out, { now: NOW, storage: { [ns + 'progress']: JSON.stringify(before), [ns + 'issue-reviews']: JSON.stringify(revs) } });
   d = app.document;
   await wait(20);
   const readCount = () => $('#pprog .pcount').textContent;
@@ -194,7 +194,7 @@ module.exports = async function (t) {
   const cleared = stored(app, 'progress');
   t.ok('Clear all removes every mark', Object.keys(cleared.marks).length === 0 && /^0 \//.test(readCount()));
   t.ok('…keeps bookmarks and reviews', JSON.stringify(cleared.bookmarks) === JSON.stringify(before.bookmarks) &&
-       JSON.stringify(stored(app, 'reviews')) === JSON.stringify(revs));
+       JSON.stringify(stored(app, 'issue-reviews')) === JSON.stringify(revs));
   t.ok('…and offers Undo', !$('#toast').hidden && $('#toastAct').textContent === 'Undo');
   $('#toastAct').click();
   t.eq('Undo restores the previous progress exactly', stored(app, 'progress'), before);

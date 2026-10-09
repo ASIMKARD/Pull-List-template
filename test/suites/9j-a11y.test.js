@@ -20,7 +20,7 @@ function nameOf(el, d) {
 module.exports = async function (t) {
   const b = basic(), D = loadData(b.out), ns = D.franchise.key + ':v3:';
   const app = boot(b.out, { storage: { [ns + 'settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' }, banner: true, eraNav: 'chips', reveal: true }),
-                                       [ns + 'reviews']: JSON.stringify({ origins: { r: 4, t: 'Kept.' } }) } });
+                                       [ns + 'issue-reviews']: JSON.stringify({ 'fixture-hero-1980-1': { r: 4, t: 'Kept.' } }) } });
   const d = app.document, w = app.window;
   await wait(20);
   const $ = q => d.querySelector(q), $$ = q => [...d.querySelectorAll(q)];
@@ -30,7 +30,7 @@ module.exports = async function (t) {
   $('[data-act="panel"]').click();
   openSections(app, 'f');
   $('.ptools [data-act="expand-all"]').click();
-  $('.arc-head .b.rv').click();                                        // a review editor open too
+  $('.row .b.rv').click();                                             // a review editor open too
   const seenIds = new Set(), dupes = new Set(), unnamed = [], badRefs = [], badStates = [];
   const audit = where => {
     const ids = $$('[id]').map(e => e.id);

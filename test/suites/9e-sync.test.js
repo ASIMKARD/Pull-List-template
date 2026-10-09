@@ -93,7 +93,7 @@ module.exports = async function (t) {
     t.ok('10,000 alternating marks: it fit, and round-trips', JSON.stringify(app.window.PullList.readCode(app.window.PullList.syncCodes().qrText).data.marks) === JSON.stringify(alt));
   } else {
     t.ok('10,000 alternating marks overflow a QR: a clear message, no QR drawn', /Too much progress for a QR code: use the copy-code/.test(box.textContent) && box.getAttribute('data-version') === '');
-    t.ok('…and the copy-code is right there and round-trips', fullOut.startsWith('BIG:s3.') && JSON.stringify(app.window.PullList.readCode(fullOut).data.marks) === JSON.stringify(alt));
+    t.ok('…and the copy-code is right there and round-trips', fullOut.startsWith('BIG:s4.') && JSON.stringify(app.window.PullList.readCode(fullOut).data.marks) === JSON.stringify(alt));
   }
   t.ok('no runtime errors (10,000 rows)', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
@@ -103,17 +103,17 @@ module.exports = async function (t) {
   const baseSettings = { v: 3, migrated: { format: 'v2' } };
   const A = {
     progress: { marks: { 'fixture-hero-1980-1': 'read', 'fixture-hero-1980-2': 'reading', 'fixture-hero-1980-3': 'skip' }, bookmarks: ['fixture-hero-1980-4'] },
-    reviews: { origins: { r: 5, t: 'Device A notes.' } },
+    reviews: { 'fixture-hero-1980-1': { r: 5, t: 'Device A notes.' } },
     settings: Object.assign({}, baseSettings, { pace: { minutes: 25, weekly: 5 }, filters: { mandatory: true }, presets: [{ name: 'A', filters: { unread: true }, order: 'reading', events: 'essential' }] })
   };
-  const store = st => ({ [ns + 'progress']: JSON.stringify(st.progress), [ns + 'reviews']: JSON.stringify(st.reviews), [ns + 'settings']: JSON.stringify(st.settings) });
+  const store = st => ({ [ns + 'progress']: JSON.stringify(st.progress), [ns + 'issue-reviews']: JSON.stringify(st.reviews), [ns + 'settings']: JSON.stringify(st.settings) });
   app = boot(b.out, { now: NOW, storage: store(A) });
   await wait(20);
   const codeA = app.window.PullList.syncCodes();
-  t.ok('the copy-code is the full id-keyed format with this tracker\'s prefix', codeA.full.startsWith('FIXTURE:s3.'));
+  t.ok('the copy-code is the full id-keyed format, version 4 (reviews per issue), with this tracker\'s prefix', codeA.full.startsWith('FIXTURE:s4.'));
   const flush = a => { a.window.dispatchEvent(new a.window.Event('pagehide')); };
   flush(app);
-  const savedA = { progress: JSON.parse(app.window.localStorage.getItem(ns + 'progress')), reviews: JSON.parse(app.window.localStorage.getItem(ns + 'reviews')),
+  const savedA = { progress: JSON.parse(app.window.localStorage.getItem(ns + 'progress')), reviews: JSON.parse(app.window.localStorage.getItem(ns + 'issue-reviews')),
                    settings: JSON.parse(app.window.localStorage.getItem(ns + 'settings')) };
   // file export: capture the download
   let href = null, fileName = null;
@@ -122,7 +122,8 @@ module.exports = async function (t) {
   app.document.querySelector('[data-act="backup-export"]').click();
   t.ok('Export backup downloads <key>-backup-YYYY-MM-DD.json', fileName === 'fixture-backup-2026-01-01.json', fileName);
   const fileJson = decodeURIComponent(href.replace(/^data:application\/json;charset=utf-8,/, ''));
-  t.ok('…holding the full format', JSON.parse(fileJson).format === 'pull-list-backup' && JSON.parse(fileJson).key === 'fixture');
+  t.ok('…holding the full format, version 4, reviews keyed by row id', JSON.parse(fileJson).format === 'pull-list-backup' && JSON.parse(fileJson).key === 'fixture' &&
+       JSON.parse(fileJson).v === 4 && JSON.stringify(JSON.parse(fileJson).reviews) === JSON.stringify(A.reviews));
   t.ok('no runtime errors (device A)', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
 
@@ -133,7 +134,7 @@ module.exports = async function (t) {
   d = app.document;
   await wait(20);
   const $ = q => d.querySelector(q);
-  const stored = () => { flush(app); return { progress: JSON.parse(app.window.localStorage.getItem(ns + 'progress')), reviews: JSON.parse(app.window.localStorage.getItem(ns + 'reviews') || '{}'),
+  const stored = () => { flush(app); return { progress: JSON.parse(app.window.localStorage.getItem(ns + 'progress')), reviews: JSON.parse(app.window.localStorage.getItem(ns + 'issue-reviews') || '{}'),
                                               settings: JSON.parse(app.window.localStorage.getItem(ns + 'settings')) }; };
   const savedB = stored();
   $('#tab-settings').click();
@@ -147,7 +148,7 @@ module.exports = async function (t) {
   t.ok('Merge never downgrades a read mark (#2 stays read, not "reading")', m1['fixture-hero-1980-2'] === 'read');
   t.ok('…brings in what is new (#3 skip) and upgrades the rest (#1 reading → read)', m1['fixture-hero-1980-3'] === 'skip' && m1['fixture-hero-1980-1'] === 'read');
   t.ok('…keeps marks only this device had (#5)', m1['fixture-hero-1980-5'] === 'read');
-  t.ok('…adds bookmarks and fills in reviews', stored().progress.bookmarks.includes('fixture-hero-1980-4') && stored().reviews.origins.t === 'Device A notes.');
+  t.ok('…adds bookmarks and fills in reviews, per issue', stored().progress.bookmarks.includes('fixture-hero-1980-4') && stored().reviews['fixture-hero-1980-1'].t === 'Device A notes.');
   t.ok('…and says what it did, including the read mark it kept', /Merged 2 marks, 1 bookmark, 1 review\. Kept 1 read mark you already had\./.test($('#toastMsg').textContent),
        $('#toastMsg').textContent);
   app.window.close();
@@ -202,7 +203,41 @@ module.exports = async function (t) {
   $('[data-act="sync-replace-ask"]').click();
   $('[data-act="sync-replace-yes"]').click();
   same('…and Replace from the file restores device A exactly', stored().progress, savedA.progress);
+  same('…its reviews too, per issue', stored().reviews, savedA.reviews);
   t.ok('no runtime errors (device B)', app.errors.length === 0, app.errors.join(' | '));
+  app.window.close();
+
+  // ---- the old format (v3, reviews per arc) still reads (John, 8 Oct): each arc's review goes to its first issue
+  const b64u = o => Buffer.from(JSON.stringify(o), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const bodyA = JSON.parse(Buffer.from(codeA.full.slice('FIXTURE:s4.'.length).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+  const v3body = Object.assign({}, bodyA, { v: 3, reviews: { origins: { r: 5, t: 'Arc note.' }, 'arc-gone': { r: 2, t: 'Its arc left the list.' } } });
+  const v3code = 'FIXTURE:s3.' + b64u(v3body), originsFirst = D.ids[D.issues.findIndex(r => D.arcs[r[2]].id === 'origins')];
+  app = boot(b.out, { now: NOW, storage: store(B) });
+  d = app.document;
+  await wait(20);
+  const old3 = app.window.PullList.readCode(v3code);
+  same('an old v3 code still reads: marks and bookmarks as they were', [old3.data.marks, old3.data.bookmarks], [bodyA.marks, bodyA.bookmarks]);
+  same('…and each arc\'s review lands on the arc\'s first issue (an arc the list lost is left out)', old3.data.reviews, { [originsFirst]: { r: 5, t: 'Arc note.' } });
+  $('#tab-settings').click();
+  paste(v3code);
+  $('[data-act="sync-replace-ask"]').click();
+  $('[data-act="sync-replace-yes"]').click();
+  same('Replace from an old v3 code: progress exactly', stored().progress, savedA.progress);
+  same('…reviews on the first issues', stored().reviews, { [originsFirst]: { r: 5, t: 'Arc note.' } });
+  const v4again = app.window.PullList.syncCodes().full;
+  t.ok('…and its next copy-code is v4', v4again.startsWith('FIXTURE:s4.'));
+  same('a v4 code made after an old v3 import round-trips exactly', app.window.PullList.readCode(v4again).data.reviews, { [originsFirst]: { r: 5, t: 'Arc note.' } });
+  const v3file = JSON.stringify(Object.assign({ format: 'pull-list-backup' }, v3body));
+  const input3 = $('#importFile');
+  Object.defineProperty(input3, 'files', { value: [new app.window.File([v3file], 'fixture-backup-2026-01-01.json', { type: 'application/json' })] });
+  input3.dispatchEvent(new app.window.Event('change', { bubbles: true }));
+  await wait(60);
+  t.ok('an old v3 backup file reads too', /A backup: 3 marks, 1 bookmark, 1 review/.test(($('.syncpend') || { textContent: '' }).textContent),
+       ($('.syncpend') || { textContent: '' }).textContent);
+  let newer = '';
+  try { app.window.PullList.readCode('FIXTURE:s4.' + b64u(Object.assign({}, bodyA, { v: 5 }))); } catch (e) { newer = e.message; }
+  t.ok('a backup from a newer format is refused, saying so', /newer version of the tracker/.test(newer), newer);
+  t.ok('no runtime errors (old format)', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
 
   // #sync= on open: merges, reports, clears the link
@@ -226,9 +261,9 @@ module.exports = async function (t) {
   writeJSON(eraFile, ef);
   const gb = build(path.join(grown, 'dataset.json'), { label: 'sync-grown-out' }), Dgr = loadData(gb.out);
   t.ok('the grown list has a new dataVersion', gb.status === 0 && Dgr.dataVersion !== D.dataVersion, gb.stderr);
-  const withGhost = JSON.parse(Buffer.from(codeA.full.slice('FIXTURE:s3.'.length).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+  const withGhost = JSON.parse(Buffer.from(codeA.full.slice('FIXTURE:s4.'.length).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
   withGhost.marks['row-that-left-the-list'] = 'read';
-  const ghostCode = 'FIXTURE:s3.' + Buffer.from(JSON.stringify(withGhost), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const ghostCode = 'FIXTURE:s4.' + Buffer.from(JSON.stringify(withGhost), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   app = boot(gb.out, { now: NOW, storage: { [ns + 'settings']: JSON.stringify(baseSettings) } });
   d = app.document;
   await wait(20);
@@ -267,7 +302,8 @@ module.exports = async function (t) {
   const got = app.window.PullList.readCode(v2code).data;
   same('v2 code: every position after the retired id still lands on the right row', got.marks, { '199001001': 'read', '199001004': 'skip', '199001006': 'reading' });
   t.ok('…the retired row\'s mark is dropped', !('199001003' in got.marks));
-  t.ok('…bookmarks and per-issue reviews come across (reviews mapped to arcs)', got.bookmarks[0] === '199001005' && got.reviews.b.r === 4);
+  t.ok('…bookmarks come across', got.bookmarks[0] === '199001005');
+  same('…and per-issue reviews, exactly as the old tracker kept them', got.reviews, { '199001005': { r: 4, t: 'Old note.' } });
   let refused = '';
   try { app.window.PullList.readCode('PROB1:' + Buffer.from(JSON.stringify(Object.assign({}, v2body, { d: '5-199001001-199001006' })), 'utf8').toString('base64')); }
   catch (e) { refused = e.message; }

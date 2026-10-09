@@ -109,6 +109,39 @@ module.exports = async function (t) {
     await p2.close();
     await gp.close();
 
+    // ------------------------------------------------ one plain reload shows a deploy (the v8 -> v9 proof, 9 Oct)
+    /* Within Pages' 10 minutes Chromium reuses a reloaded page's scripts from its
+       memory cache without asking the worker, so a reload showed the old build.
+       index.html's links carry the build's hash: a new build has new addresses.
+       Without the stamps the same reload shows the old build (the check can fail). */
+    const reloadOnce = async stamped => {
+      const gr = await serve(b.out, { pages: true });
+      const idx = gr.file('/index.html'), plain = idx.replace(/\?v=[0-9a-f]{12}/g, '');
+      if (!stamped) gr.override('/index.html', plain);
+      const pr = await open(gr.url, { width: 390, reducedMotion: 'reduce', storage: seed });
+      await pr.page.waitForFunction(() => navigator.serviceWorker.controller, null, { timeout: 15000 });
+      await pr.page.reload();                                 // every file in the HTTP and memory caches
+      await pr.page.waitForSelector('.era-head', { state: 'attached' });
+      const data = gr.file('/data.js'), ver = await pr.page.evaluate(() => window.TRACKER_DATA.version);
+      gr.override('/data.js', data.replace('"version":' + ver + ',', '"version":' + (ver + 1) + ',').replace(/"cache":"[^"]+"/, '"cache":"fixture-deploy3"'));
+      gr.override('/sw.js', gr.file('/sw.js').replace(/const CACHE = '[^']+';/, "const CACHE = 'fixture-deploy3';"));
+      gr.override('/index.html', stamped ? idx.replace(/\?v=[0-9a-f]{12}/g, '?v=0123456789ab') : plain);
+      await pr.page.reload();
+      await pr.page.waitForSelector('.era-head', { state: 'attached' });
+      const r = await pr.page.evaluate(() => ({ version: window.TRACKER_DATA.version, header: document.querySelector('#buildtag').textContent,
+        app: performance.getEntriesByType('resource').filter(x => /\/app\.js/.test(x.name)).map(x => x.name.replace(/^.*\//, '')) }));
+      r.was = ver; r.errors = pr.errors.filter(e => !/Failed to load resource/.test(e));
+      await pr.close();
+      await gr.close();
+      return r;
+    };
+    const fresh = await reloadOnce(true), stale = await reloadOnce(false);
+    t.ok('a deploy on Pages\' caching: one plain reload opens the new build (header v' + fresh.version + ', app.js at its new stamp)',
+         fresh.version === fresh.was + 1 && fresh.header === 'v' + fresh.version && fresh.app.includes('app.js?v=0123456789ab') && !fresh.errors.length,
+         JSON.stringify(fresh));
+    t.ok('…and the check can fail: without the stamps the same reload still shows the old build (Chromium\'s memory cache)',
+         stale.version === stale.was && stale.header === 'v' + stale.was, JSON.stringify(stale));
+
     // ------------------------------------------------ an older build's data.js: recovered in place, never a loop
     const gs = await serve(b.out, { pages: true });
     gs.override('/data.js', 'window.TRACKER_DATA = {"franchise":{"key":"old"},"issues":[]};');

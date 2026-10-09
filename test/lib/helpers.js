@@ -70,7 +70,7 @@ function boot(dataDir, opts) {
   vc.on('jsdomError', e => errors.push(String(e && (e.detail || e.message) || e)));
   vc.on('error', m => errors.push('console.error: ' + m));
   let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  html = html.replace(/<script(?: defer)? src="\.\/([\w.-]+)"><\/script>/g, (m, file) => {
+  html = html.replace(/<script(?: defer)? src="\.\/([\w.-]+)(?:\?v=[0-9a-f]{12})?"><\/script>/g, (m, file) => {
     const p = file === 'data.js' ? path.join(dataDir, 'data.js') : path.join(ROOT, file);
     const raw = file === 'app.js' && opts.appSrc !== undefined ? opts.appSrc : fs.readFileSync(p, 'utf8');
     const src = raw.split('</scr' + 'ipt>').join('<\\/scr' + 'ipt>');
@@ -78,7 +78,7 @@ function boot(dataDir, opts) {
   });
   if (opts.css || opts.cssSrc) {
     const css = opts.cssSrc || fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
-    html = html.replace('<link rel="stylesheet" href="./styles.css">', '<style>' + css + '</style>');
+    html = html.replace(/<link rel="stylesheet" href="\.\/styles\.css(?:\?v=[0-9a-f]{12})?">/, () => '<style>' + css + '</style>');
   }
   const listeners = [];
   const dom = new JSDOM(html, {

@@ -39,7 +39,7 @@ module.exports = async function (t) {
     const html = srv.file('/index.html');
     const preloads = (html.match(/<link rel="preload"[^>]*>/g) || []);
     t.ok('one stylesheet, and both scripts deferred', (html.match(/rel="stylesheet"/g) || []).length === 1 &&
-         /<script defer src="\.\/data\.js"><\/script>/.test(html) && /<script defer src="\.\/app\.js"><\/script>/.test(html));
+         /<script defer src="\.\/data\.js\?v=[0-9a-f]{12}"><\/script>/.test(html) && /<script defer src="\.\/app\.js\?v=[0-9a-f]{12}"><\/script>/.test(html));
     t.ok('only the display font is preloaded, as a font, with crossorigin (a preload without it is fetched twice)',
          preloads.length === 1 && /anton-400-latin\.woff2" as="font" type="font\/woff2" crossorigin/.test(preloads[0]), preloads.join(' '));
     let m = await load({ delay: '/data.js' });
@@ -52,7 +52,7 @@ module.exports = async function (t) {
     await pg.goto(srv.url);
     const display = await pg.evaluate(() => [...document.styleSheets].flatMap(sh => [...sh.cssRules]).filter(r => r.type === CSSRule.FONT_FACE_RULE)
       .map(r => r.style.getPropertyValue('font-display')));
-    const sigReq = await pg.evaluate(() => ({ styles: performance.getEntriesByType('resource').filter(x => /\.css(\?|$)/.test(x.name)).map(x => x.name.replace(/^.*\//, '')),
+    const sigReq = await pg.evaluate(() => ({ styles: performance.getEntriesByType('resource').filter(x => /\.css(\?|$)/.test(x.name)).map(x => x.name.replace(/^.*\//, '').replace(/\?v=[0-9a-f]{12}$/, '')),
                                              inline: (document.querySelector('style#skin-signature') || {}).textContent || '' }));
     await ctx.close();
     const sigFaces = (loadData(basic().out).signature.css.match(/@font-face/g) || []).length;

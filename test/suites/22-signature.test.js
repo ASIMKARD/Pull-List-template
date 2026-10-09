@@ -101,6 +101,45 @@ module.exports = async function (t) {
   refuse('a legacy map to the signature skin when there is none',
          withSig('sig-x', { storage: { legacy: { prefix: 'm:v1:', format: 'v2', skins: { field: 'layout', map: { abs: 'signature' } } } } }), /maps to 'signature'/);
 
+  // ---------------------------------------------------------------- decorations (John, 8 Oct)
+  /* ::before and ::after may carry content (quoted text, attr(data-n), counters),
+     counters may run anywhere, and a pseudo-element may be placed absolutely
+     against its host. The build adds an empty alternative (silent to screen
+     readers) and pointer-events: none to every decoration. Nothing else that
+     moves, hides or reorders a control is allowed, on a pseudo-element or not. */
+  const pseudoRules = css.split('\n}').filter(r => /::(before|after)\s*\{/.test(r));
+  t.ok('the demo skin decorates: ' + pseudoRules.length + ' ::before/::after rules (row numbers, an arc prefix, era numerals, bracket marks)',
+       pseudoRules.length >= 6 && /\.row::after \{[^}]*content: attr\(data-n\);/.test(css) && /\.mark::after \{[^}]*content: "\[ \]";/.test(css));
+  t.ok('…every one silent to screen readers: the build adds the empty alternative after each content', pseudoRules.every(r => {
+    const cs = r.match(/content: [^;]+;/g) || [];
+    return cs.every(c => /content: none;/.test(c) || cs.includes(c.replace(/;$/, ' / "";')) || / \/ "";$/.test(c));
+  }) && (css.match(/content: attr\(data-n\) \/ "";/g) || []).length >= 1, pseudoRules.find(r => !/\/ ""/.test(r) && !/content: none/.test(r)));
+  t.ok('…and never takes a tap: the build adds pointer-events: none to every one', pseudoRules.every(r => /pointer-events: none;/.test(r)));
+  t.ok('…while the demo\'s ordinary rules get no pointer-events of their own', css.split('\n}').filter(r => !/::(before|after)\s*\{/.test(r)).every(r => !/pointer-events/.test(r)));
+  const decor = styled([SCOPE + ' .era { counter-increment: era; }', SCOPE + ' #app { counter-reset: era 0 row; }',
+    SCOPE + ' .era-head .bname::before { content: counter(era, decimal-leading-zero) ". "; color: var(--accent); }',
+    SCOPE + ' .row::after { content: attr(data-n); position: absolute; top: 0; right: -2px; width: 2em; height: auto; text-align: right; white-space: nowrap; }',
+    SCOPE + '[data-table="1"] .row::after { content: none; }', SCOPE + ' .mark { font-size: 0; }', SCOPE + ' .mark::after { content: \'[X]\'; }'].join('\n'));
+  t.ok('decorations pass: counters anywhere, counter() and attr(data-n) content, an absolutely placed pseudo-element, a glyph mark', decor.status === 0, decor.stderr);
+  const dec = (rule) => styled(SCOPE + ' ' + rule);
+  for (const [what, rule, rx] of [
+    ['content on an ordinary element', '.a { content: "x"; }', /\{ content \}: refused — only a ::before or ::after decoration may have content/],
+    ['position on an ordinary element', '.a { position: absolute; }', /\{ position \}: refused — only a ::before or ::after decoration may have position/],
+    ['a decoration placed fixed', '.a::after { content: "x"; position: fixed; }', /placed absolutely or not at all/],
+    ['a decoration placed relative (the sticky trap)', '.a::before { content: "x"; position: relative; }', /placed absolutely or not at all/],
+    ['a decoration raised over the page (z-index)', '.a::after { content: "x"; z-index: 5; }', /\{ z-index \}: refused/],
+    ['a decoration that hides (display)', '.a::after { display: none; }', /\{ display \}: refused/],
+    ['a decoration that fades (opacity)', '.a::after { content: "x"; opacity: .5; }', /\{ opacity \}: refused/],
+    ['a decoration that moves (transform)', '.a::after { content: "x"; transform: translateX(4px); }', /\{ transform \}: refused/],
+    ['a decoration with margins', '.a::before { content: "x"; margin-left: 4px; }', /\{ margin-left \}: refused/],
+    ['an image as content', '.a::after { content: url(./icons/icon-192.png); }', /content may hold only quoted text/],
+    ['any other attribute as content', '.a::after { content: attr(title); }', /attr\(title\): only data-n/],
+    ['a hand-written alternative', '.a::after { content: "x" / "y"; }', /content may hold only quoted text/],
+    ['an unknown counter style', '.a::after { content: counter(x, fancy); }', /counter style 'fancy'/],
+    ['a counter list that isn\'t one', '.a { counter-reset: 5; }', /a counter list/],
+    ['a decoration on a selector list where one part is ordinary', '.a::after, ' + SCOPE + ' .b { content: "x"; }', /\{ content \}: refused/]])
+    refuse(what, dec(rule), rx);
+
   // ---------------------------------------------------------------- the app
   const ns = D.franchise.key + ':v3:', oldKey = D.franchise.storage.legacy.prefix + 'settings';
   const seen = { [ns + 'settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' } }) };
@@ -111,6 +150,12 @@ module.exports = async function (t) {
   t.ok('the app adds the signature CSS once, as it came from the build', styles.length === 1 && styles[0].textContent === css);
   t.eq('…and opens in it on a first visit', d.documentElement.getAttribute('data-skin'), 'signature');
   t.ok('…without tripping the stale-styles beacon (it only reads the page\'s own stylesheet)', !/out of date/.test(d.querySelector('#toastMsg').textContent));
+  d.querySelector('.ptools [data-act="expand-all"]').click();
+  const padTo = (n, w) => String(n).padStart(w, '0'), rw = Math.max(2, String(D.issues.length).length);
+  const rowsN = [...d.querySelectorAll('.row[data-i]')];
+  t.ok('every row carries its reading position for decorations (data-n, zero-padded to the list\'s width), inert rows too',
+       rowsN.length > 10 && rowsN.some(r => r.classList.contains('inert')) && rowsN.every(r => r.dataset.n === padTo(+r.dataset.i + 1, rw)), rowsN.slice(0, 3).map(r => r.dataset.n).join());
+  t.eq('…and every era name its number', [...d.querySelectorAll('.era-head .bname')].map(x => x.dataset.n), D.eras.map((e, k) => padTo(k + 1, 2)));
   app.window.close();
 
   const firstVisit = async (old, extra) => {

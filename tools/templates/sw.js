@@ -51,7 +51,8 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, copy));
         }
         return res;
-      }).catch(() => caches.match(e.request)
+      // index.html asks for app.js?v=<build>; the install stored ./app.js (same build, same cache)
+      }).catch(() => caches.match(e.request, { ignoreSearch: true })
         .then(hit => hit || caches.match('./index.html'))
         .then(hit => hit || new Response('Offline and not cached yet.', { status: 503 })))
     );
