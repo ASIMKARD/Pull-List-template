@@ -4,7 +4,7 @@
    this measures what actually ships, in every skin it offers (its signature
    skin first, when it has one):
    - contrast on every paper swatch: each text pair this data puts on screen at
-     4.5:1, control outlines at 3:1;
+     4.5:1, control outlines at 3:1 (a glyph mark with no outline: its glyph);
    - its era banners, split and one colour: every text on the banner at 4.5:1;
    - reachability: every control on every tab, at 390 and 320 px and with the
      largest text and buttons (V-5). */
@@ -67,7 +67,14 @@ module.exports = async function (t) {
           }
           for (const [what, sel, prop] of EDGE) {
             const el = [...document.querySelectorAll(sel)].find(e => !e.closest('[hidden]'));
-            if (el) out.push([what, window.__ratio(window.__rgb(getComputedStyle(el)[prop]), window.__bg(el.parentElement)), 3]);
+            if (!el) continue;
+            /* a glyph mark (a signature decoration, session 6): when the outline is
+               invisible and the control draws a glyph, the glyph is what shows the
+               control and its state (WCAG 1.4.11), so the glyph clears 3:1 */
+            const cs = getComputedStyle(el), side = prop.replace(/Color$/, ''), g = getComputedStyle(el, '::after');
+            const noLine = parseFloat(cs[side + 'Width']) === 0 || cs[side + 'Style'] === 'none' || window.__rgb(cs[prop])[3] === 0;
+            const glyph = g.content && g.content !== 'none' && g.content !== 'normal' && /"[^"]*\S[^"]*"/.test(g.content);
+            out.push([what, noLine && glyph ? window.__ratio(window.__rgb(g.color), window.__bg(el)) : window.__ratio(window.__rgb(cs[prop]), window.__bg(el.parentElement)), 3]);
           }
           return { out, skin: document.documentElement.getAttribute('data-skin') };
         }, [PAGE_LIB.toString(), TEXT, EDGE]);

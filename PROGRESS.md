@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1539 assertions, 0 failed, 35 suites (session 6, step 2 done). **Layout suite (real Chromium, in CI too):** 351 checks, 0 failed, 11 suites.
+**Harness:** 1539 assertions, 0 failed, 35 suites (session 6, step 3 done). **Layout suite (real Chromium, in CI too):** 351 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2362,3 +2362,40 @@ goes after it, and the stars are the edited review's (the latest choice).
   - full-width era bars: `box-shadow` either side.
 - **First tests:** `test/layout/55-decor` and `45-root` on Absolute's data, then screenshots side
   by side with v7's (Research-Repo `sessions/2026-10-06-absolute/upgrade-proof/screens/`).
+
+## Session 6 checkpoint — step 3 done (Absolute v9 built and checked on its own data), 9 Oct 2026
+
+### Done
+- **Absolute's session branch, restarted from `main` (v8):**
+  - the template's files copied in;
+  - its skin given v7's five touches, as decorations;
+  - its version: v9 (the build counted up from v8's `data.js`).
+- **The five touches:**
+  - **big era numbers:** mono 26 px, dark wine on the red bar (3.7:1, large text);
+  - **the row-number gutter:** `001` to `134`, down the right edge, in a 26 px `--row-gutter`;
+    none in table view;
+  - **the marks:** `[ ] [/] [X] [-]`, borderless, in mono 13 px. They fit on one line at every
+    tap size (26, 34 and 44 px marks);
+  - **the arc prefix:** a red `//`;
+  - **full-width era bars:** a `box-shadow` either side.
+- **Side by side with v7** at 390 px, with the same marks: Research-Repo
+  `sessions/2026-10-09-absolute-v9/screens/`. v9 keeps everything readable, where v7's read and
+  skipped rows and its row numbers were near-invisible wine on black.
+- **One template test refined: 45-root's "mark outline".** When a mark's outline is invisible and
+  it draws a glyph, the glyph is what shows the control and its state (WCAG 1.4.11), so the glyph
+  must clear 3:1. A mark with neither still fails. Proved both ways: a faint glyph (1.17:1) and no
+  glyph (1.00:1).
+- **On Absolute's data:** gate passed; harness 1538, 0 failed; layout 352, 0 failed (with
+  55-decor and 45-root on its skin).
+
+### Step 4 begins with: the v8 → v9 in-place proof
+Research-Repo `sessions/2026-10-09-absolute-v9/upgrade-proof/proof.js`:
+- **v8 is the real `main`.** It's used through its UI: marks, a bookmark and the skin, with
+  reviews in every case of John's decisions, written as v8 itself made them.
+- **Then v9 at the same address,** with one reload.
+- **After the reload:**
+  - everything is intact;
+  - the reviews are restored per issue as decided;
+  - v8's per-arc store is byte for byte unchanged;
+  - v9's worker is in control.
+- **Then:** offline, and a v8 sync code imported into v9.
