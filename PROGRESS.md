@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1547 assertions, 0 failed, 35 suites (session 6, step 4: the template's stamped links). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
+**Harness:** 1547 assertions, 0 failed, 35 suites (session 6 done; Absolute v9 live). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2449,6 +2449,34 @@ But "one reload opens v9" is what John asked for.
   worker checks the page with the server. `CLAUDE.md` says so now.
 - **ASIMKARD/Absolute#2** is open into `main`, for John to merge.
 
-### Step 4 ends with: the live check, after John merges
-Wait about 100 s for Pages. Then verify every file on `main` against
-https://asimkard.github.io/Absolute/ by sha256, and check the header reads v9.
+## Transfer checkpoint — end of session 6: Absolute v9 is live, 9 Oct 2026
+
+### Done (all 4 steps)
+- **Template** (this branch: steps 1–4, no pull request yet):
+  - per-issue reviews;
+  - signature decorations;
+  - the glyph-mark contrast rule;
+  - one reload shows a new build.
+
+  Harness 1547 and layout 353, both 0 failed; CI green.
+- **Absolute v9 is live.** John merged ASIMKARD/Absolute#2 as `2c03d99`.
+  - Pages served v9's worker about 25 s after the merge.
+  - `verify-live.sh 2c03d99`: 182 files match `main` by sha256, and the bare address serves
+    `index.html`. 5 dot-files are skipped, since Pages doesn't serve them.
+  - v7's 5 removed files still return 404.
+  - The live `data.js` is version 9, and the cache is `absolute-bd988f4e80f7`.
+  - Real Chromium on the live site, with TLS verification on, reads "v9" in the header, in the
+    Absolute skin, with no errors.
+- **Research-Repo** `sessions/2026-10-09-absolute-v9/` (pushed on its session branch, no pull
+  request yet):
+  - the upgrade proof and its report;
+  - the v7 vs v9 screenshots;
+  - the live check.
+- **Absolute's own `PROGRESS.md`** still says "after the merge: verify". Changing it needs John's
+  say-so, as any change to Absolute does.
+
+### Open with John (non-blocking)
+- **Pull requests to open:** the template branch (session 6) and Research-Repo's session folder.
+  This session doesn't open them unless John asks.
+- **Session 5's questions,** still open: the Pull era boxes; the tab bar edge to edge; the mark
+  size; signature CSS inside `data.js` (see "Questions for John" in session 5's checkpoint).
