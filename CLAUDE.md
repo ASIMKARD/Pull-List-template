@@ -74,6 +74,7 @@ swap John approves. (Full text: Master-Repo
 | `tools/build.py` | stitch + derive keys + validate + emit `data.js` (stdlib only) |
 | `tools/build_workbook.py` | the workbook writer (stdlib; off per tracker with `deliverables.workbook: false`) |
 | `tools/verify_gate.py`, `tools/verify.py`, `tools/verify.lock` | the verify gate; `verify.py` is Research-Repo's, pinned byte for byte — never edit it here |
+| `tools/version_tag.py`, `.github/workflows/version-tag.yml` | version tags: a merge into `main` that changes the readable version is tagged `vN` (John, 12 Oct); never moves or touches an existing tag |
 | `README.md`, `BUILD-NOTES.md`, `MIGRATING.md`, `.claude/skills/comic-tracker-build/` | start a tracker; conventions; migrating; the Skill. `25-docs` checks every path and command they name |
 | `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`). Same runner; CI runs it |
 | `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`, `gate/*`) |

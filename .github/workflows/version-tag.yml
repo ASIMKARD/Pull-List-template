@@ -1,0 +1,40 @@
+name: version tag
+
+# A merge into main that changes the readable version tags that commit vN, e.g.
+# v10 (John, 12 Oct). A merge that leaves the version as it was (docs only)
+# makes no tag. A tag that exists is never moved or made twice, so re-running is
+# safe, and rollback tags such as v7-final and v8-final are never touched.
+# The rules live in tools/version_tag.py; test/suites/26-version-tags tests them.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Pushing a tag needs write access to the repo's contents, for this workflow only.
+permissions:
+  contents: write
+
+concurrency:
+  group: version-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Tag the readable version if this push changed it
+        env:
+          BASE: ${{ github.event.before }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python3 tools/version_tag.py --head "$GITHUB_SHA" --base "$BASE"

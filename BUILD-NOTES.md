@@ -43,6 +43,22 @@ are in `schema/dataset.schema.json`.
   checkout passes.
 - **After merging two branches, rebuild on `main`.** Each branch counted up
   from the same `data.js`; the number continues from `main`'s, once.
+- **Version tags are automatic (John, 12 Oct).** `.github/workflows/version-tag.yml`
+  runs `tools/version_tag.py` on every push to `main`:
+  - when the push changes the readable version in `data.js`, it tags the pushed
+    commit (the merge commit) `vN`, e.g. `v10`, and pushes that one tag;
+  - a merge that leaves the version as it was (docs only) makes no tag;
+  - a tag that already exists, here or on GitHub, is never moved or made
+    twice, so re-running the workflow is safe;
+  - it only ever creates `vN`, so rollback tags such as `v7-final` and
+    `v8-final` are never touched;
+  - the template itself (key `starter`) makes none.
+
+  The workflow asks for `contents: write` for itself. If its push is refused,
+  the repo's Settings → Actions → General → Workflow permissions is the place
+  to look ("Read and write permissions"), and Settings → Rules for a ruleset
+  that restricts tags. `python3 tools/version_tag.py --dry-run` says what it
+  would do. `test/suites/26-version-tags.test.js` tests it on real git repos.
 
 ## Skins
 

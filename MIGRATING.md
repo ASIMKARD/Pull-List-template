@@ -63,6 +63,13 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
   silently orphaned and old QR positions don't shift.
 - `franchise.versionStart` is the old tracker's last build + 1 (Absolute: build
   v7, so 8). The build counts up from there.
+- **Version tags come with the copy** (John, 12 Oct; `BUILD-NOTES.md`,
+  "Versions"). `.github/workflows/version-tag.yml` tags each merge into `main`
+  that changes the readable version `vN`. It starts with the first such merge
+  after the copy lands, so earlier versions keep only the tags made by hand.
+  Existing tags, such as the `v7-final` rollback tag, are never moved or
+  touched. A tracker already on v3 picks it up at its next update, as
+  Absolute will.
 
 ## 5. What the tracker produces
 
