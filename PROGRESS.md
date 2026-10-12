@@ -2553,3 +2553,138 @@ settings.
   - Absolute's rollback tags are now `v7-final` (v7) and `v8-final` (v8).
   - Master-Repo (ASIMKARD/Master-Repo#1, merged) still says "v8 rollback: commit `36fd088`". Naming
     both tags there needs another Master-Repo change, so it waits for John's say-so.
+
+## Session 7 plan (proposed 12 Oct 2026): Pull's era boxes and tab bar — waiting on John
+The Pull changes decided 9 Oct (decisions 1 and 2 above), in the template only. No tracker deploys
+this session; Absolute picks them up at its next update. X-Men is read from a local read-only clone
+(`git clone https://github.com/ASIMKARD/x-men`, commit `663fe46`, the commit the reference was
+captured from). Nothing is written to it.
+
+### Decided 12 Oct (John) — do not reopen
+- **A tracker's era colours are drawn exactly as given,** X-Men's shades included, in the same
+  fonts and font colours. The build never refuses or changes one. The 4.5:1 rule applies to the
+  colours Pull derives itself.
+  - **What it means.** Three of X-Men's eleven colours put white text under WCAG AA (4.5:1):
+    - Foundations `#A6791E`: 3.91:1, and 3.29:1 for its years at 85 %;
+    - Bendis to IvX `#B08A1F`: 3.23:1;
+    - ResurrXion `#C0622A`: 4.18:1.
+  - The build reports each such era with its ratio, as a warning, never a failure. The contrast
+    suites still hold every other era text to 4.5:1.
+- **The other skins ignore an era's colour.** Paper, Newsprint, Night and a signature skin keep
+  today's pale washes from the era's index.
+- **The folder tab keeps the template's arrangement inside:**
+  - the figures line (read, time left, finish by, "filtered", "+N untimed"), with the bar across
+    the strip under it;
+  - the years beside the name, wrapping under it when there's no room.
+
+### Measured in X-Men (real Chromium, 393 px, `663fe46`)
+| Part | X-Men |
+|---|---|
+| Era box | 369 px wide, 12 px from each edge, 14 px apart; radius 8 8 3 3; no outline; shadow `0 1px 2px` ink at 8 % plus `0 1px 1px` ink at 6 % |
+| Tab | the era's colour; padding 12 44 12 16; the right edge slants from 88 % at the top to 100 % at the strip; a 14 px hatch in the corner (black at 12 %, 2 px in every 6, at 135°) |
+| Text | name and years white; the years at 85 % opacity |
+| Strip | the era's colour with each channel −25 (Foundations `#A6791E` → `#8D6005`); padding 6 16; mono 11 px, white; the bar 4 px, white at 25 % with a 95 % fill |
+| Open body | 12 px from each edge; a 2 px line frame left, right and bottom (`#C9C4B5`); radius 0 0 8 8; paper-2 (`#DEDACF`); padding 6 |
+| Tab bar | 0 to 393 px, square corners |
+
+In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to −0.095 across its 11 eras).
+
+### Steps — each ends committed, pushed and green (harness, layout suite, CI)
+1. **Measure first.** The comparison grows before anything changes, so every later step removes
+   differences rather than describing them.
+   - `ref/pull-map.js` and `ref/capture-x-men.js` gain:
+     - the era box, tab, strip and open body: margins, radii, padding, shadow, frame, backgrounds;
+     - each text's effective colour (colour × opacity), so 85 % white compares equal however it's drawn;
+     - the bar's track and fill;
+     - the cut, read from pixels: where the slant starts and where it ends.
+   - Era boxes are measured on top-level eras, as X-Men has them: the `no-periods` fixture, with
+     `basic` for everything else.
+   - `ref/x-men.json` is re-captured from `663fe46`, and the drift check passes.
+   - `DIFFERENCES` lists each new one as "John (9 Oct): session 7 builds it", so 45-pull stays
+     true both ways.
+   - First file: `test/layout/ref/pull-map.js`. First test: `test/layout/45-pull`.
+2. **The tab bar edge to edge, in Pull only.**
+   - One layout token, `--tabs-inset`: 16 px by default, 0 in Pull, with square corners there.
+   - The build refuses it in a signature skin, and 80-guards checks that only `:root` and Pull's
+     block set it. Steps 4 and 5 use the same mechanism for every Pull-only layout token.
+   - 60-stack measures it at 320, 390 and 1024 px:
+     - Pull's bar spans the screen;
+     - every other skin's stays 16 px in;
+     - the stack stays pinned.
+   - 40-look and 10-sweep: all four tabs still fit at 320 px.
+   - This removes the two tab-bar differences.
+3. **A `colour` per era in the data.**
+   - Schema: `eras[].colour`, `#RRGGBB`.
+   - `tools/build.py`:
+     - checks the format;
+     - computes the strip by X-Men's rule;
+     - emits both as OKLCH numbers in `data.js` (the guard allows only token-built `oklch()` and
+       `hsl()` outside `:root`), precise enough to come back to the same hex;
+     - reports each colour's ratio under white. Under 4.5:1 it warns, with the nearest passing
+       shade as a hint (`#A6791E` → `#9B6E0A`, 4.54:1).
+   - Fixtures:
+     - X-Men's own colours on some eras, Foundations' on the first, so one is under 4.5:1;
+     - the other eras derive;
+     - a broken case for a malformed colour.
+   - Tests: 10-schema; 20-build (the values, the hex round trip, the strip); 60-validation; the
+     warning's text.
+4. **Pull's solid colours.**
+   - `app.js` puts an era's colour numbers on its section as tokens, beside `--ei`. No skin test
+     in `app.js`.
+   - `styles.css`: Pull draws the tracker's colour when there is one. Otherwise it derives one
+     from the era's hue, `oklch(.48 .08 h)`, with the strip 0.08 darker.
+     - The derived colour, at every hue: white text 6.24:1 or better, the 85 % years 4.99:1 or
+       better, inside sRGB.
+     - Each switch is a 0-or-1 token, so the blend is exact, and the other skins are unchanged.
+   - Every text in a Pull era box is white, including finish-by, "filtered" and ✓. The years are
+     white at 85 %, as X-Men. The bar is white on the strip.
+   - "One colour" sets the data's colours aside: every era gets Pull's one derived colour (my call).
+   - 40-look:
+     - every text in the box, on the tab and on the strip, at 4.5:1, for 64 derived eras, split
+       and one colour;
+     - the pale rule (T-39) covers every skin but Pull;
+     - each data colour is drawn exactly: the pixel is the hex, the strip is X-Men's shade;
+     - a colour the build flagged is the only exception, and its measured ratios must equal the
+       build's;
+     - the other skins look identical with and without data colours.
+   - 45-root holds the same rules on a tracker's own data.
+5. **The folder-tab shape, in Pull only.**
+   - In every skin, the era box's figures line and bar move into one strip element. Nothing
+     visible changes outside Pull (measured), and Absolute's signature selectors still match.
+   - Pull-only layout tokens give the measured box: margins, radii, shadow, padding, the open
+     body's frame. Their defaults are today's layout.
+   - The cut and the hatch are background layers, not `clip-path`, so no text or focus ring is
+     ever clipped.
+   - A new Chromium check in 10-sweep, in every skin, at 320, 360, 390 and 1024 px with the
+     largest text: no era text crosses the cut or sits on the transparent corner.
+   - Risk: the open body's frame takes 16 px from each row at 320 px. If 50-table finds a title
+     under half its row, table view's frame gets tighter (measured).
+   - This removes the shape differences.
+6. **Close-out.**
+   - Docs:
+     - BUILD-NOTES: the field and Pull's layout exception;
+     - MIGRATING: X-Men's colours carry over exactly, and three warn;
+     - the Skill;
+     - CLAUDE.md: the data rule, and the pale-wash line names Pull's exception;
+     - FEATURE-INVENTORY: T-38 and T-39 re-expressed, a new X-12.
+   - X-Men and Pull side by side at 393 px, sent to John.
+   - A dry run on a scratch copy of Absolute's data, with nothing written to Absolute: build, gate,
+     harness and layout suite, so its next update is known to pass.
+
+### My calls (open to veto)
+- In Pull, era boxes sit 12 px from the edge and 14 px apart, as measured. The rest of the page
+  keeps the template's 16 px.
+- Derived colours: `oklch(.48 .08 h)`. X-Men's own picks run from chroma .07 to .20; .08 is the most
+  that every hue holds in sRGB at that lightness.
+- "One colour" in Pull ignores the data's colours.
+- Pull's banner under the tabs (off by default) stays inset under the full-width bar.
+- Eras inside bands (X-Men has none) keep the band's spacing.
+
+### What stays as it is
+- The read mark keeps 24 px (decision 3). Its three differences stay listed, now as "John (9 Oct):
+  keeps the accessible 24 px minimum, with the Button size and Marks settings".
+- The two accessible differences stay: the selected-tab underline and the search outline.
+
+### Starts with (once John agrees)
+Step 1. First file: `test/layout/ref/pull-map.js`. First test: `test/layout/45-pull`, with
+`X_MEN_DIR` pointing at the local X-Men clone.
