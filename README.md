@@ -67,6 +67,7 @@ one build step, an offline web app, a generated workbook, and two test suites
 | `tools/build.py` | stitch, derive keys, validate, emit (stdlib only) |
 | `tools/build_workbook.py` | the workbook writer (stdlib only) |
 | `tools/verify_gate.py`, `tools/verify.py`, `tools/verify.lock` | the verify gate and its pinned copy of verify.py |
+| `tools/version_tag.py`, `.github/workflows/version-tag.yml` | tags each merge into `main` that changes the readable version `vN` (`BUILD-NOTES.md`, "Versions") |
 | `tools/templates/sw.js` | the service-worker template the build fills in |
 | `schema/` | JSON Schema for the data files |
 | `test/run.js`, `test/suites/`, `test/lib/` | the jsdom harness |

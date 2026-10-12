@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1547 assertions, 0 failed, 35 suites (session 6 done; Absolute v9 live; session 7's decisions recorded). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
+**Harness:** 1569 assertions, 0 failed, 36 suites (session 7: automatic version tags). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2495,3 +2495,61 @@ These answer "Questions for John" in the transfer checkpoint at the end of sessi
    the Button size and Marks settings, and does not take compact X-Men's 22 px.
 4. **Signature-skin styles stay inside `data.js`** (question 4, my call from session 5, step 2,
    confirmed). There is no linked `skin.css`.
+5. **Automatic version tags (John, 12 Oct).** A GitHub Actions workflow in the template, so every
+   tracker gets it:
+   - whenever a merge into `main` changes the readable version, it tags that commit `vN`
+     (e.g. `v10`);
+   - a docs-only merge that leaves the version unchanged creates no tag;
+   - existing tags, such as `v7-final` and `v8-final`, are never moved or touched;
+   - the workflow requests `contents: write` for itself;
+   - tests: a version change creates exactly one tag on the merge commit; a docs-only merge
+     creates none; re-running never duplicates or moves a tag;
+   - documented in `BUILD-NOTES.md` and `MIGRATING.md`. Absolute picks it up at its next update.
+
+## Session 7 checkpoint — automatic version tags (template), 11 Oct 2026
+
+### Done
+- **`tools/version_tag.py`** (stdlib), run by **`.github/workflows/version-tag.yml`** on every
+  push to `main` (and by hand):
+  - it reads the readable version from `data.js` at the pushed commit, and at `main` before the
+    push (the push's `before`; with none, the commit's first parent);
+  - when they differ, it tags the pushed commit (the merge commit) `vN`, annotated with the
+    version and the build, and pushes that one tag;
+  - when they are the same, it makes no tag;
+  - when `vN` already exists, on GitHub or locally, it is never moved or made again: on the same
+    commit it does nothing, on another it leaves it and warns;
+  - it only ever creates `vN`, and never forces, deletes or moves a tag;
+  - the template itself (key `starter`) makes none, since its demo's version is not a release;
+  - `--dry-run` says what it would do.
+- **The workflow** asks for `contents: write` for itself, checks out the full history and tags,
+  and runs one at a time (`concurrency`).
+- **New suite `26-version-tags`** (22 checks), on real git repos with a bare repo as the remote:
+  - a version change: exactly one tag, `v9`, on the merge commit, pushed;
+  - a docs-only merge: no tag, here or on the remote;
+  - re-running, twice: nothing new, nothing moved; with the tag only on the remote, nothing
+    made twice; another commit asking for the same version leaves it where it is;
+  - no usable base (workflow_dispatch, a new branch): compared with the first parent;
+  - a push of two commits at once: compared with `main` before the push;
+  - `v7-final` (lightweight) and `v8-final` (annotated) unchanged, here and on the remote;
+  - no readable version fails; `--dry-run`; the template makes none; the workflow file itself.
+- **Mutation-proved** (each bug put back once, each caught): tagging an unchanged version; no
+  check for an existing tag; ignoring the remote's tags; ignoring the push's `before`; tagging the
+  template; tagging the base instead of the merge commit.
+- **Docs:** `BUILD-NOTES.md` (Versions), `MIGRATING.md` (Ids, numbers and versions), the repo
+  maps in `CLAUDE.md` and `README.md`, and `FEATURE-INVENTORY.md` X-11.
+
+### Not yet proved on GitHub
+The workflow runs only on `main`, so its first real run is the first merge after this branch
+lands. The suite runs its logic against real git repos, but not GitHub's settings. If that run's
+push is refused, `BUILD-NOTES.md` names the settings to check. This session can't read repo
+settings.
+
+### Also (John, 11 Oct)
+- **`v8-final` for Absolute.** John approved making a release `v8-final` with a new tag on
+  `36fd088` (v8's merge commit) through the GitHub API. This session's GitHub tools can read tags
+  and releases but can't create either, so John made it.
+  - **Confirmed on GitHub (12 Oct).** `v8-final` points at commit
+    `36fd0884bc99cf19f8dc732a82822eb307a2c152`, with the release "v8 — before v9".
+  - Absolute's rollback tags are now `v7-final` (v7) and `v8-final` (v8).
+  - Master-Repo (ASIMKARD/Master-Repo#1, merged) still says "v8 rollback: commit `36fd088`". Naming
+    both tags there needs another Master-Repo change, so it waits for John's say-so.
