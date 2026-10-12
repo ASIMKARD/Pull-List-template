@@ -2547,5 +2547,9 @@ settings.
 ### Also (John, 11 Oct)
 - **`v8-final` for Absolute.** John approved making a release `v8-final` with a new tag on
   `36fd088` (v8's merge commit) through the GitHub API. This session's GitHub tools can read tags
-  and releases but can't create either, so John makes it. Until then the rollback point for v8 is
-  commit `36fd088`.
+  and releases but can't create either, so John made it.
+  - **Confirmed on GitHub (12 Oct).** `v8-final` points at commit
+    `36fd0884bc99cf19f8dc732a82822eb307a2c152`, with the release "v8 — before v9".
+  - Absolute's rollback tags are now `v7-final` (v7) and `v8-final` (v8).
+  - Master-Repo (ASIMKARD/Master-Repo#1, merged) still says "v8 rollback: commit `36fd088`". Naming
+    both tags there needs another Master-Repo change, so it waits for John's say-so.
