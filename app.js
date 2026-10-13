@@ -11,7 +11,7 @@
 (function start() {
   'use strict';
   var D = window.TRACKER_DATA;
-  var SKIN_OK = '3';            // the skin beacon (F-57): the token contract styles.css must declare
+  var SKIN_OK = '4';            // the skin beacon (F-57): the token contract styles.css must declare (4: the era box's strip, session 7)
   if (staleShell()) return;
   var N = D.issues.length;
   var FL = D.flagBits;
@@ -718,13 +718,29 @@
     return intro + html;
   }
 
+  /* An era's numbers for the stylesheet, as tokens: its index (for a pale
+     wash's hue), and in Pull the colour it is drawn in (--ec…: a tracker's own,
+     else the default palette's) and the one "One colour" draws (--em…), tab and
+     strip each, as OKLCH numbers from data.js (session 7). Only numbers. */
+  function eraStyle(e) {
+    var num = function (v) { return typeof v === 'number' && isFinite(v); };
+    var ok = function (c) { return c && Array.isArray(c.tab) && Array.isArray(c.strip) && c.tab.concat(c.strip).every(num); };
+    var toks = function (p, c) {
+      return ';--' + p + '-l:' + c.tab[0] + ';--' + p + '-c:' + c.tab[1] + ';--' + p + '-h:' + c.tab[2] +
+             ';--' + p + '-sl:' + c.strip[0] + ';--' + p + '-sc:' + c.strip[1] + ';--' + p + '-sh:' + c.strip[2];
+    };
+    var era = D.eras[e], s = '--ei:' + e;
+    if (ok(era.pull) && ok(D.pullMono)) s += ';--ec:1' + toks('ec', era.pull) + toks('em', D.pullMono);
+    return s;
+  }
+
   function eraHtml(e, S, fin, hidden) {
     var era = D.eras[e], isOpen = !!open.e[e];
-    return '<section class="era" data-e="' + e + '" style="--ei:' + e + '"' + (hidden ? ' hidden' : '') + '>' +
+    return '<section class="era" data-e="' + e + '" style="' + eraStyle(e) + '"' + (hidden ? ' hidden' : '') + '>' +
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
-      statsHtml(S.era[e], fin) + '</button>' +
+      '<span class="bfoot">' + statsHtml(S.era[e], fin) + '</span></button>' +     // the strip under the tab (Pull's folder tab, session 7)
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
       (isOpen ? eraBodyHtml(e) : '') + '</div></section>';
   }
@@ -1563,7 +1579,7 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {

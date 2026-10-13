@@ -5,8 +5,9 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { basic } = require('../lib/helpers');
+const { ROOT, basic } = require('../lib/helpers');
 const { serve, open, openSettings, closeBrowser, poll } = require('./lib');
+const SKIN_OK = (fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8').match(/var SKIN_OK = '(\d+)'/) || [])[1];   // the beacon this app.js expects
 
 const seed = { 'fixture:v3:settings': JSON.stringify({ v: 3, migrated: { format: 'v2' } }) };
 
@@ -161,7 +162,7 @@ module.exports = async function (t) {
     const r4 = await p4.evaluate(() => ({ nav: performance.getEntriesByType('navigation')[0].type, retried: document.querySelectorAll('script[src*="data.js?r="]').length,
       version: window.TRACKER_DATA && window.TRACKER_DATA.version, beacon: getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim() }));
     t.ok('…once the new one is deployed, a page that still gets the old one from a cache recovers in place and opens normally',
-         ok4 && e4.length === 0 && r4.version === 1 && r4.beacon === '3', JSON.stringify(Object.assign({ ok4, e4 }, r4)));
+         ok4 && e4.length === 0 && r4.version === 1 && !!SKIN_OK && r4.beacon === SKIN_OK, JSON.stringify(Object.assign({ ok4, e4, SKIN_OK }, r4)));
     await p3.close();
     await gs.close();
   } finally { await closeBrowser(); }

@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1569 assertions, 0 failed, 36 suites (session 7: automatic version tags). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
+**Harness:** 1645 assertions, 0 failed, 36 suites (session 7, before the PR: Pull's default palette, the 3 px mini bar). **Layout suite (real Chromium, in CI too):** 409 checks, 0 failed, 11 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1645 (+ 409).
 
 ---
 
@@ -2553,3 +2553,501 @@ settings.
   - Absolute's rollback tags are now `v7-final` (v7) and `v8-final` (v8).
   - Master-Repo (ASIMKARD/Master-Repo#1, merged) still says "v8 rollback: commit `36fd088`". Naming
     both tags there needs another Master-Repo change, so it waits for John's say-so.
+
+## Session 7 plan (agreed 13 Oct 2026, step 4 amended): Pull's era boxes and tab bar
+The Pull changes decided 9 Oct (decisions 1 and 2 above), in the template only. No tracker deploys
+this session; Absolute picks them up at its next update. X-Men is read from a local read-only clone
+(`git clone https://github.com/ASIMKARD/x-men`, commit `663fe46`, the commit the reference was
+captured from). Nothing is written to it.
+
+### Decided 12 Oct (John) — do not reopen
+- **A tracker's era colours are drawn exactly as given,** X-Men's shades included, in the same
+  fonts and font colours. The build never refuses or changes one. The 4.5:1 rule applies to the
+  colours Pull derives itself.
+  - **What it means.** Three of X-Men's eleven colours put white text under WCAG AA (4.5:1):
+    - Foundations `#A6791E`: 3.91:1, and 3.29:1 for its years at 85 %;
+    - Bendis to IvX `#B08A1F`: 3.23:1;
+    - ResurrXion `#C0622A`: 4.18:1.
+  - The build reports each such era with its ratio, as a warning, never a failure. The contrast
+    suites still hold every other era text to 4.5:1.
+- **The other skins ignore an era's colour.** Paper, Newsprint, Night and a signature skin keep
+  today's pale washes from the era's index.
+- **The folder tab keeps the template's arrangement inside:**
+  - the figures line (read, time left, finish by, "filtered", "+N untimed"), with the bar across
+    the strip under it;
+  - the years beside the name, wrapping under it when there's no room.
+
+### Decided 13 Oct (John): the plan approved, with derived colours as vivid as each hue allows
+- **A derived colour is `oklch(.48 C h)`.** C is the highest chroma inside the sRGB gamut at
+  L .48 for that hue, capped at .14 so nothing turns garish, and never below .08. This replaces the
+  flat `.08` in step 4.
+- **Contrast at every hue:** white text at least 4.5:1, and the 85 % years at least 4.5:1. Tested
+  across all hues, not a sample, and every derived colour must be inside the gamut.
+- **A screenshot** of a band of derived era colours next to X-Men's, for John to judge the look.
+
+**Measured before building (13 Oct), at every hue in 0.01° steps (36,000 hues):**
+- At L .48 the gamut edge runs from chroma .082 (cyan, about 200°) to .298 (blue, about 275°). With
+  the cap and the floor, 1,945 of every 3,600 tenth-degree hues land between .08 and .14, so C
+  really varies.
+- The tab: white text 6.10:1 or better, the 85 % years 4.88:1 or better, in gamut at every hue.
+- The strip is the same colour with lightness and chroma both × 5/6 (L .40). Scaling L and C
+  together scales every linear sRGB channel by (5/6)³, so the strip is in gamut whenever the tab
+  is. White text on it is 8.69:1 or better, and the 85 % years 6.75:1 or better.
+- CSS can't find the gamut edge itself. So the build computes each era's chroma exactly from the
+  hue the stylesheet gives it (the era's index, `--era-h0` and `--era-step`, read from
+  `styles.css`), and does the same for Pull's one-colour hue.
+
+### Measured in X-Men (real Chromium, 393 px, `663fe46`)
+| Part | X-Men |
+|---|---|
+| Era box | 369 px wide, 12 px from each edge, 14 px apart; radius 8 8 3 3; no outline; shadow `0 1px 2px` ink at 8 % plus `0 1px 1px` ink at 6 % |
+| Tab | the era's colour; padding 12 44 12 16; the right edge slants from 88 % at the top to 100 % at the strip; a 14 px hatch in the corner (black at 12 %, 2 px in every 6, at 135°) |
+| Text | name and years white; the years at 85 % opacity |
+| Strip | the era's colour with each channel −25 (Foundations `#A6791E` → `#8D6005`); padding 6 16; mono 11 px, white; the bar 4 px, white at 25 % with a 95 % fill |
+| Open body | 12 px from each edge; a 2 px line frame left, right and bottom (`#C9C4B5`); radius 0 0 8 8; paper-2 (`#DEDACF`); padding 6 |
+| Tab bar | 0 to 393 px, square corners |
+
+In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to −0.095 across its 11 eras).
+
+### Steps — each ends committed, pushed and green (harness, layout suite, CI)
+1. **Measure first.** The comparison grows before anything changes, so every later step removes
+   differences rather than describing them.
+   - `ref/pull-map.js` and `ref/capture-x-men.js` gain:
+     - the era box, tab, strip and open body: margins, radii, padding, shadow, frame, backgrounds;
+     - each text's effective colour (colour × opacity), so 85 % white compares equal however it's drawn;
+     - the bar's track and fill;
+     - the cut, read from pixels: where the slant starts and where it ends.
+   - Era boxes are measured on top-level eras, as X-Men has them: the `no-periods` fixture, with
+     `basic` for everything else.
+   - `ref/x-men.json` is re-captured from `663fe46`, and the drift check passes.
+   - `DIFFERENCES` lists each new one as "John (9 Oct): session 7 builds it", so 45-pull stays
+     true both ways.
+   - First file: `test/layout/ref/pull-map.js`. First test: `test/layout/45-pull`.
+2. **The tab bar edge to edge, in Pull only.**
+   - One layout token, `--tabs-inset`: 16 px by default, 0 in Pull, with square corners there.
+   - The build refuses it in a signature skin, and 80-guards checks that only `:root` and Pull's
+     block set it. Steps 4 and 5 use the same mechanism for every Pull-only layout token.
+   - 60-stack measures it at 320, 390 and 1024 px:
+     - Pull's bar spans the screen;
+     - every other skin's stays 16 px in;
+     - the stack stays pinned.
+   - 40-look and 10-sweep: all four tabs still fit at 320 px.
+   - This removes the two tab-bar differences.
+3. **A `colour` per era in the data.**
+   - Schema: `eras[].colour`, `#RRGGBB`.
+   - `tools/build.py`:
+     - checks the format;
+     - computes the strip by X-Men's rule;
+     - emits both as OKLCH numbers in `data.js` (the guard allows only token-built `oklch()` and
+       `hsl()` outside `:root`), precise enough to come back to the same hex;
+     - reports each colour's ratio under white. Under 4.5:1 it warns, with the nearest passing
+       shade as a hint. (Built: the hint passes for the 85 % years too, so `#A6791E` → `#896100`.)
+   - Fixtures:
+     - X-Men's own colours on some eras, Foundations' on the first, so one is under 4.5:1;
+     - the other eras derive;
+     - a broken case for a malformed colour.
+   - Tests: 10-schema; 20-build (the values, the hex round trip, the strip); 60-validation; the
+     warning's text.
+4. **Pull's solid colours.**
+   - `app.js` puts an era's colour numbers on its section as tokens, beside `--ei`. No skin test
+     in `app.js`.
+   - `styles.css`: Pull draws the tracker's colour when there is one. Otherwise it derives one
+     from the era's hue, `oklch(.48 C h)` with C as decided 13 Oct, and the strip at L .40 with
+     chroma × 5/6.
+     - Each switch is a 0-or-1 token, so the blend is exact, and the other skins are unchanged.
+   - Every hue is tested: the build's chroma at 0.01° steps in the harness (in gamut, the highest
+     within the cap and floor, both contrasts), and in Chromium a dataset whose eras' hues cover
+     the circle, every drawn colour read back and checked.
+   - A screenshot of a band of derived colours next to X-Men's, for John.
+   - Every text in a Pull era box is white, including finish-by, "filtered" and ✓. The years are
+     white at 85 %, as X-Men. The bar is white on the strip.
+   - "One colour" sets the data's colours aside: every era gets Pull's one derived colour (my call).
+   - 40-look:
+     - every text in the box, on the tab and on the strip, at 4.5:1, for 64 derived eras, split
+       and one colour;
+     - the pale rule (T-39) covers every skin but Pull;
+     - each data colour is drawn exactly: the pixel is the hex, the strip is X-Men's shade;
+     - a colour the build flagged is the only exception, and its measured ratios must equal the
+       build's;
+     - the other skins look identical with and without data colours.
+   - 45-root holds the same rules on a tracker's own data.
+5. **The folder-tab shape, in Pull only.**
+   - In every skin, the era box's figures line and bar move into one strip element. Nothing
+     visible changes outside Pull (measured), and Absolute's signature selectors still match.
+   - Pull-only layout tokens give the measured box: margins, radii, shadow, padding, the open
+     body's frame. Their defaults are today's layout.
+   - The cut and the hatch are background layers, not `clip-path`, so no text or focus ring is
+     ever clipped.
+   - A new Chromium check in 10-sweep, in every skin, at 320, 360, 390 and 1024 px with the
+     largest text: no era text crosses the cut or sits on the transparent corner.
+   - Risk: the open body's frame takes 16 px from each row at 320 px. If 50-table finds a title
+     under half its row, table view's frame gets tighter (measured).
+   - This removes the shape differences.
+6. **Close-out.**
+   - Docs:
+     - BUILD-NOTES: the field and Pull's layout exception;
+     - MIGRATING: X-Men's colours carry over exactly, and three warn;
+     - the Skill;
+     - CLAUDE.md: the data rule, and the pale-wash line names Pull's exception;
+     - FEATURE-INVENTORY: T-38 and T-39 re-expressed, a new X-12.
+   - X-Men and Pull side by side at 393 px, sent to John.
+   - A dry run on a scratch copy of Absolute's data, with nothing written to Absolute: build, gate,
+     harness and layout suite, so its next update is known to pass.
+
+### My calls (open to veto)
+- In Pull, era boxes sit 12 px from the edge and 14 px apart, as measured. The rest of the page
+  keeps the template's 16 px.
+- ~~Derived colours: `oklch(.48 .08 h)`.~~ Replaced by John's rule (13 Oct, above).
+- "One colour" in Pull ignores the data's colours.
+- Pull's banner under the tabs (off by default) stays inset under the full-width bar, and so does
+  the mini progress bar (on by default).
+- Eras inside bands (X-Men has none) keep the band's spacing.
+
+### What stays as it is
+- The read mark keeps 24 px (decision 3). Its three differences stay listed, now as "John (9 Oct):
+  keeps the accessible 24 px minimum, with the Button size and Marks settings".
+- The two accessible differences stay: the selected-tab underline and the search outline.
+
+## Session 7 checkpoint — step 1 done (measure first), 13 Oct 2026
+
+### Done
+- **`test/layout/ref/pull-map.js` measures the whole era box** against X-Men's:
+  - the box: left edge, width, the four corner radii, outline width and shadow;
+  - the spacing between boxes (`gapAbove`: from one era's open body to the next box);
+  - the tab's and the strip's padding;
+  - the bar: track colour, height and radius;
+  - the open body: left edge, width, padding, the frame's widths and colour, and its rounded foot;
+  - each era text's **effective colour**: the colour's alpha times every opacity above it, so X-Men's
+    years (white at opacity .85) and Pull's (white at 85 %) compare equal however they're drawn;
+  - the tab bar's corners, alongside its left edge and width.
+- **The folder tab's shape, read from pixels** (`shape()`): a screenshot of the first era box,
+  decoded by the page's own canvas, so no image library is needed. It reads:
+  - where paper begins along the tab's top, middle and bottom rows, as a fraction of the box's width
+    (X-Men: .89, .94, 1);
+  - the colours painted on the tab and the strip (X-Men: `#A6791E`, `#8D6005`);
+  - the share of the tab's corner hatched darker (X-Men: .4).
+- **Era boxes are measured on the `no-periods` fixture,** whose eras are top-level as X-Men's are;
+  everything else stays on `basic`.
+- **`ref/x-men.json` re-captured** from X-Men `663fe46`, and the drift check passes.
+- **45-pull: 74 properties match and 44 differences are listed.** Each new one says "John (9 Oct):
+  session 7 builds it" and what. The reasons now carry the date of John's decision (the check
+  accepts "John (9 Oct):"). The read mark's three now say the 24 px minimum is John's decision.
+- **Mutation-proved:**
+  - a difference left off the list fails;
+  - a shape reading that matches X-Men without the shape fails (the list is no longer true).
+
+**Harness:** 1569 assertions, 0 failed, 36 suites. **Layout:** 354 checks (+1), 0 failed, 11 suites.
+
+## Session 7 checkpoint — step 2 done (the tab bar edge to edge, in Pull only), 13 Oct 2026
+
+### Done
+- **`styles.css`:** `.tabs` takes its side margin from a new token, `--tabs-inset`. It is 16 px in
+  `:root` (the template's layout) and 0 in Pull's block. The corners follow it, so an edge-to-edge
+  bar is square.
+- **`tools/build.py`:** `PULL_ONLY` names the tokens only Pull sets. A signature skin that sets
+  one, as a token or in a rule, fails the build with "is Pull's layout (John, 9 Oct): every other
+  skin keeps the template's". Steps 4 and 5 add their tokens to the same set.
+- **Tests:**
+  - 60-stack measures it in every skin at 320, 390 and 1024 px, at the top and pinned: Pull's bar
+    runs 0 to the screen's edge with square corners, every other skin's stays 16 px in, and the
+    page never gets wider (+1);
+  - 22-signature: both refusals, for every token the build names (+3);
+  - 80-guards: each Pull-only token is declared in `:root` and set in Pull's block, no other block
+    sets one, and the check sees a Night block that does (+4);
+  - 45-pull: the tab bar's three differences are gone (left edge, width, corners): 77 properties
+    match, 41 differences listed.
+- **Mutation-proved:** Pull without the token (80-guards, 60-stack); Night with it (80-guards); the
+  build's refusal removed (22-signature, twice).
+- **Found, not changed:** the mini progress bar under the tabs (on by default) is drawn 6 px tall
+  in every skin, though `.mini-bar` asks for 3 px: `progress.bar { height: 6px }` is more specific.
+  It stays 16 px in under Pull's full-width bar, as the banner does (my call, listed above).
+
+**Harness:** 1576 assertions (+7), 0 failed, 36 suites. **Layout:** 355 checks (+1), 0 failed, 11 suites.
+
+## Session 7 checkpoint — step 3 done (a colour per era in the data), 13 Oct 2026
+
+### Done
+- **Schema:** `eras[].colour`, optional, `#RRGGBB`.
+- **`tools/build.py`, the colour maths** (stdlib: OKLab and WCAG 2 contrast):
+  - a malformed colour fails the build: "era X: colour must be #RRGGBB";
+  - a tracker's colour goes into `data.js` as given. Each era gets `colour: {hex, tab, strip, white,
+    years}`:
+    - `tab` and `strip` are OKLCH numbers (6, 6 and 4 places). 200,000 random colours all came
+      back to the same 8-bit colour;
+    - the strip follows the reference tracker's rule, each channel 25 darker (Foundations
+      `#A6791E` → `#8D6005`);
+    - `white` and `years` are the ratios of white text and of the 85 % years on it;
+  - under 4.5:1 the build warns and never fails, with a hint. The text: "era dawn: white text on its
+    colour #A6791E is 3.91:1 (the years at 85 %: 3.29:1), under 4.5:1 (WCAG AA). Pull draws it as
+    given (John, 12 Oct). The nearest shade of its hue where both pass: #896100 (5.57:1, 4.51:1)";
+  - the report counts them: `eraColours: {set, underAA}`.
+- **Pull's derived chroma, per era** (John, 13 Oct):
+  - each era carries `solid`: the gamut's edge at L .48 for the era's hue, rounded down to 5 places,
+    capped at .14 and floored at .08;
+  - the hue is the one `styles.css` gives the era: `--era-h0` + index × `--era-step`. "One colour"
+    gets `solidMono`, at Pull's `--era-mono-h`. The build reads all of them, and Pull's
+    `--era-solid-l` (.48), from `styles.css`;
+  - `--era-solid-l` joins `PULL_ONLY`: `:root` has `var(--era-tint-l)`, Pull's block has .48;
+  - `python3 tools/build.py --era-solid-sweep [STEP]` prints the build's own chroma at every hue,
+    for the harness;
+  - without a `styles.css` beside `tools/` (the verify gate's tests build that way), the build
+    still builds. It warns, and the stylesheet's fallback (.08) applies.
+- **Fixtures:** `dawn` carries the reference tracker's Foundations `#A6791E` (under 4.5:1) in
+  `basic` and `no-periods`, and basic's `storm` its Claremont `#A6303C` (6.75:1). The other eras
+  derive. New broken case: `era-colour-format`.
+- **Tests:**
+  - `test/lib/colour.js`, an independent copy of the maths for the tests;
+  - 20-build: the colours as given, their OKLCH numbers back to the same hex, the strip, both
+    ratios, the warning and its hint (which does pass), no warning for the colour that passes,
+    the report, five malformed colours, the build without a stylesheet;
+  - 20-build, **every hue from the build itself**: 36,000 hues at 0.01°. Every chroma is between
+    .08 and .14, inside the gamut, and the highest under the cap (a hair more leaves the gamut).
+    The worst cases: white 6.10:1 and the 85 % years 4.88:1 on the tab; 8.69:1 and 6.75:1 on the
+    strip (L .40, chroma × 5/6), also inside the gamut at every hue;
+  - 20-build: each era's chroma is the rule at its own hue (basic's 5 eras, 64 eras) and at Pull's
+    one hue;
+  - 60-validation and 10-schema: the broken case;
+  - 22-signature and 80-guards cover `--era-solid-l` through `PULL_ONLY`.
+- **Mutation-proved:** no cap (caught at every era and in the sweep); the hue one era out; the
+  strip 20 darker instead of 25.
+- **Found while testing:** the verify gate's test runs the build from `tools/` alone, which the
+  first version crashed on. Caught by 23-verify-gate, fixed, and now checked in 20-build.
+
+**Harness:** 1607 assertions (+31), 0 failed, 36 suites. **Layout:** 355 checks, 0 failed, 11 suites.
+
+## Session 7 checkpoint — step 4 done (Pull's solid colours), 13 Oct 2026
+
+### Done
+- **`app.js` (`eraStyle`):** each era section hands the stylesheet its numbers as tokens:
+  - its index (`--ei`), as before;
+  - Pull's derived chroma at its hue (`--esc`) and at the one hue (`--esm`);
+  - a tracker's own colour (`--eo:1` and its tab and strip OKLCH numbers).
+
+  Only numbers are written, so an older `data.js` leaves the stylesheet's fallbacks. There is no skin
+  test in `app.js`.
+- **`styles.css`:**
+  - **The blend:** `.era` blends each component with 0-or-1 switches, so it picks one side
+    exactly:
+    - a pale wash in every skin but Pull, unchanged;
+    - in Pull (`--era-solid: 1`), the tracker's colour when there is one, else
+      `oklch(.48 C h)`;
+    - "One colour" (`--era-split: 0`) sets the tracker's colours aside.
+  - **The text in Pull's boxes:** white, the years at 85 %, as the reference tracker. Finish-by,
+    "filtered" and ✓ are white too, and the bar is white at 25 % with a 95 % fill. Each is a
+    token that keeps the template's colour in the other skins:
+    - `--era-years-ink`, `--era-stats-ink`, `--era-accent-ink`, `--era-done-ink`;
+    - `--era-track`, `--era-fill`;
+    - Pull points them at the new `--on-solid…` colours in `:root`.
+  - `--era-solid` joins `PULL_ONLY`.
+- **40-look:**
+  - **Era banners:** every text in the box (✓ included, the first era seeded complete) at 4.5:1,
+    as drawn: a text's alpha is now blended in before measuring, here and in 45-root;
+  - **The pale rule (T-39):** covers every skin but Pull. Pull's boxes are solid instead, and all
+    their text is white, the years at 85 %;
+  - **Every hue, in Chromium:** 3,600 eras whose golden-angle hues leave no gap wider than 0.12°.
+    Every colour drawn is the build's, inside sRGB, with white text at 6.10:1 at worst and the 85 %
+    years at 4.88:1, measured. "One colour" is one colour;
+  - **A tracker's colours:** each drawn exactly as given (`#A6791E`, `#A6303C`). Dawn's ratios
+    measure what the build reported (3.907 and 3.293), and it is the only exception. "One colour"
+    sets them aside;
+  - **The other skins:** they look the same with and without the colours, split and one colour.
+- **45-root:** a tracker colour under 4.5:1 is the one exception, in Pull, and must measure what
+  the build reported. Proved by giving the demo's first era Foundations' colour for one run.
+- **9g-look:** each era section's tokens are data.js's numbers; an older data.js gives `--ei`
+  alone.
+- **45-pull:** the era texts are compared by the colour you see, since the reference's years are
+  white at opacity .85 and Pull's are white at 85 %. Seven differences are gone: the era name, the
+  years and the stats colour, the bar's track, and the tab's fill (`#A6791E`, read from pixels).
+  The reference was re-captured, and the fresh capture still matches. 82 properties match, 34
+  differences are listed.
+- **Mutation-proved:** Pull without `--era-solid`; "One colour" keeping the tracker's colours;
+  the years at full white; `app.js` without the derived chroma.
+- **For John:** `band-colours.png`, Pull's derived colours next to X-Men's eleven, on the
+  template's card shape (the folder tab is step 5).
+
+**Harness:** 1613 assertions (+6), 0 failed, 36 suites. **Layout:** 369 checks (+14), 0 failed, 11 suites.
+
+## Session 7 checkpoint — step 5 done (the folder-tab shape, in Pull only), 13 Oct 2026
+
+### Done
+- **`app.js`:** an era box's figures line and bar sit in one strip element, `.bfoot`, in every skin
+  (`refreshStats` still finds them). The skin beacon is now 4, so an older stylesheet meeting the
+  new markup is loaded again (9g-look, 9i-pwa).
+- **`styles.css`, the template's card by default** (each token's `:root` value is today's layout,
+  so nothing moves outside Pull). Pull's block sets the reference's measurements:
+  - the box: 12 px in, 14 px apart, corners 8 8 3 3, no outline, its shadow (ink at 8 % and 6 %);
+  - the tab: padding 12, max(44 px, 12 %), 12, 16. Its colour, the hatched corner, and the page
+    painted into the cut are three background layers, not a clip, so no text or focus ring is cut
+    off. The slant runs from 88 % at the top to the strip;
+  - the strip: 6 16, in the tracker colour's own shade, or else the derived colour at L .40 with
+    its chroma × 5/6. The bar is 4 px with round ends;
+  - an open era: a 2 px line frame left, right and bottom, a rounded foot, paper-2, 6 px inside;
+  - the 19 tokens join `PULL_ONLY` (22-signature refuses each in a signature skin; 80-guards
+    checks the stylesheet).
+- **The build:** a tracker colour also reports white text on its strip (`stripWhite`), and warns
+  when that is under 4.5:1. The reference's Bendis to IvX strip, `#977106`, is 4.49:1.
+  - The 85 % years are blended at 8-bit alpha (217/255), as browsers draw them. With exactly .85,
+    the build's figure for Bendis to IvX's years was 0.019 off the screen's.
+  - Derived chroma keeps one step (0.00001) in hand at the gamut's edge. Chromium reports
+    computed colours to 7 figures, and at the very edge that rounding put five strips outside
+    sRGB, by at most 3.3e-8 in linear light (the exact values were inside). Now every tab and
+    strip is inside, checked at zero tolerance.
+- **Table view:** the framed body gives its sides back to the row (`:root[data-table="1"]`). At
+  320 px a Pull title first had 48 % of its row (the rule is 50 %), then 50.0 % with the padding
+  alone, and now 50.7 %, the same as Paper.
+- **Tests:**
+  - **45-pull: 111 properties match, and only 5 differences are left.** Two are the accessible
+    ones (the selected-tab underline, the search outline) and three are the read mark's (24 px,
+    John's decision 3). The cut (.89, .94, 1), the hatch (.4), the strip `#8D6005`, every margin,
+    radius, padding and the shadow all match X-Men;
+  - **10-sweep:** no era text crosses its tab's cut or leaves the tab, on every page it sweeps. A
+    real build of basic with era names long enough to wrap, at 320 and 1024 px, every skin,
+    default and the largest text (100 tabs);
+  - **40-look:** each text is measured against what is painted behind it (an opaque background,
+    or the tab's solid layer). Each strip is darker than its tab. Every hue: the strip is the same
+    colour at L .40 with chroma × 5/6, inside sRGB, white on it 8.69:1 at worst. Tracker colours:
+    the strip is the reference's shade exactly, and a flagged colour's strip measures the build's
+    figure;
+  - **45-root:** the same, proved by giving the demo's first era the reference's Foundations
+    colour and, separately, its Bendis to IvX colour (strip under 4.5:1). Both pass; reverted;
+  - **20-build:** the strip ratio, the warning (the hint passes all three), the 8-bit years.
+- **Mutation-proved:** the tab's right padding cut short (10-sweep: text crosses the cut by
+  15 px); no hatch; no cut; the strip as light as the tab (40-look).
+
+- **Found by the full run:** 70-pwa expected the skin beacon to be 3 by name; it now reads the
+  value `app.js` expects, as 80-guards does (9i-pwa likewise).
+
+**Harness:** 1649 assertions (+36), 0 failed, 36 suites. **Layout:** 410 checks (+41: the cut check on every
+page 10-sweep sweeps), 0 failed, 11 suites.
+
+## Session 7 checkpoint — step 6 done (close-out), 13 Oct 2026
+
+### Done
+- **Docs:**
+  - `BUILD-NOTES.md`: Pull's layout exception and `PULL_ONLY`; a new "Era colours" section (the
+    field, the warning, the derived rule, the strip, One colour, the tests); the X-Men comparison
+    as it now stands (111 match, 5 left, and `X_MEN_DIR`);
+  - `MIGRATING.md`: era colours carry over exactly. Three of X-Men's will warn;
+  - the Skill: the exception and the colour rule;
+  - `CLAUDE.md`: the data rule, the pale-wash line names Pull, session 7's two measuring
+    lessons, and `test/lib/colour.js` in the repo map;
+  - `FEATURE-INVENTORY.md`: T-38, T-39 and X-8 re-expressed, and a new X-12.
+- **Sent to John:** X-Men's landing next to Pull's at 393 px, and X-Men's eleven era colours next
+  to Pull's derived ones in the folder tab.
+- **A trial run on Absolute's data, nothing written to Absolute.** A scratch clone of Absolute's
+  `main` (`27dca56`), with the template's shell, tools, schema and tests copied over (29 paths;
+  Absolute's own `dataset.json`, `signature.css`, icons, README, CLAUDE.md and PROGRESS.md
+  untouched):
+  - the build gives v10, and the gate passes (134 rows, 0 failures, 0 warnings);
+  - harness 1648, 0 failed; layout 414, 0 failed;
+  - in Chromium, Absolute's signature skin is unchanged, and in Pull its two eras take the
+    derived folder tabs.
+
+  Absolute picks this up at its next update, with John's say-so.
+
+**Harness:** 1649 assertions, 0 failed, 36 suites. **Layout:** 410 checks, 0 failed, 11 suites.
+
+## Transfer checkpoint — end of session 7: Pull's era boxes and tab bar, 13 Oct 2026
+
+### Done (all 6 steps, and the version tags before them)
+- **Pull's tab bar runs edge to edge,** in Pull only.
+- **Eras may carry their own colour,** drawn exactly in Pull, warned about under 4.5:1, ignored by
+  the other skins.
+- **Without one, Pull derives `oklch(.48 C h)`,** as vivid as each hue allows (.08 to .14), in
+  gamut and above 4.5:1 at every hue.
+- **Pull's era boxes take X-Men's folder-tab shape,** measured: 111 properties match X-Men, and 5
+  differences are left, each decided.
+- **Harness 1649 and layout 410,** both 0 failed; CI green on every step.
+- **No tracker was deployed.**
+
+### Open with John (non-blocking)
+- **My calls, open to veto** (in the plan above):
+  - era boxes 12 px in and 14 px apart, as measured;
+  - "One colour" sets a tracker's colours aside;
+  - the banner and the mini bar stay inset under the full-width tab bar;
+  - eras inside bands keep the band's spacing;
+  - in table view the framed body gives its sides back to the row.
+- **Found, not changed:** the mini progress bar under the tabs is drawn 6 px tall in every skin,
+  though its rule asks for 3 px (`progress.bar` is more specific). A one-line fix if John wants it.
+- **Absolute's next update** can take all of this. The trial run above passes on its data.
+- Master-Repo still names v8's rollback by its commit, and waits for John (from 11 Oct).
+
+### Session 8 starts with
+Whatever John asks next. No step is half-made. This branch holds session 7's work, unmerged,
+for John to review.
+
+## Changes before the PR (John, 13 Oct 2026) — do not reopen
+1. **Pull's default era colours are the X-Men tracker's eleven, in order,** and replace the
+   derived OKLCH rule. Era i takes colour i mod 11. Every default must pass for white text, for
+   the 85 % years (blended at 217/255) and for its strip (25 darker per channel), each at 4.5:1.
+   One that fails is nudged: its OKLCH lightness lowered only as much as needed, hue and chroma
+   kept, inside sRGB. A tracker's own colours are still drawn exactly.
+2. **The mini progress bar is 3 px,** with a test that catches it at 6 px.
+3. **My four calls are accepted:**
+   - era boxes 12 px in and 14 px apart, as measured;
+   - "One colour" sets a tracker's colours aside;
+   - the banner and the mini bar stay inset under the full-width tab bar;
+   - eras inside bands keep the band's spacing.
+4. **Absolute gets these template updates as v10, together with its next issue refresh.**
+
+## Checkpoint — the changes before the PR done, 13 Oct 2026
+
+### Done
+- **The source is the recorded measurement.** `test/layout/ref/capture-x-men.js` now records every
+  X-Men era box's tab and strip colour in order (`eras` in `ref/x-men.json`, re-captured from
+  `663fe46`). 45-pull's drift check covers them, and 20-build checks `PULL_PALETTE` against
+  them.
+- **`tools/build.py`:** `PULL_PALETTE` (the eleven) and `nudge()`. Each era's `pull` is the colour
+  Pull draws, its own or palette colour i mod 11, as tab and strip OKLCH numbers. `pullMono` is
+  "One colour". `python3 tools/build.py --pull-palette` lists every default as drawn. Gone:
+  the derived chroma, `--era-solid-l` and `--era-strip-l`, the build reading `styles.css` for
+  hues, and `--era-solid-sweep`.
+- **The nudges.** Five of the eleven fail, not three: Utopia's and Krakoa's 85 % years are just
+  under (4.29 and 4.44).
+
+  | Reference | Before: white · years · strip | Pull | After: white · years · strip | How |
+  |---|---|---|---|---|
+  | Foundations `#A6791E` | 3.91 · 3.29 · 5.51 | `#8A6100` | 5.54 · 4.50 · 7.99 | L .606 → .524, chroma .115 → .109 |
+  | Utopia `#1F7A5C` | 5.25 · 4.29 · 7.50 | `#1A7659` | 5.56 · 4.52 · 7.95 | L .519 → .507 |
+  | Bendis to IvX `#B08A1F` | 3.23 · 2.78 · 4.49 | `#836400` | 5.54 · 4.53 · 8.02 | L .652 → .522, chroma .124 → .107 |
+  | ResurrXion `#C0622A` | 4.18 · 3.49 · 5.83 | `#A94D0D` | 5.59 · 4.50 · 7.84 | L .599 → .531 |
+  | Krakoa `#C21E6D` | 5.68 · 4.44 · 7.40 | `#C11C6C` | 5.75 · 4.50 · 7.49 | L .540 → .537 |
+
+  - Each is the least that passes: one step of 0.0005 less still fails (20-build).
+  - **Foundations and Bendis to IvX couldn't keep their chroma.** They are yellows, and sRGB holds
+    less chroma as a yellow darkens, so both reach the gamut's edge before they pass. Staying
+    inside sRGB is kept, so from there their chroma follows the edge (Foundations from about
+    L .557, Bendis to IvX from about L .607), with the hue kept. The other three keep hue and
+    chroma, to the 8-bit rounding.
+  - The other six are untouched: Claremont `#A6303C`, The 90s `#7B3F94`, Morrison `#2C6E8C`,
+    From the Ashes `#9C4A3C`, Age of Revelation `#4A2E5C`, Shadows of Tomorrow `#1C3A5E`.
+- **"One colour" in Pull** gives every era the palette's navy, `#1C3A5E`, which is also the X-Men
+  tracker's accent (my call; the derived one-colour hue went with the derived rule).
+- **`styles.css` and `app.js`:** each era hands the stylesheet `--ec…` (the colour it is drawn in)
+  and `--em…` (One colour), tab and strip. An older `data.js` without them is now caught as a
+  stale mix and loaded again (`staleShell` checks `pullMono`).
+- **The mini bar:** `progress.bar.mini-bar { height: 3px }`. It is as specific as
+  `progress.bar`'s 6 px, and later, so it wins. 60-stack measures 3 px in every skin, default
+  and largest text. With the old rule put back once, it failed at 6 px in all ten cases.
+- **Tests:**
+  - 20-build: the palette against the recorded measurement; every default passing all three;
+    the untouched six untouched; the five nudged ones; each nudge minimal, darker, with its hue
+    kept and its chroma kept or on the gamut's edge; 52 eras cycling, with one tracker colour
+    among them drawn as given; One colour the navy; tracker colours never nudged; the build
+    without a stylesheet still giving Pull its palette;
+  - 40-look: 52 eras in Chromium, each tab and strip exactly palette colour i mod 11. Every text
+    measured as drawn: white 5.54:1, the years 4.50:1 and the strip 7.49:1 at worst;
+  - 9g-look: the tokens, and the stale `data.js` caught;
+  - 45-pull: the eleven recorded colours, and the fresh capture matches.
+- **Mutation-proved:** no nudging; nudging two steps too far; the cycle mod 10; a tracker's
+  colour nudged; the mini bar's old rule.
+- **Sent to John:** the palette next to X-Men's eleven (`band-palette.png`).
+
+**Harness:** 1645 assertions, 0 failed, 36 suites. **Layout:** 409 checks, 0 failed, 11 suites. The derived rule's
+every-hue checks went with it, and the palette's and the mini bar's came in.
+
+### Absolute
+Absolute gets all of this as v10, with its next issue refresh. Its own `PROGRESS.md` is
+Absolute's, so it isn't changed here. The trial run on its data (step 6) covered the folder tab
+and the derived colours. Its two eras will now be Pull's first two palette colours, `#8A6100` and
+`#A6303C`, and the next update re-runs everything on its data.

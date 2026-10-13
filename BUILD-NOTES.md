@@ -66,6 +66,14 @@ are in `schema/dataset.schema.json`.
   `styles.css`: bare `:root[data-skin="…"]` blocks that set custom properties
   only. `test/suites/80-guards.test.js` refuses anything else. A skin changes how
   things look, never where they are.
+- **Pull's layout exception (John, 9 Oct).** Pull alone runs its tab bar edge
+  to edge and draws its era boxes as the X-Men tracker's folder tabs. The tokens
+  that do it are listed in `PULL_ONLY` in `tools/build.py`:
+  - `:root` holds the template's layout, and only Pull's block changes them;
+  - a signature skin that sets one fails the build;
+  - `test/suites/80-guards.test.js` checks the stylesheet;
+  - `test/layout/60-stack.test.js` measures the tab bar in every skin, and
+    `test/layout/10-sweep.test.js` checks that no era text crosses the tab's cut.
 - The Look settings (paper, era colours, text size, density, button size,
   marks, the dyslexia-friendly font) own their tokens; a skin can't override
   them.
@@ -89,7 +97,8 @@ One skin of the tracker's own, from `franchise.signature`:
 ```
 
 - `tokens` must be input tokens from `styles.css` `:root`. Tokens a Look
-  setting owns are read from `styles.css` and refused, as are the page's own.
+  setting owns are read from `styles.css` and refused, as are the page's own
+  and Pull's layout tokens (`PULL_ONLY`).
 - `fonts` are woff2 files in `fonts/`, so the service worker precaches them;
   each face swaps.
 - `stylesheet` (relative to `dataset.json`) may only hold rules whose every
@@ -128,15 +137,68 @@ One skin of the tracker's own, from `franchise.signature`:
   (`test/layout/40-look.test.js` and friends). The demo is "Signal" in
   `test/fixtures/basic/`.
 
+### Era colours
+
+- An era may have its own colour: `"colour": "#RRGGBB"` in `dataset.json`'s
+  `eras`. Pull draws it exactly as given, with white text (John, 9 and 12 Oct).
+  - The strip under the tab is the X-Men tracker's rule: each channel 25 darker.
+  - The other skins ignore it and keep their pale washes from the era's index.
+- **The build never refuses or changes a colour.** It reports the ratios of
+  white text, of the 85 % years and of white text on the strip. When any is
+  under 4.5:1 it warns, and gives the nearest shade of the hue where all three
+  pass.
+- **An era without a colour gets Pull's default palette** (John, 13 Oct): the
+  X-Men tracker's eleven era colours, in its order, era i taking colour i mod 11
+  (`PULL_PALETTE` in `tools/build.py`; `test/layout/ref/x-men.json` records
+  them, and 20-build checks the two agree).
+  - Every default passes for white text, for the 85 % years (blended at
+    217/255, as browsers draw them) and for white text on its strip, each at
+    4.5:1. A reference colour that doesn't is nudged darker, only as far as it
+    must: OKLCH lightness is lowered 0.0005 at a time, with hue and chroma kept.
+    Where the gamut runs out first (a yellow holds less chroma as it darkens),
+    the chroma follows the gamut's edge, so the colour stays inside sRGB.
+  - Five of the eleven are nudged. `python3 tools/build.py --pull-palette` lists
+    every colour as drawn, with its nudge and ratios:
+
+    | Reference | Pull | How | White · years · strip |
+    |---|---|---|---|
+    | Foundations `#A6791E` | `#8A6100` | L .606 → .524, chroma .115 → .109 (the gamut's edge) | 5.54 · 4.50 · 7.99 |
+    | Utopia `#1F7A5C` | `#1A7659` | L .519 → .507 | 5.56 · 4.52 · 7.95 |
+    | Bendis to IvX `#B08A1F` | `#836400` | L .652 → .522, chroma .124 → .107 (the gamut's edge) | 5.54 · 4.53 · 8.02 |
+    | ResurrXion `#C0622A` | `#A94D0D` | L .599 → .531 | 5.59 · 4.50 · 7.84 |
+    | Krakoa `#C21E6D` | `#C11C6C` | L .540 → .537 | 5.75 · 4.50 · 7.49 |
+
+    The other six are drawn as they are (white text 5.65:1 or more).
+  - A tracker's own colours are never nudged: they are drawn exactly as given.
+- "One colour" (the Era colours setting) gives every era the palette's navy
+  `#1C3A5E`, the X-Men tracker's accent, and sets a tracker's colours aside.
+- Tested in `test/suites/20-build.test.js` (the source against the recorded
+  measurement, every default passing, each nudge the least that passes, 52 eras
+  cycling, tracker colours untouched) and `test/layout/40-look.test.js` (in
+  Chromium: 52 eras drawn in palette colour i mod 11, each strip, every text
+  measured, and the other skins identical with and without colours). A
+  tracker's colour under 4.5:1 is the one exception the contrast suites allow.
+  It must measure exactly what the build reported (40-look, and
+  `test/layout/45-root.test.js` on a tracker's own data).
+
 ### Pull matches the X-Men tracker
 
 - `test/layout/ref/x-men.json` holds X-Men's computed styles at 393 px, with
   its commit. `test/layout/ref/pull-map.js` maps each template element to
   X-Men's and lists the differences that remain, each with its reason.
+  - The era box is measured in full, on a fixture whose eras are top-level as
+    X-Men's are.
+  - The folder tab's shape is read from pixels: where the cut begins, the tab's
+    and strip's colours, the hatched corner.
 - `test/layout/45-pull.test.js` compares Pull with the reference and keeps the
-  list of differences true in both directions.
+  list of differences true in both directions. Since session 7, 111 properties
+  match and 5 differences are left:
+  - two that a contrast rule keeps (the selected-tab underline, the search
+    outline);
+  - three for the read mark, which keeps the accessible 24 px (John, 9 Oct).
 - To re-capture after X-Men changes (read-only clone beside this repo):
-  `node test/layout/ref/capture-x-men.js ../X-men`.
+  `node test/layout/ref/capture-x-men.js ../X-men`. 45-pull re-checks the
+  reference against a local copy at `../X-men`, or wherever `X_MEN_DIR` points.
 
 ## The workbook
 

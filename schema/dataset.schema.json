@@ -324,6 +324,11 @@
      },
      "intro": {
       "type": "string"
+     },
+     "colour": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$",
+      "description": "Optional, #RRGGBB. Pull draws the era in this colour exactly, with white text, and its stats strip 25 darker per channel; the other skins ignore it (John, 9 and 12 Oct). The build warns when white text on it is under 4.5:1. Without one, Pull derives a colour from the era's hue."
      }
     }
    }

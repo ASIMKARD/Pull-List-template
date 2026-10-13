@@ -152,4 +152,31 @@ module.exports = async function (t) {
   await wait(20);
   t.ok('…and so is a stylesheet with no beacon at all', /out of date \(missing\)/.test(app.document.querySelector('#toastMsg').textContent));
   app.window.close();
+
+  // ------------------------------------------------ era colours (session 7): each era hands the stylesheet its numbers
+  app = boot(b.out, { storage: seen });
+  await wait(20);
+  const tokens = el => Object.fromEntries((el.getAttribute('style') || '').split(';').filter(Boolean).map(x => x.split(':').map(y => y.trim())));
+  const secs = [...app.document.querySelectorAll('section.era')].map(s => [+s.dataset.e, tokens(s)]);
+  const six = (k, p) => [[k['--' + p + '-l'], k['--' + p + '-c'], k['--' + p + '-h']].map(Number), [k['--' + p + '-sl'], k['--' + p + '-sc'], k['--' + p + '-sh']].map(Number)];
+  t.eq('every era section carries its index and, for Pull, the colour it is drawn in (--ec…) and the one "One colour" draws (--em…), tab and strip, as numbers from data.js',
+       secs.filter(([e, k]) => k['--ei'] !== String(e) || k['--ec'] !== '1' || JSON.stringify(six(k, 'ec')) !== JSON.stringify([D.eras[e].pull.tab, D.eras[e].pull.strip]) ||
+         JSON.stringify(six(k, 'em')) !== JSON.stringify([D.pullMono.tab, D.pullMono.strip])).map(([e]) => e), []);
+  t.eq('…an era with a tracker colour is drawn in it, the others in the palette by index', D.eras.map(e => e.pull.hex),
+       D.eras.map((e, i) => e.colour ? e.colour.hex : JSON.parse(require('child_process').spawnSync('python3', [path.join(ROOT, 'tools', 'build.py'), '--pull-palette'], { encoding: 'utf8' }).stdout)[i % 11].hex));
+  app.window.close();
+  {
+    // an older data.js, from before Pull's colours (a stale mix within Pages' 10 minutes): loaded again, never drawn half-done
+    const out = path.join(copyFixture('basic', 'old-data'), 'out');
+    fs.cpSync(b.out, out, { recursive: true });
+    const OD = loadData(out);
+    OD.eras.forEach(e => { delete e.pull; delete e.colour; });
+    delete OD.pullMono;
+    fs.writeFileSync(path.join(out, 'data.js'), 'window.TRACKER_DATA=' + JSON.stringify(OD) + ';\n');
+    app = boot(out, { storage: { [OD.franchise.key + ':v3:settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' } }) } });
+    await wait(20);
+    t.ok('an older data.js without Pull\'s colours is caught as a stale mix: loaded again where no cache holds it, before anything is drawn',
+         !!app.document.querySelector('script[src^="./data.js?r="]') && /Updating to the latest version/.test(app.document.getElementById('app').textContent));
+    app.window.close();
+  }
 };

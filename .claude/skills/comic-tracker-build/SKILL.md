@@ -43,7 +43,13 @@ hand-edit what the build writes. Commit and push only when every run is clean.
   in `app.js`; a new control gets a row in `test/suites/9f-visibility.test.js`.
 - **A skin changes how things look, never where they are.** Skins and the
   signature skin set tokens (and look-only rules); the build and
-  `test/suites/80-guards.test.js` refuse the rest.
+  `test/suites/80-guards.test.js` refuse the rest. The one exception is Pull's
+  folder-tab era boxes and edge-to-edge tab bar (John, 9 Oct). Only Pull's
+  block sets the tokens named in `PULL_ONLY` (`tools/build.py`).
+- **An era's own colour (`eras[].colour`) is drawn exactly, in Pull only.** The
+  build warns when white text on it is under 4.5:1 and never changes it. Without
+  one, Pull uses its default palette (the X-Men tracker's eleven, era i taking
+  colour i mod 11, each nudged darker only as far as it must to pass).
 - **Measure anything visual in real Chromium** (`test/layout/`). jsdom has no
   layout engine. Contrast is measured, never eyeballed.
 - **Wait out the 400 ms save debounce** before reading storage in a test; seed
