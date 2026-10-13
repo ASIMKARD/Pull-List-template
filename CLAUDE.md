@@ -77,7 +77,7 @@ swap John approves. (Full text: Master-Repo
 | `tools/version_tag.py`, `.github/workflows/version-tag.yml` | version tags: a merge into `main` that changes the readable version is tagged `vN` (John, 12 Oct); never moves or touches an existing tag |
 | `README.md`, `BUILD-NOTES.md`, `MIGRATING.md`, `.claude/skills/comic-tracker-build/` | start a tracker; conventions; migrating; the Skill. `25-docs` checks every path and command they name |
 | `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`). Same runner; CI runs it |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`, `gate/*`) |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`, `gate/*`); `test/lib/colour.js`, the tests' own copy of the colour maths (OKLCH, the sRGB gamut, contrast) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)
@@ -97,6 +97,9 @@ swap John approves. (Full text: Master-Repo
   interpolate, never write series data from memory.
 - **Events state their era** in `dataset.json` (`events: [{id, era}]`); chapters
   the tracker doesn't have are placed inside that era by date then event order.
+- **An era's own colour** (`eras[].colour`, `#RRGGBB`, optional) is drawn exactly
+  as given in Pull (John, 12 Oct), and ignored by every other skin. The build warns,
+  never fails, when white text on it is under 4.5:1.
 - **Credits**: full canonical names, never surnames alone. Missing credits warn
   (coverage %), and fail only under `strictCredits`.
 - **Durations (per format), whole minutes.**
@@ -240,7 +243,8 @@ v2: base `:root`, seven `data-bg` swatches, the signature-skin palette, the
 `--eN-t/-a/-d` era ramp per scheme, and `.era[data-e=N]` rules that stopped at
 era 25 while the ramp went to 34 — rows past the lowest ceiling went unstyled.
 v3: one colour-token block; ramps generated, no cap (60+ eras), and a guard
-asserts exactly one token block. Era tints are pale washes.
+asserts exactly one token block. Era tints are pale washes, except in Pull, whose
+era boxes are solid with white text (John, 9 Oct; `BUILD-NOTES.md`, "Era colours").
 **Design dark skins against the surface.** The first dark skin had 39 of 54
 era colours failing WCAG AA (worst 1.35:1). Measure contrast; don't eyeball.
 **How v3 holds this (session 4):**
@@ -254,6 +258,12 @@ era colours failing WCAG AA (worst 1.35:1). Measure contrast; don't eyeball.
 - `test/layout/40-look` measures contrast for every skin × paper and for 64 eras.
   Its first run caught Night's control outlines at 2.95:1 on the warm and mint
   papers: at the same HSL lightness, a yellowish hue is brighter.
+- **Session 7:** a text is measured as drawn (its alpha blended in), against what
+  is painted behind it. That is an opaque background, or Pull's folder tab, whose
+  colour is a background layer.
+  - A browser draws "85 %" at 8-bit alpha (217/255); the build blends the same.
+  - At the very edge of the gamut, Chromium's 7-figure rounding stepped outside it
+    by 3e-8, so Pull's derived chroma keeps one step (0.00001) in hand.
 - Every control must be at least 24 × 24 px (WCAG 2.5.8). Creator names inside a
   line of credits are the inline exception.
 

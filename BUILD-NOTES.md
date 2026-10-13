@@ -66,6 +66,14 @@ are in `schema/dataset.schema.json`.
   `styles.css`: bare `:root[data-skin="…"]` blocks that set custom properties
   only. `test/suites/80-guards.test.js` refuses anything else. A skin changes how
   things look, never where they are.
+- **Pull's layout exception (John, 9 Oct).** Pull alone runs its tab bar edge
+  to edge and draws its era boxes as the X-Men tracker's folder tabs. The tokens
+  that do it are listed in `PULL_ONLY` in `tools/build.py`:
+  - `:root` holds the template's layout, and only Pull's block changes them;
+  - a signature skin that sets one fails the build;
+  - `test/suites/80-guards.test.js` checks the stylesheet;
+  - `test/layout/60-stack.test.js` measures the tab bar in every skin, and
+    `test/layout/10-sweep.test.js` checks that no era text crosses the tab's cut.
 - The Look settings (paper, era colours, text size, density, button size,
   marks, the dyslexia-friendly font) own their tokens; a skin can't override
   them.
@@ -89,7 +97,8 @@ One skin of the tracker's own, from `franchise.signature`:
 ```
 
 - `tokens` must be input tokens from `styles.css` `:root`. Tokens a Look
-  setting owns are read from `styles.css` and refused, as are the page's own.
+  setting owns are read from `styles.css` and refused, as are the page's own
+  and Pull's layout tokens (`PULL_ONLY`).
 - `fonts` are woff2 files in `fonts/`, so the service worker precaches them;
   each face swaps.
 - `stylesheet` (relative to `dataset.json`) may only hold rules whose every
@@ -128,15 +137,56 @@ One skin of the tracker's own, from `franchise.signature`:
   (`test/layout/40-look.test.js` and friends). The demo is "Signal" in
   `test/fixtures/basic/`.
 
+### Era colours
+
+- An era may have its own colour: `"colour": "#RRGGBB"` in `dataset.json`'s
+  `eras`. Pull draws it exactly as given, with white text (John, 9 and 12 Oct).
+  - The strip under the tab is the X-Men tracker's rule: each channel 25 darker.
+  - The other skins ignore it and keep their pale washes from the era's index.
+- **The build never refuses or changes a colour.** It reports the ratios of
+  white text, of the 85 % years and of white text on the strip. When any is
+  under 4.5:1 it warns, and gives the nearest shade of the hue where all three
+  pass.
+- **An era without a colour gets one in Pull, from its hue** (John, 13 Oct):
+  `oklch(.48 C h)`.
+  - C is the highest chroma inside sRGB at that lightness and hue, capped at
+    .14 and never under .08. It is computed by the build, since CSS can't find
+    the gamut's edge, from the hue `styles.css` gives the era (`--era-h0` +
+    index × `--era-step`).
+  - One step (0.00001) is kept in hand at the edge, so a browser's rounding
+    stays inside.
+  - The strip is the same colour with lightness and chroma both × 5/6 (L .40),
+    which is inside the gamut whenever the tab is.
+  - At every hue, white text on the tab clears 6.10:1 and the 85 % years
+    4.88:1; on the strip, 8.69:1.
+- "One colour" (the Era colours setting) sets a tracker's colours aside: every
+  era takes Pull's one derived colour.
+- Tested in `test/suites/20-build.test.js` (the build's chroma at all 36,000
+  hues, every 0.01°) and `test/layout/40-look.test.js` (in Chromium: 3,600 eras
+  whose hues leave no gap over 0.12°, each tracker colour drawn exactly, and the
+  other skins identical with and without colours). A colour under 4.5:1 is the
+  one exception the contrast suites allow. It must measure exactly what the
+  build reported (40-look, and `test/layout/45-root.test.js` on a tracker's own
+  data).
+
 ### Pull matches the X-Men tracker
 
 - `test/layout/ref/x-men.json` holds X-Men's computed styles at 393 px, with
   its commit. `test/layout/ref/pull-map.js` maps each template element to
   X-Men's and lists the differences that remain, each with its reason.
+  - The era box is measured in full, on a fixture whose eras are top-level as
+    X-Men's are.
+  - The folder tab's shape is read from pixels: where the cut begins, the tab's
+    and strip's colours, the hatched corner.
 - `test/layout/45-pull.test.js` compares Pull with the reference and keeps the
-  list of differences true in both directions.
+  list of differences true in both directions. Since session 7, 111 properties
+  match and 5 differences are left:
+  - two that a contrast rule keeps (the selected-tab underline, the search
+    outline);
+  - three for the read mark, which keeps the accessible 24 px (John, 9 Oct).
 - To re-capture after X-Men changes (read-only clone beside this repo):
-  `node test/layout/ref/capture-x-men.js ../X-men`.
+  `node test/layout/ref/capture-x-men.js ../X-men`. 45-pull re-checks the
+  reference against a local copy at `../X-men`, or wherever `X_MEN_DIR` points.
 
 ## The workbook
 

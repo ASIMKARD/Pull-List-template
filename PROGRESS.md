@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1649 assertions, 0 failed, 36 suites (session 7, step 5: Pull's folder-tab era boxes). **Layout suite (real Chromium, in CI too):** 410 checks, 0 failed, 11 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
+**Harness:** 1649 assertions, 0 failed, 36 suites (end of session 7: Pull's era boxes and tab bar). **Layout suite (real Chromium, in CI too):** 410 checks, 0 failed, 11 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1649 (+ 410).
 
 ---
 
@@ -2920,7 +2920,58 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
 **Harness:** 1649 assertions (+36), 0 failed, 36 suites. **Layout:** 410 checks (+41: the cut check on every
 page 10-sweep sweeps), 0 failed, 11 suites.
 
-### Step 6 begins with: close-out
-- **First files:** `BUILD-NOTES.md` (Skins: Pull's folder tab, the era colour field), then
-  `MIGRATING.md`, the Skill, `CLAUDE.md`, `FEATURE-INVENTORY.md`.
-- **Then:** side-by-side screenshots for John; a dry run on a scratch copy of Absolute's data.
+## Session 7 checkpoint — step 6 done (close-out), 13 Oct 2026
+
+### Done
+- **Docs:**
+  - `BUILD-NOTES.md`: Pull's layout exception and `PULL_ONLY`; a new "Era colours" section (the
+    field, the warning, the derived rule, the strip, One colour, the tests); the X-Men comparison
+    as it now stands (111 match, 5 left, and `X_MEN_DIR`);
+  - `MIGRATING.md`: era colours carry over exactly. Three of X-Men's will warn;
+  - the Skill: the exception and the colour rule;
+  - `CLAUDE.md`: the data rule, the pale-wash line names Pull, session 7's two measuring
+    lessons, and `test/lib/colour.js` in the repo map;
+  - `FEATURE-INVENTORY.md`: T-38, T-39 and X-8 re-expressed, and a new X-12.
+- **Sent to John:** X-Men's landing next to Pull's at 393 px, and X-Men's eleven era colours next
+  to Pull's derived ones in the folder tab.
+- **A trial run on Absolute's data, nothing written to Absolute.** A scratch clone of Absolute's
+  `main` (`27dca56`), with the template's shell, tools, schema and tests copied over (29 paths;
+  Absolute's own `dataset.json`, `signature.css`, icons, README, CLAUDE.md and PROGRESS.md
+  untouched):
+  - the build gives v10, and the gate passes (134 rows, 0 failures, 0 warnings);
+  - harness 1648, 0 failed; layout 414, 0 failed;
+  - in Chromium, Absolute's signature skin is unchanged, and in Pull its two eras take the
+    derived folder tabs.
+
+  Absolute picks this up at its next update, with John's say-so.
+
+**Harness:** 1649 assertions, 0 failed, 36 suites. **Layout:** 410 checks, 0 failed, 11 suites.
+
+## Transfer checkpoint — end of session 7: Pull's era boxes and tab bar, 13 Oct 2026
+
+### Done (all 6 steps, and the version tags before them)
+- **Pull's tab bar runs edge to edge,** in Pull only.
+- **Eras may carry their own colour,** drawn exactly in Pull, warned about under 4.5:1, ignored by
+  the other skins.
+- **Without one, Pull derives `oklch(.48 C h)`,** as vivid as each hue allows (.08 to .14), in
+  gamut and above 4.5:1 at every hue.
+- **Pull's era boxes take X-Men's folder-tab shape,** measured: 111 properties match X-Men, and 5
+  differences are left, each decided.
+- **Harness 1649 and layout 410,** both 0 failed; CI green on every step.
+- **No tracker was deployed.**
+
+### Open with John (non-blocking)
+- **My calls, open to veto** (in the plan above):
+  - era boxes 12 px in and 14 px apart, as measured;
+  - "One colour" sets a tracker's colours aside;
+  - the banner and the mini bar stay inset under the full-width tab bar;
+  - eras inside bands keep the band's spacing;
+  - in table view the framed body gives its sides back to the row.
+- **Found, not changed:** the mini progress bar under the tabs is drawn 6 px tall in every skin,
+  though its rule asks for 3 px (`progress.bar` is more specific). A one-line fix if John wants it.
+- **Absolute's next update** can take all of this. The trial run above passes on its data.
+- Master-Repo still names v8's rollback by its commit, and waits for John (from 11 Oct).
+
+### Session 8 starts with
+Whatever John asks next. No step is half-made. This branch holds session 7's work, unmerged,
+for John to review.

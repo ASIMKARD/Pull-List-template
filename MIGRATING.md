@@ -78,6 +78,13 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
 - A tracker with a look of its own recreates it as its signature skin
   (`BUILD-NOTES.md`, "The signature skin slot"), measured side by side with the
   old copy. What can't be done without moving a control goes to John.
+- **Era colours carry over exactly** (`eras[].colour`, `BUILD-NOTES.md`, "Era
+  colours"). Pull draws them as given (John, 12 Oct).
+  - The build warns, and never fails, for any colour that puts white text under
+    4.5:1. Three of X-Men's eleven will warn: Foundations `#A6791E` (3.91:1),
+    Bendis to IvX `#B08A1F` (3.23:1; its strip 4.49:1) and ResurrXion `#C0622A`
+    (4.18:1).
+  - Eras without a colour get Pull's derived one.
 
 ## 6. Dates, credits and the gate
 
