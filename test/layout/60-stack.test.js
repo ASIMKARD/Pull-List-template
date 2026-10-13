@@ -39,6 +39,28 @@ module.exports = async function (t) {
     t.eq('the banner is pinned directly under the tabs (L-3, L-4)', under, []);
     t.eq('--stack-h is the stack\'s measured height (F-58)', measured, []);
 
+    // ------------------------------------------------ the tab bar: edge to edge in Pull only (John, 9 Oct)
+    const bar = [];
+    for (const skin of SKINS) {
+      for (const w of [320, 390, 1024]) {
+        const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage: seed({ skin }) });
+        await openAll(pg.page);
+        const at = async () => pg.page.evaluate(() => { const nav = document.querySelector('#tabs'), r = nav.getBoundingClientRect(), cs = getComputedStyle(nav);
+          return { left: r.left, right: innerWidth - r.right, corner: cs.borderTopLeftRadius, vw: innerWidth, sw: document.documentElement.scrollWidth }; });
+        const top = await at();
+        await pg.page.evaluate(() => window.scrollTo(0, 700));
+        await pg.page.waitForTimeout(50);
+        const pinnedBar = await at();
+        const want = skin === 'pull' ? [0, 0, '0px'] : [16, 16, null];
+        for (const [when, m] of [['at the top', top], ['pinned', pinnedBar]]) {
+          const got = [Math.round(m.left * 10) / 10, Math.round(m.right * 10) / 10, want[2] === null ? null : m.corner];
+          if (got.some((v, i) => v !== want[i]) || m.sw > m.vw) bar.push(skin + ' @' + w + ' ' + when + ': ' + JSON.stringify(got) + (m.sw > m.vw ? ', page ' + m.sw + ' px' : ''));
+        }
+        await pg.close();
+      }
+    }
+    t.eq('the tab bar runs edge to edge in Pull (square corners) and stays 16 px in every other skin, at 320, 390 and 1024 px, at the top and pinned (John, 9 Oct)', bar, []);
+
     // ------------------------------------------------ measured at runtime: it follows the banner
     let pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed({}) });
     const before = await pg.page.evaluate(geo);

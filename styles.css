@@ -102,6 +102,10 @@
   --tap: 34px; --tap-glyph: 18px; --b-min: 30px;   /* button size (S-20) */
   --tap-dense: 24px;                               /* table view's targets: never under 24 px, 44 px with large buttons */
   --mark-radius: var(--radius-sm);                 /* mark style (S-5) */
+  /* Pull's layout exception (John, 9 Oct): the template's layout here, and only
+     Pull's block below changes these. The build refuses them in a signature
+     skin, and a guard checks that no other block sets them. */
+  --tabs-inset: 16px;                              /* the tab bar's side margin: 0 runs it edge to edge */
   --stack-h: 0px;        /* the sticky stack's height, measured at runtime (F-58) */
   --motion: 1;           /* every transition's duration is multiplied by this; reduced motion sets 0 */
   --skin-ok: 3;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
@@ -146,6 +150,7 @@
   --arc-size: 13.5px; --arc-weight: 600; --row-size: 13px; --row-weight: 500; --search-size: 14px;
   --tab-size: 12.5px; --tab-fit: 3.7vw; --tab-case: uppercase; --tab-track: .3px;
   --radius: 8px;
+  --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
 }
 :root[data-skin="night"] {
   --base-paper-h: 220; --base-paper-s: 50%;
@@ -320,8 +325,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .row, .band-head, .era-head, .arc-head { position: relative; }
 
 /* ---- tabs and panes ---- */
-.tabs { display: flex; gap: 0; margin: 0 16px; border-bottom: 1px solid var(--line); overflow-x: auto;
-  background: var(--bar); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.tabs { display: flex; gap: 0; margin: 0 var(--tabs-inset); border-bottom: 1px solid var(--line); overflow-x: auto;
+  background: var(--bar); border-radius: min(var(--radius-sm), var(--tabs-inset)) min(var(--radius-sm), var(--tabs-inset)) 0 0; }   /* edge to edge: square corners */
 .tab {
   flex: 1 0 auto; padding: 10px 2px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--bar-soft);
   font-weight: 600; white-space: nowrap; text-transform: var(--tab-case); letter-spacing: var(--tab-track);

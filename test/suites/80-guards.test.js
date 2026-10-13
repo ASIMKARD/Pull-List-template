@@ -206,6 +206,17 @@ module.exports = async function (t) {
        lookBlocks.every(b => decls(b).every(d => /^--[\w-]+\s*:/.test(d))), lookBlocks.filter(b => !decls(b).every(d => /^--[\w-]+\s*:/.test(d))).map(b => b.sel).join(' | '));
   const tokenOnly = b => decls(b).every(d => /^--[\w-]+\s*:/.test(d));
   t.ok('the token-only check sees a real declaration', !tokenOnly({ body: '--a: 1; position: relative' }) && tokenOnly({ body: '--a: 1; --b: var(--c)' }));
+  // ---- Pull's layout exception (John, 9 Oct): its tokens have the template's layout in :root and only Pull's block changes them ----
+  const pullOnly = (read('tools/build.py').match(/^PULL_ONLY = \{([^}]*)\}/m) || ['', ''])[1].match(/--[\w-]+/g) || [];
+  const setsAny = (b, toks) => decls(b).filter(d => toks.includes(d.split(':')[0].trim())).map(d => d.split(':')[0].trim());
+  const strays = cssText => cssBlocks(cssText).filter(b => b.sel !== ':root' && b.sel !== ':root[data-skin="pull"]' && setsAny(b, pullOnly).length)
+    .map(b => b.sel + ' sets ' + setsAny(b, pullOnly).join(', '));
+  t.ok('Pull\'s layout tokens are named in the build (' + pullOnly.join(', ') + ')', pullOnly.length >= 1);
+  const rootBlock = cssBlocks(css).find(b => b.sel === ':root'), pullBlock = cssBlocks(css).find(b => b.sel === ':root[data-skin="pull"]');
+  t.eq('…each has the template\'s layout in :root, and Pull\'s block changes it', pullOnly.filter(k => !setsAny(rootBlock, [k]).length || !setsAny(pullBlock, [k]).length), []);
+  t.eq('…and no other block in styles.css sets one', strays(css), []);
+  t.ok('…the check sees a skin that sets one (Night with ' + (pullOnly[0] || '?') + ')',
+       strays(':root { ' + pullOnly[0] + ': 16px; } :root[data-skin="night"] { ' + pullOnly[0] + ': 0px; }').length === 1);
   const buildSkins = (read('tools/build.py').match(/^SKINS = \[([^\]]+)\]/m) || ['', ''])[1].match(/'([\w-]+)'/g).map(x => x.slice(1, -1));
   const appSkins = Object.keys(JSON.parse(appJs.match(/var SKIN_NAMES = (\{[^}]+\})/)[1].replace(/(\w+):/g, '"$1":').replace(/'/g, '"')));
   t.eq('the build and app.js know the same skins, base first', appSkins, buildSkins);

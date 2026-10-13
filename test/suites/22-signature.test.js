@@ -94,6 +94,14 @@ module.exports = async function (t) {
   refuse('a property that isn\'t a look (cursor, transition)', styled(SCOPE + ' .a { cursor: pointer; }'), /\{ cursor \}: not a look property/);
   refuse('a transition (motion stays with the reduced-motion token)', styled(SCOPE + ' .a { transition: color 1s; }'), /\{ transition \}: not a look property/);
   refuse('a setting-owned token in a rule', styled(SCOPE + ' .a { --row-pad: 2px; }'), /\{ --row-pad \}: not a known input token/);
+  // Pull's layout exception (John, 9 Oct): only Pull sets these, so a signature skin keeps the template's layout
+  const pullOnly = (fs.readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_ONLY = \{([^}]*)\}/m) || ['', ''])[1].match(/--[\w-]+/g) || [];
+  t.ok('the build names Pull\'s layout tokens (' + pullOnly.join(', ') + ')', pullOnly.includes('--tabs-inset'));
+  for (const tok of pullOnly) {
+    refuse('Pull\'s layout token ' + tok + ' as a signature token', withSig('sig-x', sig({ tokens: { [tok]: '0px' } })),
+           new RegExp(tok + ' is Pull\'s layout \\(John, 9 Oct\\): every other skin keeps the template\'s'));
+    refuse('…and in a signature rule', styled(SCOPE + ' .a { ' + tok + ': 0px; }'), new RegExp('\\{ ' + tok + ' \\}: is Pull\'s layout'));
+  }
   refuse('an image that isn\'t in the repo', styled(SCOPE + ' .a { background-image: url(./images/nope.png); }'), /must name a file in fonts\/, icons\/, images\//);
   refuse('url() outside background-image', styled(SCOPE + ' .a { border-image: url(./icons/icon-192.png); }'), /border-image \}: not a look property/);
   refuse('a legacy skin map pointing at a skin the tracker doesn\'t offer',

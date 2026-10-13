@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1569 assertions, 0 failed, 36 suites (session 7, step 1: measure first). **Layout suite (real Chromium, in CI too):** 354 checks, 0 failed, 11 suites.
+**Harness:** 1576 assertions, 0 failed, 36 suites (session 7, step 2: the tab bar edge to edge in Pull). **Layout suite (real Chromium, in CI too):** 355 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2699,7 +2699,8 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
   keeps the template's 16 px.
 - ~~Derived colours: `oklch(.48 .08 h)`.~~ Replaced by John's rule (13 Oct, above).
 - "One colour" in Pull ignores the data's colours.
-- Pull's banner under the tabs (off by default) stays inset under the full-width bar.
+- Pull's banner under the tabs (off by default) stays inset under the full-width bar, and so does
+  the mini progress bar (on by default).
 - Eras inside bands (X-Men has none) keep the band's spacing.
 
 ### What stays as it is
@@ -2737,7 +2738,33 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
 
 **Harness:** 1569 assertions, 0 failed, 36 suites. **Layout:** 354 checks (+1), 0 failed, 11 suites.
 
-### Step 2 begins with: the tab bar edge to edge
-- **First file:** `styles.css` (`.tabs`, a `--tabs-inset` token), then `tools/build.py` (refuse the
-  Pull-only layout tokens in a signature skin).
-- **First test:** `test/layout/60-stack`, then `test/suites/22-signature` and `80-guards`.
+## Session 7 checkpoint — step 2 done (the tab bar edge to edge, in Pull only), 13 Oct 2026
+
+### Done
+- **`styles.css`:** `.tabs` takes its side margin from a new token, `--tabs-inset`. It is 16 px in
+  `:root` (the template's layout) and 0 in Pull's block. The corners follow it, so an edge-to-edge
+  bar is square.
+- **`tools/build.py`:** `PULL_ONLY` names the tokens only Pull sets. A signature skin that sets
+  one, as a token or in a rule, fails the build with "is Pull's layout (John, 9 Oct): every other
+  skin keeps the template's". Steps 4 and 5 add their tokens to the same set.
+- **Tests:**
+  - 60-stack measures it in every skin at 320, 390 and 1024 px, at the top and pinned: Pull's bar
+    runs 0 to the screen's edge with square corners, every other skin's stays 16 px in, and the
+    page never gets wider (+1);
+  - 22-signature: both refusals, for every token the build names (+3);
+  - 80-guards: each Pull-only token is declared in `:root` and set in Pull's block, no other block
+    sets one, and the check sees a Night block that does (+4);
+  - 45-pull: the tab bar's three differences are gone (left edge, width, corners): 77 properties
+    match, 41 differences listed.
+- **Mutation-proved:** Pull without the token (80-guards, 60-stack); Night with it (80-guards); the
+  build's refusal removed (22-signature, twice).
+- **Found, not changed:** the mini progress bar under the tabs (on by default) is drawn 6 px tall
+  in every skin, though `.mini-bar` asks for 3 px: `progress.bar { height: 6px }` is more specific.
+  It stays 16 px in under Pull's full-width bar, as the banner does (my call, listed above).
+
+**Harness:** 1576 assertions (+7), 0 failed, 36 suites. **Layout:** 355 checks (+1), 0 failed, 11 suites.
+
+### Step 3 begins with: a colour per era in the data
+- **First file:** `schema/dataset.schema.json` (`eras[].colour`), then `tools/build.py` (the colour
+  maths, the warning, Pull's derived chroma per era).
+- **First test:** `test/suites/20-build`, then `10-schema` and `60-validation`.

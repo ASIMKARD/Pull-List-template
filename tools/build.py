@@ -71,6 +71,11 @@ SIG_SCOPE = ':root[data-skin="signature"]'
 # is read from styles.css: the signature's CSS comes later, so setting one would
 # override the person's choice. These the page itself owns:
 RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
+# Pull's layout exception (John, 9 Oct): tokens only the Pull skin sets (its tab
+# bar edge to edge). Every other skin keeps the template's layout, so a
+# signature skin may not set them; 80-guards checks styles.css the same way.
+PULL_ONLY = {'--tabs-inset'}
+PULL_ONLY_MSG = "is Pull's layout (John, 9 Oct): every other skin keeps the template's"
 COLOUR_PROPS = {'color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color',
                 'border-left-color', 'text-decoration-color', 'caret-color', 'accent-color'}
 LOOK_PROPS = COLOUR_PROPS | {
@@ -248,7 +253,7 @@ def root_inputs(shell_root):
     m = re.search(r'(?:^|\})\s*:root\s*\{([^}]*)\}', css)
     if not m:
         return set()
-    owned = set(RUNTIME_TOKENS)
+    owned = set(RUNTIME_TOKENS) | PULL_ONLY
     for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', css):
         if any(re.match(r'^:root\[data-(?!skin=)[\w-]+="[\w-]+"\]$', x.strip()) for x in sel.split(',')):
             owned |= set(re.findall(r'(--[\w-]+)\s*:', body))
@@ -280,6 +285,9 @@ def signature_skin(sig, base, shell_root, errs):
         tokens = {}
     for k in sorted(tokens):
         v = tokens[k]
+        if k in PULL_ONLY:
+            errs.append('%s.tokens: %s %s' % (w, k, PULL_ONLY_MSG))
+            continue
         if k not in inputs:
             errs.append('%s.tokens: %s is not a known input token (styles.css :root, less the ones Look settings own)' % (w, k))
             continue
@@ -396,6 +404,9 @@ def signature_rules(css, rel, inputs, shell_root, errs):
                     decls.append('  %s: %s;' % (prop, val))
                 continue
             if prop.startswith('--'):
+                if prop in PULL_ONLY:
+                    errs.append('%s: %s' % (where, PULL_ONLY_MSG))
+                    continue
                 if prop not in inputs:
                     errs.append('%s: not a known input token' % where)
                     continue

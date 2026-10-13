@@ -46,7 +46,7 @@ const MAP = [
   ['era tab', '.era-divider .tab', '.era-head .bhead', ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'], 'eras'],
   ['era strip', '.era-divider .era-stats', '.era-head .bfoot', ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'], 'eras'],
   ['era bar', '.era-divider .era-progress-track', '.era-head progress.bar', ['backgroundColor', 'boxHeight', 'borderTopLeftRadius'], 'eras'],
-  // geometry: what a skin may not change (one layout), measured so the differences are on record
+  // geometry: the tab bar runs edge to edge in Pull (John, 9 Oct); the read mark keeps the 24 px minimum (on record below)
   ['tab bar box', '.tabbar', '#tabs', ['boxLeft', 'boxWidth', 'borderTopLeftRadius']],
   ['read mark', '.issue-row .tri-check', '.row:not(.inert) .mark', ['boxWidth', 'boxHeight', 'borderTopLeftRadius', 'borderTopColor']],
 ];
@@ -111,9 +111,6 @@ const DIFFERENCES = {
   'era shape.fill': S7 + 'the era\'s own colour (Foundations #A6791E here)',
   'era shape.strip': S7 + 'the strip: each channel of the era\'s colour −25 (#8D6005)',
   'era shape.hatch': S7 + 'a hatched corner, black at 12 %',
-  'tab bar box.boxLeft': 'John (9 Oct): session 7 runs Pull\'s tab bar edge to edge; the template\'s sits inside the 16 px page margin',
-  'tab bar box.boxWidth': 'John (9 Oct): as above (393 vs 361 px)',
-  'tab bar box.borderTopLeftRadius': 'John (9 Oct): as above, with square corners',
   'read mark.boxWidth': 'John (9 Oct): the mark keeps the accessible 24 px minimum, with the Button size setting (--tap)',
   'read mark.boxHeight': 'John (9 Oct): as the width (22 px in X-Men, --tap here)',
   'read mark.borderTopLeftRadius': 'John (9 Oct): the mark\'s shape stays with the Marks setting (--mark-radius)',
