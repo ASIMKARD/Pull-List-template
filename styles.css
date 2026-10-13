@@ -56,6 +56,10 @@
      tints, readable text, hue stepped by the golden angle — no cap on eras */
   --era-h0: 30; --era-step: 137.508; --era-mono-h: 258;
   --era-tint-l: .955; --era-tint-c: .035; --era-ink-l: .40; --era-ink-c: .10;
+  /* Pull's solid era boxes (John, 9 and 13 Oct): their lightness. tools/build.py
+     reads Pull's value and computes each era's chroma from it (the gamut's edge
+     for the era's hue, .08 to .14), since CSS can't. */
+  --era-solid-l: var(--era-tint-l);
   --scheme: light;
 
   /* ---- COLOURS: the one place colour is written ---- */
@@ -151,6 +155,7 @@
   --tab-size: 12.5px; --tab-fit: 3.7vw; --tab-case: uppercase; --tab-track: .3px;
   --radius: 8px;
   --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
+  --era-solid-l: .48;    /* solid era boxes: white text clears 4.5:1 at every hue, the years at 85 % too */
 }
 :root[data-skin="night"] {
   --base-paper-h: 220; --base-paper-s: 50%;

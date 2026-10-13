@@ -3,6 +3,7 @@
 
     python3 tools/build.py [dataset.json] [--out DIR] [--check] [--report FILE]
     python3 tools/build.py --validate-issue-ids ID [ID ...]
+    python3 tools/build.py --era-solid-sweep [STEP]   (Pull's derived chroma at every hue, for the harness)
 
 Reads dataset.json (the master) plus its per-era source files and the
 canonical event files it lists, then:
@@ -19,7 +20,7 @@ canonical event files it lists, then:
 
 Every field is read BY NAME. Nothing is read by position.
 """
-import hashlib, json, os, re, struct, sys, unicodedata
+import hashlib, json, math, os, re, struct, sys, unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCHEMA_VERSION = 1
@@ -72,9 +73,10 @@ SIG_SCOPE = ':root[data-skin="signature"]'
 # override the person's choice. These the page itself owns:
 RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
 # Pull's layout exception (John, 9 Oct): tokens only the Pull skin sets (its tab
-# bar edge to edge). Every other skin keeps the template's layout, so a
-# signature skin may not set them; 80-guards checks styles.css the same way.
-PULL_ONLY = {'--tabs-inset'}
+# bar edge to edge, its solid era boxes). Every other skin keeps the template's
+# layout and pale eras, so a signature skin may not set them; 80-guards checks
+# styles.css the same way.
+PULL_ONLY = {'--tabs-inset', '--era-solid-l'}
 PULL_ONLY_MSG = "is Pull's layout (John, 9 Oct): every other skin keeps the template's"
 COLOUR_PROPS = {'color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color',
                 'border-left-color', 'text-decoration-color', 'caret-color', 'accent-color'}
@@ -524,6 +526,155 @@ def parse_date(s):
     return (y, mo, d)
 
 
+# --------------------------------------------------------------------------
+# era colours (session 7). A tracker may give an era its own colour: Pull draws
+# it exactly as given, with white text, and the other skins ignore it (John, 9
+# and 12 Oct). Where an era has none, Pull derives a solid colour from the
+# era's hue, oklch(L C h): C is the highest chroma inside sRGB at L for that
+# hue, capped at .14 so nothing turns garish and never under .08 (John, 13 Oct).
+# CSS can't find the gamut's edge, so the build computes C for each era from
+# the hue styles.css gives it. The maths is OKLab's and WCAG 2's contrast.
+# --------------------------------------------------------------------------
+COLOUR_RX = re.compile(r'^#[0-9A-Fa-f]{6}$')
+SOLID_CMAX, SOLID_CMIN = 0.14, 0.08      # John, 13 Oct
+AA = 4.5
+YEARS_ALPHA = 0.85                        # a Pull era box's years: white at 85 %, as the reference tracker
+WHITE = (255, 255, 255)
+
+
+def _to_linear(v):
+    return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+
+
+def _to_srgb(v):
+    return 12.92 * v if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055
+
+
+def hex_rgb(h):
+    return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def rgb_hex(rgb):
+    return '#%02X%02X%02X' % tuple(rgb)
+
+
+def rgb_oklch(rgb):
+    r, g, b = (_to_linear(v / 255) for v in rgb)
+    l = (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b) ** (1 / 3)
+    m = (0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b) ** (1 / 3)
+    s = (0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b) ** (1 / 3)
+    L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s
+    a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s
+    bb = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
+    return L, (a * a + bb * bb) ** 0.5, (math.degrees(math.atan2(bb, a)) % 360)
+
+
+def oklch_linear(L, C, H):
+    a, b = C * math.cos(math.radians(H)), C * math.sin(math.radians(H))
+    l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3
+    m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3
+    s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3
+    return (4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+            -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+            -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+
+
+def oklch_rgb(L, C, H):
+    return tuple(round(min(max(_to_srgb(min(max(v, 0.0), 1.0)), 0.0), 1.0) * 255) for v in oklch_linear(L, C, H))
+
+
+def in_gamut(L, C, H):
+    return all(0.0 <= v <= 1.0 for v in oklch_linear(L, C, H))
+
+
+def max_chroma(L, H):
+    """The highest chroma inside sRGB at lightness L and hue H."""
+    lo, hi = 0.0, 0.5
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if in_gamut(L, mid, H):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def solid_chroma(L, H):
+    """Pull's derived chroma (John, 13 Oct): the gamut's edge, capped and floored.
+    Rounded down to 5 places, so the rounding never steps outside the gamut."""
+    return min(max(math.floor(max_chroma(L, H) * 1e5) / 1e5, SOLID_CMIN), SOLID_CMAX)
+
+
+def luminance(rgb):
+    return sum(k * _to_linear(v / 255) for k, v in zip((0.2126, 0.7152, 0.0722), rgb))
+
+
+def contrast(a, b):
+    x, y = luminance(a), luminance(b)
+    return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+
+
+def over(fg, alpha, bg):
+    """fg at alpha over bg, blended as browsers blend text (in sRGB values), to 8 bits."""
+    return tuple(round(alpha * f + (1 - alpha) * b) for f, b in zip(fg, bg))
+
+
+def white_ratios(rgb):
+    """White text on rgb, and the years (white at 85 %) on it."""
+    return contrast(WHITE, rgb), contrast(over(WHITE, YEARS_ALPHA, rgb), rgb)
+
+
+def strip_shade(rgb):
+    """The stats strip under a tracker's own colour: the reference tracker's
+    rule, each channel 25 darker, never below 0."""
+    return tuple(max(v - 25, 0) for v in rgb)
+
+
+def passing_shade(rgb):
+    """A hint for a colour under AA: the same hue, darker, until white text and
+    the 85 % years both clear 4.5:1 (chroma kept where the gamut allows)."""
+    L, C, H = rgb_oklch(rgb)
+    while L > 0:
+        cand = oklch_rgb(L, min(C, max_chroma(L, H)), H)
+        if min(white_ratios(cand)) >= AA:
+            return cand
+        L -= 0.001
+    return (0, 0, 0)
+
+
+def oklch_parts(rgb):
+    """OKLCH numbers that come back to the same 8-bit colour (checked in 20-build)."""
+    L, C, H = rgb_oklch(rgb)
+    return [round(L, 6), round(C, 6), round(H, 4)]
+
+
+def pull_hue_tokens(shell_root):
+    """Pull's era-colour inputs from styles.css: :root, then Pull's own block.
+    Returns {name: number}; None when there is no styles.css (the build run on
+    its own, as the verify gate's tests do); raises BuildError when one isn't a
+    plain number."""
+    try:
+        with open(os.path.join(shell_root, 'styles.css'), encoding='utf-8') as f:
+            css = re.sub(r'/\*[\s\S]*?\*/', '', f.read())
+    except OSError:
+        return None
+    vals = {}
+    for want in (':root', ':root[data-skin="pull"]'):
+        for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', css):
+            if sel.strip() == want:
+                for decl in body.split(';'):
+                    if ':' in decl:
+                        k, v = (x.strip() for x in decl.split(':', 1))
+                        vals[k] = v
+    out = {}
+    for k in ('--era-h0', '--era-step', '--era-mono-h', '--era-solid-l'):
+        try:
+            out[k] = float(vals[k])
+        except (KeyError, ValueError):
+            raise BuildError(['styles.css: %s must be a plain number in :root or Pull\'s block (Pull\'s derived era colours are computed from it)' % k])
+    return out
+
+
 def build(dataset_path, previous_datajs=None, keep=None):
     """Returns (payload, report). Raises BuildError listing every problem.
     keep (a dict) receives the stitched rows, arcs and eras as soon as they are
@@ -631,6 +782,32 @@ def build(dataset_path, previous_datajs=None, keep=None):
             if last_rank is not None and rank <= last_rank:
                 errs.append('%s: ranks must ascend in era order (%d after %d)' % (w, rank, last_rank))
             last_rank = rank
+
+    # ---- era colours (session 7): a tracker's own, drawn as given; Pull derives the rest ----
+    hues = pull_hue_tokens(ROOT)
+    if hues is None:
+        warns.append('no styles.css beside tools/: Pull\'s derived era colours are left to the stylesheet\'s fallback chroma (.08)')
+    era_colours, under_aa = [], []
+    for i, e in enumerate(eras):
+        w = 'era %s' % e.get('id', i)
+        out = {'solid': solid_chroma(hues['--era-solid-l'], (hues['--era-h0'] + i * hues['--era-step']) % 360)} if hues else {}
+        col = e.get('colour')
+        if col is not None:
+            if not isinstance(col, str) or not COLOUR_RX.match(col):
+                errs.append('%s: colour must be #RRGGBB (got %r)' % (w, col))
+            else:
+                rgb = hex_rgb(col)
+                white, years = white_ratios(rgb)
+                out['colour'] = {'hex': col.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
+                                 'white': round(white, 3), 'years': round(years, 3)}
+                if min(white, years) < AA:
+                    hint = passing_shade(rgb)
+                    under_aa.append(e.get('id'))
+                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1), under %.1f:1 (WCAG AA). '
+                                 'Pull draws it as given (John, 12 Oct). The nearest shade of its hue where both pass: %s (%.2f:1, %.2f:1)'
+                                 % (w, col.upper(), white, years, AA, rgb_hex(hint), *white_ratios(hint)))
+        era_colours.append(out)
+    solid_mono = solid_chroma(hues['--era-solid-l'], hues['--era-mono-h'] % 360) if hues else None
 
     periods = ds.get('periods') or []
     if periods:
@@ -1078,8 +1255,10 @@ def build(dataset_path, previous_datajs=None, keep=None):
                                                      'background', 'searchUrl', 'dualOrder', 'storage')
                            if k in fr}, skins=skins, skin=skin, icons={k: './' + v for k, v in sorted(icons.items())}),
         'signature': signature,
-        'eras': [{'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
-                  'intro': e.get('intro', '')} for e in eras],
+        'eras': [dict({'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
+                       'intro': e.get('intro', '')}, **era_colours[i]) for i, e in enumerate(eras)],
+        # Pull's derived chroma for "One colour" (every era at Pull's one hue); each era carries its own as 'solid'
+        'solidMono': solid_mono,
         'periods': [{'id': p.get('id'), 'name': p.get('name', ''), 'label': p.get('label', ''),
                      'blurb': p.get('blurb', ''), 'eras': [ERA[x] for x in p['eras']]} for p in periods],
         'strands': strands,
@@ -1135,7 +1314,8 @@ def build(dataset_path, previous_datajs=None, keep=None):
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
               'durationsCoverage': dur_coverage, 'creators': len(creator_names),
-              'versionStart': version_start, 'deliverables': deliverables}
+              'versionStart': version_start, 'deliverables': deliverables,
+              'eraColours': {'set': sum(1 for c in era_colours if 'colour' in c), 'underAA': under_aa}}
     return payload, report
 
 
@@ -1269,6 +1449,16 @@ def render_outputs(payload, shell_root, version_start=1, previous=None):
 def main(argv):
     if argv[:1] == ['--validate-issue-ids']:
         print(json.dumps({i: issue_id_problem(i) for i in argv[1:]}))
+        return 0
+    if argv[:1] == ['--era-solid-sweep']:          # the harness checks Pull's derived chroma at every hue (20-build)
+        step = float(argv[1]) if len(argv) > 1 else 0.01
+        hues = pull_hue_tokens(ROOT)
+        if hues is None:
+            print('no styles.css beside tools/', file=sys.stderr)
+            return 1
+        L = hues['--era-solid-l']
+        n = int(round(360 / step))
+        print(json.dumps({'l': L, 'step': step, 'c': [solid_chroma(L, k * step) for k in range(n)]}))
         return 0
     args = [a for a in argv if not a.startswith('--')]
     opts = {}

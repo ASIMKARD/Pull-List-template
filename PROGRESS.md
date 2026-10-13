@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1576 assertions, 0 failed, 36 suites (session 7, step 2: the tab bar edge to edge in Pull). **Layout suite (real Chromium, in CI too):** 355 checks, 0 failed, 11 suites.
+**Harness:** 1607 assertions, 0 failed, 36 suites (session 7, step 3: a colour per era in the data). **Layout suite (real Chromium, in CI too):** 355 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2641,7 +2641,7 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
      - emits both as OKLCH numbers in `data.js` (the guard allows only token-built `oklch()` and
        `hsl()` outside `:root`), precise enough to come back to the same hex;
      - reports each colour's ratio under white. Under 4.5:1 it warns, with the nearest passing
-       shade as a hint (`#A6791E` → `#9B6E0A`, 4.54:1).
+       shade as a hint. (Built: the hint passes for the 85 % years too, so `#A6791E` → `#896100`.)
    - Fixtures:
      - X-Men's own colours on some eras, Foundations' on the first, so one is under 4.5:1;
      - the other eras derive;
@@ -2764,7 +2764,61 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
 
 **Harness:** 1576 assertions (+7), 0 failed, 36 suites. **Layout:** 355 checks (+1), 0 failed, 11 suites.
 
-### Step 3 begins with: a colour per era in the data
-- **First file:** `schema/dataset.schema.json` (`eras[].colour`), then `tools/build.py` (the colour
-  maths, the warning, Pull's derived chroma per era).
-- **First test:** `test/suites/20-build`, then `10-schema` and `60-validation`.
+## Session 7 checkpoint — step 3 done (a colour per era in the data), 13 Oct 2026
+
+### Done
+- **Schema:** `eras[].colour`, optional, `#RRGGBB`.
+- **`tools/build.py`, the colour maths** (stdlib: OKLab and WCAG 2 contrast):
+  - a malformed colour fails the build: "era X: colour must be #RRGGBB";
+  - a tracker's colour goes into `data.js` as given. Each era gets `colour: {hex, tab, strip, white,
+    years}`:
+    - `tab` and `strip` are OKLCH numbers (6, 6 and 4 places). 200,000 random colours all came
+      back to the same 8-bit colour;
+    - the strip follows the reference tracker's rule, each channel 25 darker (Foundations
+      `#A6791E` → `#8D6005`);
+    - `white` and `years` are the ratios of white text and of the 85 % years on it;
+  - under 4.5:1 the build warns and never fails, with a hint. The text: "era dawn: white text on its
+    colour #A6791E is 3.91:1 (the years at 85 %: 3.29:1), under 4.5:1 (WCAG AA). Pull draws it as
+    given (John, 12 Oct). The nearest shade of its hue where both pass: #896100 (5.57:1, 4.51:1)";
+  - the report counts them: `eraColours: {set, underAA}`.
+- **Pull's derived chroma, per era** (John, 13 Oct):
+  - each era carries `solid`: the gamut's edge at L .48 for the era's hue, rounded down to 5 places,
+    capped at .14 and floored at .08;
+  - the hue is the one `styles.css` gives the era: `--era-h0` + index × `--era-step`. "One colour"
+    gets `solidMono`, at Pull's `--era-mono-h`. The build reads all of them, and Pull's
+    `--era-solid-l` (.48), from `styles.css`;
+  - `--era-solid-l` joins `PULL_ONLY`: `:root` has `var(--era-tint-l)`, Pull's block has .48;
+  - `python3 tools/build.py --era-solid-sweep [STEP]` prints the build's own chroma at every hue,
+    for the harness;
+  - without a `styles.css` beside `tools/` (the verify gate's tests build that way), the build
+    still builds. It warns, and the stylesheet's fallback (.08) applies.
+- **Fixtures:** `dawn` carries the reference tracker's Foundations `#A6791E` (under 4.5:1) in
+  `basic` and `no-periods`, and basic's `storm` its Claremont `#A6303C` (6.75:1). The other eras
+  derive. New broken case: `era-colour-format`.
+- **Tests:**
+  - `test/lib/colour.js`, an independent copy of the maths for the tests;
+  - 20-build: the colours as given, their OKLCH numbers back to the same hex, the strip, both
+    ratios, the warning and its hint (which does pass), no warning for the colour that passes,
+    the report, five malformed colours, the build without a stylesheet;
+  - 20-build, **every hue from the build itself**: 36,000 hues at 0.01°. Every chroma is between
+    .08 and .14, inside the gamut, and the highest under the cap (a hair more leaves the gamut).
+    The worst cases: white 6.10:1 and the 85 % years 4.88:1 on the tab; 8.69:1 and 6.75:1 on the
+    strip (L .40, chroma × 5/6), also inside the gamut at every hue;
+  - 20-build: each era's chroma is the rule at its own hue (basic's 5 eras, 64 eras) and at Pull's
+    one hue;
+  - 60-validation and 10-schema: the broken case;
+  - 22-signature and 80-guards cover `--era-solid-l` through `PULL_ONLY`.
+- **Mutation-proved:** no cap (caught at every era and in the sweep); the hue one era out; the
+  strip 20 darker instead of 25.
+- **Found while testing:** the verify gate's test runs the build from `tools/` alone, which the
+  first version crashed on. Caught by 23-verify-gate, fixed, and now checked in 20-build.
+
+**Harness:** 1607 assertions (+31), 0 failed, 36 suites. **Layout:** 355 checks, 0 failed, 11 suites.
+
+### Step 4 begins with: Pull's solid colours
+- **First file:** `app.js` (`eraHtml`: the era's numbers as tokens, beside `--ei`, only when they
+  are numbers), then `styles.css` (the blend in `.era`, Pull's tokens, the text colours in the box).
+- **First test:** `test/layout/40-look` (the era check in Pull; every hue in Chromium on a
+  dataset of 3,600 eras whose golden-angle hues cover the circle; data colours exact; One colour;
+  the other skins unchanged), then 45-root and 45-pull.
+- **The strip's colour waits for step 5,** where the strip element exists.

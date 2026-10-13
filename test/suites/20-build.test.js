@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir } = require('../lib/helpers');
+const C = require('../lib/colour');
 
 const DATASETS = {
   root: path.join(ROOT, 'dataset.json'),
@@ -132,6 +133,103 @@ module.exports = async function (t) {
       t.ok('empty strand list becomes one universal strand', D.strands.length === 1 && D.arcs.every(a => a.s.length === 1));
       t.ok('universal strand is reported as a warning', /universal strand/.test(b.stderr));
       module.exports.stressDir = b.out;
+      eraHues(t, D, '64 eras');
     }
   }
+
+  // era colours (session 7): a tracker's own, drawn exactly as given (John, 12 Oct); Pull derives the rest (John, 13 Oct)
+  if (built.basic) {
+    const { D, b } = built.basic;
+    const own = D.eras.filter(e => e.colour);
+    t.eq('basic: the two eras with a colour carry it, as given (Foundations and Claremont, the reference tracker\'s)',
+         own.map(e => [e.id, e.colour.hex]), [['dawn', '#A6791E'], ['storm', '#A6303C']]);
+    t.ok('…the others carry none', D.eras.filter(e => !e.colour).length === 3);
+    t.eq('…their OKLCH numbers come back to the same colour, and the strip to the reference\'s shade, each channel 25 darker',
+         own.map(e => [C.rgbHex(C.oklchRgb(...e.colour.tab)), C.rgbHex(C.oklchRgb(...e.colour.strip))]), [['#A6791E', '#8D6005'], ['#A6303C', '#8D1723']]);
+    t.eq('…with white text\'s ratio and the 85 % years\' on each, as measured here',
+         own.map(e => [e.colour.white, e.colour.years]),
+         own.map(e => { const rgb = C.hexRgb(e.colour.hex); return [C.contrast(C.WHITE, rgb), C.contrast(C.over(C.WHITE, 0.85, rgb), rgb)].map(x => Math.round(x * 1000) / 1000); }));
+    t.ok('the colour under 4.5:1 warns, never fails: era dawn, 3.91:1 and 3.29:1, with a passing shade as a hint',
+         /era dawn: white text on its colour #A6791E is 3\.91:1 \(the years at 85 %: 3\.29:1\), under 4\.5:1 \(WCAG AA\)\. Pull draws it as given \(John, 12 Oct\)\. The nearest shade of its hue where both pass: #[0-9A-F]{6}/.test(b.stderr), b.stderr);
+    const hint = (b.stderr.match(/both pass: (#[0-9A-F]{6})/) || [])[1];
+    t.ok('…and the hint does pass (white and the 85 % years at 4.5:1 or more): ' + hint,
+         !!hint && C.contrast(C.WHITE, C.hexRgb(hint)) >= 4.5 && C.contrast(C.over(C.WHITE, 0.85, C.hexRgb(hint)), C.hexRgb(hint)) >= 4.5);
+    t.ok('…the colour that passes (storm, 6.75:1) doesn\'t warn', !/era storm: white text/.test(b.stderr));
+    t.eq('the report counts them', b.report.eraColours, { set: 2, underAA: ['dawn'] });
+    eraHues(t, D, 'basic');
+    const bad = copyFixture('basic', 'bad-colour'), ds = readJSON(path.join(bad, 'dataset.json'));
+    for (const v of ['#A6791', 'red', '#GG0000', 'A6791E', 7]) {
+      ds.eras[1].colour = v;
+      writeJSON(path.join(bad, 'dataset.json'), ds);
+      const r = build(path.join(bad, 'dataset.json'), { label: 'bad-colour' });
+      t.ok('a malformed colour fails the build: ' + JSON.stringify(v), r.status === 1 && /era rising: colour must be #RRGGBB/.test(r.stderr), r.stderr.split('\n')[0]);
+    }
+  }
+
+  // Pull's derived chroma at every hue, from the build itself (John, 13 Oct): oklch(.48 C h), C the gamut's edge, .08 to .14
+  {
+    const r = spawnSync('python3', [BUILD, '--era-solid-sweep', '0.01'], { encoding: 'utf8', cwd: ROOT });
+    const sweep = JSON.parse(r.stdout || '{"c":[]}'), L = sweep.l, LS = 0.40, k = LS / L;
+    const bad = { range: [], gamut: [], highest: [], white: [], years: [], stripGamut: [], stripWhite: [], stripYears: [] };
+    let worst = { white: 99, years: 99, stripWhite: 99, stripYears: 99 };
+    sweep.c.forEach((c, i) => {
+      const h = i * sweep.step, at = h.toFixed(2) + '°';
+      if (!(c >= 0.08 && c <= 0.14)) bad.range.push(at);
+      if (!C.inGamut(L, c, h)) bad.gamut.push(at);
+      if (c < 0.14 && C.inGamut(L, c + 1e-4, h)) bad.highest.push(at);      // under the cap, a hair more must leave the gamut
+      const rgb = C.oklchRgb(L, c, h), w = C.contrast(C.WHITE, rgb), y = C.contrast(C.over(C.WHITE, 0.85, rgb), rgb);
+      if (w < 4.5) bad.white.push(at);
+      if (y < 4.5) bad.years.push(at);
+      if (!C.inGamut(LS, c * k, h)) bad.stripGamut.push(at);
+      const srgb = C.oklchRgb(LS, c * k, h), sw = C.contrast(C.WHITE, srgb), sy = C.contrast(C.over(C.WHITE, 0.85, srgb), srgb);
+      if (sw < 4.5) bad.stripWhite.push(at);
+      if (sy < 4.5) bad.stripYears.push(at);
+      worst = { white: Math.min(worst.white, w), years: Math.min(worst.years, y), stripWhite: Math.min(worst.stripWhite, sw), stripYears: Math.min(worst.stripYears, sy) };
+    });
+    t.ok('the build sweeps all 36,000 hues (every 0.01°) at Pull\'s lightness, .48 from styles.css', sweep.c.length === 36000 && L === 0.48, r.stderr);
+    t.eq('…every derived chroma is between .08 and .14', bad.range.slice(0, 5), []);
+    t.eq('…and inside the sRGB gamut', bad.gamut.slice(0, 5), []);
+    t.eq('…and the highest the gamut allows under the cap (a hair more leaves it)', bad.highest.slice(0, 5), []);
+    t.eq('…white text on it clears 4.5:1 at every hue (worst ' + worst.white.toFixed(2) + ':1)', bad.white.slice(0, 5), []);
+    t.eq('…and the 85 % years (worst ' + worst.years.toFixed(2) + ':1)', bad.years.slice(0, 5), []);
+    t.eq('the strip (L .40, chroma × 5/6) is inside the gamut at every hue', bad.stripGamut.slice(0, 5), []);
+    t.eq('…with white text (worst ' + worst.stripWhite.toFixed(2) + ':1) and the 85 % years (worst ' + worst.stripYears.toFixed(2) + ':1) at 4.5:1 or more',
+         bad.stripWhite.concat(bad.stripYears).slice(0, 5), []);
+    t.ok('…and the cap and the floor both bite: some hues sit at .14, some below, none under .08',
+         sweep.c.some(c => c === 0.14) && sweep.c.some(c => c < 0.14) && Math.min(...sweep.c) >= 0.08);
+  }
+  // the build run on its own (tools/ without the app shell, as the verify gate's tests run it): it still builds
+  {
+    const dir = tmpdir('tools-only');
+    fs.mkdirSync(path.join(dir, 'tools', 'templates'), { recursive: true });
+    for (const f of ['build.py', 'build_workbook.py']) fs.copyFileSync(path.join(ROOT, 'tools', f), path.join(dir, 'tools', f));
+    fs.copyFileSync(path.join(ROOT, 'tools', 'templates', 'sw.js'), path.join(dir, 'tools', 'templates', 'sw.js'));
+    fs.cpSync(path.join(ROOT, 'icons'), path.join(dir, 'icons'), { recursive: true });      // the icons, but no app shell
+    const out = tmpdir('tools-only-out');
+    const r = spawnSync('python3', [path.join(dir, 'tools', 'build.py'), path.join(FIX, 'minimal', 'dataset.json'), '--out', out], { encoding: 'utf8', cwd: dir });
+    const D = r.status === 0 ? loadData(out) : null;
+    t.ok('without a styles.css beside tools/, the build still builds and says Pull\'s derived colours fall back to the stylesheet\'s .08',
+         r.status === 0 && /no styles\.css beside tools\/: Pull's derived era colours are left to the stylesheet's fallback chroma \(\.08\)/.test(r.stderr) &&
+         D.eras.every(e => e.solid === undefined) && D.solidMono === null, r.stderr.split('\n').slice(-3).join(' | '));
+  }
 };
+
+/* Each era's derived chroma is the build's own rule at the hue styles.css gives
+   that era (--era-h0 + index × --era-step), and "One colour" at Pull's one hue. */
+function eraHues(t, D, label) {
+  const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const tok = name => {
+    let v = null;
+    for (const sel of [':root', ':root[data-skin="pull"]']) {
+      const blk = css.split('}').find(x => x.split('{')[0].trim() === sel);
+      const m = blk && new RegExp(name + '\\s*:\\s*([^;]+);').exec(blk);
+      if (m) v = m[1].trim();
+    }
+    return parseFloat(v);
+  };
+  const L = tok('--era-solid-l'), h0 = tok('--era-h0'), step = tok('--era-step'), mono = tok('--era-mono-h');
+  const rule = h => Math.min(Math.max(Math.floor(C.maxChroma(L, h) * 1e5) / 1e5, 0.08), 0.14);
+  t.eq(label + ': each era\'s derived chroma is the rule at its own hue (' + D.eras.length + ' eras)',
+       D.eras.map((e, i) => Math.abs(e.solid - rule((h0 + i * step) % 360)) <= 1e-5).filter(x => !x).length, 0);
+  t.ok(label + ': and "One colour" has the rule at Pull\'s one hue (' + mono + '°): ' + D.solidMono, Math.abs(D.solidMono - rule(mono % 360)) <= 1e-5);
+}

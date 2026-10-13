@@ -1,0 +1,1 @@
+era two: colour must be #RRGGBB
