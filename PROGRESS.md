@@ -4,7 +4,7 @@ Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
 **Harness:** 1645 assertions, 0 failed, 36 suites (session 7, before the PR: Pull's default palette, the 3 px mini bar). **Layout suite (real Chromium, in CI too):** 409 checks, 0 failed, 11 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1645 (+ 409).
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1645 (+ 409).
 
 ---
 
