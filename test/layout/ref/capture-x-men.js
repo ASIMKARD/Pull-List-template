@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/* Session-only: capture X-Men's computed styles at 393 px into x-men.json.
+/* Session-only: capture X-Men's computed styles at 393 px, and its folder
+   tab's shape read from pixels, into x-men.json.
 
      node test/layout/ref/capture-x-men.js [path to a local X-Men copy]   (default ../X-men)
      node test/layout/ref/capture-x-men.js --print [path]                  (print, don't write)
@@ -12,7 +13,7 @@ const path = require('path');
 const http = require('http');
 const { execFileSync } = require('child_process');
 const { browser, closeBrowser } = require('../lib');
-const { WIDTH, HEIGHT, MAP, measure, prepareXMen } = require('./pull-map');
+const { WIDTH, HEIGHT, MAP, measure, shape, prepareXMen } = require('./pull-map');
 
 const OUT = path.join(__dirname, 'x-men.json');
 
@@ -35,9 +36,10 @@ async function capture(dir) {
   await page.evaluate(() => document.fonts.ready);
   await prepareXMen(page);
   const styles = await page.evaluate(([fn, map]) => eval('(' + fn + ')')(map, 'x-men'), [measure.toString(), MAP]);
+  const eraShape = await shape(page, 'x-men');
   await ctx.close();
   srv.close();
-  return { source: 'ASIMKARD/X-men', commit, width: WIDTH, styles };
+  return { source: 'ASIMKARD/X-men', commit, width: WIDTH, styles, shape: eraShape };
 }
 
 module.exports = { capture, OUT };

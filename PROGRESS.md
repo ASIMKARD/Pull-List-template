@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1569 assertions, 0 failed, 36 suites (session 7: automatic version tags). **Layout suite (real Chromium, in CI too):** 353 checks, 0 failed, 11 suites.
+**Harness:** 1569 assertions, 0 failed, 36 suites (session 7, step 1: measure first). **Layout suite (real Chromium, in CI too):** 354 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2554,7 +2554,7 @@ settings.
   - Master-Repo (ASIMKARD/Master-Repo#1, merged) still says "v8 rollback: commit `36fd088`". Naming
     both tags there needs another Master-Repo change, so it waits for John's say-so.
 
-## Session 7 plan (proposed 12 Oct 2026): Pull's era boxes and tab bar — waiting on John
+## Session 7 plan (agreed 13 Oct 2026, step 4 amended): Pull's era boxes and tab bar
 The Pull changes decided 9 Oct (decisions 1 and 2 above), in the template only. No tracker deploys
 this session; Absolute picks them up at its next update. X-Men is read from a local read-only clone
 (`git clone https://github.com/ASIMKARD/x-men`, commit `663fe46`, the commit the reference was
@@ -2576,6 +2576,26 @@ captured from). Nothing is written to it.
   - the figures line (read, time left, finish by, "filtered", "+N untimed"), with the bar across
     the strip under it;
   - the years beside the name, wrapping under it when there's no room.
+
+### Decided 13 Oct (John): the plan approved, with derived colours as vivid as each hue allows
+- **A derived colour is `oklch(.48 C h)`.** C is the highest chroma inside the sRGB gamut at
+  L .48 for that hue, capped at .14 so nothing turns garish, and never below .08. This replaces the
+  flat `.08` in step 4.
+- **Contrast at every hue:** white text at least 4.5:1, and the 85 % years at least 4.5:1. Tested
+  across all hues, not a sample, and every derived colour must be inside the gamut.
+- **A screenshot** of a band of derived era colours next to X-Men's, for John to judge the look.
+
+**Measured before building (13 Oct), at every hue in 0.01° steps (36,000 hues):**
+- At L .48 the gamut edge runs from chroma .082 (cyan, about 200°) to .298 (blue, about 275°). With
+  the cap and the floor, 1,945 of every 3,600 tenth-degree hues land between .08 and .14, so C
+  really varies.
+- The tab: white text 6.10:1 or better, the 85 % years 4.88:1 or better, in gamut at every hue.
+- The strip is the same colour with lightness and chroma both × 5/6 (L .40). Scaling L and C
+  together scales every linear sRGB channel by (5/6)³, so the strip is in gamut whenever the tab
+  is. White text on it is 8.69:1 or better, and the 85 % years 6.75:1 or better.
+- CSS can't find the gamut edge itself. So the build computes each era's chroma exactly from the
+  hue the stylesheet gives it (the era's index, `--era-h0` and `--era-step`, read from
+  `styles.css`), and does the same for Pull's one-colour hue.
 
 ### Measured in X-Men (real Chromium, 393 px, `663fe46`)
 | Part | X-Men |
@@ -2632,10 +2652,13 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
    - `app.js` puts an era's colour numbers on its section as tokens, beside `--ei`. No skin test
      in `app.js`.
    - `styles.css`: Pull draws the tracker's colour when there is one. Otherwise it derives one
-     from the era's hue, `oklch(.48 .08 h)`, with the strip 0.08 darker.
-     - The derived colour, at every hue: white text 6.24:1 or better, the 85 % years 4.99:1 or
-       better, inside sRGB.
+     from the era's hue, `oklch(.48 C h)` with C as decided 13 Oct, and the strip at L .40 with
+     chroma × 5/6.
      - Each switch is a 0-or-1 token, so the blend is exact, and the other skins are unchanged.
+   - Every hue is tested: the build's chroma at 0.01° steps in the harness (in gamut, the highest
+     within the cap and floor, both contrasts), and in Chromium a dataset whose eras' hues cover
+     the circle, every drawn colour read back and checked.
+   - A screenshot of a band of derived colours next to X-Men's, for John.
    - Every text in a Pull era box is white, including finish-by, "filtered" and ✓. The years are
      white at 85 %, as X-Men. The bar is white on the strip.
    - "One colour" sets the data's colours aside: every era gets Pull's one derived colour (my call).
@@ -2674,8 +2697,7 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
 ### My calls (open to veto)
 - In Pull, era boxes sit 12 px from the edge and 14 px apart, as measured. The rest of the page
   keeps the template's 16 px.
-- Derived colours: `oklch(.48 .08 h)`. X-Men's own picks run from chroma .07 to .20; .08 is the most
-  that every hue holds in sRGB at that lightness.
+- ~~Derived colours: `oklch(.48 .08 h)`.~~ Replaced by John's rule (13 Oct, above).
 - "One colour" in Pull ignores the data's colours.
 - Pull's banner under the tabs (off by default) stays inset under the full-width bar.
 - Eras inside bands (X-Men has none) keep the band's spacing.
@@ -2685,6 +2707,37 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
   keeps the accessible 24 px minimum, with the Button size and Marks settings".
 - The two accessible differences stay: the selected-tab underline and the search outline.
 
-### Starts with (once John agrees)
-Step 1. First file: `test/layout/ref/pull-map.js`. First test: `test/layout/45-pull`, with
-`X_MEN_DIR` pointing at the local X-Men clone.
+## Session 7 checkpoint — step 1 done (measure first), 13 Oct 2026
+
+### Done
+- **`test/layout/ref/pull-map.js` measures the whole era box** against X-Men's:
+  - the box: left edge, width, the four corner radii, outline width and shadow;
+  - the spacing between boxes (`gapAbove`: from one era's open body to the next box);
+  - the tab's and the strip's padding;
+  - the bar: track colour, height and radius;
+  - the open body: left edge, width, padding, the frame's widths and colour, and its rounded foot;
+  - each era text's **effective colour**: the colour's alpha times every opacity above it, so X-Men's
+    years (white at opacity .85) and Pull's (white at 85 %) compare equal however they're drawn;
+  - the tab bar's corners, alongside its left edge and width.
+- **The folder tab's shape, read from pixels** (`shape()`): a screenshot of the first era box,
+  decoded by the page's own canvas, so no image library is needed. It reads:
+  - where paper begins along the tab's top, middle and bottom rows, as a fraction of the box's width
+    (X-Men: .89, .94, 1);
+  - the colours painted on the tab and the strip (X-Men: `#A6791E`, `#8D6005`);
+  - the share of the tab's corner hatched darker (X-Men: .4).
+- **Era boxes are measured on the `no-periods` fixture,** whose eras are top-level as X-Men's are;
+  everything else stays on `basic`.
+- **`ref/x-men.json` re-captured** from X-Men `663fe46`, and the drift check passes.
+- **45-pull: 74 properties match and 44 differences are listed.** Each new one says "John (9 Oct):
+  session 7 builds it" and what. The reasons now carry the date of John's decision (the check
+  accepts "John (9 Oct):"). The read mark's three now say the 24 px minimum is John's decision.
+- **Mutation-proved:**
+  - a difference left off the list fails;
+  - a shape reading that matches X-Men without the shape fails (the list is no longer true).
+
+**Harness:** 1569 assertions, 0 failed, 36 suites. **Layout:** 354 checks (+1), 0 failed, 11 suites.
+
+### Step 2 begins with: the tab bar edge to edge
+- **First file:** `styles.css` (`.tabs`, a `--tabs-inset` token), then `tools/build.py` (refuse the
+  Pull-only layout tokens in a signature skin).
+- **First test:** `test/layout/60-stack`, then `test/suites/22-signature` and `80-guards`.
