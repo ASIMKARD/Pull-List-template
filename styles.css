@@ -61,7 +61,7 @@
      colour from its hue at --era-solid-l. tools/build.py reads Pull's lightness
      and computes each era's chroma from it (the gamut's edge for the era's hue,
      .08 to .14), since CSS can't. Every other skin keeps its pale washes. */
-  --era-solid: 0; --era-solid-l: var(--era-tint-l);
+  --era-solid: 0; --era-solid-l: var(--era-tint-l); --era-strip-l: var(--era-solid-l);   /* the strip: the same colour, darker */
   --era-split: 1;          /* "One colour" sets 0: every era at one hue, the tracker's own colours set aside */
   --scheme: light;
 
@@ -93,6 +93,8 @@
   /* the era box's own text and bar; the template's colours unless a skin says otherwise */
   --era-years-ink: var(--ink-soft); --era-stats-ink: var(--ink-soft); --era-accent-ink: var(--accent); --era-done-ink: var(--good);
   --era-track: var(--track); --era-fill: var(--accent);
+  --era-hatch: hsl(0 0% 0% / .12);                 /* the folder tab's hatched corner (drawn in Pull only) */
+  --era-shadow-a: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / .08); --era-shadow-b: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / .06);
 
   /* ---- type, shape, space, motion ---- */
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -119,9 +121,15 @@
      Pull's block below changes these. The build refuses them in a signature
      skin, and a guard checks that no other block sets them. */
   --tabs-inset: 16px;                              /* the tab bar's side margin: 0 runs it edge to edge */
+  /* the era box: the template's card here; Pull's folder tab (the reference tracker's, measured) in Pull's block */
+  --era-inset: 16px; --era-space: var(--gap);      /* an era's side margin, and the space under it */
+  --era-pad: 12px 14px; --era-head-gap: 6px; --era-edge: 1px; --era-foot-r: var(--radius); --era-shadow: none;
+  --era-tab-a: 0; --era-tab-pad: 0; --era-cut: 0%; --era-hatch-w: 0px;   /* the tab: painted in Pull only (1) */
+  --era-strip-pad: 0; --era-bar-h: 6px; --era-bar-r: 3px;               /* the strip under it, and its bar */
+  --era-frame: 0px; --era-frame-r: 0px; --era-body-pad: 0;               /* an open era's body */
   --stack-h: 0px;        /* the sticky stack's height, measured at runtime (F-58) */
   --motion: 1;           /* every transition's duration is multiplied by this; reduced motion sets 0 */
-  --skin-ok: 3;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
+  --skin-ok: 4;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
 }
 
 /* ---- skins (V-5): token sets only. A skin never moves or hides a control,
@@ -167,6 +175,15 @@
   --era-solid: 1; --era-solid-l: .48;    /* solid era boxes: white text clears 4.5:1 at every hue, the years at 85 % too */
   --era-years-ink: var(--on-solid-soft); --era-stats-ink: var(--on-solid); --era-accent-ink: var(--on-solid); --era-done-ink: var(--on-solid);
   --era-track: var(--on-solid-track); --era-fill: var(--on-solid-fill);
+  /* the folder tab (John, 9 Oct), as measured in the reference tracker at 393 px: 12 px in and 14 px apart,
+     corners 8 8 3 3, no outline, its shadow; the tab padded 12 44 12 16, its right edge slanting from 88 %
+     at the top to the strip, a hatched corner; the strip 6 16 with a 4 px bar; an open body framed in 2 px */
+  --era-inset: 12px; --era-space: 14px;
+  --era-pad: 0; --era-head-gap: 0; --era-edge: 0px; --era-foot-r: 3px;
+  --era-shadow: 0 1px 2px var(--era-shadow-a), 0 1px 1px var(--era-shadow-b);
+  --era-tab-a: 1; --era-tab-pad: 12px max(44px, 12%) 12px 16px; --era-cut: 12%; --era-hatch-w: 14px;
+  --era-strip-pad: 6px 16px; --era-strip-l: .40; --era-bar-h: 4px; --era-bar-r: 99px;
+  --era-frame: 2px; --era-frame-r: 8px; --era-body-pad: 6px;
 }
 :root[data-skin="night"] {
   --base-paper-h: 220; --base-paper-s: 50%;
@@ -273,7 +290,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .chip[aria-pressed="true"], .chip.on { background: var(--accent-wash); color: var(--accent); border-color: var(--accent); }
 
 /* ---- bands, eras: goal banners ---- */
-.band, .era { margin: 0 16px var(--gap); }
+.band { margin: 0 16px var(--gap); }
+.era { margin: 0 var(--era-inset) var(--era-space); }
 .band-body .era { margin: var(--gap) 0 0; }
 .band-head, .era-head {
   display: grid; gap: 6px; width: 100%; padding: 12px 14px; text-align: left;
@@ -292,22 +310,43 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
   --era-bg-l: calc(var(--era-own) * var(--eo-l, 0) + (1 - var(--era-own)) * (var(--era-solid) * var(--era-solid-l) + (1 - var(--era-solid)) * var(--era-tint-l)));
   --era-bg-c: calc(var(--era-own) * var(--eo-c, 0) + (1 - var(--era-own)) * (var(--era-solid) * var(--era-c) + (1 - var(--era-solid)) * var(--era-tint-c)));
   --era-bg-h: calc(var(--era-own) * var(--eo-h, 0) + (1 - var(--era-own)) * var(--era-h));
+  /* the strip under Pull's tab: a tracker colour's own shade, else the derived colour at --era-strip-l, its chroma
+     scaled with it (so it stays inside the gamut whenever the tab is) */
+  --era-st-l: calc(var(--era-own) * var(--eo-sl, 0) + (1 - var(--era-own)) * var(--era-strip-l));
+  --era-st-c: calc(var(--era-own) * var(--eo-sc, 0) + (1 - var(--era-own)) * var(--era-c) * var(--era-strip-l) / var(--era-solid-l));
+  --era-st-h: calc(var(--era-own) * var(--eo-sh, 0) + (1 - var(--era-own)) * var(--era-h));
+  /* Pull paints the tab and the strip (--era-tab-a 1) and the box itself goes clear; every other skin, the box */
+  --era-tab: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h) / var(--era-tab-a));
+  --era-strip: oklch(var(--era-st-l) var(--era-st-c) var(--era-st-h) / var(--era-tab-a));
+  --era-paper: hsl(var(--paper-h) var(--paper-s) var(--l-paper) / var(--era-tab-a));   /* the page, in the tab's cut corner */
 }
-.era-head { background: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h)); color: oklch(var(--era-ink-l) var(--era-ink-c) var(--era-h)); }
+.era-head { background: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h) / calc(1 - var(--era-tab-a))); color: oklch(var(--era-ink-l) var(--era-ink-c) var(--era-h));
+  gap: var(--era-head-gap); padding: var(--era-pad); border-width: var(--era-edge);
+  border-radius: var(--radius) var(--radius) var(--era-foot-r) var(--era-foot-r); box-shadow: var(--era-shadow); }
+/* The folder tab (Pull): the era's colour, the hatched corner over it, and the page painted into the cut, its
+   right edge slanting from 100 % − --era-cut at the top to 100 % at the strip. Background layers, not a
+   clip, so no text or focus ring is ever cut off; the right padding keeps text clear of the cut. */
+.era-head .bhead { padding: var(--era-tab-pad); border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(to bottom left, var(--era-paper) 50%, transparent 50%) right / var(--era-cut) 100% no-repeat,
+              repeating-linear-gradient(135deg, var(--era-hatch) 0 2px, transparent 2px 6px) right / var(--era-hatch-w) 100% no-repeat,
+              linear-gradient(var(--era-tab), var(--era-tab)); }
+.bfoot { display: grid; gap: 6px; }               /* the figures line and its bar */
+.era-head .bfoot { padding: var(--era-strip-pad); background: var(--era-strip); border-radius: 0 0 var(--era-foot-r) var(--era-foot-r); }
 .era-head .byears { color: var(--era-years-ink); }
 .era-head .bstats { color: var(--era-stats-ink); }
 .era-head .bfinish, .era-head .bfiltered { color: var(--era-accent-ink); border-color: var(--era-accent-ink); }
 .era-head .bdone { color: var(--era-done-ink); }
-.era-head progress.bar { background: var(--era-track); }
-.era-head progress.bar::-webkit-progress-bar { background: var(--era-track); }
-.era-head progress.bar::-webkit-progress-value { background: var(--era-fill); }
-.era-head progress.bar::-moz-progress-bar { background: var(--era-fill); }
+.era-head progress.bar { height: var(--era-bar-h); border-radius: var(--era-bar-r); background: var(--era-track); }
+.era-head progress.bar::-webkit-progress-bar { background: var(--era-track); border-radius: var(--era-bar-r); }
+.era-head progress.bar::-webkit-progress-value { background: var(--era-fill); border-radius: var(--era-bar-r); }
+.era-head progress.bar::-moz-progress-bar { background: var(--era-fill); border-radius: var(--era-bar-r); }
 .bhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .bname { font-family: var(--name-font); font-weight: var(--name-weight); text-transform: var(--name-case); letter-spacing: var(--name-track); font-size: calc(var(--era-name-size) * var(--scale)); }
 .band-head .bname { font-family: var(--font-display); font-weight: var(--display-weight); text-transform: var(--display-case); font-size: calc(22px * var(--scale)); letter-spacing: .02em; }
 .byears { color: var(--ink-soft); font-size: calc(var(--era-meta-size) * var(--scale)); font-family: var(--font-meta); }
 .era-head .bstats { font-size: calc(var(--era-meta-size) * var(--scale)); }
-.era-body { background: var(--inset); }
+.era-body { background: var(--inset); border: 0 solid var(--line); border-width: 0 var(--era-frame) var(--era-frame);
+  border-radius: 0 0 var(--era-frame-r) var(--era-frame-r); padding: var(--era-body-pad); }   /* Pull frames an open era */
 .bfinish { color: var(--accent); }
 .bfiltered, .pfiltered {
   padding: 0 8px; border: 1px dashed var(--accent); border-radius: 999px; color: var(--accent); font-size: calc(12px * var(--scale));
@@ -446,6 +485,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 /* ---- table view (F-49, S-7): one line per issue, half the height (L-7),
    never wider than the screen (L-8). Targets stay at least 24 px. ---- */
 :root[data-table="1"] .row { flex-wrap: nowrap; gap: 4px; padding: 0 4px; }   /* tight: four 24 px targets and the title share a 320 px row */
+:root[data-table="1"] .era-body { padding-left: 0; padding-right: 0; border-left-width: 0; border-right-width: 0; }   /* Pull's framed body gives its sides back to the row, so a title keeps half of it (50-table) */
 :root[data-table="1"] .row .mark { width: var(--tap-dense); height: var(--tap-dense); font-size: calc(14px * var(--scale)); }
 :root[data-table="1"] .title { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :root[data-table="1"] .subnote, :root[data-table="1"] .blurb, :root[data-table="1"] .era-intro, :root[data-table="1"] .band-intro { display: none; }

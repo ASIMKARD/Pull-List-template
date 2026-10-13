@@ -76,7 +76,10 @@ RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
 # bar edge to edge, its solid era boxes). Every other skin keeps the template's
 # layout and pale eras, so a signature skin may not set them; 80-guards checks
 # styles.css the same way.
-PULL_ONLY = {'--tabs-inset', '--era-solid', '--era-solid-l'}
+PULL_ONLY = {'--tabs-inset', '--era-solid', '--era-solid-l', '--era-strip-l',
+             '--era-inset', '--era-space', '--era-pad', '--era-head-gap', '--era-edge', '--era-foot-r', '--era-shadow',
+             '--era-tab-a', '--era-tab-pad', '--era-cut', '--era-hatch-w', '--era-strip-pad', '--era-bar-h', '--era-bar-r',
+             '--era-frame', '--era-frame-r', '--era-body-pad'}
 PULL_ONLY_MSG = "is Pull's layout (John, 9 Oct): every other skin keeps the template's"
 COLOUR_PROPS = {'color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color',
                 'border-left-color', 'text-decoration-color', 'caret-color', 'accent-color'}
@@ -538,7 +541,7 @@ def parse_date(s):
 COLOUR_RX = re.compile(r'^#[0-9A-Fa-f]{6}$')
 SOLID_CMAX, SOLID_CMIN = 0.14, 0.08      # John, 13 Oct
 AA = 4.5
-YEARS_ALPHA = 0.85                        # a Pull era box's years: white at 85 %, as the reference tracker
+YEARS_ALPHA = 217 / 255                   # a Pull era box's years: white at 85 %, as the reference tracker; browsers draw it at 8-bit alpha (217)
 WHITE = (255, 255, 255)
 
 
@@ -601,8 +604,10 @@ def max_chroma(L, H):
 
 def solid_chroma(L, H):
     """Pull's derived chroma (John, 13 Oct): the gamut's edge, capped and floored.
-    Rounded down to 5 places, so the rounding never steps outside the gamut."""
-    return min(max(math.floor(max_chroma(L, H) * 1e5) / 1e5, SOLID_CMIN), SOLID_CMAX)
+    To 5 places, with one step (0.00001) kept in hand: a browser reports and
+    computes colours to about 7 figures, and at the very edge that rounding
+    stepped outside the gamut (by 3e-8, measured in Chromium, 40-look)."""
+    return min(max(math.floor((max_chroma(L, H) - 1e-5) * 1e5) / 1e5, SOLID_CMIN), SOLID_CMAX)
 
 
 def luminance(rgb):
@@ -631,12 +636,13 @@ def strip_shade(rgb):
 
 
 def passing_shade(rgb):
-    """A hint for a colour under AA: the same hue, darker, until white text and
-    the 85 % years both clear 4.5:1 (chroma kept where the gamut allows)."""
+    """A hint for a colour under AA: the same hue, darker, until white text, the
+    85 % years and white text on its strip all clear 4.5:1 (chroma kept where
+    the gamut allows)."""
     L, C, H = rgb_oklch(rgb)
     while L > 0:
         cand = oklch_rgb(L, min(C, max_chroma(L, H)), H)
-        if min(white_ratios(cand)) >= AA:
+        if min(white_ratios(cand)) >= AA and contrast(WHITE, strip_shade(cand)) >= AA:
             return cand
         L -= 0.001
     return (0, 0, 0)
@@ -798,14 +804,15 @@ def build(dataset_path, previous_datajs=None, keep=None):
             else:
                 rgb = hex_rgb(col)
                 white, years = white_ratios(rgb)
+                strip = contrast(WHITE, strip_shade(rgb))
                 out['colour'] = {'hex': col.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
-                                 'white': round(white, 3), 'years': round(years, 3)}
-                if min(white, years) < AA:
+                                 'white': round(white, 3), 'years': round(years, 3), 'stripWhite': round(strip, 3)}
+                if min(white, years, strip) < AA:
                     hint = passing_shade(rgb)
                     under_aa.append(e.get('id'))
-                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1), under %.1f:1 (WCAG AA). '
-                                 'Pull draws it as given (John, 12 Oct). The nearest shade of its hue where both pass: %s (%.2f:1, %.2f:1)'
-                                 % (w, col.upper(), white, years, AA, rgb_hex(hint), *white_ratios(hint)))
+                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1; on its strip %s: %.2f:1), under %.1f:1 (WCAG AA). '
+                                 'Pull draws it as given (John, 12 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
+                                 % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, AA, rgb_hex(hint), *white_ratios(hint)))
         era_colours.append(out)
     solid_mono = solid_chroma(hues['--era-solid-l'], hues['--era-mono-h'] % 360) if hues else None
 

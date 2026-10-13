@@ -209,7 +209,7 @@ module.exports = async function (t) {
   t.ok('the current data.js boots as normal: nothing loaded again', injected(fine.document).js.length === 0 && fine.errors.length === 0 &&
        fine.document.querySelectorAll('.era').length > 0, fine.errors.join(' | '));
   fine.window.close();
-  const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8').replace(/--skin-ok:\s*3;/, '--skin-ok: 2;');
+  const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8').replace(/--skin-ok:\s*\d+;/, '--skin-ok: 2;');
   const oldCss = boot(b.out, { cssSrc: css });
   await wait(30);
   const computed = oldCss.window.getComputedStyle(oldCss.document.documentElement).getPropertyValue('--skin-ok').trim();

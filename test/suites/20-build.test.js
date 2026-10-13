@@ -146,14 +146,15 @@ module.exports = async function (t) {
     t.ok('…the others carry none', D.eras.filter(e => !e.colour).length === 3);
     t.eq('…their OKLCH numbers come back to the same colour, and the strip to the reference\'s shade, each channel 25 darker',
          own.map(e => [C.rgbHex(C.oklchRgb(...e.colour.tab)), C.rgbHex(C.oklchRgb(...e.colour.strip))]), [['#A6791E', '#8D6005'], ['#A6303C', '#8D1723']]);
-    t.eq('…with white text\'s ratio and the 85 % years\' on each, as measured here',
-         own.map(e => [e.colour.white, e.colour.years]),
-         own.map(e => { const rgb = C.hexRgb(e.colour.hex); return [C.contrast(C.WHITE, rgb), C.contrast(C.over(C.WHITE, 0.85, rgb), rgb)].map(x => Math.round(x * 1000) / 1000); }));
-    t.ok('the colour under 4.5:1 warns, never fails: era dawn, 3.91:1 and 3.29:1, with a passing shade as a hint',
-         /era dawn: white text on its colour #A6791E is 3\.91:1 \(the years at 85 %: 3\.29:1\), under 4\.5:1 \(WCAG AA\)\. Pull draws it as given \(John, 12 Oct\)\. The nearest shade of its hue where both pass: #[0-9A-F]{6}/.test(b.stderr), b.stderr);
-    const hint = (b.stderr.match(/both pass: (#[0-9A-F]{6})/) || [])[1];
-    t.ok('…and the hint does pass (white and the 85 % years at 4.5:1 or more): ' + hint,
-         !!hint && C.contrast(C.WHITE, C.hexRgb(hint)) >= 4.5 && C.contrast(C.over(C.WHITE, 0.85, C.hexRgb(hint)), C.hexRgb(hint)) >= 4.5);
+    const shade = rgb => rgb.map(v => Math.max(v - 25, 0));
+    t.eq('…with the ratios of white text, the 85 % years and white text on the strip, as measured here',
+         own.map(e => [e.colour.white, e.colour.years, e.colour.stripWhite]),
+         own.map(e => { const rgb = C.hexRgb(e.colour.hex); return [C.contrast(C.WHITE, rgb), C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb), C.contrast(C.WHITE, shade(rgb))].map(x => Math.round(x * 1000) / 1000); }));
+    t.ok('the colour under 4.5:1 warns, never fails: era dawn, 3.91:1 and 3.29:1 (its strip 5.51:1), with a passing shade as a hint',
+         /era dawn: white text on its colour #A6791E is 3\.91:1 \(the years at 85 %: 3\.29:1; on its strip #8D6005: 5\.51:1\), under 4\.5:1 \(WCAG AA\)\. Pull draws it as given \(John, 12 Oct\)\. The nearest shade of its hue where all pass: #[0-9A-F]{6}/.test(b.stderr), b.stderr);
+    const hint = (b.stderr.match(/all pass: (#[0-9A-F]{6})/) || [])[1], hr = hint ? C.hexRgb(hint) : null;
+    t.ok('…and the hint does pass (white, the 85 % years and the strip at 4.5:1 or more): ' + hint,
+         !!hint && C.contrast(C.WHITE, hr) >= 4.5 && C.contrast(C.over(C.WHITE, C.YEARS, hr), hr) >= 4.5 && C.contrast(C.WHITE, shade(hr)) >= 4.5);
     t.ok('…the colour that passes (storm, 6.75:1) doesn\'t warn', !/era storm: white text/.test(b.stderr));
     t.eq('the report counts them', b.report.eraColours, { set: 2, underAA: ['dawn'] });
     eraHues(t, D, 'basic');
@@ -169,7 +170,7 @@ module.exports = async function (t) {
   // Pull's derived chroma at every hue, from the build itself (John, 13 Oct): oklch(.48 C h), C the gamut's edge, .08 to .14
   {
     const r = spawnSync('python3', [BUILD, '--era-solid-sweep', '0.01'], { encoding: 'utf8', cwd: ROOT });
-    const sweep = JSON.parse(r.stdout || '{"c":[]}'), L = sweep.l, LS = 0.40, k = LS / L;
+    const sweep = JSON.parse(r.stdout || '{"c":[]}'), L = sweep.l, LS = C.pullTokens(ROOT).S, k = LS / L;   // the strip, from styles.css (.40)
     const bad = { range: [], gamut: [], highest: [], white: [], years: [], stripGamut: [], stripWhite: [], stripYears: [] };
     let worst = { white: 99, years: 99, stripWhite: 99, stripYears: 99 };
     sweep.c.forEach((c, i) => {
@@ -177,11 +178,11 @@ module.exports = async function (t) {
       if (!(c >= 0.08 && c <= 0.14)) bad.range.push(at);
       if (!C.inGamut(L, c, h)) bad.gamut.push(at);
       if (c < 0.14 && C.inGamut(L, c + 1e-4, h)) bad.highest.push(at);      // under the cap, a hair more must leave the gamut
-      const rgb = C.oklchRgb(L, c, h), w = C.contrast(C.WHITE, rgb), y = C.contrast(C.over(C.WHITE, 0.85, rgb), rgb);
+      const rgb = C.oklchRgb(L, c, h), w = C.contrast(C.WHITE, rgb), y = C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb);
       if (w < 4.5) bad.white.push(at);
       if (y < 4.5) bad.years.push(at);
       if (!C.inGamut(LS, c * k, h)) bad.stripGamut.push(at);
-      const srgb = C.oklchRgb(LS, c * k, h), sw = C.contrast(C.WHITE, srgb), sy = C.contrast(C.over(C.WHITE, 0.85, srgb), srgb);
+      const srgb = C.oklchRgb(LS, c * k, h), sw = C.contrast(C.WHITE, srgb), sy = C.contrast(C.over(C.WHITE, C.YEARS, srgb), srgb);
       if (sw < 4.5) bad.stripWhite.push(at);
       if (sy < 4.5) bad.stripYears.push(at);
       worst = { white: Math.min(worst.white, w), years: Math.min(worst.years, y), stripWhite: Math.min(worst.stripWhite, sw), stripYears: Math.min(worst.stripYears, sy) };

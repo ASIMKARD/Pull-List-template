@@ -11,7 +11,7 @@
    controls together, and the depth chips stay on one line (T-95). */
 'use strict';
 const path = require('path');
-const { ROOT, FIX, ROOT_DATASET, IS_TEMPLATE, build, basic, mixed } = require('../lib/helpers');
+const { ROOT, FIX, ROOT_DATASET, IS_TEMPLATE, build, basic, mixed, copyFixture, readJSON, writeJSON } = require('../lib/helpers');
 const { serve, open, openAll, openSettings, closeBrowser } = require('./lib');
 
 const WIDTHS = [320, 360, 390];
@@ -52,6 +52,21 @@ async function fit(page) {
       const beside = ctl.filter(r => r.top < lab.bottom - 0.5).length, under = ctl.length - beside;
       if (beside && under) split.push(row.querySelector('.slabel').textContent + ': ' + beside + ' beside the label, ' + under + ' under it');
     }
+    /* the folder tab (Pull, session 7): no era text crosses the cut or sits in the painted corner. The cut runs
+       from (100 % − cut) of the tab's width at its top to 100 % at its bottom; with no cut (every other skin)
+       this asks that the text stay inside the tab. Each line of text, and each name's box (decorations included). */
+    const cutText = [];
+    for (const tab of document.querySelectorAll('.era-head .bhead')) {
+      if (!live(tab)) continue;
+      const t = tab.getBoundingClientRect(), f = (parseFloat(getComputedStyle(tab).getPropertyValue('--era-cut')) || 0) / 100;
+      const edge = y => t.left + t.width * (1 - f) + f * t.width * Math.max(0, y - t.top) / t.height;
+      const rects = [];
+      for (const el of tab.querySelectorAll('.bname, .byears')) rects.push(...el.getClientRects());
+      const walk = document.createTreeWalker(tab, NodeFilter.SHOW_TEXT);
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) { const rg = document.createRange(); rg.selectNodeContents(n); rects.push(...rg.getClientRects()); }
+      const over = rects.filter(r => r.width && r.right > edge(r.top) + 0.5);
+      if (over.length) cutText.push('"' + tab.textContent.trim().slice(0, 24) + '" crosses the cut by ' + Math.round(Math.max(...over.map(r => r.right - edge(r.top)))) + ' px');
+    }
     const row = document.querySelector('#fsec-reading .depthrow');
     let depth = null;
     if (row && live(row)) {
@@ -60,7 +75,7 @@ async function fit(page) {
       if (new Set(tops).size > 1) depth.push('the chips wrap onto ' + new Set(tops).size + ' lines');
       if (row.scrollWidth > row.clientWidth + 0.5) depth.push('the row hides ' + (row.scrollWidth - row.clientWidth) + ' px of chips');
     }
-    return { clipped, split, depth };
+    return { clipped, split, depth, cutText };
   }, SCROLLERS);
 }
 
@@ -80,7 +95,7 @@ module.exports = async function (t) {
       for (const w of WIDTHS) {
         const storage = look ? { [key + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, look)) } : undefined;
         const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage });
-        const over = [], cut = [], clipped = [], split = [], depth = [];
+        const over = [], cut = [], clipped = [], split = [], depth = [], cutText = [];
         let hasDepth = false;
         for (const tab of TABS) {
           if (tab === 'list') await openAll(pg.page);
@@ -100,16 +115,41 @@ module.exports = async function (t) {
           clipped.push(...f.clipped.map(x => tab + ': ' + x));
           if (tab === 'settings') split.push(...f.split);
           if (tab === 'list' && f.depth) { hasDepth = true; depth.push(...f.depth); }
+          if (tab === 'list') cutText.push(...f.cutText);
         }
         t.eq(name + ' @ ' + w + ' px: no horizontal overflow on any tab, everything open', over, []);
         t.eq(name + ' @ ' + w + ' px: all four tabs fully visible in the bar', cut, []);
         t.eq(name + ' @ ' + w + ' px: no control is cut off by a box that clips it', clipped, []);
         t.eq(name + ' @ ' + w + ' px: every Settings row keeps its controls together, beside the label or under it', split, []);
         if (hasDepth) t.eq(name + ' @ ' + w + ' px: the depth chips sit on one line and none is cut off (T-95)', depth, []);
+        t.eq(name + ' @ ' + w + ' px: no era text crosses its tab\'s cut or leaves the tab (Pull\'s folder tab)', cutText, []);
         t.eq(name + ' @ ' + w + ' px: no page or console errors (L-9)', pg.errors, []);
         await pg.close();
       }
       await srv.close();
     }
+    // the folder tab with era names long enough to wrap, at 320 px and on a wide screen (where its cut is widest):
+    // every skin, default and the largest text. The real build of the basic fixture with its eras renamed.
+    const long = copyFixture('basic', 'long-eras'), lds = readJSON(path.join(long, 'dataset.json'));
+    lds.eras.forEach(e => { e.name = e.name + ' and the Long Years of Its Many Crossovers'; e.years = e.years + ', and after'; });
+    writeJSON(path.join(long, 'dataset.json'), lds);
+    const lb = build(path.join(long, 'dataset.json'), { label: 'long-eras-out' });
+    const wide = [], srv = await serve(lb.out);
+    let tabs = 0;
+    for (const skin of ['signature', 'paper', 'newsprint', 'pull', 'night']) {
+      for (const w of [320, 1024]) {
+        for (const look of [{}, { textSize: 'l', tap: 'large', dys: true }]) {
+          const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage: { [FK + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' }, skin }, look)) } });
+          await openAll(pg.page);
+          const f = await fit(pg.page);
+          tabs += await pg.page.evaluate(() => document.querySelectorAll('.era-head .bhead').length);
+          wide.push(...f.cutText.map(x => skin + ' @' + w + (look.textSize ? ' largest' : '') + ': ' + x));
+          await pg.close();
+        }
+      }
+    }
+    await srv.close();
+    t.eq('era names long enough to wrap, at 320 and 1024 px, in every skin with default and the largest text: no era text crosses its tab\'s cut (' + tabs + ' tabs)',
+         lb.status === 0 ? wide : ['the build failed: ' + lb.stderr.slice(-200)], []);
   } finally { await closeBrowser(); }
 };

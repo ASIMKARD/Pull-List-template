@@ -11,7 +11,7 @@
 (function start() {
   'use strict';
   var D = window.TRACKER_DATA;
-  var SKIN_OK = '3';            // the skin beacon (F-57): the token contract styles.css must declare
+  var SKIN_OK = '4';            // the skin beacon (F-57): the token contract styles.css must declare (4: the era box's strip, session 7)
   if (staleShell()) return;
   var N = D.issues.length;
   var FL = D.flagBits;
@@ -741,7 +741,7 @@
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
-      statsHtml(S.era[e], fin) + '</button>' +
+      '<span class="bfoot">' + statsHtml(S.era[e], fin) + '</span></button>' +     // the strip under the tab (Pull's folder tab, session 7)
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
       (isOpen ? eraBodyHtml(e) : '') + '</div></section>';
   }

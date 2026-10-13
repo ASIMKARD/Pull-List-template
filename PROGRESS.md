@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1613 assertions, 0 failed, 36 suites (session 7, step 4: Pull's solid era colours). **Layout suite (real Chromium, in CI too):** 369 checks, 0 failed, 11 suites.
+**Harness:** 1649 assertions, 0 failed, 36 suites (session 7, step 5: Pull's folder-tab era boxes). **Layout suite (real Chromium, in CI too):** 410 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2867,9 +2867,60 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
 
 **Harness:** 1613 assertions (+6), 0 failed, 36 suites. **Layout:** 369 checks (+14), 0 failed, 11 suites.
 
-### Step 5 begins with: the folder-tab shape
-- **First file:** `app.js` (`statsHtml`, `refreshStats`: the figures line and bar in one strip
-  element, `.bfoot`), then `styles.css` (Pull-only layout tokens; the cut and the hatch as
-  background layers; the strip from `--eo-s…` or L .40 with chroma × 5/6; the open body's frame).
-- **First test:** `test/layout/45-pull` (the shape differences go), then 10-sweep (no era text
-  crosses the cut), 50-table at 320 px, and 55-decor with Absolute-style era decorations.
+## Session 7 checkpoint — step 5 done (the folder-tab shape, in Pull only), 13 Oct 2026
+
+### Done
+- **`app.js`:** an era box's figures line and bar sit in one strip element, `.bfoot`, in every skin
+  (`refreshStats` still finds them). The skin beacon is now 4, so an older stylesheet meeting the
+  new markup is loaded again (9g-look, 9i-pwa).
+- **`styles.css`, the template's card by default** (each token's `:root` value is today's layout,
+  so nothing moves outside Pull). Pull's block sets the reference's measurements:
+  - the box: 12 px in, 14 px apart, corners 8 8 3 3, no outline, its shadow (ink at 8 % and 6 %);
+  - the tab: padding 12, max(44 px, 12 %), 12, 16. Its colour, the hatched corner, and the page
+    painted into the cut are three background layers, not a clip, so no text or focus ring is cut
+    off. The slant runs from 88 % at the top to the strip;
+  - the strip: 6 16, in the tracker colour's own shade, or else the derived colour at L .40 with
+    its chroma × 5/6. The bar is 4 px with round ends;
+  - an open era: a 2 px line frame left, right and bottom, a rounded foot, paper-2, 6 px inside;
+  - the 19 tokens join `PULL_ONLY` (22-signature refuses each in a signature skin; 80-guards
+    checks the stylesheet).
+- **The build:** a tracker colour also reports white text on its strip (`stripWhite`), and warns
+  when that is under 4.5:1. The reference's Bendis to IvX strip, `#977106`, is 4.49:1.
+  - The 85 % years are blended at 8-bit alpha (217/255), as browsers draw them. With exactly .85,
+    the build's figure for Bendis to IvX's years was 0.019 off the screen's.
+  - Derived chroma keeps one step (0.00001) in hand at the gamut's edge. Chromium reports
+    computed colours to 7 figures, and at the very edge that rounding put five strips outside
+    sRGB, by at most 3.3e-8 in linear light (the exact values were inside). Now every tab and
+    strip is inside, checked at zero tolerance.
+- **Table view:** the framed body gives its sides back to the row (`:root[data-table="1"]`). At
+  320 px a Pull title first had 48 % of its row (the rule is 50 %), then 50.0 % with the padding
+  alone, and now 50.7 %, the same as Paper.
+- **Tests:**
+  - **45-pull: 111 properties match, and only 5 differences are left.** Two are the accessible
+    ones (the selected-tab underline, the search outline) and three are the read mark's (24 px,
+    John's decision 3). The cut (.89, .94, 1), the hatch (.4), the strip `#8D6005`, every margin,
+    radius, padding and the shadow all match X-Men;
+  - **10-sweep:** no era text crosses its tab's cut or leaves the tab, on every page it sweeps. A
+    real build of basic with era names long enough to wrap, at 320 and 1024 px, every skin,
+    default and the largest text (100 tabs);
+  - **40-look:** each text is measured against what is painted behind it (an opaque background,
+    or the tab's solid layer). Each strip is darker than its tab. Every hue: the strip is the same
+    colour at L .40 with chroma × 5/6, inside sRGB, white on it 8.69:1 at worst. Tracker colours:
+    the strip is the reference's shade exactly, and a flagged colour's strip measures the build's
+    figure;
+  - **45-root:** the same, proved by giving the demo's first era the reference's Foundations
+    colour and, separately, its Bendis to IvX colour (strip under 4.5:1). Both pass; reverted;
+  - **20-build:** the strip ratio, the warning (the hint passes all three), the 8-bit years.
+- **Mutation-proved:** the tab's right padding cut short (10-sweep: text crosses the cut by
+  15 px); no hatch; no cut; the strip as light as the tab (40-look).
+
+- **Found by the full run:** 70-pwa expected the skin beacon to be 3 by name; it now reads the
+  value `app.js` expects, as 80-guards does (9i-pwa likewise).
+
+**Harness:** 1649 assertions (+36), 0 failed, 36 suites. **Layout:** 410 checks (+41: the cut check on every
+page 10-sweep sweeps), 0 failed, 11 suites.
+
+### Step 6 begins with: close-out
+- **First files:** `BUILD-NOTES.md` (Skins: Pull's folder tab, the era colour field), then
+  `MIGRATING.md`, the Skill, `CLAUDE.md`, `FEATURE-INVENTORY.md`.
+- **Then:** side-by-side screenshots for John; a dry run on a scratch copy of Absolute's data.
