@@ -217,19 +217,8 @@ module.exports = async function (t) {
 /* Each era's derived chroma is the build's own rule at the hue styles.css gives
    that era (--era-h0 + index × --era-step), and "One colour" at Pull's one hue. */
 function eraHues(t, D, label) {
-  const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const tok = name => {
-    let v = null;
-    for (const sel of [':root', ':root[data-skin="pull"]']) {
-      const blk = css.split('}').find(x => x.split('{')[0].trim() === sel);
-      const m = blk && new RegExp(name + '\\s*:\\s*([^;]+);').exec(blk);
-      if (m) v = m[1].trim();
-    }
-    return parseFloat(v);
-  };
-  const L = tok('--era-solid-l'), h0 = tok('--era-h0'), step = tok('--era-step'), mono = tok('--era-mono-h');
-  const rule = h => Math.min(Math.max(Math.floor(C.maxChroma(L, h) * 1e5) / 1e5, 0.08), 0.14);
+  const P = C.pullTokens(ROOT), rule = h => C.solidRule(P.L, h);
   t.eq(label + ': each era\'s derived chroma is the rule at its own hue (' + D.eras.length + ' eras)',
-       D.eras.map((e, i) => Math.abs(e.solid - rule((h0 + i * step) % 360)) <= 1e-5).filter(x => !x).length, 0);
-  t.ok(label + ': and "One colour" has the rule at Pull\'s one hue (' + mono + '°): ' + D.solidMono, Math.abs(D.solidMono - rule(mono % 360)) <= 1e-5);
+       D.eras.map((e, i) => Math.abs(e.solid - rule(P.hue(i))) <= 1e-5).filter(x => !x).length, 0);
+  t.ok(label + ': and "One colour" has the rule at Pull\'s one hue (' + P.mono + '°): ' + D.solidMono, Math.abs(D.solidMono - rule(P.mono % 360)) <= 1e-5);
 }

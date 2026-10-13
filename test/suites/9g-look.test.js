@@ -152,4 +152,32 @@ module.exports = async function (t) {
   await wait(20);
   t.ok('…and so is a stylesheet with no beacon at all', /out of date \(missing\)/.test(app.document.querySelector('#toastMsg').textContent));
   app.window.close();
+
+  // ------------------------------------------------ era colours (session 7): each era hands the stylesheet its numbers
+  app = boot(b.out, { storage: seen });
+  await wait(20);
+  const tokens = el => Object.fromEntries((el.getAttribute('style') || '').split(';').filter(Boolean).map(x => x.split(':').map(y => y.trim())));
+  const secs = [...app.document.querySelectorAll('section.era')].map(s => [+s.dataset.e, tokens(s)]);
+  t.eq('every era section carries its index, Pull\'s derived chroma at its hue and at the one hue, as numbers from data.js',
+       secs.filter(([e, k]) => k['--ei'] !== String(e) || +k['--esc'] !== D.eras[e].solid || +k['--esm'] !== D.solidMono).map(([e]) => e), []);
+  t.eq('…and an era with a tracker colour carries it: the tab and strip OKLCH numbers, and --eo:1',
+       secs.filter(([e]) => D.eras[e].colour).map(([e, k]) => [D.eras[e].id, k['--eo'], [k['--eo-l'], k['--eo-c'], k['--eo-h']].map(Number), [k['--eo-sl'], k['--eo-sc'], k['--eo-sh']].map(Number)]),
+       D.eras.filter(e => e.colour).map(e => [e.id, '1', e.colour.tab, e.colour.strip]));
+  t.ok('…the others carry none', secs.filter(([e]) => !D.eras[e].colour).every(([, k]) => !('--eo' in k)) && secs.some(([e]) => !D.eras[e].colour));
+  app.window.close();
+  {
+    // an older data.js (no derived chroma, no colours): the stylesheet's fallbacks, never a broken token
+    const out = path.join(copyFixture('basic', 'old-data'), 'out');
+    fs.cpSync(b.out, out, { recursive: true });
+    const OD = loadData(out);
+    OD.eras.forEach(e => { delete e.solid; delete e.colour; });
+    delete OD.solidMono;
+    fs.writeFileSync(path.join(out, 'data.js'), 'window.TRACKER_DATA=' + JSON.stringify(OD) + ';\n');
+    app = boot(out, { storage: { [OD.franchise.key + ':v3:settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' } }) } });
+    await wait(20);
+    const st = [...app.document.querySelectorAll('section.era')].map(s => s.getAttribute('style'));
+    t.ok('an older data.js without them gives each era its index alone, and the stylesheet\'s fallback chroma applies',
+         st.length === OD.eras.length && st.every((s, e) => s === '--ei:' + e), st.join(' | '));
+    app.window.close();
+  }
 };

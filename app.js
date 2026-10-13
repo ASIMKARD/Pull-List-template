@@ -718,9 +718,26 @@
     return intro + html;
   }
 
+  /* An era's numbers for the stylesheet, as tokens: its index (for its derived
+     hue), Pull's derived chroma at that hue and at Pull's one hue, and the
+     tracker's own colour when it has one (session 7: Pull draws it exactly,
+     the other skins ignore it). Only numbers: an older data.js without them
+     leaves the stylesheet's fallbacks. */
+  function eraStyle(e) {
+    var era = D.eras[e], num = function (v) { return typeof v === 'number' && isFinite(v); }, s = '--ei:' + e;
+    if (num(era.solid)) s += ';--esc:' + era.solid;
+    if (num(D.solidMono)) s += ';--esm:' + D.solidMono;
+    var c = era.colour;
+    if (c && Array.isArray(c.tab) && Array.isArray(c.strip) && c.tab.concat(c.strip).every(num)) {
+      s += ';--eo:1;--eo-l:' + c.tab[0] + ';--eo-c:' + c.tab[1] + ';--eo-h:' + c.tab[2] +
+           ';--eo-sl:' + c.strip[0] + ';--eo-sc:' + c.strip[1] + ';--eo-sh:' + c.strip[2];
+    }
+    return s;
+  }
+
   function eraHtml(e, S, fin, hidden) {
     var era = D.eras[e], isOpen = !!open.e[e];
-    return '<section class="era" data-e="' + e + '" style="--ei:' + e + '"' + (hidden ? ' hidden' : '') + '>' +
+    return '<section class="era" data-e="' + e + '" style="' + eraStyle(e) + '"' + (hidden ? ' hidden' : '') + '>' +
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +

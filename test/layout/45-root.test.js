@@ -9,7 +9,7 @@
    - reachability: every control on every tab, at 390 and 320 px and with the
      largest text and buttons (V-5). */
 'use strict';
-const { ROOT, ROOT_DATASET } = require('../lib/helpers');
+const { ROOT, ROOT_DATASET, loadData } = require('../lib/helpers');
 const { serve, open, openAll, openSettings, reachability, closeBrowser } = require('./lib');
 
 const RF = ROOT_DATASET.franchise, KEY = RF.key;
@@ -40,6 +40,8 @@ const PAGE_LIB = () => {
   };
   const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
   window.__ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  /* the text colour as it lands on bg: its alpha blended in (Pull's years are white at 85 %) */
+  window.__text = (el, bg) => { const c = window.__rgb(getComputedStyle(el).color), a = c[3] / 255; return [0, 1, 2].map(i => Math.round(a * c[i] + (1 - a) * bg[i])); };
 };
 
 module.exports = async function (t) {
@@ -63,7 +65,7 @@ module.exports = async function (t) {
           const out = [];
           for (const [what, sel] of TEXT) {
             const el = [...document.querySelectorAll(sel)].find(e => !e.closest('[hidden]'));
-            if (el) out.push([what, window.__ratio(window.__rgb(getComputedStyle(el).color), window.__bg(el)), 4.5]);
+            if (el) { const bg = window.__bg(el); out.push([what, window.__ratio(window.__text(el, bg), bg), 4.5]); }
           }
           for (const [what, sel, prop] of EDGE) {
             const el = [...document.querySelectorAll(sel)].find(e => !e.closest('[hidden]'));
@@ -94,8 +96,8 @@ module.exports = async function (t) {
          measured.size >= 18 && EDGE.every(([w]) => measured.has(w)), [...measured].join(', '));
 
     // ------------------------------------------------ its era banners, split and one colour
-    const eraFails = [];
-    let banners = 0;
+    const eraFails = [], RD = loadData(ROOT);
+    let banners = 0, flaggedSeen = 0;
     for (const skin of SKINS) {
       for (const eraHues of ['split', 'mono']) {
         const pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed({ skin, eraHues }) });
@@ -103,17 +105,25 @@ module.exports = async function (t) {
           eval('(' + lib + ')')();
           return [...document.querySelectorAll('.era-head')].map(h => {
             const bg = window.__rgb(getComputedStyle(h).backgroundColor);
-            const parts = [...h.querySelectorAll('.bname, .byears, .bcount, .bleft, .bfinish, .bdone')];
-            return parts.map(p => [p.className, window.__ratio(window.__rgb(getComputedStyle(p).color), bg)]);
+            const parts = [...h.querySelectorAll('.bname, .byears, .bcount, .bleft, .bfinish, .bdone, .buntimed, .bfiltered')];
+            return parts.map(p => [p.className, window.__ratio(window.__text(p, bg), bg)]);
           });
         }, PAGE_LIB.toString());
         banners += r.length;
-        r.forEach((parts, i) => parts.forEach(([cls, ratio]) => { if (ratio < 4.5) eraFails.push(skin + '/' + eraHues + ' era ' + i + ' .' + cls + ': ' + ratio.toFixed(2)); }));
+        r.forEach((parts, i) => parts.forEach(([cls, ratio]) => {
+          /* a tracker colour under 4.5:1 is drawn as given in Pull (John, 12 Oct): it must measure exactly what the build reported */
+          const c = RD.eras[i].colour, flagged = skin === 'pull' && eraHues === 'split' && c && Math.min(c.white, c.years) < 4.5;
+          if (flagged) { const want = cls === 'byears' ? c.years : c.white; if (Math.abs(ratio - want) > 0.01) eraFails.push(skin + ' era ' + i + ' .' + cls + ': ' + ratio.toFixed(3) + ', the build reported ' + want); flaggedSeen++; }
+          else if (ratio < 4.5) eraFails.push(skin + '/' + eraHues + ' era ' + i + ' .' + cls + ': ' + ratio.toFixed(2));
+        }));
         await pg.close();
       }
     }
     t.eq(name + ': every text on its ' + ROOT_DATASET.eras.length + ' era banners clears 4.5:1 in every skin, split and one colour (' + banners + ' banners)', eraFails, []);
     t.ok('…every era measured in every case', banners === ROOT_DATASET.eras.length * SKINS.length * 2, String(banners));
+    const flaggedEras = RD.eras.filter(e => e.colour && Math.min(e.colour.white, e.colour.years) < 4.5).map(e => e.id);
+    t.ok('…a tracker colour under 4.5:1 (' + (flaggedEras.join(', ') || 'none here') + ') is the only exception, in Pull, and measures what the build reported',
+         flaggedEras.length === 0 || (SKINS.includes('pull') && flaggedSeen > 0), String(flaggedSeen));
 
     // ------------------------------------------------ reachability: every control, every skin it offers (V-5)
     const unreachable = [];

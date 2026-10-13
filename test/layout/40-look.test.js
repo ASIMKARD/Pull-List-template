@@ -14,7 +14,8 @@
      at compact (T-56) and 44 px glyph buttons at large (T-57). */
 'use strict';
 const path = require('path');
-const { FIX, basic, stress, readJSON } = require('../lib/helpers');
+const { ROOT, FIX, basic, stress, readJSON, writeJSON, build, loadData, tmpdir, copyFixture } = require('../lib/helpers');
+const C = require('../lib/colour');
 const { serve, open, openAll, openSettings, reachability, closeBrowser } = require('./lib');
 
 const SKINS = ['signature', 'paper', 'newsprint', 'pull', 'night'];     // the basic fixture's demo signature skin first
@@ -35,6 +36,8 @@ const PAGE_LIB = () => {
   const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
   window.__lum = lum;
   window.__ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  /* the text colour as it lands on bg: its alpha blended in (Pull's years are white at 85 %) */
+  window.__text = (el, bg) => { const c = window.__rgb(getComputedStyle(el).color), a = c[3] / 255; return [0, 1, 2].map(i => Math.round(a * c[i] + (1 - a) * bg[i])); };
 };
 
 module.exports = async function (t) {
@@ -65,7 +68,8 @@ module.exports = async function (t) {
           for (const [what, sel] of TEXT) {
             const el = document.querySelector(sel);
             if (!el) { out.push([what, 0, 'missing']); continue; }
-            out.push([what, window.__ratio(window.__rgb(getComputedStyle(el).color), window.__bg(el)), 4.5]);
+            const bg = window.__bg(el);
+            out.push([what, window.__ratio(window.__text(el, bg), bg), 4.5]);
           }
           for (const [what, sel, prop] of EDGE) {
             const el = document.querySelector(sel);
@@ -89,30 +93,44 @@ module.exports = async function (t) {
          worst.r.toFixed(2) + ', ' + worst.at + ')', fails, []);
     t.eq('the browser chrome (theme-color) follows each skin\'s paper (F-39)', theme, []);
 
-    // ------------------------------------------------ era washes: 64 eras, every skin, split and one colour
+    // ------------------------------------------------ era banners: 64 eras, every skin, split and one colour
+    // Every text in the box (the first era complete, so its ✓ shows). Pull's are solid with white text
+    // (John, 9 Oct); every other skin's are pale washes (T-39).
     const sig = readJSON(path.join(FIX, 'basic', 'dataset.json')).franchise.signature;
     sig.stylesheet = path.join(FIX, 'basic', sig.stylesheet);              // the same demo signature skin, 64 eras
     const big = stress(64, 2, { signature: sig }), bsrv = await serve(big.out);
-    const eraFails = [], pale = [];
+    const done = { 'big:v3:progress': JSON.stringify({ marks: { 'series0-1960-1': 'read', 'series0-1960-2': 'read' }, bookmarks: [] }) };
+    const ERA_TEXT = '.bname, .byears, .bcount, .bleft, .bfinish, .bdone, .buntimed, .bfiltered';
+    const eraFails = [], pale = [], solid = [];
+    let ticks = 0;
     for (const skin of SKINS) {
       for (const eraHues of ['split', 'mono']) {
-        const pg = await open(bsrv.url, { width: 390, reducedMotion: 'reduce', storage: seed('big', { skin, eraHues }) });
-        const r = await pg.page.evaluate(lib => {
+        const pg = await open(bsrv.url, { width: 390, reducedMotion: 'reduce', storage: Object.assign(seed('big', { skin, eraHues }), done) });
+        const r = await pg.page.evaluate(([lib, sel]) => {
           eval('(' + lib + ')')();
           const heads = [...document.querySelectorAll('.era-head')];
           window.__skin = document.documentElement.getAttribute('data-skin');
           return heads.map(h => {
             const bg = window.__rgb(getComputedStyle(h).backgroundColor);
-            const parts = [h.querySelector('.bname'), h.querySelector('.byears'), h.querySelector('.bcount'), h.querySelector('.bleft'), h.querySelector('.bfinish')].filter(Boolean);
-            return { bg, lum: window.__lum(bg), min: Math.min.apply(null, parts.map(p => window.__ratio(window.__rgb(getComputedStyle(p).color), bg))) };
+            const parts = [...h.querySelectorAll(sel)];
+            return { bg, lum: window.__lum(bg), min: Math.min.apply(null, parts.map(p => window.__ratio(window.__text(p, bg), bg))),
+                     tick: !!h.querySelector('.bdone'), ink: parts.map(p => [p.className, window.__rgb(getComputedStyle(p).color).join(',')]) };
           });
-        }, PAGE_LIB.toString());
+        }, [PAGE_LIB.toString(), ERA_TEXT]);
         if (r.length !== 64) eraFails.push(skin + '/' + eraHues + ': ' + r.length + ' era banners');
         const inSkin = await pg.page.evaluate(() => window.__skin);
         if (inSkin !== skin) eraFails.push(skin + '/' + eraHues + ': the page is in ' + inSkin);
+        ticks += r.filter(e => e.tick).length;
         r.forEach((e, i) => { if (e.min < 4.5) eraFails.push(skin + '/' + eraHues + ' era ' + i + ': ' + e.min.toFixed(2)); });
-        const dark = skin === 'night';
-        r.forEach((e, i) => { if (dark ? e.lum > 0.08 : e.lum < 0.7) pale.push(skin + '/' + eraHues + ' era ' + i + ' luminance ' + e.lum.toFixed(2)); });
+        if (skin === 'pull') {
+          r.forEach((e, i) => {
+            if (e.lum > 0.1833) solid.push('pull/' + eraHues + ' era ' + i + ' luminance ' + e.lum.toFixed(3));
+            e.ink.forEach(([cls, c]) => { if (c !== (cls === 'byears' ? '255,255,255,217' : '255,255,255,255')) solid.push('pull/' + eraHues + ' era ' + i + ' .' + cls + ' is ' + c); });
+          });
+        } else {
+          const dark = skin === 'night';
+          r.forEach((e, i) => { if (dark ? e.lum > 0.08 : e.lum < 0.7) pale.push(skin + '/' + eraHues + ' era ' + i + ' luminance ' + e.lum.toFixed(2)); });
+        }
         const same = (x, y) => x.bg.slice(0, 3).every((v, k) => Math.abs(v - y.bg[k]) <= 2);
         if (eraHues === 'split') {
           const twins = r.slice(1).filter((e, i) => same(e, r[i])).length;
@@ -121,9 +139,111 @@ module.exports = async function (t) {
         await pg.close();
       }
     }
-    t.eq('era banners, 64 eras × ' + SKINS.length + ' skins × split and one colour: every text on its wash clears 4.5:1, neighbours differ, one colour is one colour (D-12, T-38)', eraFails, []);
-    t.eq('…and the washes are pale (luminance ≥ 0.7, or ≤ 0.08 on the dark skin; T-39)', pale, []);
+    t.eq('era banners, 64 eras × ' + SKINS.length + ' skins × split and one colour: every text in the box clears 4.5:1 (the years as drawn, ✓ included), neighbours differ, one colour is one colour (D-12, T-38)', eraFails, []);
+    t.ok('…the ✓ of a complete era was measured in every case', ticks === SKINS.length * 2, String(ticks));
+    t.eq('…and the washes are pale in every skin but Pull (luminance ≥ 0.7, or ≤ 0.08 on the dark skin; T-39)', pale, []);
+    t.eq('…Pull\'s are solid, dark enough for white text, and all their text is white, the years at 85 % (John, 9 Oct)', solid, []);
     await bsrv.close();
+
+    // ------------------------------------------------ Pull, every hue (John, 13 Oct): 3,600 eras whose hues cover the circle
+    // Each era's hue is --era-h0 + index × --era-step (the golden angle), so 3,600 of them leave no gap wider than a
+    // fraction of a degree. Every colour Chromium draws is the build's (L .48, C at the gamut's edge, .08 to .14),
+    // inside sRGB, and under white text and the 85 % years at 4.5:1 or more. 20-build checks every 0.01°.
+    {
+      const P = C.pullTokens(ROOT), N = 3600, dir = tmpdir('hues');
+      const eras = [], arcs = [], rows = [];
+      for (let e = 0; e < N; e++) {
+        eras.push({ id: 'h' + e, name: 'Hue ' + e, rank: 1000 + 2 * e, years: String(e) });
+        arcs.push({ id: 'a' + e, name: 'Arc ' + e, era: 'h' + e, strands: ['Main'], type: 'MAIN', mo: 'M', tier: 'All',
+                    credits: { writers: ['Writer Number'], artists: ['Artist Number'] } });
+        rows.push({ issueId: 'hue' + e + '-1990-1', series: 'Hue' + e, vol: '1990', num: '1', title: 'Hue ' + e + ' #1', era: 'h' + e, arc: 'a' + e,
+                    date: { cover: (1000 + Math.floor(e / 12)) + '-' + String(e % 12 + 1).padStart(2, '0'), source: 'generated' } });
+      }
+      writeJSON(path.join(dir, 'dataset.json'), { schemaVersion: 1, franchise: { key: 'hues', wordmark: 'Hues', title: 'Hues', strapline: '', span: '', theme: '#000000' },
+        eras, strands: ['Main'], types: ['MAIN'], tiers: ['All'], media: ['comic'], arcs, rows });
+      const hb = build(path.join(dir, 'dataset.json'), { label: 'hues-out' });
+      t.ok('a dataset of ' + N + ' eras builds', hb.status === 0, hb.stderr.slice(-300));
+      const D = loadData(hb.out), hues = D.eras.map((e, i) => P.hue(i)), sorted = hues.slice().sort((a, b) => a - b);
+      const gap = Math.max(sorted[0] + 360 - sorted[sorted.length - 1], ...sorted.slice(1).map((h, i) => h - sorted[i]));
+      const hsrv = await serve(hb.out), bad = { colour: [], gamut: [], white: [], years: [], mono: [] };
+      let worst = { white: 99, years: 99 };
+      for (const eraHues of ['split', 'mono']) {
+        const pg = await open(hsrv.url, { width: 390, reducedMotion: 'reduce', storage: seed('hues', { skin: 'pull', eraHues }) });
+        const r = await pg.page.evaluate(lib => {
+          eval('(' + lib + ')')();
+          return [...document.querySelectorAll('.era-head')].map(h => {
+            const cs = getComputedStyle(h), bg = window.__rgb(cs.backgroundColor);
+            return { css: cs.backgroundColor, bg, white: window.__ratio(window.__text(h.querySelector('.bname'), bg), bg),
+                     years: window.__ratio(window.__text(h.querySelector('.byears'), bg), bg) };
+          });
+        }, PAGE_LIB.toString());
+        if (r.length !== N) bad.colour.push(eraHues + ': ' + r.length + ' era banners');
+        r.forEach((e, i) => {
+          const L = P.L, c = eraHues === 'split' ? D.eras[i].solid : D.solidMono, h = eraHues === 'split' ? hues[i] : P.mono % 360;
+          const want = C.oklchRgb(L, c, h), at = eraHues + ' era ' + i + ' (' + h.toFixed(2) + '°)';
+          const m = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(e.css);
+          if (!m || Math.abs(+m[1] - L) > 1e-4 || Math.abs(+m[2] - c) > 1e-4 || Math.abs(((+m[3] - h) % 360 + 540) % 360 - 180) > 1e-3) bad.colour.push(at + ': drawn as ' + e.css);
+          if (e.bg.slice(0, 3).some((v, k) => Math.abs(v - want[k]) > 1)) bad.colour.push(at + ': ' + e.bg.slice(0, 3) + ' vs ' + want);
+          if (!m || !C.inGamut(+m[1], +m[2], +m[3])) bad.gamut.push(at);
+          if (e.white < 4.5) bad.white.push(at + ' ' + e.white.toFixed(2));
+          if (e.years < 4.5) bad.years.push(at + ' ' + e.years.toFixed(2));
+          worst = { white: Math.min(worst.white, e.white), years: Math.min(worst.years, e.years) };
+        });
+        if (eraHues === 'mono' && !r.every(e => e.css === r[0].css)) bad.mono.push('one colour is not one colour');
+        await pg.close();
+      }
+      await hsrv.close();
+      t.ok('…its hues cover the circle with no gap wider than ' + gap.toFixed(3) + '°', gap < 0.5, String(gap));
+      t.eq('Pull draws every one of the ' + N + ' hues in the build\'s colour, oklch(.48 C h), and "One colour" in the one at its hue', bad.colour.concat(bad.mono).slice(0, 5), []);
+      t.eq('…every colour drawn is inside the sRGB gamut', bad.gamut.slice(0, 5), []);
+      t.eq('…white text on it clears 4.5:1 at every hue (worst ' + worst.white.toFixed(2) + ':1, measured)', bad.white.slice(0, 5), []);
+      t.eq('…and the years at 85 % (worst ' + worst.years.toFixed(2) + ':1, measured)', bad.years.slice(0, 5), []);
+    }
+
+    // ------------------------------------------------ a tracker's own colours (John, 12 Oct): drawn exactly, in Pull only
+    {
+      const B = loadData(b.out), own = B.eras.map((e, i) => [e, i]).filter(([e]) => e.colour);
+      const plain = copyFixture('basic', 'no-colours'), pds = readJSON(path.join(plain, 'dataset.json'));
+      pds.eras.forEach(e => { delete e.colour; });
+      writeJSON(path.join(plain, 'dataset.json'), pds);
+      const pb = build(path.join(plain, 'dataset.json'), { label: 'no-colours-out' }), psrv = await serve(pb.out);
+      const heads = async (url, s) => {
+        const pg = await open(url, { width: 390, reducedMotion: 'reduce', storage: seed('fixture', s) });
+        await openAll(pg.page);
+        const r = await pg.page.evaluate(([lib, sel]) => {
+          eval('(' + lib + ')')();
+          return [...document.querySelectorAll('.era-head')].map(h => {
+            const bg = window.__rgb(getComputedStyle(h).backgroundColor);
+            return { bg: bg.slice(0, 3).join(','), parts: [...h.querySelectorAll(sel)].map(p => [p.className, window.__ratio(window.__text(p, bg), bg)]) };
+          });
+        }, [PAGE_LIB.toString(), ERA_TEXT]);
+        await pg.close();
+        return r;
+      };
+      const split = await heads(srv.url, { skin: 'pull', eraHues: 'split' }), mono = await heads(srv.url, { skin: 'pull', eraHues: 'mono' });
+      t.eq('Pull draws each tracker colour exactly as given: ' + own.map(([e]) => e.id + ' ' + e.colour.hex).join(', '),
+           own.map(([e, i]) => split[i].bg), own.map(([e]) => C.hexRgb(e.colour.hex).join(',')));
+      const flagged = [], other = [];
+      split.forEach((h, i) => h.parts.forEach(([cls, ratio]) => {
+        const c = B.eras[i].colour, low = c && Math.min(c.white, c.years) < 4.5;
+        if (low) { const want = cls === 'byears' ? c.years : c.white; if (Math.abs(ratio - want) > 0.01) flagged.push(B.eras[i].id + ' .' + cls + ' ' + ratio.toFixed(3) + ' vs ' + want); }
+        else if (ratio < 4.5) other.push(B.eras[i].id + ' .' + cls + ' ' + ratio.toFixed(2));
+      }));
+      t.eq('…the one under 4.5:1 (dawn, as the build warned) measures exactly the ratios the build reported: white ' +
+           own.filter(([e]) => e.colour.white < 4.5).map(([e]) => e.colour.white + ':1, years ' + e.colour.years + ':1').join('; '), flagged, []);
+      t.eq('…and it is the only exception: every other era text in Pull clears 4.5:1', other, []);
+      t.eq('"One colour" sets the tracker\'s colours aside: every era in the one derived colour',
+           mono.filter(h => h.bg !== C.oklchRgb(C.pullTokens(ROOT).L, B.solidMono, C.pullTokens(ROOT).mono % 360).join(',')).length, 0);
+      const changed = [];
+      for (const skin of SKINS.filter(s => s !== 'pull')) {
+        for (const eraHues of ['split', 'mono']) {
+          const a = await heads(srv.url, { skin, eraHues }), z = await heads(psrv.url, { skin, eraHues });
+          a.forEach((h, i) => { if (h.bg !== z[i].bg) changed.push(skin + '/' + eraHues + ' ' + B.eras[i].id + ': ' + h.bg + ' vs ' + z[i].bg); });
+        }
+      }
+      t.eq('every other skin ignores an era\'s colour: its eras look the same with and without them, split and one colour (John, 12 Oct)', changed, []);
+      await psrv.close();
+    }
 
     // ------------------------------------------------ reachability: every control, every skin (V-5)
     const unreachable = [];

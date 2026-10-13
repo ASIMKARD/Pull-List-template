@@ -56,10 +56,13 @@
      tints, readable text, hue stepped by the golden angle — no cap on eras */
   --era-h0: 30; --era-step: 137.508; --era-mono-h: 258;
   --era-tint-l: .955; --era-tint-c: .035; --era-ink-l: .40; --era-ink-c: .10;
-  /* Pull's solid era boxes (John, 9 and 13 Oct): their lightness. tools/build.py
-     reads Pull's value and computes each era's chroma from it (the gamut's edge
-     for the era's hue, .08 to .14), since CSS can't. */
-  --era-solid-l: var(--era-tint-l);
+  /* Pull's solid era boxes (John, 9, 12 and 13 Oct). --era-solid 1: an era is
+     drawn in the tracker's own colour when it has one, exactly, else in a solid
+     colour from its hue at --era-solid-l. tools/build.py reads Pull's lightness
+     and computes each era's chroma from it (the gamut's edge for the era's hue,
+     .08 to .14), since CSS can't. Every other skin keeps its pale washes. */
+  --era-solid: 0; --era-solid-l: var(--era-tint-l);
+  --era-split: 1;          /* "One colour" sets 0: every era at one hue, the tracker's own colours set aside */
   --scheme: light;
 
   /* ---- COLOURS: the one place colour is written ---- */
@@ -84,6 +87,12 @@
   --danger: hsl(6 59% var(--l-danger));
   --shadow: hsl(var(--ink-h) var(--ink-s) var(--l-shadow) / .2);
   --qr-paper: #ffffff;   /* a QR scans reliably only on white, whatever the skin */
+  /* text on a solid era box (Pull): white, the years at 85 %, the bar white on the strip, as the reference tracker */
+  --on-solid: hsl(0 0% 100%); --on-solid-soft: hsl(0 0% 100% / .85);
+  --on-solid-track: hsl(0 0% 100% / .25); --on-solid-fill: hsl(0 0% 100% / .95);
+  /* the era box's own text and bar; the template's colours unless a skin says otherwise */
+  --era-years-ink: var(--ink-soft); --era-stats-ink: var(--ink-soft); --era-accent-ink: var(--accent); --era-done-ink: var(--good);
+  --era-track: var(--track); --era-fill: var(--accent);
 
   /* ---- type, shape, space, motion ---- */
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -146,7 +155,7 @@
   --bar-h: var(--ink-h); --bar-s: var(--ink-s); --l-bar: 8.8235%;
   --bar-soft-h: 45; --bar-soft-s: 17.2414%; --l-bar-soft: 77.2549%; --l-bar-ink: 100%;
   --accent-h: 212.7273; --accent-s: 54.0984%; --l-accent: 23.9216%; --l-wash: 92%; --l-bar-mark: 44%;
-  --era-tint-l: .93; --era-tint-c: .05; --era-ink-l: .38; --era-ink-c: .11; --era-mono-h: 20;
+  --era-ink-l: 1; --era-ink-c: 0; --era-mono-h: 20;
   --font-meta: var(--font-mono); --display-case: uppercase; --display-weight: 700;
   --title-size: 24px; --title-track: .5px; --title-lh: 1.45; --meta-size: 12px;
   --name-font: var(--font-display); --name-weight: 400; --name-case: uppercase; --name-track: .4px;
@@ -155,7 +164,9 @@
   --tab-size: 12.5px; --tab-fit: 3.7vw; --tab-case: uppercase; --tab-track: .3px;
   --radius: 8px;
   --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
-  --era-solid-l: .48;    /* solid era boxes: white text clears 4.5:1 at every hue, the years at 85 % too */
+  --era-solid: 1; --era-solid-l: .48;    /* solid era boxes: white text clears 4.5:1 at every hue, the years at 85 % too */
+  --era-years-ink: var(--on-solid-soft); --era-stats-ink: var(--on-solid); --era-accent-ink: var(--on-solid); --era-done-ink: var(--on-solid);
+  --era-track: var(--on-solid-track); --era-fill: var(--on-solid-fill);
 }
 :root[data-skin="night"] {
   --base-paper-h: 220; --base-paper-s: 50%;
@@ -176,7 +187,7 @@
 :root[data-paper="sky"], .swatch[data-v="sky"] { --paper-h: 205; --paper-s: 42%; }
 :root[data-paper="lilac"], .swatch[data-v="lilac"] { --paper-h: 268; --paper-s: 32%; }
 /* ---- the other Look settings: tokens only, like the skins ---- */
-:root[data-eras="mono"] { --era-h0: var(--era-mono-h); --era-step: 0; }
+:root[data-eras="mono"] { --era-h0: var(--era-mono-h); --era-step: 0; --era-split: 0; }
 :root[data-text="s"] { --scale: .9; }
 :root[data-text="l"] { --scale: 1.15; }
 :root[data-density="compact"] { --row-pad: 4px; --gap: 6px; }
@@ -269,8 +280,28 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--card);
 }
 .band-head { border-width: 2px; }
-.era { --era-h: calc(var(--era-h0) + var(--ei, 0) * var(--era-step)); }
-.era-head { background: oklch(var(--era-tint-l) var(--era-tint-c) var(--era-h)); color: oklch(var(--era-ink-l) var(--era-ink-c) var(--era-h)); }
+/* An era's colour. --ei, --esc and --esm come from app.js (its index, Pull's
+   derived chroma at its hue and at the one hue), --eo… from the tracker's own
+   colour. The switches are 0 or 1, so each blend below picks one side exactly:
+   a pale wash in every skin but Pull; in Pull the tracker's colour, else the
+   derived one (the same in both, for "One colour"). */
+.era {
+  --era-h: calc(var(--era-h0) + var(--ei, 0) * var(--era-step));
+  --era-own: calc(var(--eo, 0) * var(--era-solid) * var(--era-split));
+  --era-c: calc(var(--era-split) * var(--esc, .08) + (1 - var(--era-split)) * var(--esm, .08));
+  --era-bg-l: calc(var(--era-own) * var(--eo-l, 0) + (1 - var(--era-own)) * (var(--era-solid) * var(--era-solid-l) + (1 - var(--era-solid)) * var(--era-tint-l)));
+  --era-bg-c: calc(var(--era-own) * var(--eo-c, 0) + (1 - var(--era-own)) * (var(--era-solid) * var(--era-c) + (1 - var(--era-solid)) * var(--era-tint-c)));
+  --era-bg-h: calc(var(--era-own) * var(--eo-h, 0) + (1 - var(--era-own)) * var(--era-h));
+}
+.era-head { background: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h)); color: oklch(var(--era-ink-l) var(--era-ink-c) var(--era-h)); }
+.era-head .byears { color: var(--era-years-ink); }
+.era-head .bstats { color: var(--era-stats-ink); }
+.era-head .bfinish, .era-head .bfiltered { color: var(--era-accent-ink); border-color: var(--era-accent-ink); }
+.era-head .bdone { color: var(--era-done-ink); }
+.era-head progress.bar { background: var(--era-track); }
+.era-head progress.bar::-webkit-progress-bar { background: var(--era-track); }
+.era-head progress.bar::-webkit-progress-value { background: var(--era-fill); }
+.era-head progress.bar::-moz-progress-bar { background: var(--era-fill); }
 .bhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .bname { font-family: var(--name-font); font-weight: var(--name-weight); text-transform: var(--name-case); letter-spacing: var(--name-track); font-size: calc(var(--era-name-size) * var(--scale)); }
 .band-head .bname { font-family: var(--font-display); font-weight: var(--display-weight); text-transform: var(--display-case); font-size: calc(22px * var(--scale)); letter-spacing: .02em; }

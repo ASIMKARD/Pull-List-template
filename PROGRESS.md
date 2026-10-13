@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1607 assertions, 0 failed, 36 suites (session 7, step 3: a colour per era in the data). **Layout suite (real Chromium, in CI too):** 355 checks, 0 failed, 11 suites.
+**Harness:** 1613 assertions, 0 failed, 36 suites (session 7, step 4: Pull's solid era colours). **Layout suite (real Chromium, in CI too):** 369 checks, 0 failed, 11 suites.
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) and session 5 at 1472 (+ 267 layout checks).
 
 ---
@@ -2815,10 +2815,61 @@ In OKLCH, X-Men's −25 strip is a lightness step of about −0.08 (−0.064 to 
 
 **Harness:** 1607 assertions (+31), 0 failed, 36 suites. **Layout:** 355 checks, 0 failed, 11 suites.
 
-### Step 4 begins with: Pull's solid colours
-- **First file:** `app.js` (`eraHtml`: the era's numbers as tokens, beside `--ei`, only when they
-  are numbers), then `styles.css` (the blend in `.era`, Pull's tokens, the text colours in the box).
-- **First test:** `test/layout/40-look` (the era check in Pull; every hue in Chromium on a
-  dataset of 3,600 eras whose golden-angle hues cover the circle; data colours exact; One colour;
-  the other skins unchanged), then 45-root and 45-pull.
-- **The strip's colour waits for step 5,** where the strip element exists.
+## Session 7 checkpoint — step 4 done (Pull's solid colours), 13 Oct 2026
+
+### Done
+- **`app.js` (`eraStyle`):** each era section hands the stylesheet its numbers as tokens:
+  - its index (`--ei`), as before;
+  - Pull's derived chroma at its hue (`--esc`) and at the one hue (`--esm`);
+  - a tracker's own colour (`--eo:1` and its tab and strip OKLCH numbers).
+
+  Only numbers are written, so an older `data.js` leaves the stylesheet's fallbacks. There is no skin
+  test in `app.js`.
+- **`styles.css`:**
+  - **The blend:** `.era` blends each component with 0-or-1 switches, so it picks one side
+    exactly:
+    - a pale wash in every skin but Pull, unchanged;
+    - in Pull (`--era-solid: 1`), the tracker's colour when there is one, else
+      `oklch(.48 C h)`;
+    - "One colour" (`--era-split: 0`) sets the tracker's colours aside.
+  - **The text in Pull's boxes:** white, the years at 85 %, as the reference tracker. Finish-by,
+    "filtered" and ✓ are white too, and the bar is white at 25 % with a 95 % fill. Each is a
+    token that keeps the template's colour in the other skins:
+    - `--era-years-ink`, `--era-stats-ink`, `--era-accent-ink`, `--era-done-ink`;
+    - `--era-track`, `--era-fill`;
+    - Pull points them at the new `--on-solid…` colours in `:root`.
+  - `--era-solid` joins `PULL_ONLY`.
+- **40-look:**
+  - **Era banners:** every text in the box (✓ included, the first era seeded complete) at 4.5:1,
+    as drawn: a text's alpha is now blended in before measuring, here and in 45-root;
+  - **The pale rule (T-39):** covers every skin but Pull. Pull's boxes are solid instead, and all
+    their text is white, the years at 85 %;
+  - **Every hue, in Chromium:** 3,600 eras whose golden-angle hues leave no gap wider than 0.12°.
+    Every colour drawn is the build's, inside sRGB, with white text at 6.10:1 at worst and the 85 %
+    years at 4.88:1, measured. "One colour" is one colour;
+  - **A tracker's colours:** each drawn exactly as given (`#A6791E`, `#A6303C`). Dawn's ratios
+    measure what the build reported (3.907 and 3.293), and it is the only exception. "One colour"
+    sets them aside;
+  - **The other skins:** they look the same with and without the colours, split and one colour.
+- **45-root:** a tracker colour under 4.5:1 is the one exception, in Pull, and must measure what
+  the build reported. Proved by giving the demo's first era Foundations' colour for one run.
+- **9g-look:** each era section's tokens are data.js's numbers; an older data.js gives `--ei`
+  alone.
+- **45-pull:** the era texts are compared by the colour you see, since the reference's years are
+  white at opacity .85 and Pull's are white at 85 %. Seven differences are gone: the era name, the
+  years and the stats colour, the bar's track, and the tab's fill (`#A6791E`, read from pixels).
+  The reference was re-captured, and the fresh capture still matches. 82 properties match, 34
+  differences are listed.
+- **Mutation-proved:** Pull without `--era-solid`; "One colour" keeping the tracker's colours;
+  the years at full white; `app.js` without the derived chroma.
+- **For John:** `band-colours.png`, Pull's derived colours next to X-Men's eleven, on the
+  template's card shape (the folder tab is step 5).
+
+**Harness:** 1613 assertions (+6), 0 failed, 36 suites. **Layout:** 369 checks (+14), 0 failed, 11 suites.
+
+### Step 5 begins with: the folder-tab shape
+- **First file:** `app.js` (`statsHtml`, `refreshStats`: the figures line and bar in one strip
+  element, `.bfoot`), then `styles.css` (Pull-only layout tokens; the cut and the hatch as
+  background layers; the strip from `--eo-s…` or L .40 with chroma × 5/6; the open body's frame).
+- **First test:** `test/layout/45-pull` (the shape differences go), then 10-sweep (no era text
+  crosses the cut), 50-table at 320 px, and 55-decor with Absolute-style era decorations.

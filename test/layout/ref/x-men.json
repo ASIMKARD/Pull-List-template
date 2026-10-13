@@ -50,7 +50,6 @@
    "fontWeight": "400",
    "letterSpacing": "0.4px",
    "textTransform": "uppercase",
-   "color": "rgba(255, 255, 255, 1)",
    "effectiveColor": "rgba(255, 255, 255, 1)"
   },
   "era years": {
@@ -59,7 +58,6 @@
    "fontWeight": "400",
    "letterSpacing": "0px",
    "textTransform": "none",
-   "color": "rgba(255, 255, 255, 1)",
    "effectiveColor": "rgba(255, 255, 255, 0.85)"
   },
   "era stats": {

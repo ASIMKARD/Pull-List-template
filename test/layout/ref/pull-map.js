@@ -22,6 +22,10 @@ const WIDTH = 393, HEIGHT = 852;
    A selector ending in @N is its Nth match. The page is 'main' (the basic
    fixture) unless it says 'eras' (the no-periods fixture: top-level eras). */
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'color'];
+/* An era box's text is compared by the colour you see (its colour times every
+   opacity above it): the reference draws its years white at opacity .85, Pull
+   in white at 85 % (a skin never sets opacity), and the two land the same. */
+const SEEN = TEXT.slice(0, -1).concat(['effectiveColor']);
 const MAP = [
   ['page background', 'body', 'body', ['backgroundColor']],
   ['title', '.topbar h1', '.ptitle', TEXT.concat(['lineHeight'])],
@@ -29,8 +33,8 @@ const MAP = [
   ['tab bar', '.tabbar', '#tabs', ['backgroundColor']],
   ['tab', '.tabbar button:not(.active)', '.tab[aria-selected="false"]', TEXT],
   ['selected tab', '.tabbar button.active', '.tab[aria-selected="true"]', TEXT.concat(['borderBottomColor', 'borderBottomWidth'])],
-  ['era name', '.era-divider .era-name', '.era-head .bname', TEXT.concat(['effectiveColor']), 'eras'],
-  ['era years', '.era-divider .era-years', '.era-head .byears', TEXT.concat(['effectiveColor']), 'eras'],
+  ['era name', '.era-divider .era-name', '.era-head .bname', SEEN, 'eras'],
+  ['era years', '.era-divider .era-years', '.era-head .byears', SEEN, 'eras'],
   ['era stats', '.era-divider .era-stats span', '.era-head .bcount', ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'effectiveColor'], 'eras'],
   ['era intro', '.era-intro', '.era-intro', TEXT.concat(['fontStyle']), 'eras'],
   ['arc name', '.arc-head .name', '.arc-head h3', TEXT],
@@ -75,11 +79,6 @@ const S7 = 'John (9 Oct): session 7 builds it — ';
 const DIFFERENCES = {
   'selected tab.borderBottomColor': 'accessible: X-Men\'s navy underline is 1.52:1 on the bar; Pull uses the same hue at 3:1',
   'search box.borderTopColor': 'accessible: X-Men\'s field outline is 1.53:1; Pull keeps the 3:1 control outline (--edge)',
-  'era name.color': S7 + 'white on a solid era colour (the template\'s eras are pale washes, T-39)',
-  'era name.effectiveColor': S7 + 'white on a solid era colour',
-  'era years.color': S7 + 'white, as the era name',
-  'era years.effectiveColor': S7 + 'white at 85 %, as X-Men',
-  'era stats.effectiveColor': S7 + 'white on the strip',
   'era body.boxLeft': S7 + 'the open body sits 12 px from the edge, as the era box',
   'era body.boxWidth': S7 + 'as above (369 vs 361 px)',
   'era body.paddingTop': S7 + 'a 6 px inset',
@@ -103,12 +102,10 @@ const DIFFERENCES = {
   'era strip.paddingRight': S7 + 'as above',
   'era strip.paddingBottom': S7 + 'as above',
   'era strip.paddingLeft': S7 + 'as above',
-  'era bar.backgroundColor': S7 + 'white at 25 % on the strip',
   'era bar.boxHeight': S7 + 'a 4 px bar',
   'era bar.borderTopLeftRadius': S7 + 'a round-ended bar',
   'era shape.cutTop': S7 + 'the tab\'s right edge slants from 88 % at the top',
   'era shape.cutMiddle': S7 + 'as above, through the middle',
-  'era shape.fill': S7 + 'the era\'s own colour (Foundations #A6791E here)',
   'era shape.strip': S7 + 'the strip: each channel of the era\'s colour −25 (#8D6005)',
   'era shape.hatch': S7 + 'a hatched corner, black at 12 %',
   'read mark.boxWidth': 'John (9 Oct): the mark keeps the accessible 24 px minimum, with the Button size setting (--tap)',

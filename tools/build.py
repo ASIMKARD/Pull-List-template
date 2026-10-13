@@ -76,7 +76,7 @@ RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
 # bar edge to edge, its solid era boxes). Every other skin keeps the template's
 # layout and pale eras, so a signature skin may not set them; 80-guards checks
 # styles.css the same way.
-PULL_ONLY = {'--tabs-inset', '--era-solid-l'}
+PULL_ONLY = {'--tabs-inset', '--era-solid', '--era-solid-l'}
 PULL_ONLY_MSG = "is Pull's layout (John, 9 Oct): every other skin keeps the template's"
 COLOUR_PROPS = {'color', 'background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color',
                 'border-left-color', 'text-decoration-color', 'caret-color', 'accent-color'}
