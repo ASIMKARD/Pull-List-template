@@ -3,7 +3,7 @@
 
     python3 tools/build.py [dataset.json] [--out DIR] [--check] [--report FILE]
     python3 tools/build.py --validate-issue-ids ID [ID ...]
-    python3 tools/build.py --era-solid-sweep [STEP]   (Pull's derived chroma at every hue, for the harness)
+    python3 tools/build.py --pull-palette   (Pull's default era colours as drawn, and each nudge)
 
 Reads dataset.json (the master) plus its per-era source files and the
 canonical event files it lists, then:
@@ -76,7 +76,7 @@ RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
 # bar edge to edge, its solid era boxes). Every other skin keeps the template's
 # layout and pale eras, so a signature skin may not set them; 80-guards checks
 # styles.css the same way.
-PULL_ONLY = {'--tabs-inset', '--era-solid', '--era-solid-l', '--era-strip-l',
+PULL_ONLY = {'--tabs-inset', '--era-solid',
              '--era-inset', '--era-space', '--era-pad', '--era-head-gap', '--era-edge', '--era-foot-r', '--era-shadow',
              '--era-tab-a', '--era-tab-pad', '--era-cut', '--era-hatch-w', '--era-strip-pad', '--era-bar-h', '--era-bar-r',
              '--era-frame', '--era-frame-r', '--era-body-pad'}
@@ -532,14 +532,13 @@ def parse_date(s):
 # --------------------------------------------------------------------------
 # era colours (session 7). A tracker may give an era its own colour: Pull draws
 # it exactly as given, with white text, and the other skins ignore it (John, 9
-# and 12 Oct). Where an era has none, Pull derives a solid colour from the
-# era's hue, oklch(L C h): C is the highest chroma inside sRGB at L for that
-# hue, capped at .14 so nothing turns garish and never under .08 (John, 13 Oct).
-# CSS can't find the gamut's edge, so the build computes C for each era from
-# the hue styles.css gives it. The maths is OKLab's and WCAG 2's contrast.
+# and 12 Oct). Where an era has none, Pull uses its default palette (John, 13
+# Oct): the reference tracker's eleven era colours, in its order, era i taking
+# colour i mod 11. Each default must clear 4.5:1 for white text, for the years
+# at 85 % and for white text on its strip; one that doesn't is nudged darker
+# only as far as it must. The maths is OKLab's and WCAG 2's contrast.
 # --------------------------------------------------------------------------
 COLOUR_RX = re.compile(r'^#[0-9A-Fa-f]{6}$')
-SOLID_CMAX, SOLID_CMIN = 0.14, 0.08      # John, 13 Oct
 AA = 4.5
 YEARS_ALPHA = 217 / 255                   # a Pull era box's years: white at 85 %, as the reference tracker; browsers draw it at 8-bit alpha (217)
 WHITE = (255, 255, 255)
@@ -602,14 +601,6 @@ def max_chroma(L, H):
     return lo
 
 
-def solid_chroma(L, H):
-    """Pull's derived chroma (John, 13 Oct): the gamut's edge, capped and floored.
-    To 5 places, with one step (0.00001) kept in hand: a browser reports and
-    computes colours to about 7 figures, and at the very edge that rounding
-    stepped outside the gamut (by 3e-8, measured in Chromium, 40-look)."""
-    return min(max(math.floor((max_chroma(L, H) - 1e-5) * 1e5) / 1e5, SOLID_CMIN), SOLID_CMAX)
-
-
 def luminance(rgb):
     return sum(k * _to_linear(v / 255) for k, v in zip((0.2126, 0.7152, 0.0722), rgb))
 
@@ -654,31 +645,56 @@ def oklch_parts(rgb):
     return [round(L, 6), round(C, 6), round(H, 4)]
 
 
-def pull_hue_tokens(shell_root):
-    """Pull's era-colour inputs from styles.css: :root, then Pull's own block.
-    Returns {name: number}; None when there is no styles.css (the build run on
-    its own, as the verify gate's tests do); raises BuildError when one isn't a
-    plain number."""
-    try:
-        with open(os.path.join(shell_root, 'styles.css'), encoding='utf-8') as f:
-            css = re.sub(r'/\*[\s\S]*?\*/', '', f.read())
-    except OSError:
-        return None
-    vals = {}
-    for want in (':root', ':root[data-skin="pull"]'):
-        for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', css):
-            if sel.strip() == want:
-                for decl in body.split(';'):
-                    if ':' in decl:
-                        k, v = (x.strip() for x in decl.split(':', 1))
-                        vals[k] = v
-    out = {}
-    for k in ('--era-h0', '--era-step', '--era-mono-h', '--era-solid-l'):
-        try:
-            out[k] = float(vals[k])
-        except (KeyError, ValueError):
-            raise BuildError(['styles.css: %s must be a plain number in :root or Pull\'s block (Pull\'s derived era colours are computed from it)' % k])
+# Pull's default palette (John, 13 Oct): the reference tracker's eleven era
+# colours, in its order, as test/layout/ref/x-men.json records them (20-build
+# checks the two agree). "One colour" gives every era the last, its navy, which
+# is also the reference tracker's accent.
+PULL_PALETTE = ['#A6791E', '#A6303C', '#7B3F94', '#2C6E8C', '#1F7A5C', '#B08A1F',
+                '#C0622A', '#C21E6D', '#9C4A3C', '#4A2E5C', '#1C3A5E']
+PULL_MONO = 10
+NUDGE_STEP = 0.0005                       # OKLCH lightness, per step
+
+
+def passes_aa(rgb):
+    """White text, the 85 % years and white text on the strip, each at 4.5:1 or more."""
+    return min(white_ratios(rgb)) >= AA and contrast(WHITE, strip_shade(rgb)) >= AA
+
+
+def nudge(rgb):
+    """The least darkening that passes: OKLCH lightness lowered a step at a time,
+    hue and chroma kept. Where the gamut runs out first (a yellow holds less
+    chroma as it darkens), the chroma follows the gamut's edge, so the colour
+    stays inside sRGB. Returns (rgb, None) for a colour that already passes,
+    else (rgb, {'steps', 'l', 'c', 'edge'})."""
+    if passes_aa(rgb):
+        return rgb, None
+    L, C, H = rgb_oklch(rgb)
+    k = 0
+    while k * NUDGE_STEP < L:
+        k += 1
+        x = L - k * NUDGE_STEP
+        c = C if in_gamut(x, C, H) else max_chroma(x, H)
+        cand = oklch_rgb(x, c, H)
+        if passes_aa(cand):
+            return cand, {'steps': k, 'l': round(x, 4), 'c': round(c, 4), 'edge': c < C}
+    return (0, 0, 0), {'steps': k, 'l': 0, 'c': 0, 'edge': True}
+
+
+def pull_palette():
+    """The defaults as drawn: [{source, hex, nudged, white, years, strip}], in order."""
+    out = []
+    for src in PULL_PALETTE:
+        rgb, how = nudge(hex_rgb(src))
+        white, years = white_ratios(rgb)
+        out.append({'source': src, 'hex': rgb_hex(rgb), 'nudged': how, 'white': round(white, 3), 'years': round(years, 3),
+                    'strip': round(contrast(WHITE, strip_shade(rgb)), 3)})
     return out
+
+
+def pull_colour(hexcol):
+    """What Pull draws for a colour: its tab and strip as OKLCH numbers."""
+    rgb = hex_rgb(hexcol)
+    return {'hex': hexcol.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb))}
 
 
 def build(dataset_path, previous_datajs=None, keep=None):
@@ -789,14 +805,12 @@ def build(dataset_path, previous_datajs=None, keep=None):
                 errs.append('%s: ranks must ascend in era order (%d after %d)' % (w, rank, last_rank))
             last_rank = rank
 
-    # ---- era colours (session 7): a tracker's own, drawn as given; Pull derives the rest ----
-    hues = pull_hue_tokens(ROOT)
-    if hues is None:
-        warns.append('no styles.css beside tools/: Pull\'s derived era colours are left to the stylesheet\'s fallback chroma (.08)')
+    # ---- era colours (session 7): a tracker's own, drawn as given; else Pull's default palette ----
+    palette = pull_palette()
     era_colours, under_aa = [], []
     for i, e in enumerate(eras):
         w = 'era %s' % e.get('id', i)
-        out = {'solid': solid_chroma(hues['--era-solid-l'], (hues['--era-h0'] + i * hues['--era-step']) % 360)} if hues else {}
+        out = {'pull': pull_colour(palette[i % len(palette)]['hex'])}
         col = e.get('colour')
         if col is not None:
             if not isinstance(col, str) or not COLOUR_RX.match(col):
@@ -807,6 +821,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
                 strip = contrast(WHITE, strip_shade(rgb))
                 out['colour'] = {'hex': col.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
                                  'white': round(white, 3), 'years': round(years, 3), 'stripWhite': round(strip, 3)}
+                out['pull'] = pull_colour(col)            # Pull draws a tracker's own colour exactly
                 if min(white, years, strip) < AA:
                     hint = passing_shade(rgb)
                     under_aa.append(e.get('id'))
@@ -814,7 +829,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
                                  'Pull draws it as given (John, 12 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
                                  % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, AA, rgb_hex(hint), *white_ratios(hint)))
         era_colours.append(out)
-    solid_mono = solid_chroma(hues['--era-solid-l'], hues['--era-mono-h'] % 360) if hues else None
+    pull_mono = pull_colour(palette[PULL_MONO]['hex'])
 
     periods = ds.get('periods') or []
     if periods:
@@ -1264,8 +1279,8 @@ def build(dataset_path, previous_datajs=None, keep=None):
         'signature': signature,
         'eras': [dict({'id': e['id'], 'name': e['name'], 'rank': e['rank'], 'years': e.get('years', ''),
                        'intro': e.get('intro', '')}, **era_colours[i]) for i, e in enumerate(eras)],
-        # Pull's derived chroma for "One colour" (every era at Pull's one hue); each era carries its own as 'solid'
-        'solidMono': solid_mono,
+        # what Pull draws for "One colour": every era in the palette's navy; each era carries its own as 'pull'
+        'pullMono': pull_mono,
         'periods': [{'id': p.get('id'), 'name': p.get('name', ''), 'label': p.get('label', ''),
                      'blurb': p.get('blurb', ''), 'eras': [ERA[x] for x in p['eras']]} for p in periods],
         'strands': strands,
@@ -1457,15 +1472,8 @@ def main(argv):
     if argv[:1] == ['--validate-issue-ids']:
         print(json.dumps({i: issue_id_problem(i) for i in argv[1:]}))
         return 0
-    if argv[:1] == ['--era-solid-sweep']:          # the harness checks Pull's derived chroma at every hue (20-build)
-        step = float(argv[1]) if len(argv) > 1 else 0.01
-        hues = pull_hue_tokens(ROOT)
-        if hues is None:
-            print('no styles.css beside tools/', file=sys.stderr)
-            return 1
-        L = hues['--era-solid-l']
-        n = int(round(360 / step))
-        print(json.dumps({'l': L, 'step': step, 'c': [solid_chroma(L, k * step) for k in range(n)]}))
+    if argv[:1] == ['--pull-palette']:             # Pull's default era colours as drawn, with every nudge (20-build, and for John)
+        print(json.dumps(pull_palette(), indent=1))
         return 0
     args = [a for a in argv if not a.startswith('--')]
     opts = {}

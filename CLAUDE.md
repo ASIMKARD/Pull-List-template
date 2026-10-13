@@ -262,8 +262,11 @@ era colours failing WCAG AA (worst 1.35:1). Measure contrast; don't eyeball.
   is painted behind it. That is an opaque background, or Pull's folder tab, whose
   colour is a background layer.
   - A browser draws "85 %" at 8-bit alpha (217/255); the build blends the same.
-  - At the very edge of the gamut, Chromium's 7-figure rounding stepped outside it
-    by 3e-8, so Pull's derived chroma keeps one step (0.00001) in hand.
+  - Chromium reports computed colours to 7 figures. At the very edge of the gamut that
+    rounding stepped outside it (by 3e-8): judge a colour by the pixels it draws, or keep a
+    step in hand.
+  - Pull's default era colours are the X-Men tracker's eleven, each nudged darker only as
+    far as it must to pass (John, 13 Oct; `BUILD-NOTES.md`, "Era colours").
 - Every control must be at least 24 × 24 px (WCAG 2.5.8). Creator names inside a
   line of credits are the inline exception.
 

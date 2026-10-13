@@ -37,9 +37,15 @@ async function capture(dir) {
   await prepareXMen(page);
   const styles = await page.evaluate(([fn, map]) => eval('(' + fn + ')')(map, 'x-men'), [measure.toString(), MAP]);
   const eraShape = await shape(page, 'x-men');
+  // every era box's colours, in order: Pull's default palette is these (John, 13 Oct; tools/build.py PULL_PALETTE)
+  const eras = await page.evaluate(() => {
+    const hex = c => '#' + c.match(/\d+/g).slice(0, 3).map(v => (+v).toString(16).padStart(2, '0')).join('').toUpperCase();
+    return [...document.querySelectorAll('.era-divider')].map(d => ({ tab: hex(getComputedStyle(d.querySelector('.tab')).backgroundColor),
+      strip: hex(getComputedStyle(d.querySelector('.era-stats')).backgroundColor) }));
+  });
   await ctx.close();
   srv.close();
-  return { source: 'ASIMKARD/X-men', commit, width: WIDTH, styles, shape: eraShape };
+  return { source: 'ASIMKARD/X-men', commit, width: WIDTH, styles, shape: eraShape, eras };
 }
 
 module.exports = { capture, OUT };

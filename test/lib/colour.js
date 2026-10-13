@@ -38,29 +38,10 @@ function maxChroma(L, H) {
   return lo;
 }
 
-/* Pull's era-colour tokens from the real styles.css (:root, then Pull's block):
-   its lightness, the hue formula (--era-h0 + index × --era-step) and its one hue. */
-function pullTokens(root) {
-  const css = require('fs').readFileSync(require('path').join(root, 'styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const tok = name => {
-    let v = null;
-    for (const sel of [':root', ':root[data-skin="pull"]']) {
-      const blk = css.split('}').find(x => x.split('{')[0].trim() === sel);
-      const m = blk && new RegExp(name + '\\s*:\\s*([^;]+);').exec(blk);
-      if (m) v = m[1].trim();
-    }
-    return parseFloat(v);
-  };
-  const L = tok('--era-solid-l'), S = tok('--era-strip-l'), h0 = tok('--era-h0'), step = tok('--era-step'), mono = tok('--era-mono-h');
-  return { L, S, h0, step, mono, hue: i => (h0 + i * step) % 360 };
-}
-/* Pull's derived chroma, the build's rule (John, 13 Oct): the gamut's edge less one step kept in hand, to 5 places, .08 to .14. */
-const solidRule = (L, h) => Math.min(Math.max(Math.floor((maxChroma(L, h) - 1e-5) * 1e5) / 1e5, 0.08), 0.14);
-
 const luminance = c => 0.2126 * toLinear(c[0] / 255) + 0.7152 * toLinear(c[1] / 255) + 0.0722 * toLinear(c[2] / 255);
 const contrast = (a, b) => { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 const over = (fg, alpha, bg) => fg.map((f, i) => Math.round(alpha * f + (1 - alpha) * bg[i]));
 const WHITE = [255, 255, 255];
 const YEARS = 217 / 255;          /* the years in a Pull era box: white at 85 %, drawn at 8-bit alpha */
 
-module.exports = { oklchLinear, inGamut, oklchRgb, rgbOklch, hexRgb, rgbHex, maxChroma, pullTokens, solidRule, luminance, contrast, over, WHITE, YEARS };
+module.exports = { oklchLinear, inGamut, oklchRgb, rgbOklch, hexRgb, rgbHex, maxChroma, luminance, contrast, over, WHITE, YEARS };

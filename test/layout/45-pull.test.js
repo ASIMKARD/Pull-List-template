@@ -29,6 +29,8 @@ module.exports = async function (t) {
          REF.source === 'ASIMKARD/X-men' && /^[0-9a-f]{40}$/.test(REF.commit) && REF.width === WIDTH);
     t.eq('…and holds every mapped element and property', MAP.filter(([what, , , props]) => !REF.styles[what] || props.some(p => REF.styles[what][p] == null)).map(m => m[0]), []);
     t.eq('…and the folder tab\'s shape, read from pixels', SHAPE_PROPS.filter(p => !REF.shape || REF.shape[p] == null), []);
+    t.ok('…and its eleven era colours, tab and strip, in order (Pull\'s default palette, John, 13 Oct)', Array.isArray(REF.eras) && REF.eras.length === 11 &&
+         REF.eras.every(e => /^#[0-9A-F]{6}$/.test(e.tab) && /^#[0-9A-F]{6}$/.test(e.strip)));
 
     // ------------------------------------------------ Pull, measured the same way: the basic fixture, and one
     // without bands for the era boxes (X-Men's eras are top-level)
@@ -77,7 +79,8 @@ module.exports = async function (t) {
       const { capture } = require('./ref/capture-x-men');
       const fresh = await capture(local);
       const drift = MAP.flatMap(([what, , , props]) => props.filter(p => (fresh.styles[what] || {})[p] !== REF.styles[what][p]).map(p => what + '.' + p))
-        .concat(SHAPE_PROPS.filter(p => (fresh.shape || {})[p] !== REF.shape[p]).map(p => 'era shape.' + p));
+        .concat(SHAPE_PROPS.filter(p => (fresh.shape || {})[p] !== REF.shape[p]).map(p => 'era shape.' + p))
+        .concat(JSON.stringify(fresh.eras) === JSON.stringify(REF.eras) ? [] : ['the era colours']);
       t.eq('a fresh capture of the local X-Men copy (' + fresh.commit.slice(0, 7) + ') matches the reference (' + REF.commit.slice(0, 7) + ')', drift, []);
     } else {
       t.ok('no local X-Men copy here (CI): the reference stands as recorded from ' + REF.commit.slice(0, 7), true);

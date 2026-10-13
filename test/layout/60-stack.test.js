@@ -61,6 +61,19 @@ module.exports = async function (t) {
     }
     t.eq('the tab bar runs edge to edge in Pull (square corners) and stays 16 px in every other skin, at 320, 390 and 1024 px, at the top and pinned (John, 9 Oct)', bar, []);
 
+    // ------------------------------------------------ the mini progress bar under the tabs (F-17) is 3 px, in every skin
+    // (session 7: progress.bar's 6 px used to win over it, being more specific)
+    const thin = [];
+    for (const skin of SKINS) {
+      for (const [w, extra] of [[390, {}], [320, { textSize: 'l', tap: 'large' }]]) {
+        const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage: seed(Object.assign({ skin }, extra)) });
+        const h = await pg.page.evaluate(() => { const m = document.querySelector('#miniBar'); return m && m.getClientRects().length ? m.getBoundingClientRect().height : null; });
+        if (h !== 3) thin.push(skin + ' @' + w + (extra.textSize ? ' largest' : '') + ': ' + h + ' px');
+        await pg.close();
+      }
+    }
+    t.eq('the mini progress bar is 3 px tall in every skin, with default and the largest text (F-17)', thin, []);
+
     // ------------------------------------------------ measured at runtime: it follows the banner
     let pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed({}) });
     const before = await pg.page.evaluate(geo);

@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1649 assertions, 0 failed, 36 suites (end of session 7: Pull's era boxes and tab bar). **Layout suite (real Chromium, in CI too):** 410 checks, 0 failed, 11 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1649 (+ 410).
+**Harness:** 1645 assertions, 0 failed, 36 suites (session 7, before the PR: Pull's default palette, the 3 px mini bar). **Layout suite (real Chromium, in CI too):** 409 checks, 0 failed, 11 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks) session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1645 (+ 409).
 
 ---
 
@@ -2975,3 +2975,79 @@ page 10-sweep sweeps), 0 failed, 11 suites.
 ### Session 8 starts with
 Whatever John asks next. No step is half-made. This branch holds session 7's work, unmerged,
 for John to review.
+
+## Changes before the PR (John, 13 Oct 2026) — do not reopen
+1. **Pull's default era colours are the X-Men tracker's eleven, in order,** and replace the
+   derived OKLCH rule. Era i takes colour i mod 11. Every default must pass for white text, for
+   the 85 % years (blended at 217/255) and for its strip (25 darker per channel), each at 4.5:1.
+   One that fails is nudged: its OKLCH lightness lowered only as much as needed, hue and chroma
+   kept, inside sRGB. A tracker's own colours are still drawn exactly.
+2. **The mini progress bar is 3 px,** with a test that catches it at 6 px.
+3. **My four calls are accepted:**
+   - era boxes 12 px in and 14 px apart, as measured;
+   - "One colour" sets a tracker's colours aside;
+   - the banner and the mini bar stay inset under the full-width tab bar;
+   - eras inside bands keep the band's spacing.
+4. **Absolute gets these template updates as v10, together with its next issue refresh.**
+
+## Checkpoint — the changes before the PR done, 13 Oct 2026
+
+### Done
+- **The source is the recorded measurement.** `test/layout/ref/capture-x-men.js` now records every
+  X-Men era box's tab and strip colour in order (`eras` in `ref/x-men.json`, re-captured from
+  `663fe46`). 45-pull's drift check covers them, and 20-build checks `PULL_PALETTE` against
+  them.
+- **`tools/build.py`:** `PULL_PALETTE` (the eleven) and `nudge()`. Each era's `pull` is the colour
+  Pull draws, its own or palette colour i mod 11, as tab and strip OKLCH numbers. `pullMono` is
+  "One colour". `python3 tools/build.py --pull-palette` lists every default as drawn. Gone:
+  the derived chroma, `--era-solid-l` and `--era-strip-l`, the build reading `styles.css` for
+  hues, and `--era-solid-sweep`.
+- **The nudges.** Five of the eleven fail, not three: Utopia's and Krakoa's 85 % years are just
+  under (4.29 and 4.44).
+
+  | Reference | Before: white · years · strip | Pull | After: white · years · strip | How |
+  |---|---|---|---|---|
+  | Foundations `#A6791E` | 3.91 · 3.29 · 5.51 | `#8A6100` | 5.54 · 4.50 · 7.99 | L .606 → .524, chroma .115 → .109 |
+  | Utopia `#1F7A5C` | 5.25 · 4.29 · 7.50 | `#1A7659` | 5.56 · 4.52 · 7.95 | L .519 → .507 |
+  | Bendis to IvX `#B08A1F` | 3.23 · 2.78 · 4.49 | `#836400` | 5.54 · 4.53 · 8.02 | L .652 → .522, chroma .124 → .107 |
+  | ResurrXion `#C0622A` | 4.18 · 3.49 · 5.83 | `#A94D0D` | 5.59 · 4.50 · 7.84 | L .599 → .531 |
+  | Krakoa `#C21E6D` | 5.68 · 4.44 · 7.40 | `#C11C6C` | 5.75 · 4.50 · 7.49 | L .540 → .537 |
+
+  - Each is the least that passes: one step of 0.0005 less still fails (20-build).
+  - **Foundations and Bendis to IvX couldn't keep their chroma.** They are yellows, and sRGB holds
+    less chroma as a yellow darkens, so both reach the gamut's edge before they pass. Staying
+    inside sRGB is kept, so from there their chroma follows the edge (Foundations from about
+    L .557, Bendis to IvX from about L .607), with the hue kept. The other three keep hue and
+    chroma, to the 8-bit rounding.
+  - The other six are untouched: Claremont `#A6303C`, The 90s `#7B3F94`, Morrison `#2C6E8C`,
+    From the Ashes `#9C4A3C`, Age of Revelation `#4A2E5C`, Shadows of Tomorrow `#1C3A5E`.
+- **"One colour" in Pull** gives every era the palette's navy, `#1C3A5E`, which is also the X-Men
+  tracker's accent (my call; the derived one-colour hue went with the derived rule).
+- **`styles.css` and `app.js`:** each era hands the stylesheet `--ec…` (the colour it is drawn in)
+  and `--em…` (One colour), tab and strip. An older `data.js` without them is now caught as a
+  stale mix and loaded again (`staleShell` checks `pullMono`).
+- **The mini bar:** `progress.bar.mini-bar { height: 3px }`. It is as specific as
+  `progress.bar`'s 6 px, and later, so it wins. 60-stack measures 3 px in every skin, default
+  and largest text. With the old rule put back once, it failed at 6 px in all ten cases.
+- **Tests:**
+  - 20-build: the palette against the recorded measurement; every default passing all three;
+    the untouched six untouched; the five nudged ones; each nudge minimal, darker, with its hue
+    kept and its chroma kept or on the gamut's edge; 52 eras cycling, with one tracker colour
+    among them drawn as given; One colour the navy; tracker colours never nudged; the build
+    without a stylesheet still giving Pull its palette;
+  - 40-look: 52 eras in Chromium, each tab and strip exactly palette colour i mod 11. Every text
+    measured as drawn: white 5.54:1, the years 4.50:1 and the strip 7.49:1 at worst;
+  - 9g-look: the tokens, and the stale `data.js` caught;
+  - 45-pull: the eleven recorded colours, and the fresh capture matches.
+- **Mutation-proved:** no nudging; nudging two steps too far; the cycle mod 10; a tracker's
+  colour nudged; the mini bar's old rule.
+- **Sent to John:** the palette next to X-Men's eleven (`band-palette.png`).
+
+**Harness:** 1645 assertions, 0 failed, 36 suites. **Layout:** 409 checks, 0 failed, 11 suites. The derived rule's
+every-hue checks went with it, and the palette's and the mini bar's came in.
+
+### Absolute
+Absolute gets all of this as v10, with its next issue refresh. Its own `PROGRESS.md` is
+Absolute's, so it isn't changed here. The trial run on its data (step 6) covered the folder tab
+and the derived colours. Its two eras will now be Pull's first two palette colours, `#8A6100` and
+`#A6303C`, and the next update re-runs everything on its data.

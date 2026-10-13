@@ -147,27 +147,39 @@ One skin of the tracker's own, from `franchise.signature`:
   white text, of the 85 % years and of white text on the strip. When any is
   under 4.5:1 it warns, and gives the nearest shade of the hue where all three
   pass.
-- **An era without a colour gets one in Pull, from its hue** (John, 13 Oct):
-  `oklch(.48 C h)`.
-  - C is the highest chroma inside sRGB at that lightness and hue, capped at
-    .14 and never under .08. It is computed by the build, since CSS can't find
-    the gamut's edge, from the hue `styles.css` gives the era (`--era-h0` +
-    index × `--era-step`).
-  - One step (0.00001) is kept in hand at the edge, so a browser's rounding
-    stays inside.
-  - The strip is the same colour with lightness and chroma both × 5/6 (L .40),
-    which is inside the gamut whenever the tab is.
-  - At every hue, white text on the tab clears 6.10:1 and the 85 % years
-    4.88:1; on the strip, 8.69:1.
-- "One colour" (the Era colours setting) sets a tracker's colours aside: every
-  era takes Pull's one derived colour.
-- Tested in `test/suites/20-build.test.js` (the build's chroma at all 36,000
-  hues, every 0.01°) and `test/layout/40-look.test.js` (in Chromium: 3,600 eras
-  whose hues leave no gap over 0.12°, each tracker colour drawn exactly, and the
-  other skins identical with and without colours). A colour under 4.5:1 is the
-  one exception the contrast suites allow. It must measure exactly what the
-  build reported (40-look, and `test/layout/45-root.test.js` on a tracker's own
-  data).
+- **An era without a colour gets Pull's default palette** (John, 13 Oct): the
+  X-Men tracker's eleven era colours, in its order, era i taking colour i mod 11
+  (`PULL_PALETTE` in `tools/build.py`; `test/layout/ref/x-men.json` records
+  them, and 20-build checks the two agree).
+  - Every default passes for white text, for the 85 % years (blended at
+    217/255, as browsers draw them) and for white text on its strip, each at
+    4.5:1. A reference colour that doesn't is nudged darker, only as far as it
+    must: OKLCH lightness is lowered 0.0005 at a time, with hue and chroma kept.
+    Where the gamut runs out first (a yellow holds less chroma as it darkens),
+    the chroma follows the gamut's edge, so the colour stays inside sRGB.
+  - Five of the eleven are nudged. `python3 tools/build.py --pull-palette` lists
+    every colour as drawn, with its nudge and ratios:
+
+    | Reference | Pull | How | White · years · strip |
+    |---|---|---|---|
+    | Foundations `#A6791E` | `#8A6100` | L .606 → .524, chroma .115 → .109 (the gamut's edge) | 5.54 · 4.50 · 7.99 |
+    | Utopia `#1F7A5C` | `#1A7659` | L .519 → .507 | 5.56 · 4.52 · 7.95 |
+    | Bendis to IvX `#B08A1F` | `#836400` | L .652 → .522, chroma .124 → .107 (the gamut's edge) | 5.54 · 4.53 · 8.02 |
+    | ResurrXion `#C0622A` | `#A94D0D` | L .599 → .531 | 5.59 · 4.50 · 7.84 |
+    | Krakoa `#C21E6D` | `#C11C6C` | L .540 → .537 | 5.75 · 4.50 · 7.49 |
+
+    The other six are drawn as they are (white text 5.65:1 or more).
+  - A tracker's own colours are never nudged: they are drawn exactly as given.
+- "One colour" (the Era colours setting) gives every era the palette's navy
+  `#1C3A5E`, the X-Men tracker's accent, and sets a tracker's colours aside.
+- Tested in `test/suites/20-build.test.js` (the source against the recorded
+  measurement, every default passing, each nudge the least that passes, 52 eras
+  cycling, tracker colours untouched) and `test/layout/40-look.test.js` (in
+  Chromium: 52 eras drawn in palette colour i mod 11, each strip, every text
+  measured, and the other skins identical with and without colours). A
+  tracker's colour under 4.5:1 is the one exception the contrast suites allow.
+  It must measure exactly what the build reported (40-look, and
+  `test/layout/45-root.test.js` on a tracker's own data).
 
 ### Pull matches the X-Men tracker
 

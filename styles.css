@@ -56,13 +56,12 @@
      tints, readable text, hue stepped by the golden angle — no cap on eras */
   --era-h0: 30; --era-step: 137.508; --era-mono-h: 258;
   --era-tint-l: .955; --era-tint-c: .035; --era-ink-l: .40; --era-ink-c: .10;
-  /* Pull's solid era boxes (John, 9, 12 and 13 Oct). --era-solid 1: an era is
-     drawn in the tracker's own colour when it has one, exactly, else in a solid
-     colour from its hue at --era-solid-l. tools/build.py reads Pull's lightness
-     and computes each era's chroma from it (the gamut's edge for the era's hue,
-     .08 to .14), since CSS can't. Every other skin keeps its pale washes. */
-  --era-solid: 0; --era-solid-l: var(--era-tint-l); --era-strip-l: var(--era-solid-l);   /* the strip: the same colour, darker */
-  --era-split: 1;          /* "One colour" sets 0: every era at one hue, the tracker's own colours set aside */
+  /* Pull's solid era boxes (John, 9, 12 and 13 Oct). --era-solid 1: each era is
+     drawn in the colour data.js gives it: a tracker's own exactly, else Pull's
+     default palette (the reference tracker's eleven, tools/build.py), each with
+     its strip. Every other skin keeps its pale washes. */
+  --era-solid: 0;
+  --era-split: 1;          /* "One colour" sets 0: every era at one hue (in Pull, the palette's one colour; a tracker's own set aside) */
   --scheme: light;
 
   /* ---- COLOURS: the one place colour is written ---- */
@@ -172,7 +171,7 @@
   --tab-size: 12.5px; --tab-fit: 3.7vw; --tab-case: uppercase; --tab-track: .3px;
   --radius: 8px;
   --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
-  --era-solid: 1; --era-solid-l: .48;    /* solid era boxes: white text clears 4.5:1 at every hue, the years at 85 % too */
+  --era-solid: 1;        /* solid era boxes, in the colours data.js gives each era */
   --era-years-ink: var(--on-solid-soft); --era-stats-ink: var(--on-solid); --era-accent-ink: var(--on-solid); --era-done-ink: var(--on-solid);
   --era-track: var(--on-solid-track); --era-fill: var(--on-solid-fill);
   /* the folder tab (John, 9 Oct), as measured in the reference tracker at 393 px: 12 px in and 14 px apart,
@@ -182,7 +181,7 @@
   --era-pad: 0; --era-head-gap: 0; --era-edge: 0px; --era-foot-r: 3px;
   --era-shadow: 0 1px 2px var(--era-shadow-a), 0 1px 1px var(--era-shadow-b);
   --era-tab-a: 1; --era-tab-pad: 12px max(44px, 12%) 12px 16px; --era-cut: 12%; --era-hatch-w: 14px;
-  --era-strip-pad: 6px 16px; --era-strip-l: .40; --era-bar-h: 4px; --era-bar-r: 99px;
+  --era-strip-pad: 6px 16px; --era-bar-h: 4px; --era-bar-r: 99px;
   --era-frame: 2px; --era-frame-r: 8px; --era-body-pad: 6px;
 }
 :root[data-skin="night"] {
@@ -298,23 +297,21 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--card);
 }
 .band-head { border-width: 2px; }
-/* An era's colour. --ei, --esc and --esm come from app.js (its index, Pull's
-   derived chroma at its hue and at the one hue), --eo… from the tracker's own
-   colour. The switches are 0 or 1, so each blend below picks one side exactly:
-   a pale wash in every skin but Pull; in Pull the tracker's colour, else the
-   derived one (the same in both, for "One colour"). */
+/* An era's colour. --ei comes from app.js (its index, for a pale wash's hue). In
+   Pull, --ec… is the colour the era is drawn in (a tracker's own, else the
+   default palette's) and --em… the one "One colour" draws, tab and strip each,
+   as OKLCH numbers from data.js. The switches are 0 or 1, so each blend picks
+   one side exactly: a pale wash in every skin but Pull. */
 .era {
   --era-h: calc(var(--era-h0) + var(--ei, 0) * var(--era-step));
-  --era-own: calc(var(--eo, 0) * var(--era-solid) * var(--era-split));
-  --era-c: calc(var(--era-split) * var(--esc, .08) + (1 - var(--era-split)) * var(--esm, .08));
-  --era-bg-l: calc(var(--era-own) * var(--eo-l, 0) + (1 - var(--era-own)) * (var(--era-solid) * var(--era-solid-l) + (1 - var(--era-solid)) * var(--era-tint-l)));
-  --era-bg-c: calc(var(--era-own) * var(--eo-c, 0) + (1 - var(--era-own)) * (var(--era-solid) * var(--era-c) + (1 - var(--era-solid)) * var(--era-tint-c)));
-  --era-bg-h: calc(var(--era-own) * var(--eo-h, 0) + (1 - var(--era-own)) * var(--era-h));
-  /* the strip under Pull's tab: a tracker colour's own shade, else the derived colour at --era-strip-l, its chroma
-     scaled with it (so it stays inside the gamut whenever the tab is) */
-  --era-st-l: calc(var(--era-own) * var(--eo-sl, 0) + (1 - var(--era-own)) * var(--era-strip-l));
-  --era-st-c: calc(var(--era-own) * var(--eo-sc, 0) + (1 - var(--era-own)) * var(--era-c) * var(--era-strip-l) / var(--era-solid-l));
-  --era-st-h: calc(var(--era-own) * var(--eo-sh, 0) + (1 - var(--era-own)) * var(--era-h));
+  --era-pick: calc(var(--ec, 0) * var(--era-solid));
+  --era-bg-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-l, 0) + (1 - var(--era-split)) * var(--em-l, 0)) + (1 - var(--era-pick)) * var(--era-tint-l));
+  --era-bg-c: calc(var(--era-pick) * (var(--era-split) * var(--ec-c, 0) + (1 - var(--era-split)) * var(--em-c, 0)) + (1 - var(--era-pick)) * var(--era-tint-c));
+  --era-bg-h: calc(var(--era-pick) * (var(--era-split) * var(--ec-h, 0) + (1 - var(--era-split)) * var(--em-h, 0)) + (1 - var(--era-pick)) * var(--era-h));
+  /* the strip under Pull's tab: the reference tracker's rule, each channel 25 darker (the build's numbers) */
+  --era-st-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-sl, 0) + (1 - var(--era-split)) * var(--em-sl, 0)) + (1 - var(--era-pick)) * var(--era-tint-l));
+  --era-st-c: calc(var(--era-pick) * (var(--era-split) * var(--ec-sc, 0) + (1 - var(--era-split)) * var(--em-sc, 0)) + (1 - var(--era-pick)) * var(--era-tint-c));
+  --era-st-h: calc(var(--era-pick) * (var(--era-split) * var(--ec-sh, 0) + (1 - var(--era-split)) * var(--em-sh, 0)) + (1 - var(--era-pick)) * var(--era-h));
   /* Pull paints the tab and the strip (--era-tab-a 1) and the box itself goes clear; every other skin, the box */
   --era-tab: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h) / var(--era-tab-a));
   --era-strip: oklch(var(--era-st-l) var(--era-st-c) var(--era-st-h) / var(--era-tab-a));
@@ -480,7 +477,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .pbl-name { font-weight: 600; color: var(--ink); min-width: 4.5em; }
 .pbl progress.bar { flex-basis: 100%; height: 4px; margin-top: 2px; }
 .mini { padding: 0 16px; }      /* the inset lives on the wrapper: the bar stays 100% of it */
-.mini-bar { height: 3px; }
+progress.bar.mini-bar { height: 3px; }   /* as specific as progress.bar's 6 px, and later, so it wins (60-stack measures it) */
 
 /* ---- table view (F-49, S-7): one line per issue, half the height (L-7),
    never wider than the screen (L-8). Targets stay at least 24 px. ---- */

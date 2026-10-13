@@ -718,20 +718,19 @@
     return intro + html;
   }
 
-  /* An era's numbers for the stylesheet, as tokens: its index (for its derived
-     hue), Pull's derived chroma at that hue and at Pull's one hue, and the
-     tracker's own colour when it has one (session 7: Pull draws it exactly,
-     the other skins ignore it). Only numbers: an older data.js without them
-     leaves the stylesheet's fallbacks. */
+  /* An era's numbers for the stylesheet, as tokens: its index (for a pale
+     wash's hue), and in Pull the colour it is drawn in (--ec…: a tracker's own,
+     else the default palette's) and the one "One colour" draws (--em…), tab and
+     strip each, as OKLCH numbers from data.js (session 7). Only numbers. */
   function eraStyle(e) {
-    var era = D.eras[e], num = function (v) { return typeof v === 'number' && isFinite(v); }, s = '--ei:' + e;
-    if (num(era.solid)) s += ';--esc:' + era.solid;
-    if (num(D.solidMono)) s += ';--esm:' + D.solidMono;
-    var c = era.colour;
-    if (c && Array.isArray(c.tab) && Array.isArray(c.strip) && c.tab.concat(c.strip).every(num)) {
-      s += ';--eo:1;--eo-l:' + c.tab[0] + ';--eo-c:' + c.tab[1] + ';--eo-h:' + c.tab[2] +
-           ';--eo-sl:' + c.strip[0] + ';--eo-sc:' + c.strip[1] + ';--eo-sh:' + c.strip[2];
-    }
+    var num = function (v) { return typeof v === 'number' && isFinite(v); };
+    var ok = function (c) { return c && Array.isArray(c.tab) && Array.isArray(c.strip) && c.tab.concat(c.strip).every(num); };
+    var toks = function (p, c) {
+      return ';--' + p + '-l:' + c.tab[0] + ';--' + p + '-c:' + c.tab[1] + ';--' + p + '-h:' + c.tab[2] +
+             ';--' + p + '-sl:' + c.strip[0] + ';--' + p + '-sc:' + c.strip[1] + ';--' + p + '-sh:' + c.strip[2];
+    };
+    var era = D.eras[e], s = '--ei:' + e;
+    if (ok(era.pull) && ok(D.pullMono)) s += ';--ec:1' + toks('ec', era.pull) + toks('em', D.pullMono);
     return s;
   }
 
@@ -1580,7 +1579,7 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {

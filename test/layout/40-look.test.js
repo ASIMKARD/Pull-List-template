@@ -14,6 +14,7 @@
      at compact (T-56) and 44 px glyph buttons at large (T-57). */
 'use strict';
 const path = require('path');
+const { spawnSync } = require('child_process');
 const { ROOT, FIX, basic, stress, readJSON, writeJSON, build, loadData, tmpdir, copyFixture } = require('../lib/helpers');
 const C = require('../lib/colour');
 const { serve, open, openAll, openSettings, reachability, closeBrowser } = require('./lib');
@@ -159,67 +160,51 @@ module.exports = async function (t) {
     t.eq('…Pull\'s are solid, dark enough for white text, each strip darker than its tab, and all their text is white, the years at 85 % (John, 9 Oct)', solid, []);
     await bsrv.close();
 
-    // ------------------------------------------------ Pull, every hue (John, 13 Oct): 3,600 eras whose hues cover the circle
-    // Each era's hue is --era-h0 + index × --era-step (the golden angle), so 3,600 of them leave no gap wider than a
-    // fraction of a degree. Every colour Chromium draws is the build's (L .48, C at the gamut's edge, .08 to .14),
-    // inside sRGB, and under white text and the 85 % years at 4.5:1 or more. 20-build checks every 0.01°.
+    // ------------------------------------------------ Pull's default palette (John, 13 Oct), drawn in Chromium
+    // The reference tracker's eleven era colours, nudged where they fail: era i in colour i mod 11, past eleven eras (52).
+    // Every tab and strip is the build's colour exactly; every text on them clears 4.5:1, measured as drawn.
     {
-      const P = C.pullTokens(ROOT), N = 3600, dir = tmpdir('hues');
+      const PAL = JSON.parse(spawnSync('python3', [path.join(ROOT, 'tools', 'build.py'), '--pull-palette'], { encoding: 'utf8', cwd: ROOT }).stdout || '[]');
+      const N = 52, dir = tmpdir('palette');
       const eras = [], arcs = [], rows = [];
       for (let e = 0; e < N; e++) {
-        eras.push({ id: 'h' + e, name: 'Hue ' + e, rank: 1000 + 2 * e, years: String(e) });
-        arcs.push({ id: 'a' + e, name: 'Arc ' + e, era: 'h' + e, strands: ['Main'], type: 'MAIN', mo: 'M', tier: 'All',
+        eras.push({ id: 'p' + e, name: 'Era ' + e, rank: 5000 + 10 * e, years: String(1960 + e) });
+        arcs.push({ id: 'a' + e, name: 'Arc ' + e, era: 'p' + e, strands: ['Main'], type: 'MAIN', mo: 'M', tier: 'All',
                     credits: { writers: ['Writer Number'], artists: ['Artist Number'] } });
-        rows.push({ issueId: 'hue' + e + '-1990-1', series: 'Hue' + e, vol: '1990', num: '1', title: 'Hue ' + e + ' #1', era: 'h' + e, arc: 'a' + e,
-                    date: { cover: (1000 + Math.floor(e / 12)) + '-' + String(e % 12 + 1).padStart(2, '0'), source: 'generated' } });
+        rows.push({ issueId: 'pal' + e + '-1990-1', series: 'Pal' + e, vol: '1990', num: '1', title: 'Pal ' + e + ' #1', era: 'p' + e, arc: 'a' + e,
+                    date: { cover: (1990 + Math.floor(e / 12)) + '-' + String(e % 12 + 1).padStart(2, '0'), source: 'generated' } });
       }
-      writeJSON(path.join(dir, 'dataset.json'), { schemaVersion: 1, franchise: { key: 'hues', wordmark: 'Hues', title: 'Hues', strapline: '', span: '', theme: '#000000' },
+      writeJSON(path.join(dir, 'dataset.json'), { schemaVersion: 1, franchise: { key: 'pal', wordmark: 'Pal', title: 'Pal', strapline: '', span: '', theme: '#000000' },
         eras, strands: ['Main'], types: ['MAIN'], tiers: ['All'], media: ['comic'], arcs, rows });
-      const hb = build(path.join(dir, 'dataset.json'), { label: 'hues-out' });
-      t.ok('a dataset of ' + N + ' eras builds', hb.status === 0, hb.stderr.slice(-300));
-      const D = loadData(hb.out), hues = D.eras.map((e, i) => P.hue(i)), sorted = hues.slice().sort((a, b) => a - b);
-      const gap = Math.max(sorted[0] + 360 - sorted[sorted.length - 1], ...sorted.slice(1).map((h, i) => h - sorted[i]));
-      const hsrv = await serve(hb.out), bad = { colour: [], gamut: [], white: [], years: [], mono: [], strip: [] };
+      const hb = build(path.join(dir, 'dataset.json'), { label: 'palette-out' });
+      t.ok('a dataset of ' + N + ' eras builds, and the palette has its eleven colours', hb.status === 0 && PAL.length === 11, hb.stderr.slice(-300));
+      const hsrv = await serve(hb.out), bad = { colour: [], strip: [], white: [] };
       let worst = { white: 99, years: 99, strip: 99 };
-      const LS = P.S, K = P.S / P.L;                         // the strip: lightness and chroma both scaled (L .40, × 5/6)
       for (const eraHues of ['split', 'mono']) {
-        const pg = await open(hsrv.url, { width: 390, reducedMotion: 'reduce', storage: seed('hues', { skin: 'pull', eraHues }) });
+        const pg = await open(hsrv.url, { width: 390, reducedMotion: 'reduce', storage: seed('pal', { skin: 'pull', eraHues }) });
         const r = await pg.page.evaluate(lib => {
           eval('(' + lib + ')')();
           return [...document.querySelectorAll('.era-head')].map(h => {
-            const [bg, css] = window.__eraBg(h.querySelector('.bname')), [sbg, scss] = window.__eraBg(h.querySelector('.bcount'));
-            return { css, bg, white: window.__ratio(window.__text(h.querySelector('.bname'), bg), bg),
-                     years: window.__ratio(window.__text(h.querySelector('.byears'), bg), bg),
-                     scss, sbg, strip: window.__ratio(window.__text(h.querySelector('.bcount'), sbg), sbg) };
+            const bg = window.__eraBg(h.querySelector('.bname'))[0], sbg = window.__eraBg(h.querySelector('.bcount'))[0];
+            return { bg: bg.slice(0, 3), sbg: sbg.slice(0, 3), white: window.__ratio(window.__text(h.querySelector('.bname'), bg), bg),
+                     years: window.__ratio(window.__text(h.querySelector('.byears'), bg), bg), strip: window.__ratio(window.__text(h.querySelector('.bcount'), sbg), sbg) };
           });
         }, PAGE_LIB.toString());
         if (r.length !== N) bad.colour.push(eraHues + ': ' + r.length + ' era banners');
-        const drawn = (css, L, c, h) => { const m = /^oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(css);
-          return m && Math.abs(+m[1] - L) <= 1e-4 && Math.abs(+m[2] - c) <= 1e-4 && Math.abs(((+m[3] - h) % 360 + 540) % 360 - 180) <= 1e-3 ? m.slice(1).map(Number) : null; };
         r.forEach((e, i) => {
-          const L = P.L, c = eraHues === 'split' ? D.eras[i].solid : D.solidMono, h = eraHues === 'split' ? hues[i] : P.mono % 360;
-          const want = C.oklchRgb(L, c, h), swant = C.oklchRgb(LS, c * K, h), at = eraHues + ' era ' + i + ' (' + h.toFixed(2) + '°)';
-          const tab = drawn(e.css, L, c, h), strip = drawn(e.scss, LS, c * K, h);
-          if (!tab) bad.colour.push(at + ': drawn as ' + e.css);
-          if (e.bg.slice(0, 3).some((v, k) => Math.abs(v - want[k]) > 1)) bad.colour.push(at + ': ' + e.bg.slice(0, 3) + ' vs ' + want);
-          if (!strip || e.sbg.slice(0, 3).some((v, k) => Math.abs(v - swant[k]) > 1)) bad.strip.push(at + ': its strip drawn as ' + e.scss);
-          if (!tab || !C.inGamut(...tab) || !strip || !C.inGamut(...strip)) bad.gamut.push(at);
-          if (e.white < 4.5) bad.white.push(at + ' ' + e.white.toFixed(2));
-          if (e.years < 4.5) bad.years.push(at + ' ' + e.years.toFixed(2));
-          if (e.strip < 4.5) bad.white.push(at + ' on its strip ' + e.strip.toFixed(2));
+          const want = C.hexRgb(PAL[eraHues === 'split' ? i % 11 : 10].hex), swant = want.map(v => Math.max(v - 25, 0)), at = eraHues + ' era ' + i;
+          if (e.bg.join() !== want.join()) bad.colour.push(at + ': ' + C.rgbHex(e.bg) + ', not ' + C.rgbHex(want));
+          if (e.sbg.join() !== swant.join()) bad.strip.push(at + ': its strip ' + C.rgbHex(e.sbg) + ', not ' + C.rgbHex(swant));
+          if (e.white < 4.5 || e.years < 4.5 || e.strip < 4.5) bad.white.push(at + ': ' + [e.white, e.years, e.strip].map(x => x.toFixed(2)).join('/'));
           worst = { white: Math.min(worst.white, e.white), years: Math.min(worst.years, e.years), strip: Math.min(worst.strip, e.strip) };
         });
-        if (eraHues === 'mono' && !r.every(e => e.css === r[0].css)) bad.mono.push('one colour is not one colour');
         await pg.close();
       }
       await hsrv.close();
-      t.ok('…its hues cover the circle with no gap wider than ' + gap.toFixed(3) + '°', gap < 0.5, String(gap));
-      t.eq('Pull draws every one of the ' + N + ' hues in the build\'s colour, oklch(.48 C h), and "One colour" in the one at its hue', bad.colour.concat(bad.mono).slice(0, 5), []);
-      t.eq('…and each strip in the same colour at L .40, chroma × 5/6', bad.strip.slice(0, 5), []);
-      t.eq('…every colour drawn, tab and strip, is inside the sRGB gamut', bad.gamut.slice(0, 5), []);
-      t.eq('…white text on the tab clears 4.5:1 at every hue (worst ' + worst.white.toFixed(2) + ':1, measured), and on the strip (worst ' + worst.strip.toFixed(2) + ':1)',
-           bad.white.slice(0, 5), []);
-      t.eq('…and the years at 85 % (worst ' + worst.years.toFixed(2) + ':1, measured)', bad.years.slice(0, 5), []);
+      t.eq('Pull draws era i of ' + N + ' in palette colour i mod 11, exactly, round and round; "One colour" draws every era in its navy', bad.colour.slice(0, 5), []);
+      t.eq('…and each strip in its colour with each channel 25 darker, exactly', bad.strip.slice(0, 5), []);
+      t.eq('…every text on them clears 4.5:1, measured as drawn: white on the tab (worst ' + worst.white.toFixed(2) + ':1), the 85 % years (worst ' +
+           worst.years.toFixed(2) + ':1), white on the strip (worst ' + worst.strip.toFixed(2) + ':1)', bad.white.slice(0, 5), []);
     }
 
     // ------------------------------------------------ a tracker's own colours (John, 12 Oct): drawn exactly, in Pull only
@@ -256,8 +241,8 @@ module.exports = async function (t) {
       t.eq('…the one under 4.5:1 (dawn, as the build warned) measures exactly the ratios the build reported: white ' +
            own.filter(([e]) => e.colour.white < 4.5).map(([e]) => e.colour.white + ':1, years ' + e.colour.years + ':1').join('; '), flagged, []);
       t.eq('…and it is the only exception: every other era text in Pull clears 4.5:1', other, []);
-      t.eq('"One colour" sets the tracker\'s colours aside: every era in the one derived colour',
-           mono.filter(h => h.bg !== C.oklchRgb(C.pullTokens(ROOT).L, B.solidMono, C.pullTokens(ROOT).mono % 360).join(',')).length, 0);
+      t.eq('"One colour" sets the tracker\'s colours aside: every era in the palette\'s navy (' + B.pullMono.hex + ')',
+           mono.filter(h => h.bg !== C.hexRgb(B.pullMono.hex).join(',')).length, 0);
       const changed = [];
       for (const skin of SKINS.filter(s => s !== 'pull')) {
         for (const eraHues of ['split', 'mono']) {

@@ -6,6 +6,8 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir } = require('../lib/helpers');
 const C = require('../lib/colour');
+const shade = rgb => rgb.map(v => Math.max(v - 25, 0));      // the reference tracker's strip: each channel 25 darker
+
 
 const DATASETS = {
   root: path.join(ROOT, 'dataset.json'),
@@ -15,6 +17,7 @@ const DATASETS = {
 };
 
 module.exports = async function (t) {
+  const PAL = JSON.parse(spawnSync('python3', [BUILD, '--pull-palette'], { encoding: 'utf8', cwd: ROOT }).stdout || '[]');   // Pull's default palette, from the build
   const built = {};
   for (const [name, file] of Object.entries(DATASETS)) {
     const b = build(file, { label: name });
@@ -133,11 +136,10 @@ module.exports = async function (t) {
       t.ok('empty strand list becomes one universal strand', D.strands.length === 1 && D.arcs.every(a => a.s.length === 1));
       t.ok('universal strand is reported as a warning', /universal strand/.test(b.stderr));
       module.exports.stressDir = b.out;
-      eraHues(t, D, '64 eras');
     }
   }
 
-  // era colours (session 7): a tracker's own, drawn exactly as given (John, 12 Oct); Pull derives the rest (John, 13 Oct)
+  // era colours (session 7): a tracker's own, drawn exactly as given (John, 12 Oct); else Pull's default palette (John, 13 Oct)
   if (built.basic) {
     const { D, b } = built.basic;
     const own = D.eras.filter(e => e.colour);
@@ -146,7 +148,6 @@ module.exports = async function (t) {
     t.ok('…the others carry none', D.eras.filter(e => !e.colour).length === 3);
     t.eq('…their OKLCH numbers come back to the same colour, and the strip to the reference\'s shade, each channel 25 darker',
          own.map(e => [C.rgbHex(C.oklchRgb(...e.colour.tab)), C.rgbHex(C.oklchRgb(...e.colour.strip))]), [['#A6791E', '#8D6005'], ['#A6303C', '#8D1723']]);
-    const shade = rgb => rgb.map(v => Math.max(v - 25, 0));
     t.eq('…with the ratios of white text, the 85 % years and white text on the strip, as measured here',
          own.map(e => [e.colour.white, e.colour.years, e.colour.stripWhite]),
          own.map(e => { const rgb = C.hexRgb(e.colour.hex); return [C.contrast(C.WHITE, rgb), C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb), C.contrast(C.WHITE, shade(rgb))].map(x => Math.round(x * 1000) / 1000); }));
@@ -157,7 +158,8 @@ module.exports = async function (t) {
          !!hint && C.contrast(C.WHITE, hr) >= 4.5 && C.contrast(C.over(C.WHITE, C.YEARS, hr), hr) >= 4.5 && C.contrast(C.WHITE, shade(hr)) >= 4.5);
     t.ok('…the colour that passes (storm, 6.75:1) doesn\'t warn', !/era storm: white text/.test(b.stderr));
     t.eq('the report counts them', b.report.eraColours, { set: 2, underAA: ['dawn'] });
-    eraHues(t, D, 'basic');
+    t.eq('…and Pull draws them untouched, never nudged: dawn and storm in their own colours, the other eras in the palette\'s by index',
+         D.eras.map(e => e.pull.hex), ['#A6791E', PAL[1].hex, '#A6303C', PAL[3].hex, PAL[4].hex]);
     const bad = copyFixture('basic', 'bad-colour'), ds = readJSON(path.join(bad, 'dataset.json'));
     for (const v of ['#A6791', 'red', '#GG0000', 'A6791E', 7]) {
       ds.eras[1].colour = v;
@@ -167,37 +169,52 @@ module.exports = async function (t) {
     }
   }
 
-  // Pull's derived chroma at every hue, from the build itself (John, 13 Oct): oklch(.48 C h), C the gamut's edge, .08 to .14
+  // Pull's default palette (John, 13 Oct): the reference tracker's eleven era colours, each nudged only as far as it must
   {
-    const r = spawnSync('python3', [BUILD, '--era-solid-sweep', '0.01'], { encoding: 'utf8', cwd: ROOT });
-    const sweep = JSON.parse(r.stdout || '{"c":[]}'), L = sweep.l, LS = C.pullTokens(ROOT).S, k = LS / L;   // the strip, from styles.css (.40)
-    const bad = { range: [], gamut: [], highest: [], white: [], years: [], stripGamut: [], stripWhite: [], stripYears: [] };
-    let worst = { white: 99, years: 99, stripWhite: 99, stripYears: 99 };
-    sweep.c.forEach((c, i) => {
-      const h = i * sweep.step, at = h.toFixed(2) + '°';
-      if (!(c >= 0.08 && c <= 0.14)) bad.range.push(at);
-      if (!C.inGamut(L, c, h)) bad.gamut.push(at);
-      if (c < 0.14 && C.inGamut(L, c + 1e-4, h)) bad.highest.push(at);      // under the cap, a hair more must leave the gamut
-      const rgb = C.oklchRgb(L, c, h), w = C.contrast(C.WHITE, rgb), y = C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb);
-      if (w < 4.5) bad.white.push(at);
-      if (y < 4.5) bad.years.push(at);
-      if (!C.inGamut(LS, c * k, h)) bad.stripGamut.push(at);
-      const srgb = C.oklchRgb(LS, c * k, h), sw = C.contrast(C.WHITE, srgb), sy = C.contrast(C.over(C.WHITE, C.YEARS, srgb), srgb);
-      if (sw < 4.5) bad.stripWhite.push(at);
-      if (sy < 4.5) bad.stripYears.push(at);
-      worst = { white: Math.min(worst.white, w), years: Math.min(worst.years, y), stripWhite: Math.min(worst.stripWhite, sw), stripYears: Math.min(worst.stripYears, sy) };
-    });
-    t.ok('the build sweeps all 36,000 hues (every 0.01°) at Pull\'s lightness, .48 from styles.css', sweep.c.length === 36000 && L === 0.48, r.stderr);
-    t.eq('…every derived chroma is between .08 and .14', bad.range.slice(0, 5), []);
-    t.eq('…and inside the sRGB gamut', bad.gamut.slice(0, 5), []);
-    t.eq('…and the highest the gamut allows under the cap (a hair more leaves it)', bad.highest.slice(0, 5), []);
-    t.eq('…white text on it clears 4.5:1 at every hue (worst ' + worst.white.toFixed(2) + ':1)', bad.white.slice(0, 5), []);
-    t.eq('…and the 85 % years (worst ' + worst.years.toFixed(2) + ':1)', bad.years.slice(0, 5), []);
-    t.eq('the strip (L .40, chroma × 5/6) is inside the gamut at every hue', bad.stripGamut.slice(0, 5), []);
-    t.eq('…with white text (worst ' + worst.stripWhite.toFixed(2) + ':1) and the 85 % years (worst ' + worst.stripYears.toFixed(2) + ':1) at 4.5:1 or more',
-         bad.stripWhite.concat(bad.stripYears).slice(0, 5), []);
-    t.ok('…and the cap and the floor both bite: some hues sit at .14, some below, none under .08',
-         sweep.c.some(c => c === 0.14) && sweep.c.some(c => c < 0.14) && Math.min(...sweep.c) >= 0.08);
+    const REF = readJSON(path.join(ROOT, 'test', 'layout', 'ref', 'x-men.json'));
+    t.eq('the palette is the reference tracker\'s eleven era colours, in its order, as the recorded measurement holds them (X-Men ' + REF.commit.slice(0, 7) + ')',
+         PAL.map(p => p.source), REF.eras.map(e => e.tab));
+    t.eq('…and the reference\'s strips are its tabs with each channel 25 darker, as Pull draws them', REF.eras.map(e => e.strip), REF.eras.map(e => C.rgbHex(shade(C.hexRgb(e.tab)))));
+    const ratios = h => { const rgb = C.hexRgb(h); return [C.contrast(C.WHITE, rgb), C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb), C.contrast(C.WHITE, shade(rgb))]; };
+    t.eq('every default colour passes: white text, the 85 % years (blended at 217/255) and white text on its strip, each at 4.5:1 or more',
+         PAL.filter(p => ratios(p.hex).some(r => r < 4.5)).map(p => p.hex + ' ' + ratios(p.hex).map(r => r.toFixed(2)).join('/')), []);
+    t.eq('…as the build reports them', PAL.map(p => [p.white, p.years, p.strip]), PAL.map(p => ratios(p.hex).map(r => Math.round(r * 1000) / 1000)));
+    t.eq('the reference colours that already pass are untouched', PAL.filter(p => !p.nudged).map(p => [p.source, p.hex]), PAL.filter(p => !p.nudged).map(p => [p.source, p.source]));
+    t.eq('…and the five that fail are the ones nudged: Foundations, Utopia, Bendis to IvX, ResurrXion, Krakoa', PAL.filter(p => p.nudged).map(p => p.source),
+         ['#A6791E', '#1F7A5C', '#B08A1F', '#C0622A', '#C21E6D']);
+    t.eq('…each of those failed to begin with', PAL.filter(p => p.nudged && !ratios(p.source).some(r => r < 4.5)).map(p => p.source), []);
+    const STEP = 0.0005, cands = (src, k) => { const [L, Cs, H] = C.rgbOklch(C.hexRgb(src)), x = L - k * STEP, c = C.inGamut(x, Cs, H) ? Cs : C.maxChroma(x, H); return { rgb: C.oklchRgb(x, c, H), c, edge: c < Cs }; };
+    const minimal = [], kept = [], edge = [];
+    for (const p of PAL.filter(q => q.nudged)) {
+      const [L0, C0, H0] = C.rgbOklch(C.hexRgb(p.source)), [L1, C1, H1] = C.rgbOklch(C.hexRgb(p.hex)), k = p.nudged.steps;
+      if (C.rgbHex(cands(p.source, k).rgb) !== p.hex) minimal.push(p.source + ': step ' + k + ' is not ' + p.hex);
+      if (!ratios(C.rgbHex(cands(p.source, k - 1).rgb)).some(r => r < 4.5)) minimal.push(p.source + ': one step less (' + C.rgbHex(cands(p.source, k - 1).rgb) + ') already passes');
+      if (!(L1 < L0) || Math.abs(((H1 - H0) % 360 + 540) % 360 - 180) > 1) kept.push(p.source + ': L ' + L0.toFixed(4) + '→' + L1.toFixed(4) + ', hue ' + H0.toFixed(1) + '→' + H1.toFixed(1));
+      if (p.nudged.edge) { if (!(p.nudged.c < C0) || Math.abs(p.nudged.c - C.maxChroma(p.nudged.l, H0)) > 1e-4) edge.push(p.source + ': chroma ' + p.nudged.c + ' is not the gamut\'s edge'); }
+      else if (Math.abs(C1 - C0) > 0.002) kept.push(p.source + ': chroma ' + C0.toFixed(4) + '→' + C1.toFixed(4));
+    }
+    t.eq('each nudge is the least that passes: one step (0.0005 of lightness) less still fails', minimal, []);
+    t.eq('…darker, its hue kept (within 1°, the 8-bit rounding) and its chroma kept (within .002), unless the gamut runs out first', kept, []);
+    t.eq('…where it does (the two yellows, Foundations and Bendis to IvX), the chroma follows the gamut\'s edge, so the colour stays inside sRGB',
+         edge.concat(PAL.filter(p => p.nudged && p.nudged.edge).map(p => p.source).join() === '#A6791E,#B08A1F' ? [] : ['the edge was reached by ' + PAL.filter(p => p.nudged && p.nudged.edge).map(p => p.source).join()]), []);
+    // the palette cycles: era i takes colour i mod 11, past eleven eras (52)
+    const dir = tmpdir('palette52'), eras = [], arcs = [], rows = [];
+    for (let e = 0; e < 52; e++) {
+      eras.push({ id: 'p' + e, name: 'Era ' + e, rank: 5000 + 10 * e });
+      arcs.push({ id: 'a' + e, name: 'Arc ' + e, era: 'p' + e, type: 'MAIN', mo: 'M', tier: 'All', credits: { writers: ['Avery Quill'], artists: ['Cass Delune'] } });
+      rows.push({ issueId: 'pal-1990-' + (e + 1), series: 'Pal', vol: '1990', num: String(e + 1), title: 'Pal (1990) #' + (e + 1), era: 'p' + e, arc: 'a' + e,
+                  date: { cover: (1990 + Math.floor(e / 12)) + '-' + String(e % 12 + 1).padStart(2, '0'), source: 'generated' } });
+    }
+    eras[20].colour = '#123456';                                         // one tracker colour among them, drawn as given
+    writeJSON(path.join(dir, 'dataset.json'), { schemaVersion: 1, franchise: { key: 'pal', wordmark: 'Pal', title: 'Pal', strapline: '', span: '', theme: '#000000' },
+      eras, strands: [], types: ['MAIN'], tiers: ['All'], media: ['comic'], arcs, rows });
+    const pb = build(path.join(dir, 'dataset.json'), { label: 'palette52-out' });
+    const PD = pb.status === 0 ? loadData(pb.out) : { eras: [] };
+    t.eq('52 eras: era i is drawn in palette colour i mod 11, round and round (the tracker\'s one colour, era 20, aside)',
+         PD.eras.map((e, i) => e.pull.hex), PD.eras.map((e, i) => i === 20 ? '#123456' : PAL[i % 11].hex));
+    t.eq('…each as OKLCH numbers that come back to the same colour, and its strip to the reference\'s shade',
+         PD.eras.filter(e => C.rgbHex(C.oklchRgb(...e.pull.tab)) !== e.pull.hex || C.rgbHex(C.oklchRgb(...e.pull.strip)) !== C.rgbHex(shade(C.hexRgb(e.pull.hex)))).map(e => e.id), []);
+    t.eq('"One colour" draws every era in the palette\'s navy, the reference tracker\'s accent', PD.pullMono && PD.pullMono.hex, PAL[10].hex);
   }
   // the build run on its own (tools/ without the app shell, as the verify gate's tests run it): it still builds
   {
@@ -209,17 +226,7 @@ module.exports = async function (t) {
     const out = tmpdir('tools-only-out');
     const r = spawnSync('python3', [path.join(dir, 'tools', 'build.py'), path.join(FIX, 'minimal', 'dataset.json'), '--out', out], { encoding: 'utf8', cwd: dir });
     const D = r.status === 0 ? loadData(out) : null;
-    t.ok('without a styles.css beside tools/, the build still builds and says Pull\'s derived colours fall back to the stylesheet\'s .08',
-         r.status === 0 && /no styles\.css beside tools\/: Pull's derived era colours are left to the stylesheet's fallback chroma \(\.08\)/.test(r.stderr) &&
-         D.eras.every(e => e.solid === undefined) && D.solidMono === null, r.stderr.split('\n').slice(-3).join(' | '));
+    t.ok('without a styles.css beside tools/, the build still builds, and gives Pull its palette (it needs nothing from the stylesheet)',
+         r.status === 0 && D.eras.every((e, i) => e.pull.hex === PAL[i % 11].hex) && D.pullMono.hex === PAL[10].hex, r.stderr.split('\n').slice(-3).join(' | '));
   }
 };
-
-/* Each era's derived chroma is the build's own rule at the hue styles.css gives
-   that era (--era-h0 + index × --era-step), and "One colour" at Pull's one hue. */
-function eraHues(t, D, label) {
-  const P = C.pullTokens(ROOT), rule = h => C.solidRule(P.L, h);
-  t.eq(label + ': each era\'s derived chroma is the rule at its own hue (' + D.eras.length + ' eras)',
-       D.eras.map((e, i) => Math.abs(e.solid - rule(P.hue(i))) <= 1e-5).filter(x => !x).length, 0);
-  t.ok(label + ': and "One colour" has the rule at Pull\'s one hue (' + P.mono + '°): ' + D.solidMono, Math.abs(D.solidMono - rule(P.mono % 360)) <= 1e-5);
-}

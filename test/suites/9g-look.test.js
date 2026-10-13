@@ -158,26 +158,25 @@ module.exports = async function (t) {
   await wait(20);
   const tokens = el => Object.fromEntries((el.getAttribute('style') || '').split(';').filter(Boolean).map(x => x.split(':').map(y => y.trim())));
   const secs = [...app.document.querySelectorAll('section.era')].map(s => [+s.dataset.e, tokens(s)]);
-  t.eq('every era section carries its index, Pull\'s derived chroma at its hue and at the one hue, as numbers from data.js',
-       secs.filter(([e, k]) => k['--ei'] !== String(e) || +k['--esc'] !== D.eras[e].solid || +k['--esm'] !== D.solidMono).map(([e]) => e), []);
-  t.eq('…and an era with a tracker colour carries it: the tab and strip OKLCH numbers, and --eo:1',
-       secs.filter(([e]) => D.eras[e].colour).map(([e, k]) => [D.eras[e].id, k['--eo'], [k['--eo-l'], k['--eo-c'], k['--eo-h']].map(Number), [k['--eo-sl'], k['--eo-sc'], k['--eo-sh']].map(Number)]),
-       D.eras.filter(e => e.colour).map(e => [e.id, '1', e.colour.tab, e.colour.strip]));
-  t.ok('…the others carry none', secs.filter(([e]) => !D.eras[e].colour).every(([, k]) => !('--eo' in k)) && secs.some(([e]) => !D.eras[e].colour));
+  const six = (k, p) => [[k['--' + p + '-l'], k['--' + p + '-c'], k['--' + p + '-h']].map(Number), [k['--' + p + '-sl'], k['--' + p + '-sc'], k['--' + p + '-sh']].map(Number)];
+  t.eq('every era section carries its index and, for Pull, the colour it is drawn in (--ec…) and the one "One colour" draws (--em…), tab and strip, as numbers from data.js',
+       secs.filter(([e, k]) => k['--ei'] !== String(e) || k['--ec'] !== '1' || JSON.stringify(six(k, 'ec')) !== JSON.stringify([D.eras[e].pull.tab, D.eras[e].pull.strip]) ||
+         JSON.stringify(six(k, 'em')) !== JSON.stringify([D.pullMono.tab, D.pullMono.strip])).map(([e]) => e), []);
+  t.eq('…an era with a tracker colour is drawn in it, the others in the palette by index', D.eras.map(e => e.pull.hex),
+       D.eras.map((e, i) => e.colour ? e.colour.hex : JSON.parse(require('child_process').spawnSync('python3', [path.join(ROOT, 'tools', 'build.py'), '--pull-palette'], { encoding: 'utf8' }).stdout)[i % 11].hex));
   app.window.close();
   {
-    // an older data.js (no derived chroma, no colours): the stylesheet's fallbacks, never a broken token
+    // an older data.js, from before Pull's colours (a stale mix within Pages' 10 minutes): loaded again, never drawn half-done
     const out = path.join(copyFixture('basic', 'old-data'), 'out');
     fs.cpSync(b.out, out, { recursive: true });
     const OD = loadData(out);
-    OD.eras.forEach(e => { delete e.solid; delete e.colour; });
-    delete OD.solidMono;
+    OD.eras.forEach(e => { delete e.pull; delete e.colour; });
+    delete OD.pullMono;
     fs.writeFileSync(path.join(out, 'data.js'), 'window.TRACKER_DATA=' + JSON.stringify(OD) + ';\n');
     app = boot(out, { storage: { [OD.franchise.key + ':v3:settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' } }) } });
     await wait(20);
-    const st = [...app.document.querySelectorAll('section.era')].map(s => s.getAttribute('style'));
-    t.ok('an older data.js without them gives each era its index alone, and the stylesheet\'s fallback chroma applies',
-         st.length === OD.eras.length && st.every((s, e) => s === '--ei:' + e), st.join(' | '));
+    t.ok('an older data.js without Pull\'s colours is caught as a stale mix: loaded again where no cache holds it, before anything is drawn',
+         !!app.document.querySelector('script[src^="./data.js?r="]') && /Updating to the latest version/.test(app.document.getElementById('app').textContent));
     app.window.close();
   }
 };
