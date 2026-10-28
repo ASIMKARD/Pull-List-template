@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '2';
+const CURRENT_STEP = '3';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -67,10 +67,9 @@ const MAP = {
     ['era tab', '.era-divider .tab', '.era-head .bhead', PAD, { leaf: false }],
     ['era name', '.era-divider .era-name', '.era-head .bname', SEEN.concat(['relLeft', 'relTop']), { anchor: 'era tab' }],
     ['era years', '.era-divider .era-years', '.era-head .byears', SEEN.concat(['relLeft', 'relTop']), { anchor: 'era tab' }],
-    ['era chevron', '.era-divider .chevron', '.era-head .echev', SEEN.concat(['relRight', 'relTop']), { anchor: 'era tab' }],
     ['era strip', '.era-divider .era-stats', '.era-head .bfoot', PAD.concat(['fontFamily', 'fontSize']), { leaf: false }],
     ['era count', '.era-divider .era-stats > span:first-child', '.era-head .bcount', SEEN.concat(['relLeft']), { anchor: 'era strip' }],
-    ['era bar', '.era-divider .era-progress-track', '.era-head progress.bar', ['backgroundColor', 'boxHeight', 'borderTopLeftRadius', 'relLeft', 'relRight'], { anchor: 'era strip' }],
+    ['era bar', '.era-divider .era-progress-track', '.era-head progress.bar', ['backgroundColor', 'boxHeight', 'borderTopLeftRadius', 'relSibLeft', 'relSibRight']],
     ['era bar fill', '.era-divider .era-progress-fill', '.era-head progress.bar', ['fillColor']],
     ['era time', '.era-divider .era-stats > span:last-child', '.era-head .bleft', SEEN.concat(['relRight']), { anchor: 'era strip' }],
   ],
@@ -164,6 +163,7 @@ const ONLY = {
     ['.settings-section select', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['.refresh-box', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['.empty-state', 'kept:v3: an empty state the template words its own way'],
+    ['.era-divider .chevron', 'unseen: X-Men draws its era chevron inside the tab\'s clipped corner, so it never shows, open or shut (read from pixels at 3x, 28 Oct)'],
   ],
   template: [
     ['.ftoggle', 'kept:filters: the Filters button (John, 1 Oct)'],
@@ -171,6 +171,7 @@ const ONLY = {
     ['#fshow', 'kept:filters: "Showing X of Y issues" belongs to the Filters panel (John, 1 Oct)'],
     ['#fbody', 'kept:filters: the collapsible sections (John, 1 Oct)'],
     ['.pfinish', 'John (24 Oct): the plan\'s finish-by date sits beside the time remaining'],
+    ['.era-body > .efinish', 'John (24 Oct): an era\'s finish-by date is the first line of its open body, above the intro'],
     ['.b.rv', 'kept:reviews: ✎ on every row (John, 8 Oct)'],
     ['.review', 'kept:reviews: the per-issue review editor (John, 8 Oct)'],
     ['.arc-meta', 'kept:v3: an arc\'s year and importance, beside its type badge'],
@@ -197,7 +198,6 @@ const ONLY = {
     ['.arc-head h3', 'step 4a: arc headings become cards'],
     ['.arc-head .blurb', 'step 4a: the blurb moves into the card\'s ⓘ panel'],
     ['.arc-acts', 'step 4a: Mark arc read and unread show in an open card only'],
-    ['.era-head .bfinish', 'step 3: an era\'s finish-by date leaves the box for the first line of its open body (John, 24 Oct)'],
     ['.b.core', 'step 5: the core marker becomes X-Men\'s star after the title'],
     ['.rstate', 'step 6a: the read state moves into the counter, as X-Men'],
     ['#reviews .pane-h', 'step 6a: the Reviews heading'],
@@ -218,7 +218,7 @@ const WRAPPERS = {
    matches anything in its place. 45-pull fails on a difference that isn't
    listed, a listed one that no longer differs anywhere, a reason that isn't
    one of the forms below, and a step that is already done. */
-const REASON = /^(kept:(filters|title|reviews|mark24|outlines|settings|v3)|accessible|John \(\d{1,2} [A-Z][a-z]{2}\)|step (1b|2|3|4a|4b|5|6a|6b|7|8|9)): .{10,}/;
+const REASON = /^(kept:(filters|title|reviews|mark24|outlines|settings|v3)|accessible|unseen|John \(\d{1,2} [A-Z][a-z]{2}\)|step (1b|2|3|4a|4b|5|6a|6b|7|8|9)): .{10,}/;
 const DIFFERENCES = {
   // kept (decided)
   'landing/selected tab.borderBottomColor@*': 'kept:outlines: X-Men\'s navy underline is 1.52:1 on the bar; Pull uses the same hue at 3:1 (John, 9 Oct)',
@@ -232,14 +232,9 @@ const DIFFERENCES = {
   'scrolled/pinned header.boxBottom@390': 'John (24 Oct): the offline line ends "· vN" (its second line at 390 px)',
   'arc/pinned chip.borderTopColor@*': 'accessible: a pinned chip\'s outline is the control outline, 3:1 on every paper it sits on (X-Men\'s #C9C4B5 is 1.37:1 there, G\'s #8F8A7C 2.71:1; John, 28 Oct)',
   'reviews/review card.box*@1024': 'step 6a: X-Men\'s review cards, 12 px in',
-  // step 3: the era box and the open era's body
-  'landing/era tab.paddingRight@1024': 'step 3: X-Men\'s 44 px tab padding at every width',
-  'landing/era years.*@*': 'step 3: the years under the name (John, 24 Oct)',
-  'landing/era chevron.*@*': 'step 3: X-Men\'s chevron in the tab',
-  'landing/era strip.*@*': 'step 3: one strip in X-Men\'s mono, with the read count, the bar and the time left',
-  'landing/era bar.*@*': 'step 3: the bar between the count and the time left',
-  'landing/era time.*@*': 'step 3: the time left at the strip\'s right',
-  'era/era intro.*@*': 'step 3: X-Men\'s intro, with its dashed rule',
+  // step 3 (done): the era box and the open era's body
+  'landing/era tab.paddingRight@1024': 'accessible: the tab keeps its text clear of the cut at every width, max(44 px, 12 %); X-Men\'s 44 px lets a long name run under its clipped corner at 1024 px (awaiting John)',
+  'era/era intro.relTop@*': 'John (24 Oct): the era\'s finish-by date is the first line of its open body, so the intro sits under it',
   // step 4: arc cards
   'era/arc *.*@*': 'step 4b: X-Men\'s arc cards',
   'era/type badge.*@*': 'step 4b: the type badge',
@@ -320,6 +315,10 @@ function measure(rows, side) {
       } else if (p === 'scrollY') x = Math.round(window.scrollY) + 'px';
       else if (/^box(Left|Width|Height|Top|Bottom)$/.test(p)) x = px({ boxLeft: r.left, boxWidth: r.width, boxHeight: r.height, boxTop: r.top, boxBottom: r.bottom }[p]);
       else if (/^rel(Left|Top|Right|Bottom)$/.test(p)) x = a ? px({ relLeft: r.left - a.left, relTop: r.top - a.top, relRight: a.right - r.right, relBottom: a.bottom - r.bottom }[p]) : null;
+      else if (p === 'relSibLeft' || p === 'relSibRight') {   // the gap to the element beside it, whatever the figures' lengths
+        const sib = p === 'relSibLeft' ? el.previousElementSibling : el.nextElementSibling;
+        x = sib ? px(p === 'relSibLeft' ? r.left - sib.getBoundingClientRect().right : sib.getBoundingClientRect().left - r.right) : null;
+      }
       else if (/color$/i.test(p)) x = rgb(x);
       else if (p === 'boxShadow') x = x === 'none' ? 'none' : x.replace(/rgba?\([^)]*\)/g, c => rgb(c));
       else if (p === 'fontFamily') x = x.split(',')[0].replace(/["']/g, '').trim();

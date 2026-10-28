@@ -71,7 +71,7 @@ module.exports = async function (t) {
 
     // ------------------------------------------------ the lists' own rules
     const reasons = Object.entries(PM.DIFFERENCES).concat(PM.ONLY['x-men'], PM.ONLY.template);
-    t.eq('every difference and one-sided element gives its reason as a kept item, accessible, John\'s ruling or a step', reasons.filter(r => !PM.REASON.test(r[1])).map(r => r[0]), []);
+    t.eq('every difference and one-sided element gives its reason as a kept item, accessible, unseen (X-Men draws it where it never shows), John\'s ruling or a step', reasons.filter(r => !PM.REASON.test(r[1])).map(r => r[0]), []);
     t.eq('…and none is tied to a step already done (step ' + PM.CURRENT_STEP + ')', reasons.filter(r => stepOf(r[1]) && done(stepOf(r[1]))).map(r => r[0]), []);
 
     // ------------------------------------------------ Pull, measured the same way

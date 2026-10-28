@@ -258,6 +258,22 @@ One skin of the tracker's own, from `franchise.signature`:
 - **The tabs** share the bar equally, X-Men's padding; Pull draws no rule under its
   dark bar (`--tabs-rule`, Pull's layout).
 
+### The x frame's era box (session 8, step 3)
+
+- **The tab:** the name, and the years under it, as X-Men's. X-Men's ▸ chevron sits in its
+  clipped corner and never shows, so Pull draws none. The tab's right padding stays
+  `max(44px, 12%)`, so a long name wraps before the cut (awaiting John).
+- **One strip under it:** the count ("1/21 read", X-Men's form) and "filtered" on the left,
+  the bar between, 10 px from each side, and the time left, "+N untimed" or ✓ on the right
+  (`app.js`, `eraFootHtml`).
+- **An era's finish-by date is the first line of its body** (John, 24 Oct), above the intro;
+  band heads keep theirs, and an era inside a band shows none. The line is in the closed body
+  too, so it is always in the page; `refreshStats` keeps it current.
+- **The intro** has X-Men's padding and dashed rule.
+- 45-pull measures the strip's bar by its gaps to the figures beside it
+  (`relSibLeft`, `relSibRight`), so a fixture whose counts are shorter than X-Men's
+  still compares.
+
 ## The workbook
 
 - `tools/build_workbook.py` writes five sheets (Reading Order, Arcs, Eras,

@@ -25,7 +25,7 @@ module.exports = async function (t) {
   t.ok('top-level banners show read count', $$('.band-head .bcount').every(x => /\d+ \/ \d+ read/.test(x.textContent)));
   t.ok('top-level banners show time left', $$('.band-head .bleft').length === D.periods.length);
   t.ok('top-level banners show a finish-by date', $$('.band-head .bfinish').length === D.periods.length);
-  t.ok('era banners inside a band show time left but no finish-by', $$('.era-head .bleft').length === D.eras.length && $$('.era-head .bfinish').length === 0);
+  t.ok('era banners inside a band show time left but no finish-by, in the head or the body (band heads keep theirs)', $$('.era-head .bleft').length === D.eras.length && $$('.era .bfinish').length === 0);
   t.ok('banners carry a progress bar', $$('.band-head progress, .era-head progress').length === D.periods.length + D.eras.length);
 
   // ---- open a band, then an era: only that era renders ----
@@ -82,7 +82,8 @@ module.exports = async function (t) {
   await wait(20);
   const d2 = a2.document;
   t.ok('no-periods: no band elements (T-27)', d2.querySelectorAll('.band').length === 0);
-  t.ok('no-periods: eras are top-level banners with finish-by', d2.querySelectorAll('#app > .era .era-head .bfinish').length === loadData(np.out).eras.length);
+  t.ok('no-periods: eras are top-level banners with finish-by (the x frame puts it on the first line of the era\'s body; John, 24 Oct)',
+       d2.querySelectorAll('#app > .era > .era-body > .bfinish').length === loadData(np.out).eras.length && !d2.querySelector('#app > .era > .era-head .bfinish'));
   t.ok('no-periods: boots clean', a2.errors.length === 0, a2.errors.join(' | '));
   a2.window.close();
 

@@ -42,9 +42,9 @@ const HEAD_WORD = 'remaining';     // the header's word on the x frame, the refe
 
 /* Read every figure off the real DOM. */
 function readFigures(doc, D) {
-  const pick = (head, p) => {
+  const pick = (head, p, finishIn) => {
     if (!head) return null;
-    const l = head.querySelector('.' + p + 'left'), f = head.querySelector('.' + p + 'finish'), u = head.querySelector('.' + p + 'untimed');
+    const l = head.querySelector('.' + p + 'left'), f = (finishIn || head).querySelector('.' + p + 'finish'), u = head.querySelector('.' + p + 'untimed');
     return { left: l ? +l.dataset.leftMin : null, leftText: l ? l.textContent : null,
              weeks: f ? f.dataset.weeks : null, finish: f ? f.dataset.finish : null, finishText: f ? f.textContent : null,
              untimed: u ? +u.dataset.untimed : 0 };
@@ -52,7 +52,8 @@ function readFigures(doc, D) {
   return {
     header: pick(doc.querySelector('#pprog'), 'p'),
     bands: D.periods.map((p, b) => pick(doc.querySelector(`.band[data-b="${b}"] > .band-head`), 'b')),
-    eras: D.eras.map((e, ei) => pick(doc.querySelector(`.era[data-e="${ei}"] > .era-head`), 'b'))
+    // an era's finish-by date is the first line of its body on the x frame (John, 24 Oct)
+    eras: D.eras.map((e, ei) => pick(doc.querySelector(`.era[data-e="${ei}"] > .era-head`), 'b', doc.querySelector(`.era[data-e="${ei}"]`)))
   };
 }
 

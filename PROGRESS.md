@@ -3410,3 +3410,57 @@ Every change is on the x frame (the shared skins); 47-frame-v9 holds the v9 fram
 "filtered", the bar, the time left or ✓, "+N untimed"); then each era's finish-by date as the
 first line of its open body; then 95-pace, 96 and 97 re-pointed from `.era-head .bfinish`.
 
+## Session 8 checkpoint — step 3 done (the x frame's era box), 28 Oct 2026
+
+### Done
+- **The tab:** the years under the name, as X-Men's.
+- **One strip under it**, as X-Men's:
+  - the count ("1/21 read", X-Men's form) and "filtered" on the left;
+  - the bar between, 10 px from each;
+  - the time left, "+N untimed" or ✓ on the right.
+
+  `eraFootHtml` draws it on the x frame; the v9 frame keeps `statsHtml`.
+- **An era's finish-by date is the first line of its body**, above the intro (John, 24 Oct).
+  - Band heads keep theirs, and an era inside a band shows none.
+  - The line sits in a closed body too, so it is always in the page.
+  - `refreshStats` keeps it current after a mark or a pace change.
+- **The intro** has X-Men's padding and dashed rule.
+- **X-Men's ▸ chevron never shows.** It sits in the tab's clipped corner, open or shut (read from
+  pixels at 3×). So Pull draws none, and the reference lists it as `unseen`, a new reason form
+  for an X-Men element that never paints.
+- **45-pull** measures the strip's bar by its gaps to the figures beside it, so the fixture's
+  shorter counts still compare.
+  - X-Men's reference was re-captured for this map change.
+  - The live site still equals the clone at `663fe46`; a drift check before the change matched
+    exactly, and only the bar's two properties and the chevron changed.
+  - **The numbers:** 1102 match (1063 at step 2), 695 listed.
+  - **Left for the era box:** the intro under the finish-by line (John, 24 Oct), and the tab's
+    padding at 1024 px (below).
+- **Tests changed on purpose:**
+  - 90-render: the finish-by line, and none inside bands, head or body;
+  - 91-marks and 9a: the "1/N" count;
+  - 97-durations: an era's date read from its section.
+- **Mutation-proved, 7 of 7:**
+  - the years beside the name;
+  - the strip a grid;
+  - no finish-by line;
+  - a finish-by line inside bands;
+  - the line not refreshed;
+  - the count with spaces;
+  - the v9 era head given the x strip.
+- **Docs:** BUILD-NOTES "The x frame's era box"; FEATURE-INVENTORY X-15.
+
+**Harness:** 1651 assertions, 0 failed, 36 suites. **Layout:** 424 checks, 0 failed, 12 suites.
+
+### One case for John
+- **The tab's right padding at wide screens.** X-Men pads 44 px at every width. At 1024 px
+  that lets a long era name run under the clipped corner, where X-Men cuts it off.
+- Built: session 7's `max(44px, 12%)`, so a long name wraps before the cut (10-sweep checks
+  it with long names at 320 and 1024 px). At 1024 px that is 88 px.
+
+### Step 4a begins with
+`eraBodyHtml` (`app.js`) on the x frame in "Headings" mode: an era opens to collapsed arc cards
+(`div.arc > div.arc-head > span.arc-tab, h3 > button.arc-toggle, button.info-btn, span.arc-chev`),
+rows rendered on a card's first open; then `setAll`, `jumpToIssue`, a search match and an era
+chip opening cards; then 90-render, 92, 94, 99, 9c, 9d and 9j.
+

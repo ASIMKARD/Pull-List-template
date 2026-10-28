@@ -568,6 +568,22 @@
       '</span><progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>';
   }
 
+  /* The x frame's era strip, the reference tracker's: the count, the bar, the time
+     left (or ✓). An era's finish-by date moves to the first line of its open body
+     (John, 24 Oct); band heads keep theirs. */
+  function eraFootHtml(t) {
+    var g = goal(t), done = remaining(t) === 0 && t.total > 0;
+    return '<span class="bfoot"><span class="bstats"><span class="bcount">' + t.read + '/' + g + ' read' + (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
+      (browsing() ? '<span class="bfiltered">filtered</span>' : '') + '</span>' +
+      '<progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>' +
+      '<span class="bstats bend">' + (done ? '<span class="bdone" aria-label="complete">✓</span>' : leftHtml(t, 'bleft') + untimedHtml(t, 'buntimed')) + '</span></span>';
+  }
+  var eraFin = {};                       // each top-level era's finish-by date (none inside bands), for its body's first line
+  function eraFinishHtml(e) {
+    var f = frameOf(settings.skin) === 'x' && eraFin[e];
+    return f ? '<p class="bfinish efinish" data-finish="' + f.iso + '" data-weeks="' + f.weeks + '">finish by ' + escapeHtml(f.text) + '</p>' : '';
+  }
+
   function topUnits() { return HAS.bands ? D.periods.map(function (p, b) { return b; }) : D.eras.map(function (e, i) { return i; }); }
   function finishMap(S) {
     var out = {}, cum = 0;
@@ -701,7 +717,7 @@
         if ((filt ? !matches(i) : !inView(i)) || (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE))) return;
         html += rowHtml(i);
       });
-      return (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
+      return eraFinishHtml(e) + (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
     }
     orderedEraRows(e).forEach(function (i) {
       if (filt ? !matches(i) : !inView(i)) return;
@@ -725,7 +741,7 @@
     });
     if (curArc !== -1) html += '</div>';
     var intro = D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '';
-    return intro + html;
+    return eraFinishHtml(e) + intro + html;
   }
 
   /* An era's numbers for the stylesheet, as tokens: its index (for a pale
@@ -751,14 +767,15 @@
       '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
       (frameOf(settings.skin) === 'v9' ? statsHtml(S.era[e], fin) :              // the v9 frame: v9's era head, exactly
-        '<span class="bfoot">' + statsHtml(S.era[e], fin) + '</span>') + '</button>' +   // the strip under the tab (Pull's folder tab, session 7)
+        eraFootHtml(S.era[e])) + '</button>' +                                    // the x frame: the strip under the tab
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
-      (isOpen ? eraBodyHtml(e) : '') + '</div></section>';
+      (isOpen ? eraBodyHtml(e) : eraFinishHtml(e)) + '</div></section>';
   }
 
   function renderList() {
     var S = computeStats(), fins = finishMap(S), filt = narrowing();
     rendered = {};
+    eraFin = HAS.bands ? {} : fins;
     $('#app').setAttribute('data-frame', frameOf(settings.skin));      // the frame this list was drawn for
     if (!filt && wasNarrowing) open = { b: {}, e: {} };
     wasNarrowing = filt;
@@ -800,12 +817,23 @@
 
   /* Repaint numbers only (after a mark): banners and header, no list rebuild. */
   function refreshStats() {
-    var S = computeStats(), fins = finishMap(S);
+    var S = computeStats(), fins = finishMap(S), x = frameOf(settings.skin) === 'x';
+    eraFin = HAS.bands ? {} : fins;
     D.eras.forEach(function (era, e) {
       var head = $('.era[data-e="' + e + '"] > .era-head');
       if (!head) return;
-      var old = head.querySelector('.bstats'), bar = head.querySelector('progress');
       var tmp = document.createElement('div');
+      if (x) {                                              // the strip, and the finish-by line at the top of the body
+        tmp.innerHTML = eraFootHtml(S.era[e]);
+        head.querySelector('.bfoot').replaceWith(tmp.firstChild);
+        var body = head.nextElementSibling, line = body.firstElementChild && body.firstElementChild.classList.contains('efinish') ? body.firstElementChild : null;
+        tmp.innerHTML = eraFinishHtml(e);
+        if (line && tmp.firstChild) line.replaceWith(tmp.firstChild);
+        else if (line) line.remove();
+        else if (tmp.firstChild) body.insertBefore(tmp.firstChild, body.firstChild);
+        return;
+      }
+      var old = head.querySelector('.bstats'), bar = head.querySelector('progress');
       tmp.innerHTML = statsHtml(S.era[e], HAS.bands ? null : fins[e]);
       old.replaceWith(tmp.firstChild); bar.replaceWith(tmp.lastChild);
     });

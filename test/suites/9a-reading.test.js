@@ -43,7 +43,7 @@ module.exports = async function (t) {
   btn('rd-done').click();
   t.ok('the done button persists the mark (T-119)', stored('progress').marks['mixed-quest-1990'] === 'read');
   t.ok('header, band and era counters all move (D-1)', hdr() !== before[0] && band0() !== before[1] && era0() !== before[2] &&
-       /^2 \//.test(hdr()) && /^2 \//.test(band0()) && /^2 \//.test(era0()), [hdr(), band0(), era0()].join(' | '));
+       /^2 \//.test(hdr()) && /^2 \//.test(band0()) && /^2\//.test(era0()), [hdr(), band0(), era0()].join(' | '));   // an era strip reads "2/N" on the x frame
   t.ok('…and the time left drops by the game\'s 1500 minutes (two comics were already done)', $('#pprog .pleft').dataset.leftMin === String(1708 - 15 - 15 - 1500));
   t.ok('marking steps on to the next entry', cur() === 'mixed-hero-1990-3' && btn('rd-done').textContent === 'Mark Read');
   btn('rd-prev').click();

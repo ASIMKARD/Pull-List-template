@@ -27,7 +27,7 @@ module.exports = async function (t) {
   t.ok('reading does not count as read', eraCount() === e0 && headCount() === h0);
   mk().click();
   t.ok('second click: reading -> read', row().dataset.s === 'read');
-  t.ok('era banner count moves on a mark', eraCount() !== e0 && /^1 \//.test(eraCount()), eraCount());
+  t.ok('era banner count moves on a mark ("1/N read" on the x frame, as the reference tracker)', eraCount() !== e0 && /^1\//.test(eraCount()), eraCount());
   t.ok('band banner count moves on a mark', bandCount() !== b0);
   t.ok('header count moves on a mark', headCount() !== h0 && /^1 \//.test(headCount()));
   t.ok('mark label follows the state', /Read$/.test(mk().getAttribute('aria-label')));
