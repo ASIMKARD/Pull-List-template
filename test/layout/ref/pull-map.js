@@ -386,8 +386,8 @@ function covers(side) {
 }
 
 /* The folder tab, read from a screenshot of the first era box. Paper is the
-   page colour; the cut is where paper begins along a row of the tab, as a
-   fraction of the box's width, at its top, middle and bottom; fill and strip
+   page colour; the cut is where the paper at the tab's right edge begins along
+   a row of the tab, as a fraction of the box's width, at its top, middle and bottom; fill and strip
    are the colours painted there; hatch is the share of the tab's corner (its
    last 14 px at the bottom) drawn darker than the fill. */
 const SHAPE = {
@@ -414,9 +414,14 @@ async function shape(page, side) {
     const box = r(s.box), tab = r(s.tab) || box, strip = r(s.strip);
     const paperAt = px(2, tab.top + tab.height / 2);
     const paper = d => d.slice(0, 3).every((v, i) => Math.abs(v - paperAt[i]) <= 6);
+    /* Read from the right edge inwards, where only paper and the cut can be: a
+       scan from the left met an antialiased pixel inside the era's name that
+       matched the paper (CI's fonts, 28 Oct). */
     const cut = y => {
-      for (let x = box.left + 10; x < box.right; x++) if (paper(px(x, y))) return Math.round((x - box.left) / box.width * 100) / 100;
-      return 1;
+      let x = Math.floor(box.right) - 2;
+      if (!paper(px(x, y))) return 1;
+      while (x > box.left + 10 && paper(px(x - 1, y))) x--;
+      return Math.round((x - box.left) / box.width * 100) / 100;
     };
     const fill = px(box.left + 6, tab.top + tab.height / 2);
     let dark = 0, all = 0;
