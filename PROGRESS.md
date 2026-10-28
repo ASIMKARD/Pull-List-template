@@ -3051,3 +3051,129 @@ Absolute gets all of this as v10, with its next issue refresh. Its own `PROGRESS
 Absolute's, so it isn't changed here. The trial run on its data (step 6) covered the folder tab
 and the derived colours. Its two eras will now be Pull's first two palette colours, `#8A6100` and
 `#A6303C`, and the next update re-runs everything on its data.
+
+## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
+
+### 19 Oct: session 7's last two calls
+- **Accepted:** in table view, Pull's framed era body gives its sides back to the row, so a title
+  keeps half of it (`styles.css`, the table rule; 50-table).
+- **"One colour" in Pull uses the tracker's own accent colour**, not X-Men's navy. The default stays
+  the eleven-colour palette. The accent is darkened by the palette's rule (OKLCH lightness lowered
+  only as far as needed, hue kept, inside sRGB) so white text, the 85 % years and the strip each
+  pass 4.5:1. Without an accent, the navy `#1C3A5E`.
+  - **The accent's source (24 Oct):** a new optional `franchise.accent` (`#RRGGBB`).
+    `franchise.theme` is required, so it couldn't be the "none" case. Absolute keeps the navy until
+    its accent is set.
+
+### 22 Oct: Absolute v10 follows this work
+Absolute v10 goes out as soon as this session's template work is merged, without waiting for its
+next issue refresh. It is how a real phone confirms that the template's Pull matches X-Men, before
+Archie Sonic's build step. Absolute keeps its own skin as the default.
+
+### 23 Oct: repo safety — migrations go in place
+Every migration goes in place on the tracker's own repo, the way Absolute did, replacing the fresh
+repo and the cut-over swap: Archie Sonic, IDW Sonic, Spider-Man, Dark Nights and X-Men's fixes.
+- John tags the current `main` `vN-final` first (the one-step rollback);
+- the work reaches `main` only through a branch and a pull request John merges;
+- the in-place upgrade proof passes in Chromium before the merge;
+- every file is verified live by hash after it;
+- no repo is edited without John's explicit say-so, given per migration.
+
+`CLAUDE.md`, `MIGRATING.md` and the Skill say so (step 0).
+
+### 24 Oct: the layout matches X-Men
+Session 7 matched the era boxes' styles, but the page is arranged differently from X-Men, so Pull
+still doesn't look like it. Change the template's layout, then make Pull identical to X-Men in every
+visual, measured against the live X-Men tracker at 320, 390 and 1024 px, in every view (Checklist
+landing, an era open, an arc open, Reading, Reviews, Settings, and the pinned header when
+scrolling). Every difference left is fixed or tied to a kept item. Side-by-side screenshots of X-Men
+and Pull at 390 px at every step.
+1. **Arc cards.** An open era shows its arcs as collapsed cards: the type-coloured stripe, the type
+   badge, the read count, ⓘ and ▸. An open card shows Mark arc read / Mark arc unread and its
+   issues; issues render when their arc opens. "Label on each row" keeps opening an era straight
+   to its rows, with arc labels.
+2. **Era box.** The years under the name, and one strip with the read count, the bar and the time
+   left. "Finish by" leaves the box: each era's date is the first line of its open body, above the
+   intro, and the plan's sits beside the time remaining under the header bar. Band heads keep
+   theirs.
+3. **Header.** Read count on the left, time remaining on the right; Next unread as a filled button
+   beside search; Expand all and Collapse all in the filter area. Both of X-Men's lines: its
+   offline line on every tracker, ending "· vN" and the offline state, and the strapline in the
+   subtitle's place.
+4. **Issue rows.** X-Men's rounded checkbox, the note under the title, a quiet star.
+5. **Everything else** in Pull identical to X-Men on every tab. In the x frame (below) the page pins
+   like X-Men: the tabs at the top and the header's lines and progress under them, replacing 4 Oct's
+   "only the stack is sticky" there; the mini bar goes off by default, as X-Men's is, and stays a
+   setting. Settings keep their collapsible sections (tied to the kept Filters sections), restyled
+   in X-Men's look.
+
+Kept on purpose, not matched: the Filters button and its collapsible sections (1 Oct); the
+franchise name as the title (24 Oct); per-issue reviews with ✎ on every row (8 Oct); the 24 px read
+mark and the two accessibility outlines (9 Oct); every v3 feature X-Men lacks stays reachable.
+
+**X-Men visuals that fail contrast or the 24 px rule** (the quiet ☆, the MINI badge, the gold ★ on
+cards, the 0.6-opacity offline line, the 22 px bookmark, the 20 px review stars, and any others the
+measurement finds) go to John one by one, each with X-Men's version and the passing one side by
+side. Until he rules, the passing version is built and listed as awaiting him.
+
+### 25 Oct: Absolute's own skin keeps v9's arrangement (G)
+Absolute's signature skin must look and work exactly as in v9: its era boxes, arc headings (no
+cards), rows, header, what pins when scrolling, and its width. The X-Men layout is for the shared
+skins (Paper, Newsprint, Pull, Night); in v10 only Absolute's Pull and the other shared skins change.
+No Sonic work in this session.
+- **The switch (my design, approved 28 Oct):** `franchise.signature.frame`, `"x"` (default) or
+  `"v9"`. Today's arrangement is the v9 frame, kept untouched; the X-Men arrangement is the x frame.
+  The shared skins always use x; a signature skin uses its own frame.
+- **Proved in step 8:** Absolute's skin on v9 against the new template at 320, 390 and 1024 px (the
+  landing, an era open, an arc's rows, scrolled, Reading), with screenshots and the differences
+  measured. **CI guards it** (`47-frame-v9`), so a later template change can't drift it.
+
+### 28 Oct: the plan approved, with two notes
+- **The mini bar in the v9 frame stays 6 px**, exactly as v9 draws it, so Absolute's own skin shows
+  no differences at all in step 8. The x frame keeps 3 px (13 Oct).
+- **The X-Men pinning applies to the x frame only.** The v9 frame keeps today's pinning: the tabs,
+  the banner and the mini bar; the header scrolls away.
+
+## Session 8 plan (approved 28 Oct 2026)
+Each step ends committed, pushed and green (the harness, the layout suite and CI), with a
+checkpoint here and X-Men | Pull screenshots at 390 px sent to John. Every new check is
+mutation-proved.
+0. **Records and docs.** These decisions; `CLAUDE.md`, `MIGRATING.md` and the Skill to the in-place
+   route.
+1. **Measure first.** The X-Men capture extended to the whole page (seven views × 320, 390, 1024 px)
+   against the live tracker, a `pull-ref` fixture, 45-pull comparing all of it with every remaining
+   difference tied to a kept item or to the step that fixes it. Ends with the accessibility cases
+   put to John one by one.
+1b. **The frame switch and the v9 guard**, before any layout change: `signature.frame`, root
+   `data-frame`, a `sig-v9` fixture and `47-frame-v9` (five views × three widths, every visible
+   element's box and look against a recorded reference). Every later layout change is x-only.
+2. **Header and page frame** (x): the pinned header, the split progress line, Next unread beside
+   search, Expand/Collapse in the filter area, the 760 px column.
+3. **Era box** (x): years under the name, one strip, finish-by moved.
+4a. **Arc cards: structure and behaviour** (x). 4b. **Arc cards: the look.**
+5. **Issue rows** (x).
+6a. **Reading and Reviews.** 6b. **Settings and the rest.**
+7. **One colour:** `franchise.accent`, nudged; tested with an accent, without, and a light one.
+8. **Absolute's skin proved unchanged from v9**, and Absolute in Pull measured against X-Men.
+9. **Close-out** and the template pull request; then Absolute v10 in place after John merges it.
+
+## Session 8 checkpoint — step 0 done (records and the in-place route), 28 Oct 2026
+
+### Done
+- The decisions of 19–28 Oct and the approved plan, above.
+- **The in-place route (John, 23 Oct)** in the template's own docs:
+  - `CLAUDE.md`: the repo rules ("What John approves, per piece of work"), the standing rule
+    (say-so per migration), and a new "Migrations go in place" with the four safeguards and
+    Absolute's three rollback tags;
+  - `MIGRATING.md`: §1 is now "In place, on the tracker's own repo", §2 copies over the old files
+    on a branch, §7 names Pages' headers for the proof, and §8 is "Deploy and verify" (the
+    cut-over swap is gone);
+  - the Skill: migrations in place, the `vN-final` tag confirmed before the first change;
+  - `README.md` points a live tracker at `MIGRATING.md`; FEATURE-INVENTORY V-28 re-expressed.
+- The branch was restarted from `main` (`4db1ba1`) and pushed.
+
+**Harness:** 1645 assertions, 0 failed, 36 suites. **Layout:** 409 checks, 0 failed, 11 suites.
+
+### Step 1 begins with
+`test/layout/ref/pull-map.js`: views × widths, then `capture-x-men.js` against the live tracker,
+then 45-pull. The comparison fixture is `test/fixtures/pull-ref/`.

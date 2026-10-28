@@ -14,6 +14,7 @@ one build step, an offline web app, a generated workbook, and two test suites
 
 1. **Get a fresh repo.** John creates it. Copy this template in with fresh
    history; never build a new tracker inside the template or inside a live repo.
+   (A live tracker moves onto v3 in place, on its own repo: `MIGRATING.md`.)
 2. **Install the test tools.** `npm ci` (jsdom, ajv, playwright-core). Cloud
    sessions do this at start-up (`.claude/settings.json`).
 3. **Write `dataset.json`** — the master; everything else is generated from it.

@@ -3,27 +3,28 @@
 Moving a tracker people already use onto the v3 template, without losing a
 single mark, bookmark, review or skin choice. The Absolute pilot is the first.
 
-## 1. A fresh repo, unless John says otherwise
+## 1. In place, on the tracker's own repo (John, 23 Oct)
 
-- **Stop and ask John first.** Normally he creates a fresh repo and the
-  migration goes there. The original stays untouched, for comparison and
-  rollback; read it from a local read-only copy and never commit to it. v3
-  takes over the original address only at a **cut-over swap John approves**
-  (step 8).
-- **In place, as a one-off (Absolute, 8 Oct).** John approved upgrading
-  ASIMKARD/Absolute on its own `main`. Because `main` is live:
-  - the last old commit is tagged first (`v7-final`): the one-step rollback;
-  - nothing reaches `main` until everything passes on the tracker's own data
-    (step 6) and the in-place proof passes (step 7);
-  - v8 reaches `main` through one pull request John merges;
-  - that first deploy replaces every file and removes the old tracker's own
-    (its generator, tests and scripts), so nothing stale is left serving.
+Every migration goes in place, on the tracker's own `main`, the way Absolute did (v8,
+8 Oct). This replaced the fresh repo and the cut-over swap. It covers Archie Sonic,
+IDW Sonic, Spider-Man, Dark Nights and X-Men's fixes.
+
+- **Stop and ask John first.** His say-so is given per migration, and covers only that
+  tracker's repo. Every other repo stays read-only.
+- **John tags the current `main` `vN-final` first:** the one-step rollback (Absolute:
+  `v7-final`). A session can't push tags or `main`, so John makes it. Before the first
+  change, confirm on GitHub that the tag exists and points at `main`; if it doesn't, stop.
+- **The work reaches `main` only through a branch and a pull request John merges.**
+- **Nothing is merged until everything passes on the tracker's own data** (step 6) and
+  the in-place upgrade proof passes in Chromium (step 7).
+- **After the merge, every file is verified live by hash** (step 8). The first deploy
+  replaces every file and removes the old tracker's own (its generator, tests and
+  scripts), so nothing stale is left serving.
 
 ## 2. Copy the template in
 
-Copy this template into the fresh repo with fresh history (in place: over the
-old files, removing them), then give it the tracker's own name, theme, icons
-and data (`README.md`, "Start a tracker"). Leave out what is only the
+Copy this template over the tracker's old files, on a branch, removing the old
+tracker's own files, then give it the tracker's own name, theme, icons and data (`README.md`, "Start a tracker"). Leave out what is only the
 template's: its `PROGRESS.md`, `FEATURE-INVENTORY.md` and demo `dataset.json`.
 The tracker gets its own `README.md`, `CLAUDE.md` and `PROGRESS.md`.
 Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
@@ -103,18 +104,19 @@ On the same origin and path as the old tracker: mark rows, add bookmarks, write
 a review and pick a skin in the old copy; open the v3 build; everything carries
 over. An old QR code imports. The old keys are byte-for-byte unchanged.
 
-In place, serve the old build, let its service worker take control, then serve
-the new build over the top at the same address and reload. It must open as the
-new version with every mark, bookmark, review and the skin intact; the new
-worker takes over, deletes the old one's cache (`absolute-v7`) and leaves other
-trackers' caches on the origin alone.
+Then the in-place upgrade proof: serve the old build with GitHub Pages' headers
+(`serve(dir, { pages: true })`), let its service worker take control, then serve
+the new build over the top at the same address and reload once. It must open as
+the new version with every mark, bookmark, review and the skin intact; the new
+worker takes over, deletes the old one's cache (Absolute's was `absolute-v7`) and
+leaves other trackers' caches on the origin alone.
 
-## 8. Deploy, verify, swap
+## 8. Deploy and verify
 
-- Deploy to GitHub Pages (`.nojekyll`, so files are served as they are). Wait
-  about 100 s, check the version in the header, and verify **every** file by
-  hash against the live URL, never by HTTP 200. In place, the old tracker's
-  removed files must be gone (404).
+- John merges the pull request. GitHub Pages deploys it (`.nojekyll`, so files are
+  served as they are).
+- Wait about 100 s, check the version in the header, and verify **every** file by
+  hash against the live URL, never by HTTP 200. The old tracker's removed files
+  must be gone (404).
+- Confirm the version tag appeared (`vN`, "Versions" in `BUILD-NOTES.md`).
 - John checks it on his phone.
-- For a fresh repo, the cut-over swap (v3 takes the original address) happens
-  only when John approves it.

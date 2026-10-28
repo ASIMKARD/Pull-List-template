@@ -3,28 +3,14 @@
 ## Repo rules (read first, every session)
 
 ### Read-only rule
-Only **Pull-List-Template** may be changed, plus the two exceptions below. Master-Repo,
+Only **Pull-List-Template** may be changed, plus what John approves below. Master-Repo,
 X-men and every other repo are **read-only**: read them from local copies
 (clone or pull only), and **never** commit, push, create branches, open pull requests
 on, or register them as repo roots.
 
-**Exceptions (John, 6 Oct; the Absolute one changed 8 Oct):**
-- **ASIMKARD/Absolute: a one-off exception for the pilot (John, 8 Oct).** v8 replaces v7 in
-  place on its `main` branch; Absolute-v3 is no longer needed. This applies to Absolute
-  only. The repo-safety rule below still holds for every other repo. The safeguards,
-  because `main` is live:
-  1. Before the first change, v7's commit (`7304f82`) is tagged `v7-final`: the one-step
-     rollback. This session can't push tags or `main`, so John creates the tag, and v8
-     reaches `main` through one pull request that John merges.
-  2. Nothing reaches `main` until it all passes on Absolute's own data: the harness, the
-     layout suite, the verify gate, and the migration proof in real Chromium.
-  3. The upgrade is tested in place. In Chromium, load v7, mark issues, add a bookmark and
-     a review, and pick a skin. Then serve v8 over it and reload. It must open as v8 with
-     everything intact, and the v7 service worker and its `absolute-v7` cache must hand
-     over cleanly.
-  4. The first deploy replaces everything (fonts, icons, manifest and `qrcode.js`
-     included) and removes v7's old files. Every file is verified live by hash after
-     the merge.
+**What John approves, per piece of work:**
+- **A tracker's own repo, for one migration or update he names** (for example
+  ASIMKARD/Absolute for v8, v9 and v10). See "Migrations go in place", below.
 - **Research-Repo is add-only.**
   - Each session writes only inside its own new folder,
     `sessions/<yyyy-mm-dd>-<label>/`, for its research caches, notes and gate reports.
@@ -36,14 +22,32 @@ on, or register them as repo roots.
     that CI can run it.
 
 ### Standing rule from John
-**Never edit any repo without John's explicit say-so.** Pull-List-Template is
-approved for the v3 work. Before the first edit to any other repo, **stop and tell
-John**, so he can create a fresh repo first. (The Absolute pilot is the one
-exception: John approved upgrading ASIMKARD/Absolute in place, 8 Oct; see above.)
-Every other migration goes into a fresh repo; the original stays untouched for
-comparison and rollback, and v3 takes over the original address only at a cut-over
-swap John approves. (Full text: Master-Repo
-`starter/STANDARDS.md`, "Repo safety".)
+**Never edit any repo without John's explicit say-so,** given per piece of work: for a
+migration, per migration. Pull-List-Template is approved for the v3 work. Before the
+first edit to any other repo, **stop and tell John**, and wait for his say-so. (Full
+text: Master-Repo `starter/STANDARDS.md`, "Repo safety".)
+
+### Migrations go in place (John, 23 Oct)
+Every migration goes in place, on the tracker's own repo, the way Absolute did (v8,
+8 Oct). This replaces the fresh repo and the cut-over swap. It covers Archie Sonic,
+IDW Sonic, Spider-Man, Dark Nights and X-Men's fixes. Because the tracker's `main` is live:
+1. **John tags the current `main` `vN-final` first:** the one-step rollback. A session
+   can't push tags or `main`, so John makes the tag. Before the first change, confirm the
+   tag exists and points at `main`; if it doesn't, stop and tell him.
+2. **The work reaches `main` only through a branch and a pull request John merges.**
+3. **Before the merge, it all passes on the tracker's own data:** the harness, the layout
+   suite, the verify gate, and the in-place upgrade proof in real Chromium. Load the old
+   version, mark issues, add a bookmark and a review, and pick a skin. Then serve the new
+   version over it at the same address and reload. It must open as the new version with
+   everything intact, and the old service worker and its cache must hand over cleanly.
+4. **After the merge, every file is verified live by hash.** A migration's first deploy
+   replaces everything (fonts, icons, manifest and `qrcode.js` included) and removes the
+   old tracker's own files.
+
+Saved progress carries over: the address and the origin stay the same, and v3 reads the
+old keys through `franchise.storage.legacy` and never writes them, so reverting `main` to
+its `vN-final` tag restores the old version as it was. Absolute's rollback tags are
+`v7-final` (`7304f82`), `v8-final` (`36fd088`) and `v9-final` (`27dca56`).
 
 ### Working method
 - Each session works on its own branch and pushes it. John reviews and merges.
