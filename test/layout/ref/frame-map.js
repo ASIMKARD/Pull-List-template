@@ -11,6 +11,8 @@
    change can't move or restyle anything on that frame. An inline element's
    width follows its text, so only its position is kept. */
 'use strict';
+const fs = require('fs');
+const path = require('path');
 
 const WIDTHS = [320, 390, 1024];
 const HEIGHTS = { 320: 568, 390: 844, 1024: 768 };
@@ -46,6 +48,30 @@ const DRIVE = {
   async reading(page) { await page.evaluate(() => scrollTo(0, 0)); await page.click('#tab-reading'); await pause(page); },
 };
 
+/* Symbols drawn the same on every machine. IBM Plex and Anton have no ★ ✎ ↗ ✓
+   and the like, so each machine drew them from its own fonts, and a box holding
+   one was a few px wider or taller in CI (28 Oct). Every page measured here draws
+   them from one face (ref/frame-symbols.woff2, a subset of DejaVu Sans; its
+   licence beside it), added beside every face the page declares, with its
+   family, weight and style: a face of its own weight would win the match for
+   bold text and send the letters to a system font. */
+const SYMBOLS = fs.readFileSync(path.join(__dirname, 'frame-symbols.woff2')).toString('base64');
+const SYMBOL_RANGE = 'U+2190-21FF, U+2298, U+2460-24FF, U+25A0-25FF, U+2600-26FF, U+2700-27BF, U+27F0-27FF, U+29D7';
+async function symbols(page) {
+  await page.evaluate(async ([b64, range]) => {
+    const buf = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer, seen = new Set();
+    for (const f of [...document.fonts]) {
+      const d = { weight: f.weight, style: f.style, stretch: f.stretch }, k = [f.family, d.weight, d.style, d.stretch].join('|');
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const ff = new FontFace(f.family.replace(/["']/g, ''), buf, Object.assign({ unicodeRange: range }, d));
+      document.fonts.add(ff);
+      await ff.load();
+    }
+    await document.fonts.ready;
+  }, [SYMBOLS, SYMBOL_RANGE]);
+}
+
 /* In-page: every visible element in the viewport, as { key: [box, look, before, after] }
    with the looks in a shared table. The key is the element's tag, id and
    classes plus its place among the page's elements with the same ones. */
@@ -80,6 +106,8 @@ function inventory(LOOK, PSEUDO) {
 /* One page through every view at one width: { view: inventory }. */
 async function measurePage(page) {
   const out = {};
+  await page.waitForSelector('.era-head');
+  await symbols(page);
   for (const v of VIEWS) {
     await DRIVE[v](page);
     out[v] = await page.evaluate(([fn, L, P]) => eval('(' + fn + ')')(L, P), [inventory.toString(), LOOK, PSEUDO]);
@@ -108,4 +136,4 @@ function compare(ref, got) {
   return diffs;
 }
 
-module.exports = { WIDTHS, HEIGHTS, VIEWS, SCROLL, LOOK, PSEUDO, seed, DRIVE, inventory, measurePage, compare };
+module.exports = { WIDTHS, HEIGHTS, VIEWS, SCROLL, LOOK, PSEUDO, seed, DRIVE, symbols, inventory, measurePage, compare };

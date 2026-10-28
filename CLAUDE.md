@@ -202,7 +202,9 @@ that clips it.
 GitHub's Ubuntu runner hints text fully by default, which rounds every glyph to whole
 pixels. A text-sized box measured in a session moved by 1 or 2 px in CI (47-frame-v9,
 28 Oct). `test/layout/lib.js` launches Chromium without hinting on every machine, so
-measure anything exact through it, never through a browser of your own.
+measure anything exact through it, never through a browser of your own. Symbols the
+vendored fonts lack (★ ✎ ↗ ✓) come from each machine's own fonts; anything measured to
+the pixel draws them from one face (`test/layout/ref/frame-map.js`).
 
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:

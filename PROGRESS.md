@@ -3313,6 +3313,18 @@ differences, to the tenth of a pixel. `test/layout/lib.js` now launches Chromium
 `--font-render-hinting=none` on every machine; here that changes nothing (it was already the
 default), and in CI it draws text as here. CLAUDE.md has the trap.
 
+The second push failed it in CI on the boxes that hold a symbol (★ on the pinned chips, ✎ and ↗
+on the row badges): IBM Plex and Anton have none of them, so each machine drew them from its own
+fonts. Reproduced here by setting this machine's fallback fonts aside (fontconfig). Every page
+47-frame-v9 measures now draws its symbols from one face, `test/layout/ref/frame-symbols.woff2`
+(the symbol blocks of DejaVu Sans, renamed as its licence requires; the licence beside it), added
+beside each face the page declares, with its weight and style. (A first version gave it every
+weight, so bold letters matched it and fell to a system font; Chromium's own font report caught
+that.) The reference was captured again: the v9 frame's code is unchanged since `ed7878e`, and
+measured the new way Absolute v9 (`27dca56`) against the new template on Absolute's data still
+shows no difference in all 15 views. 47-frame-v9 now passes here with three different sets of
+fallback fonts.
+
 **Harness:** 1647 assertions, 0 failed, 36 suites. **Layout:** 421 checks, 0 failed, 12 suites.
 
 ### Step 2 begins with

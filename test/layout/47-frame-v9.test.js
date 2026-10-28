@@ -13,6 +13,7 @@
    - A tracker's own: when the repo's signature skin is on the v9 frame and a
      frame-ref.json sits beside dataset.json (Absolute's, captured from v9 itself),
      so a template change copied in can't move its skin either.
+   Symbols (★ ✎ ↗ …) are drawn from one face on every machine (ref/frame-map.js).
    Re-capture only after John has seen the difference: ref/capture-frame.js. */
 'use strict';
 const fs = require('fs');
