@@ -197,6 +197,12 @@
   /* the tracker's own signature skin (John, 6 Oct), from config: offered first */
   if (D.signature) SKIN_NAMES.signature = D.signature.name;
   var SKINS = (D.signature ? ['signature'] : []).concat(D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  /* The frame a skin is drawn on (John, 25 Oct): the shared skins use "x", the
+     reference tracker's arrangement; a signature skin uses its own, and "v9" keeps the template's
+     arrangement as it was up to v9, exactly (a live tracker's own skin; 47-frame-v9).
+     The root carries it as data-frame, and the list remembers which frame it was
+     drawn for, so a skin change that crosses frames draws everything again. */
+  function frameOf(skin) { return skin === 'signature' && D.signature && D.signature.frame === 'v9' ? 'v9' : 'x'; }
   /* A first visit opens in the skin picked on the old tracker (its saved
      settings, read only, through the data's own map), else the signature
      skin, else the configured default. After that, the last one used. */
@@ -740,7 +746,8 @@
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
-      '<span class="bfoot">' + statsHtml(S.era[e], fin) + '</span></button>' +     // the strip under the tab (Pull's folder tab, session 7)
+      (frameOf(settings.skin) === 'v9' ? statsHtml(S.era[e], fin) :              // the v9 frame: v9's era head, exactly
+        '<span class="bfoot">' + statsHtml(S.era[e], fin) + '</span>') + '</button>' +   // the strip under the tab (Pull's folder tab, session 7)
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
       (isOpen ? eraBodyHtml(e) : '') + '</div></section>';
   }
@@ -748,6 +755,7 @@
   function renderList() {
     var S = computeStats(), fins = finishMap(S), filt = narrowing();
     rendered = {};
+    $('#app').setAttribute('data-frame', frameOf(settings.skin));      // the frame this list was drawn for
     if (!filt && wasNarrowing) open = { b: {}, e: {} };
     wasNarrowing = filt;
     var visEra = D.eras.map(function () { return !filt; }), any = false;
@@ -1523,6 +1531,7 @@
     root.setAttribute('data-reveal', settings.reveal ? '1' : '0');
     root.setAttribute('data-layout', settings.layout);
     root.setAttribute('data-skin', settings.skin);
+    root.setAttribute('data-frame', frameOf(settings.skin));
     root.setAttribute('data-paper', settings.paper);
     LOOK.forEach(function (l) { root.setAttribute('data-' + l[1], settings[l[0]]); });
     root.setAttribute('data-dys', settings.dys ? '1' : '0');
@@ -1534,11 +1543,13 @@
   /* a Look setting: validated, stored in the one store, applied as a root
      attribute. Mark style also changes the glyphs, so the rows re-render. */
   function setLook(k, v) {
+    var was = frameOf(settings.skin);
     if (k === 'skin') { if (SKINS.indexOf(v) === -1) return; settings.skin = v; }
     else if (k === 'paper') { if (!PAPERS.some(function (p) { return p[0] === v; })) return; settings.paper = v; }
     else { var l = lookOf(k); if (!l || !lookOk(l, v)) return; settings[k] = v; }
     saveSettings(); applyPrefs();
-    if (k === 'marks') { renderList(); if (activeTab === 'reading') renderReading(); }
+    if (frameOf(settings.skin) !== was) { rerenderAll(); if (activeTab === 'reading') renderReading(); }   // another arrangement: draw it all again
+    else if (k === 'marks') { renderList(); if (activeTab === 'reading') renderReading(); }
     if (activeTab === 'settings') renderSettings();
   }
   /* The skin beacon (F-57): styles.css declares the token contract it was

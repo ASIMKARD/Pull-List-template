@@ -206,6 +206,13 @@
        "maxLength": 24,
        "description": "The name in the skin control."
       },
+      "frame": {
+       "enum": [
+        "x",
+        "v9"
+       ],
+       "description": "The arrangement the skin is drawn on (John, 25 Oct). \"x\" (the default) is the shared skins' X-Men layout; \"v9\" keeps the template's arrangement as it was up to v9 (Absolute's own skin), exactly, guarded by test/layout/47-frame-v9."
+      },
       "tokens": {
        "type": "object",
        "minProperties": 1,

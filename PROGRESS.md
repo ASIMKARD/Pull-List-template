@@ -3134,6 +3134,20 @@ No Sonic work in this session.
 - **The X-Men pinning applies to the x frame only.** The v9 frame keeps today's pinning: the tabs,
   the banner and the mini bar; the header scrolls away.
 
+### 28 Oct: the accessibility cases, ruled one by one
+Each X-Men visual that fails a check the template keeps (the table in step 1's checkpoint):
+- **A.** The quiet ☆: `#726D60` (4.52:1).
+- **B.** The gold (the core ★, the bookmarked ★, the review stars): `#896900` (4.51:1).
+- **C.** Type badges: MAIN `#266886`, SOLO `#0A6E51`, MINI `#A04600`, each nudged only as far as it
+  must to pass; the stripes keep X-Men's exact colours.
+- **D.** The offline line at 62 % (4.51:1).
+- **E.** The ☆ button, the review stars and the paper swatches at 24 × 24 px, glyphs unchanged.
+- **F.** A switch that is off stays X-Men's `#C9C4B5`, exactly (John's choice).
+- **G.** Control outlines (ⓘ, Mark arc, pinned chips): `#8F8A7C` (3.02:1).
+
+A, B, C, D, E and G are listed in 45-pull as `accessible:` in the step that builds them. F matches
+X-Men, so it needs no entry.
+
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a
 checkpoint here and X-Men | Pull screenshots at 390 px sent to John. Every new check is
@@ -3239,3 +3253,62 @@ X-Men visuals that would fail a check the template keeps. For each, the least ch
 ### Step 1b begins with
 `franchise.signature.frame` in `schema/dataset.schema.json` and `tools/build.py`, then root
 `data-frame` in `app.js`, then the `sig-v9` fixture and `47-frame-v9`.
+
+## Session 8 checkpoint — step 1b done (the frame switch and the v9 guard), 28 Oct 2026
+
+### Done
+- **`franchise.signature.frame`**, `"x"` (the default) or `"v9"`:
+  - in the schema and `tools/build.py`; any other value fails the build
+    (`test/fixtures/broken/signature-frame/`);
+  - root `data-frame` on the page, from the active skin: the shared skins are always on x, and a
+    signature skin is on its own frame;
+  - a skin change that crosses frames draws the list again (and Reading, if it is open).
+- **The v9 frame is today's arrangement, exactly.** Session 7's Pull-era work had touched shared
+  rules, so they were scoped to the x frame: the era head's background layers, the years, the
+  stats strip and its wrapper (`.bfoot`, now an x-only render path), finish-by and "filtered",
+  the done mark, the era head's bar and the era body's frame. The v9 frame draws them as v9 itself
+  did (Absolute `27dca56`, before session 7), the 6 px mini bar included (John, 28 Oct).
+- **New fixture `test/fixtures/sig-v9/`:** no-periods' data (by `sources`) and a demo signature
+  skin on the v9 frame that uses all five decoration types (era numbers, a row gutter, `// ` arc
+  prefixes, bracket marks, full-width era bars). Its `frame-ref.json` was captured from this
+  branch's v9 frame once that measured no difference from v9 itself on Absolute's data (below).
+  The plan said to capture it from `main` (`4db1ba1`), but `main` already carries session 7's era
+  strip and the 3 px mini bar, which v9 never had: 743 measured differences from the v9 frame on
+  this fixture, all of them those two.
+- **New suite `test/layout/47-frame-v9`** (8 checks): every visible element in five views (the
+  landing, an era open, an arc's rows, scrolled, Reading) at 320, 390 and 1024 px, as box, look and
+  `::before`/`::after`, against the reference: 1130 elements in 15 views, positions and sizes
+  within 0.5 px, looks exact; the 6 px mini bar; signature → Pull → signature redraws on each
+  frame; no page errors; a tracker's own `frame-ref.json` is checked when its skin is on v9.
+- **`test/layout/ref/capture-frame.js`** (session-only) records or compares a reference, from a
+  fixture, the repo's own dataset, or any built tracker served as it is.
+- **Mutation-proved,** 6 of 6 caught:
+  - an x-only rule leaking into v9 (the folder tab's layers unscoped);
+  - the 3 px mini bar on every frame;
+  - a skin change that doesn't redraw;
+  - a 1 px shift in the v9 header;
+  - the frame ignored (every skin on x);
+  - v9's era head given session 7's strip wrapper.
+- **Docs:** CLAUDE.md's UI rules and BUILD-NOTES' "Two frames"; FEATURE-INVENTORY X-13.
+
+### The early check on Absolute (a scratch copy; nothing written to Absolute)
+Absolute v9 (`27dca56`, served as it is) against the new template with Absolute's own data and
+`"frame": "v9"`, in its signature skin:
+- **the 47-frame-v9 inventory: no differences** in all 15 views (every element's box and look);
+- **pixels:** 0 differ in the arc's rows and scrolled views. 93–95 differ in the landing, an era
+  open and Reading, all in one place: the header's version label ("· v9" against the scratch
+  build's "· v12"). The real build will read v10, so step 8 compares against that label.
+
+### One call of mine (open to veto)
+- **The mini bar's default follows the frame in step 2, not here.** Until the x frame's header pins
+  (step 2), the mini bar is its only progress once scrolled, so turning it off now would leave
+  nothing. Step 2 turns it off by default on the x frame with the pinned header, for visitors who
+  haven't chosen; the v9 frame keeps it on.
+
+**Harness:** 1647 assertions, 0 failed, 36 suites. **Layout:** 421 checks, 0 failed, 12 suites.
+
+### Step 2 begins with
+`renderHeader` (`app.js`) on the x frame: `#phead`'s offline line and strapline, then `#pprog`'s split
+line, then `.fbar` with Next unread and the new `.ftools` row, then the pinned header and
+`measureStack`; then 45-pull's header entries come off the list.
+

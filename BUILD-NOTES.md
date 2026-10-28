@@ -74,6 +74,24 @@ are in `schema/dataset.schema.json`.
   - `test/suites/80-guards.test.js` checks the stylesheet;
   - `test/layout/60-stack.test.js` measures the tab bar in every skin, and
     `test/layout/10-sweep.test.js` checks that no era text crosses the tab's cut.
+- **Two frames (John, 25 Oct).** The shared skins are drawn on the **x frame**,
+  the X-Men tracker's arrangement (session 8). A signature skin may keep the
+  **v9 frame**, the template's arrangement as it was up to v9, exactly:
+  `"frame": "v9"` in `franchise.signature` (Absolute's own skin).
+  - The root carries `data-frame`. Every rule that belongs to the x frame is
+    scoped `:root[data-frame="x"]`, and the render paths split only where the
+    structure differs (the era head's strip, so far), so the v9 frame is the old
+    rules and markup, untouched. A skin change that crosses frames draws the page
+    again.
+  - `test/layout/47-frame-v9.test.js` measures every visible element in five
+    views at 320, 390 and 1024 px against a recorded reference
+    (`test/layout/ref/frame-map.js`): the `sig-v9` fixture's in the template
+    (`test/fixtures/sig-v9/frame-ref.json`), and a tracker's own frame-ref.json
+    beside its `dataset.json` when its skin is on the v9 frame. Re-capture (`node test/layout/ref/capture-frame.js`) only after John
+    has seen the difference.
+  - The v9 frame keeps v9's 6 px mini bar; the x frame's is 3 px (John, 13 and
+    28 Oct).
+  - Within a frame a skin still never moves a control.
 - The Look settings (paper, era colours, text size, density, button size,
   marks, the dyslexia-friendly font) own their tokens; a skin can't override
   them.
@@ -92,9 +110,13 @@ One skin of the tracker's own, from `franchise.signature`:
   "name": "Signal",
   "tokens": { "--accent-h": 176, "--font-display": "'Fixture Signal', var(--font-mono)" },
   "fonts": [{ "family": "Fixture Signal", "file": "fonts/ibm-plex-mono-500-latin.woff2", "weight": 500 }],
-  "stylesheet": "signature.css"
+  "stylesheet": "signature.css",
+  "frame": "x"
 }
 ```
+
+- `frame` is `"x"` (the default: the shared skins' layout) or `"v9"` (keep v9's
+  arrangement; see "Two frames" above).
 
 - `tokens` must be input tokens from `styles.css` `:root`. Tokens a Look
   setting owns are read from `styles.css` and refused, as are the page's own

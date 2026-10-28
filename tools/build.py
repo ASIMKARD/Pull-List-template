@@ -66,6 +66,11 @@ class BuildError(Exception):
 # things look, never where they are, so the build refuses anything else.
 # --------------------------------------------------------------------------
 SIGNATURE = 'signature'
+# The frames (John, 25 Oct): "x" is the shared skins' layout, X-Men's arrangement;
+# "v9" is the template's arrangement as it was up to v9, which a signature skin
+# may keep ("frame": "v9", Absolute's own skin). styles.css scopes every x-only
+# rule to :root[data-frame="x"], so the v9 frame is today's rules, untouched.
+FRAMES = ('x', 'v9')
 SIG_SCOPE = ':root[data-skin="signature"]'
 # :root tokens a skin may not set. Every token a Look setting's block sets
 # (paper, era colours, text size, density, buttons, marks, the dyslexia font)
@@ -340,7 +345,12 @@ def signature_skin(sig, base, shell_root, errs):
                 css = ''
             rules = signature_rules(css, rel, inputs, shell_root, errs)
     css = '\n'.join(faces + ['%s {\n%s\n}' % (SIG_SCOPE, '\n'.join(lines))] + rules) + '\n'
-    return {'name': name, 'css': css}
+    # the arrangement it is drawn on (John, 25 Oct): the shared skins' X-Men layout, or v9's, kept exactly
+    frame = sig.get('frame', 'x')
+    if frame not in FRAMES:
+        errs.append('%s.frame must be one of %s: %r' % (w, ', '.join(FRAMES), frame))
+        frame = 'x'
+    return {'name': name, 'css': css, 'frame': frame}
 
 
 def signature_rules(css, rel, inputs, shell_root, errs):

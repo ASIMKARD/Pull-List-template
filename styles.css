@@ -323,27 +323,30 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 /* The folder tab (Pull): the era's colour, the hatched corner over it, and the page painted into the cut, its
    right edge slanting from 100 % − --era-cut at the top to 100 % at the strip. Background layers, not a
    clip, so no text or focus ring is ever cut off; the right padding keeps text clear of the cut. */
-.era-head .bhead { padding: var(--era-tab-pad); border-radius: var(--radius) var(--radius) 0 0;
+.era-head .bhead { padding: var(--era-tab-pad); border-radius: var(--radius) var(--radius) 0 0; }
+/* Session 7's era box is drawn on the x frame only, so the v9 frame keeps v9's
+   rules exactly (John, 25 Oct; 47-frame-v9 measures it). */
+:root[data-frame="x"] .era-head .bhead {
   background: linear-gradient(to bottom left, var(--era-paper) 50%, transparent 50%) right / var(--era-cut) 100% no-repeat,
               repeating-linear-gradient(135deg, var(--era-hatch) 0 2px, transparent 2px 6px) right / var(--era-hatch-w) 100% no-repeat,
               linear-gradient(var(--era-tab), var(--era-tab)); }
-.bfoot { display: grid; gap: 6px; }               /* the figures line and its bar */
+.bfoot { display: grid; gap: 6px; }               /* the figures line and its bar (the x frame's era head) */
 .era-head .bfoot { padding: var(--era-strip-pad); background: var(--era-strip); border-radius: 0 0 var(--era-foot-r) var(--era-foot-r); }
-.era-head .byears { color: var(--era-years-ink); }
-.era-head .bstats { color: var(--era-stats-ink); }
-.era-head .bfinish, .era-head .bfiltered { color: var(--era-accent-ink); border-color: var(--era-accent-ink); }
-.era-head .bdone { color: var(--era-done-ink); }
-.era-head progress.bar { height: var(--era-bar-h); border-radius: var(--era-bar-r); background: var(--era-track); }
-.era-head progress.bar::-webkit-progress-bar { background: var(--era-track); border-radius: var(--era-bar-r); }
-.era-head progress.bar::-webkit-progress-value { background: var(--era-fill); border-radius: var(--era-bar-r); }
-.era-head progress.bar::-moz-progress-bar { background: var(--era-fill); border-radius: var(--era-bar-r); }
+:root[data-frame="x"] .era-head .byears { color: var(--era-years-ink); }
+:root[data-frame="x"] .era-head .bstats { color: var(--era-stats-ink); }
+:root[data-frame="x"] .era-head .bfinish, :root[data-frame="x"] .era-head .bfiltered { color: var(--era-accent-ink); border-color: var(--era-accent-ink); }
+:root[data-frame="x"] .era-head .bdone { color: var(--era-done-ink); }
+:root[data-frame="x"] .era-head progress.bar { height: var(--era-bar-h); border-radius: var(--era-bar-r); background: var(--era-track); }
+:root[data-frame="x"] .era-head progress.bar::-webkit-progress-bar { background: var(--era-track); border-radius: var(--era-bar-r); }
+:root[data-frame="x"] .era-head progress.bar::-webkit-progress-value { background: var(--era-fill); border-radius: var(--era-bar-r); }
+:root[data-frame="x"] .era-head progress.bar::-moz-progress-bar { background: var(--era-fill); border-radius: var(--era-bar-r); }
 .bhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .bname { font-family: var(--name-font); font-weight: var(--name-weight); text-transform: var(--name-case); letter-spacing: var(--name-track); font-size: calc(var(--era-name-size) * var(--scale)); }
 .band-head .bname { font-family: var(--font-display); font-weight: var(--display-weight); text-transform: var(--display-case); font-size: calc(22px * var(--scale)); letter-spacing: .02em; }
 .byears { color: var(--ink-soft); font-size: calc(var(--era-meta-size) * var(--scale)); font-family: var(--font-meta); }
 .era-head .bstats { font-size: calc(var(--era-meta-size) * var(--scale)); }
-.era-body { background: var(--inset); border: 0 solid var(--line); border-width: 0 var(--era-frame) var(--era-frame);
-  border-radius: 0 0 var(--era-frame-r) var(--era-frame-r); padding: var(--era-body-pad); }   /* Pull frames an open era */
+.era-body { background: var(--inset); border-radius: 0 0 var(--era-frame-r) var(--era-frame-r); padding: var(--era-body-pad); }
+:root[data-frame="x"] .era-body { border: 0 solid var(--line); border-width: 0 var(--era-frame) var(--era-frame); }   /* Pull frames an open era */
 .bfinish { color: var(--accent); }
 .bfiltered, .pfiltered {
   padding: 0 8px; border: 1px dashed var(--accent); border-radius: 999px; color: var(--accent); font-size: calc(12px * var(--scale));
@@ -477,7 +480,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .pbl-name { font-weight: 600; color: var(--ink); min-width: 4.5em; }
 .pbl progress.bar { flex-basis: 100%; height: 4px; margin-top: 2px; }
 .mini { padding: 0 16px; }      /* the inset lives on the wrapper: the bar stays 100% of it */
-progress.bar.mini-bar { height: 3px; }   /* as specific as progress.bar's 6 px, and later, so it wins (60-stack measures it) */
+:root[data-frame="x"] progress.bar.mini-bar { height: 3px; }   /* 3 px in the x frame (John, 13 Oct); the v9 frame keeps v9's 6 px (John, 28 Oct; 60-stack measures both) */
 
 /* ---- table view (F-49, S-7): one line per issue, half the height (L-7),
    never wider than the screen (L-8). Targets stay at least 24 px. ---- */

@@ -123,6 +123,12 @@ its `vN-final` tag restores the old version as it was. Absolute's rollback tags 
   ids listed, or every later position shifts.
 
 ## UI rules (v3)
+- **Two frames (John, 25 Oct).** The shared skins use the x frame, the X-Men
+  tracker's arrangement. A signature skin may keep the v9 frame (`"frame": "v9"`),
+  the template's arrangement as it was up to v9, exactly; Absolute's own skin
+  does. Scope every x-only rule to `:root[data-frame="x"]` and split a render path
+  only where the structure differs; `test/layout/47-frame-v9` fails on any change
+  to the v9 frame. Within a frame, a skin never moves a control.
 - **Data-driven visibility: a rule, not a one-off (decided 4 Oct).** A control or
   section renders only when the dataset gives it something to do. The data
   decides this, never a setting or a skin; skins never hide a control.
