@@ -3177,3 +3177,65 @@ mutation-proved.
 ### Step 1 begins with
 `test/layout/ref/pull-map.js`: views × widths, then `capture-x-men.js` against the live tracker,
 then 45-pull. The comparison fixture is `test/fixtures/pull-ref/`.
+
+## Session 8 checkpoint — step 1 done (measure first), 28 Oct 2026
+
+### Done
+- **`test/layout/ref/x-men.json` now holds the live X-Men tracker's whole page.**
+  - Eight views: the landing, an era open, an arc open, scrolled 300 px, Reading, Reviews (one
+    review written through the UI), Settings, and "extras" (a core row and a gap note).
+  - Three widths: 320, 390 and 1024 px.
+  - Captured from https://asimkard.github.io/X-men/, byte-identical to the read-only clone at
+    `663fe46` (sha256 `fc885da7…`).
+  - The folder tab's shape (at 390 px) and the eleven era colours are kept.
+- **`test/layout/ref/pull-map.js`** maps every element view by view, with each page's driver.
+  - New measures: positions relative to an anchor (`rel*`), the gap to the previous match,
+    the pinned top and bottom, scroll, and a `<progress>`'s fill (read from its winning rule,
+    since Chromium doesn't compute `::-webkit-progress-value`).
+  - `ONLY` lists one-sided elements with their reason: X-Men's filter chips and per-arc reviews
+    on one side; the Filters button, ✎, finish-by, the banner, the jump bar, Settings' own rows
+    and the key hint on the other.
+  - `WRAPPERS` lists containers that draw nothing.
+  - `DIFFERENCES` ties every remaining difference to a kept item or a step; `CURRENT_STEP` is 1.
+- **The capture refuses to write** while any visible X-Men element is unmapped (its first runs
+  did, until the map covered everything).
+- **New fixture `test/fixtures/pull-ref/`:** six top-level eras in X-Men's first six colours, 14
+  arcs of X-Men's five types, notes, core rows and a gap note.
+- **`45-pull` rewritten** to compare all of it, both ways:
+  - every visible template element accounted for (the inventory);
+  - every template-only entry still on the page;
+  - every difference listed, and every listed one still a difference;
+  - each reason a kept item, accessible, John's ruling or a step not yet done;
+  - the reference captured with this map (a hash).
+  - `PULL_REPORT=file` writes the measured differences for a report.
+- **The numbers:** 858 properties match X-Men, and 966 differences are listed, every one tied to
+  steps 2 to 6b.
+- **`test/layout/ref/side-by-side.js`** joins X-Men | Pull screenshots per view (session-only).
+- **Mutation-proved,** 7 of 7 caught:
+  - a wrapper dropped;
+  - a stale template-only entry;
+  - a difference unlisted;
+  - a listed one that no longer differs;
+  - a step already done;
+  - a reason in no known form;
+  - an X-Men selector changed after the capture.
+- **Docs:** BUILD-NOTES' "Pull matches the X-Men tracker".
+
+**Harness:** 1645 assertions, 0 failed, 36 suites. **Layout:** 413 checks, 0 failed, 11 suites.
+
+### The accessibility cases, put to John one by one (28 Oct)
+X-Men visuals that would fail a check the template keeps. For each, the least change that passes:
+
+| Case | X-Men | Passing |
+|---|---|---|
+| A. The quiet ☆ (bookmark off) | `#C9C4B5` on the card, 1.53:1 | `#726D60`, 4.52:1 (hue kept) |
+| B. Gold: core ★, bookmarked ★, review stars | `#B08A1F`, 2.83:1 | `#896900`, 4.51:1 |
+| C. Type badges (text on its 13 % tint) | MAIN 4.18, SOLO 3.88, MINI 3.14 | MAIN `#266886` 4.51, SOLO `#0A6E51` 4.55, MINI `#A04600` 4.50 (SPIN-OFF 5.07, EVENT 4.82 already pass) |
+| D. The offline line | ink at 60 %, 4.25:1 | at 62 %, 4.51:1 |
+| E. Small targets | the ☆ button 22 px, review stars 20 px, paper swatches 22 px | 24 × 24 px, glyphs unchanged |
+| F. A switch that is off | `#C9C4B5` on the paper, 1.37:1 | `#878274`, 3.02:1 |
+| G. Control outlines (ⓘ, Mark arc, pinned chips) | `#C9C4B5`, 1.53:1 | `#8F8A7C`, 3.02:1 |
+
+### Step 1b begins with
+`franchise.signature.frame` in `schema/dataset.schema.json` and `tools/build.py`, then root
+`data-frame` in `app.js`, then the `sig-v9` fixture and `47-frame-v9`.

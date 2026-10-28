@@ -1,125 +1,346 @@
-/* Pull = X-Men (John, 6 Oct): which X-Men element each template element is
-   measured against, and what is measured. Shared by the capture script
-   (capture-x-men.js, session-only: it needs a local read-only X-Men copy) and
-   test/layout/45-pull, so both always measure the same things.
+/* Pull = X-Men (John, 6 Oct; the whole page since 24 Oct): which X-Men
+   element each template element is measured against, in every view, at every
+   width, and what is measured. Shared by the capture script (capture-x-men.js,
+   session-only: it reads the live X-Men tracker) and test/layout/45-pull, so
+   both always measure the same things.
 
-   Measured at 393 px (John's iPhone). Colours, font families, weights, case
-   and tracking must be exact; sizes within 0.5 px. Spacing that would move a
-   control is a skin's business only with John's say-so (one layout), so it
-   is recorded in DIFFERENCES below rather than built. Sizes compare within
-   0.5 px; everything else exactly.
+   Session 8 (John, 24 Oct): the whole page, in seven views (the Checklist
+   landing, an era open, an arc open, scrolled, Reading, Reviews, Settings) plus
+   "extras" (a core row and a gap note), at 320, 390 and 1024 px. The template
+   side is the pull-ref fixture in Pull: top-level eras with X-Men's type names
+   and its first six era colours. Every visible X-Men element is mapped or
+   listed in ONLY['x-men'] with the kept item that explains it, and every
+   visible template element likewise (45-pull's inventory checks). Every
+   difference left is in DIFFERENCES, tied to a kept item, to John's ruling,
+   or to the step of session 8 that fixes it.
 
-   Session 7 (John, 9 Oct): Pull's era boxes take X-Men's folder-tab shape and
-   its tab bar runs edge to edge, so both are measured in full: the era box,
-   tab, strip and open body, each text's effective colour, and the folder tab's
-   cut, read from pixels (SHAPE). X-Men's eras are top-level, so the template's
-   are measured on a fixture without bands (page 'eras'). */
+   Colours, font families, weights, case and style compare exactly; sizes and
+   positions within 0.5 px. */
 'use strict';
 
-const WIDTH = 393, HEIGHT = 852;
+const WIDTHS = [320, 390, 1024];
+const HEIGHTS = { 320: 568, 390: 844, 1024: 768 };
+const WIDTH = 390;                       // the screenshots, the folder tab's shape and the era colours
+const HEIGHT = HEIGHTS[WIDTH];
+const VIEWS = ['landing', 'era', 'arc', 'scrolled', 'reading', 'reviews', 'settings', 'extras'];
+const SCROLL = 300;                      // the scrolled view: both pages scrolled this far
 
-/* [what, X-Men selector, template selector, properties, template page]
-   A selector ending in @N is its Nth match. The page is 'main' (the basic
-   fixture) unless it says 'eras' (the no-periods fixture: top-level eras). */
-const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'color'];
-/* An era box's text is compared by the colour you see (its colour times every
-   opacity above it): the reference draws its years white at opacity .85, Pull
-   in white at 85 % (a skin never sets opacity), and the two land the same. */
+/* The steps of session 8, in order (PROGRESS.md). A difference tied to a step
+   that is done (at or before CURRENT_STEP) fails 45-pull: that step should
+   have fixed it. */
+const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
+const CURRENT_STEP = '1';
+
+const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
+/* Text drawn on a coloured box is compared by the colour you see: its colour
+   times every opacity above it (X-Men's years are white at opacity .85). */
 const SEEN = TEXT.slice(0, -1).concat(['effectiveColor']);
-const MAP = [
-  ['page background', 'body', 'body', ['backgroundColor']],
-  ['title', '.topbar h1', '.ptitle', TEXT.concat(['lineHeight'])],
-  ['subtitle', '.topbar .subtitle', '.pmeta', TEXT],
-  ['tab bar', '.tabbar', '#tabs', ['backgroundColor']],
-  ['tab', '.tabbar button:not(.active)', '.tab[aria-selected="false"]', TEXT],
-  ['selected tab', '.tabbar button.active', '.tab[aria-selected="true"]', TEXT.concat(['borderBottomColor', 'borderBottomWidth'])],
-  ['era name', '.era-divider .era-name', '.era-head .bname', SEEN, 'eras'],
-  ['era years', '.era-divider .era-years', '.era-head .byears', SEEN, 'eras'],
-  ['era stats', '.era-divider .era-stats span', '.era-head .bcount', ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'effectiveColor'], 'eras'],
-  ['era intro', '.era-intro', '.era-intro', TEXT.concat(['fontStyle']), 'eras'],
-  ['arc name', '.arc-head .name', '.arc-head h3', TEXT],
-  ['row title', '.issue-row .title', '.row:not(.inert) .title', TEXT],
-  ['row', '.issue-row', '.row:not(.inert)', ['effectiveBackground', 'borderBottomColor']],
-  ['era body', '.era-body', '.era-body', ['effectiveBackground', 'boxLeft', 'boxWidth', 'paddingTop', 'paddingLeft', 'borderLeftWidth', 'borderLeftColor',
-    'borderBottomWidth', 'borderBottomLeftRadius'], 'eras'],
-  ['search box', '#searchInput', '#q', ['fontFamily', 'fontSize', 'color', 'backgroundColor', 'borderTopColor', 'borderTopLeftRadius']],
-  // the era box (session 7): X-Men's folder tab, a darker strip under it, and the open body's frame
-  ['era box', '.era-divider', '.era-head', ['boxLeft', 'boxWidth', 'borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomLeftRadius',
-    'borderBottomRightRadius', 'borderTopWidth', 'boxShadow'], 'eras'],
-  ['era spacing', '.era-divider@2', '.era-head@2', ['gapAbove'], 'eras'],
-  ['era tab', '.era-divider .tab', '.era-head .bhead', ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'], 'eras'],
-  ['era strip', '.era-divider .era-stats', '.era-head .bfoot', ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'], 'eras'],
-  ['era bar', '.era-divider .era-progress-track', '.era-head progress.bar', ['backgroundColor', 'boxHeight', 'borderTopLeftRadius'], 'eras'],
-  // geometry: the tab bar runs edge to edge in Pull (John, 9 Oct); the read mark keeps the 24 px minimum (on record below)
-  ['tab bar box', '.tabbar', '#tabs', ['boxLeft', 'boxWidth', 'borderTopLeftRadius']],
-  ['read mark', '.issue-row .tri-check', '.row:not(.inert) .mark', ['boxWidth', 'boxHeight', 'borderTopLeftRadius', 'borderTopColor']],
-];
+const PAD = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'];
+const EDGE = ['borderTopWidth', 'borderTopStyle', 'borderTopColor', 'borderTopLeftRadius'];
+const RADII = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'];
 
-/* The folder tab's shape, read from pixels on the first era box (SHAPE, per
-   side: the box, its tab and its strip). Paper is the page colour. The cut is
-   where paper begins along a row of the tab, as a fraction of the box's
-   width, at its top, middle and bottom; fill and strip are the colours
-   painted there; hatch is the share of the tab's corner (its last 14 px at the
-   bottom) drawn darker than the fill. */
-const SHAPE = {
-  'x-men': { box: '.era-divider', tab: '.era-divider .tab', strip: '.era-divider .era-stats' },
-  template: { box: '.era-head', tab: '.era-head .bhead', strip: '.era-head .bfoot' },
+/* MAP[view] = [what, X-Men selector, template selector, properties, options].
+   A selector ending in @N is its Nth match. Options: anchor (another row of
+   the same view: rel* positions are measured from its box), leaf (false: the
+   row's descendants are not covered by it; rows with text are leaves). */
+const MAP = {
+  landing: [
+    ['page background', 'body', 'body', ['backgroundColor']],
+    ['header', '.topbar', '#phead', ['effectiveBackground', 'boxLeft', 'boxWidth', 'borderBottomWidth', 'borderBottomStyle', 'borderBottomColor', 'position'], { leaf: false }],
+    ['title', '.topbar h1', '.ptitle', TEXT.concat(['lineHeight', 'relLeft', 'relTop']), { anchor: 'header' }],
+    ['offline line', '.topbar .offline-badge', '.pbadge', SEEN.concat(['relLeft', 'relTop']), { anchor: 'header' }],
+    ['subtitle', '.topbar .subtitle', '.pmeta', TEXT.concat(['relLeft', 'relTop']), { anchor: 'header' }],
+    ['progress track', '.topbar .progress-track', '#pprog .pbar', ['backgroundColor', 'boxHeight', 'borderTopWidth', 'borderTopColor', 'borderTopLeftRadius', 'relLeft', 'relRight'], { anchor: 'header' }],
+    ['progress fill', '.topbar .progress-fill', '#pprog .pbar', ['fillColor']],
+    ['progress label', '.topbar .progress-label', '#pprog .pstats', ['fontFamily', 'fontSize', 'color'], { leaf: false }],
+    ['read count', '#overallLabel', '.pcount', TEXT.concat(['relLeft']), { anchor: 'header' }],
+    ['time remaining', '#overallTime', '.pleft', TEXT.concat(['relRight']), { anchor: 'header' }],
+    ['tab bar', '.tabbar', '#tabs', ['backgroundColor', 'boxLeft', 'boxWidth', 'boxHeight', 'borderTopLeftRadius'], { leaf: false }],
+    ['tab', '.tabbar button:not(.active)', '.tab[aria-selected="false"]', TEXT.concat(['paddingTop', 'paddingBottom'])],
+    ['selected tab', '.tabbar button.active', '.tab[aria-selected="true"]', TEXT.concat(['borderBottomColor', 'borderBottomWidth'])],
+    ['filter bar', '.filterbar', '#fpanel', ['effectiveBackground', 'borderBottomWidth', 'borderBottomColor', 'boxLeft', 'boxWidth'], { leaf: false }],
+    ['search row', '.search-row', '.fbar', ['relLeft', 'relTop', 'relRight'], { anchor: 'filter bar', leaf: false }],
+    ['search box', '#searchInput', '#q', ['fontFamily', 'fontSize', 'color', 'backgroundColor', 'borderTopColor', 'borderTopWidth', 'borderTopLeftRadius', 'boxHeight', 'paddingLeft']],
+    ['next unread', '#jumpBtn', '.fbar .jump', TEXT.concat(['backgroundColor', 'borderTopWidth', 'borderTopLeftRadius', 'paddingLeft', 'paddingRight', 'boxHeight', 'relRight']), { anchor: 'filter bar' }],
+    ['era box', '.era-divider', '.era-head', ['boxLeft', 'boxWidth'].concat(RADII, ['borderTopWidth', 'boxShadow']), { leaf: false }],
+    ['era spacing', '.era-divider@2', '.era-head@2', ['gapPrev']],
+    ['era tab', '.era-divider .tab', '.era-head .bhead', PAD, { leaf: false }],
+    ['era name', '.era-divider .era-name', '.era-head .bname', SEEN.concat(['relLeft', 'relTop']), { anchor: 'era tab' }],
+    ['era years', '.era-divider .era-years', '.era-head .byears', SEEN.concat(['relLeft', 'relTop']), { anchor: 'era tab' }],
+    ['era chevron', '.era-divider .chevron', '.era-head .echev', SEEN.concat(['relRight', 'relTop']), { anchor: 'era tab' }],
+    ['era strip', '.era-divider .era-stats', '.era-head .bfoot', PAD.concat(['fontFamily', 'fontSize']), { leaf: false }],
+    ['era count', '.era-divider .era-stats > span:first-child', '.era-head .bcount', SEEN.concat(['relLeft']), { anchor: 'era strip' }],
+    ['era bar', '.era-divider .era-progress-track', '.era-head progress.bar', ['backgroundColor', 'boxHeight', 'borderTopLeftRadius', 'relLeft', 'relRight'], { anchor: 'era strip' }],
+    ['era bar fill', '.era-divider .era-progress-fill', '.era-head progress.bar', ['fillColor']],
+    ['era time', '.era-divider .era-stats > span:last-child', '.era-head .bleft', SEEN.concat(['relRight']), { anchor: 'era strip' }],
+  ],
+  era: [
+    ['era body', '.era-body', '.era-body', ['effectiveBackground', 'boxLeft', 'boxWidth', 'paddingTop', 'paddingLeft', 'borderLeftWidth', 'borderLeftColor',
+      'borderBottomWidth', 'borderBottomLeftRadius'], { leaf: false }],
+    ['era intro', '.era-intro', '.era-body .era-intro', TEXT.concat(['paddingTop', 'paddingLeft', 'borderBottomStyle', 'borderBottomWidth', 'borderBottomColor', 'relLeft', 'relTop']), { anchor: 'era body' }],
+    ['arc card', '.arc-row', '.era-body .arc', ['effectiveBackground', 'borderTopWidth', 'borderTopColor', 'borderTopLeftRadius', 'boxWidth', 'relLeft'], { anchor: 'era body', leaf: false }],
+    ['arc spacing', '.arc-row@2', '.era-body .arc@2', ['gapPrev']],
+    ['arc head', '.arc-row .arc-head', '.era-body .arc .arc-head', ['boxHeight'], { leaf: false }],
+    ['arc stripe', '.arc-row .arc-tab', '.era-body .arc .arc-tab', ['backgroundColor', 'boxWidth', 'borderTopLeftRadius', 'relLeft', 'relTop'], { anchor: 'arc card' }],
+    ['arc name', '.arc-row .arc-head .name', '.era-body .arc .arc-name', TEXT.concat(['whiteSpace', 'textOverflow', 'relLeft', 'relTop']), { anchor: 'arc card' }],
+    ['type badge', '.arc-row .type-badge', '.era-body .arc .type-badge', TEXT.concat(['backgroundColor', 'paddingTop', 'paddingLeft', 'borderTopLeftRadius', 'relLeft']), { anchor: 'arc card' }],
+    ['arc count', '.arc-row .arc-frac', '.era-body .arc .arc-frac', TEXT],
+    ['info button', '.arc-row .info-btn', '.era-body .arc .info-btn', TEXT.concat(['backgroundColor', 'boxWidth', 'boxHeight', 'borderTopWidth', 'borderTopColor', 'borderTopLeftRadius', 'relRight']), { anchor: 'arc card' }],
+    ['arc chevron', '.arc-row .arc-chevron', '.era-body .arc .arc-chev', TEXT.concat(['relRight']), { anchor: 'arc card' }],
+  ],
+  arc: [
+    ['open arc', '.arc-row.expanded', '.era-body .arc', ['effectiveBackground', 'boxWidth'], { leaf: false }],
+    ['arc actions', '.arc-row.expanded .arc-actions', '.era-body .arc .arc-acts', ['paddingLeft', 'paddingBottom', 'columnGap', 'relLeft'], { anchor: 'open arc', leaf: false }],
+    ['arc action', '.arc-row.expanded .arc-actions button', '.era-body .arc .arc-acts .b', TEXT.concat(PAD, EDGE, ['backgroundColor', 'boxHeight'])],
+    ['issue list', '.arc-row.expanded .issue-list', '.era-body .arc .arc-body', ['borderTopWidth', 'borderTopColor'], { leaf: false }],
+    ['row', '.issue-row', '.row:not(.inert)', ['effectiveBackground', 'borderBottomColor', 'borderBottomWidth', 'paddingTop', 'paddingLeft', 'columnGap'], { leaf: false }],
+    ['read mark', '.issue-row .tri-check', '.row:not(.inert) .mark', ['boxWidth', 'boxHeight', 'backgroundColor'].concat(EDGE, ['relLeft']), { anchor: 'row' }],
+    ['read mark, read', '.issue-row.state-read .tri-check', '.row[data-s="read"] .mark', ['backgroundColor', 'color', 'fontSize', 'fontWeight']],
+    ['row title', '.issue-row .title', '.row:not(.inert) .title', TEXT.concat(['relLeft']), { anchor: 'row' }],
+    ['row title, read', '.issue-row.state-read .title', '.row[data-s="read"] .title', ['color', 'textDecorationLine', 'textDecorationColor']],
+    ['row with a note', '.issue-row:has(.issue-note)', '.row:has(.subnote)', ['paddingTop'], { leaf: false }],
+    ['row note', '.issue-row .issue-note', '.row .subnote', TEXT.concat(['relLeft', 'relTop']), { anchor: 'row with a note' }],
+    ['bookmark', '.issue-row .bookmark-btn:not(.on)', '.row:not(.inert) .b.bm[aria-pressed="false"]', ['fontSize', 'color', 'backgroundColor', 'borderTopWidth', 'boxWidth', 'boxHeight', 'relRight'], { anchor: 'row' }],
+    ['bookmark, on', '.issue-row .bookmark-btn.on', '.row .b.bm[aria-pressed="true"]', ['fontSize', 'color']],
+    ['pinned bar', '#pinnedBar .chip-row', '#pinbar', ['paddingTop', 'paddingLeft'], { leaf: false }],
+    ['pinned label', '#pinnedBar .chip-row > span', '#pinbar .pin-label', TEXT],
+    ['pinned chip', '#pinnedBar .chip', '#pinbar .chip', TEXT.concat(PAD, EDGE, ['backgroundColor'])],
+  ],
+  scrolled: [
+    ['scroll', 'html', 'html', ['scrollY'], { leaf: false }],
+    ['pinned header', '.topbar', '#phead', ['boxTop', 'boxBottom'], { leaf: false }],
+    ['pinned tab bar', '.tabbar', '#tabs', ['boxTop', 'boxBottom'], { leaf: false }],
+  ],
+  reading: [
+    ['reading view', '.reading-view', '#reader', ['paddingTop', 'paddingLeft', 'effectiveBackground'], { leaf: false }],
+    ['reading counter', '.reading-counter', '.rcount', TEXT.concat(['textAlign'])],
+    ['reading card', '.reading-card', '.rcard', ['textAlign', 'rowGap', 'effectiveBackground'], { leaf: false }],
+    ['reading era', '.reading-era-chip', '.rpill', TEXT.concat(['backgroundColor', 'paddingTop', 'paddingLeft', 'borderTopLeftRadius'])],
+    ['reading title', '.reading-title', '.rtitle', TEXT.concat(['lineHeight', 'textAlign'])],
+    ['reading arc', '.reading-arc', '.rmeta', TEXT],
+    ['reading note', '.reading-note', '.rnote', TEXT],
+    ['reading blurb', '.reading-blurb', '.rblurb', TEXT.concat(['borderTopStyle', 'borderTopColor', 'paddingTop'])],
+    ['reading skip', '#readSkipBtn', '.racts .rbtn.ghost', TEXT.concat(['backgroundColor', 'paddingTop', 'boxHeight'], EDGE)],
+    ['reading read', '#readReadBtn', '.racts .rbtn.solid', TEXT.concat(['backgroundColor', 'paddingTop', 'boxHeight'], EDGE)],
+    ['reading nav', '.reading-nav button', '.rnav .linkbtn', TEXT.concat(['paddingTop'])],
+  ],
+  reviews: [
+    ['review card', '.review-card', '.rev-item', ['effectiveBackground', 'paddingTop', 'paddingLeft', 'boxLeft', 'boxWidth'].concat(EDGE), { leaf: false }],
+    ['review era', '.review-card .era-tag', '.rev-item .rev-era', TEXT],
+    ['review title', '.review-card .arc', '.rev-item .rev-name', TEXT],
+    ['review stars', '.review-card .stars', '.rev-item .rev-stars', TEXT],
+    ['review text', '.review-card .review-text', '.rev-item .rev-t', TEXT],
+    ['review edit', '.review-card [data-editreview]', '.rev-item .rev-edit', TEXT.concat(PAD, EDGE, ['backgroundColor'])],
+  ],
+  settings: [
+    ['settings section', '.settings-section', '#settings .sec', ['paddingTop', 'paddingLeft', 'borderBottomWidth', 'borderBottomColor'], { leaf: false }],
+    ['settings heading', '.settings-section h3', '#settings .sec-name', TEXT],
+    ['setting row', '.setting-row', '#settings .srow', ['paddingTop', 'paddingBottom', 'columnGap'], { leaf: false }],
+    ['setting label', '.setting-label', '#settings .slabel', TEXT],
+    ['segmented', '.settings-section .segmented', '#settings .seg', EDGE, { leaf: false }],
+    ['segment', '.settings-section .segmented button:not(.on)', '#settings .segbtn[aria-pressed="false"]', TEXT.concat(['backgroundColor', 'paddingTop', 'paddingLeft'])],
+    ['segment, on', '.settings-section .segmented button.on', '#settings .segbtn[aria-pressed="true"]', ['backgroundColor', 'color']],
+    ['switch', '.settings-section .toggle:not(.on)', '#settings .tog[aria-pressed="false"]', ['backgroundColor', 'boxWidth', 'boxHeight', 'borderTopLeftRadius']],
+    ['switch, on', '.settings-section .toggle.on', '#settings .tog[aria-pressed="true"]', ['backgroundColor']],
+    ['settings button', '.settings-section button.mini', '#settings .tool', TEXT.concat(PAD, EDGE, ['backgroundColor'])],
+    ['swatch', '.settings-section .swatch', '#settings .swatch', ['boxWidth', 'boxHeight', 'borderTopLeftRadius', 'borderTopWidth']],
+  ],
+  extras: [
+    ['core star', '.issue-row .core-star', '.row .core-star', TEXT.concat(['marginLeft'])],
+    ['gap note', '.gapnote-row', '.row.inert', TEXT.concat(PAD, ['effectiveBackground', 'borderBottomColor'])],
+  ],
 };
-const SHAPE_PROPS = ['cutTop', 'cutMiddle', 'cutBottom', 'fill', 'strip', 'hatch'];
-const NEAR = { cutTop: 0.015, cutMiddle: 0.015, cutBottom: 0.015, hatch: 0.12 };
 
-/* The differences left, each with why it isn't built. "accessible": X-Men's
-   value fails a measured contrast rule (40-look), so Pull keeps a passing one.
-   "John": it needs a layout, data or rule change only John can approve (the
-   one-layout rule, the pale era washes of T-39, the Button size setting), or
-   John approved it and session 7 is building it (9 Oct).
-   45-pull fails if a difference appears that isn't listed here, or a listed
-   one goes away, so this list is always the true state. */
+/* Elements that exist on one side only, each with the kept item or ruling
+   that explains it (its descendants are covered too). */
+const ONLY = {
+  'x-men': [
+    ['.filterbar #depthSeg', 'kept:filters: the depth control is in the Filters panel (John, 1 Oct)'],
+    ['.filterbar .chip-row', 'kept:filters: the type, era and preset chips are in the Filters panel (John, 1 Oct)'],
+    ['.arc-actions [data-reviewtoggle]', 'kept:reviews: reviews are per issue, with ✎ on every row (John, 8 Oct)'],
+    ['.review-edit-panel', 'kept:reviews: reviews are per issue (John, 8 Oct)'],
+    ['.setting-desc', 'kept:settings: Settings keep the template\'s collapsible sections and their own rows (John, 24 Oct)'],
+    ['.settings-section .row-buttons', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['.settings-section select', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['.refresh-box', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['.empty-state', 'kept:v3: an empty state the template words its own way'],
+  ],
+  template: [
+    ['.ftoggle', 'kept:filters: the Filters button (John, 1 Oct)'],
+    ['#fshow', 'kept:filters: "Showing X of Y issues" belongs to the Filters panel (John, 1 Oct)'],
+    ['#fbody', 'kept:filters: the collapsible sections (John, 1 Oct)'],
+    ['.pfinish', 'John (24 Oct): the plan\'s finish-by date sits beside the time remaining'],
+    ['.b.rv', 'kept:reviews: ✎ on every row (John, 8 Oct)'],
+    ['.review', 'kept:reviews: the per-issue review editor (John, 8 Oct)'],
+    ['.arc-meta', 'kept:v3: an arc\'s year and importance, beside its type badge'],
+    ['#eranav', 'kept:v3: the era jump bar (off by default)'],
+    ['#pbanner', 'kept:v3: the persistent banner (off by default)'],
+    ['.rkeys', 'kept:v3: the Reading tab\'s key hint (hidden on touch screens)'],
+    ['#settings .sec-ico', 'kept:settings: the collapsible sections\' icon, summary and chevron (John, 24 Oct)'],
+    ['#settings .sec-sum', 'kept:settings: as the icon (John, 24 Oct)'],
+    ['#settings .sec-chev', 'kept:settings: as the icon (John, 24 Oct)'],
+    ['#settings .sctl', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .chip', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings select', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings textarea', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .muted', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .ssub', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .pace', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .offstate', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .sgrp', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .seth', 'kept:settings: the collapsible sections (John, 24 Oct)'],
+    ['#settings .about', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .filelabel', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#settings .bmlist', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    // the template as it stands at step 1; each goes in the step named
+    ['.ptools', 'step 2: Expand all and Collapse all move into the filter area, Next unread beside search'],
+    ['#mini', 'step 2: the mini bar goes off by default in the x frame (John, 24 Oct)'],
+    ['.arc-head h3', 'step 4a: arc headings become cards'],
+    ['.arc-head .blurb', 'step 4a: the blurb moves into the card\'s ⓘ panel'],
+    ['.arc-acts', 'step 4a: Mark arc read and unread show in an open card only'],
+    ['.era-head .bfinish', 'step 3: an era\'s finish-by date leaves the box for the first line of its open body (John, 24 Oct)'],
+    ['.b.core', 'step 5: the core marker becomes X-Men\'s star after the title'],
+    ['.rstate', 'step 6a: the read state moves into the counter, as X-Men'],
+    ['#reviews .pane-h', 'step 6a: the Reviews heading'],
+    ['#reviews .rev-top', 'step 6a: the review list becomes X-Men\'s cards'],
+  ],
+};
+
+/* Containers that draw nothing of their own (their children are mapped). */
+const WRAPPERS = {
+  'x-men': ['#app', '.tabpanel', '#eraList', '#pinnedBar', '#eraList > div', '.era-divider + .era-body > div', '.arc-title', '.arc-title .meta',
+    '.issue-body', '.overall-progress', '.reading-actions', '.reading-nav', '.settings-section > div:not([class])', '.setting-row > div:not([class])'],
+  template: ['main', '.pane', '#app', '#stack', '#pprog', '.badges', '.bstats', '#reader', '.racts', '.rnav', '.rpills', '#pinchips', '#settings', '#settings .sec-pad',
+    '#settings .sec-head', '#settings .sec-t', '#settings .sec-body', '#settings .sec-in', '#reviews', '.revlist', '.arc', '.arc-head', '.era', '.era-body', '.swatches'],
+};
+
+/* The differences left, each tied to a kept item, to John's ruling, or to the
+   step of session 8 that fixes it. Keys are view/what.property@width, and *
+   matches anything in its place. 45-pull fails on a difference that isn't
+   listed, a listed one that no longer differs anywhere, a reason that isn't
+   one of the forms below, and a step that is already done. */
+const REASON = /^(kept:(filters|title|reviews|mark24|outlines|settings|v3)|accessible|John \(\d{1,2} [A-Z][a-z]{2}\)|step (1b|2|3|4a|4b|5|6a|6b|7|8|9)): .{10,}/;
 const DIFFERENCES = {
-  'selected tab.borderBottomColor': 'accessible: X-Men\'s navy underline is 1.52:1 on the bar; Pull uses the same hue at 3:1',
-  'search box.borderTopColor': 'accessible: X-Men\'s field outline is 1.53:1; Pull keeps the 3:1 control outline (--edge)',
-  'read mark.boxWidth': 'John (9 Oct): the mark keeps the accessible 24 px minimum, with the Button size setting (--tap)',
-  'read mark.boxHeight': 'John (9 Oct): as the width (22 px in X-Men, --tap here)',
-  'read mark.borderTopLeftRadius': 'John (9 Oct): the mark\'s shape stays with the Marks setting (--mark-radius)',
+  // kept (decided)
+  'landing/selected tab.borderBottomColor@*': 'kept:outlines: X-Men\'s navy underline is 1.52:1 on the bar; Pull uses the same hue at 3:1 (John, 9 Oct)',
+  'landing/search box.borderTopColor@*': 'kept:outlines: X-Men\'s field outline is 1.53:1; Pull keeps the 3:1 control outline (John, 9 Oct)',
+  'arc/read mark.boxWidth@*': 'kept:mark24: the mark keeps the accessible 24 px minimum, with the Button size setting (John, 9 Oct)',
+  'arc/read mark.boxHeight@*': 'kept:mark24: as the width (22 px in X-Men)',
+  // step 2: the header, the pinned header, the filter area and the 760 px column
+  'landing/header.*@*': 'step 2: X-Men\'s header, sticky, with its 2 px rule, in the 760 px column',
+  'landing/title.*@*': 'step 2: the title\'s place in the header, and 28 px above 420 px',
+  'landing/offline line.*@*': 'step 2: X-Men\'s offline line, ending "· vN" (John, 24 Oct)',
+  'landing/subtitle.*@*': 'step 2: the strapline in the subtitle\'s place',
+  'landing/progress *.*@*': 'step 2: X-Men\'s 8 px track and its label',
+  'landing/read count.*@*': 'step 2: the read count on the left of the label',
+  'landing/time remaining.*@*': 'step 2: the time remaining on the right of the label',
+  'landing/tab bar.*@*': 'step 2: X-Men\'s tab bar, in the 760 px column',
+  'landing/tab.*@*': 'step 2: X-Men\'s tab padding and size at every width',
+  'landing/selected tab.fontSize@*': 'step 2: X-Men\'s tab size at every width',
+  'landing/filter bar.*@*': 'step 2: X-Men\'s filter bar',
+  'landing/search row.*@*': 'step 2: the search row, with Next unread beside it',
+  'landing/search box.boxHeight@*': 'step 2: X-Men\'s search box',
+  'landing/search box.paddingLeft@*': 'step 2: X-Men\'s search box',
+  'landing/next unread.*@*': 'step 2: Next unread as a filled button beside search (John, 24 Oct)',
+  'landing/era box.box*@1024': 'step 2: the 760 px column',
+  'era/era body.box*@1024': 'step 2: the 760 px column',
+  'reviews/review card.box*@1024': 'step 2: the 760 px column',
+  'arc/pinned *.*@*': 'step 2: X-Men\'s pinned bar under the filter bar',
+  'scrolled/*.*@*': 'step 2: the header pins under the tabs as X-Men\'s does (x frame, John, 24 and 28 Oct)',
+  // step 3: the era box and the open era's body
+  'landing/era tab.paddingRight@1024': 'step 3: X-Men\'s 44 px tab padding at every width',
+  'landing/era years.*@*': 'step 3: the years under the name (John, 24 Oct)',
+  'landing/era chevron.*@*': 'step 3: X-Men\'s chevron in the tab',
+  'landing/era strip.*@*': 'step 3: one strip in X-Men\'s mono, with the read count, the bar and the time left',
+  'landing/era bar.*@*': 'step 3: the bar between the count and the time left',
+  'landing/era time.*@*': 'step 3: the time left at the strip\'s right',
+  'era/era intro.*@*': 'step 3: X-Men\'s intro, with its dashed rule',
+  // step 4: arc cards
+  'era/arc *.*@*': 'step 4b: X-Men\'s arc cards',
+  'era/type badge.*@*': 'step 4b: the type badge',
+  'era/info button.*@*': 'step 4b: the ⓘ button',
+  'arc/open arc.*@*': 'step 4b: an open arc card',
+  'arc/arc action*.*@*': 'step 4b: Mark arc read and unread in an open card',
+  'arc/issue list.*@*': 'step 4b: the card\'s list of issues',
+  // step 5: issue rows
+  'arc/row.*@*': 'step 5: X-Men\'s rows',
+  'arc/read mark.*@*': 'step 5: X-Men\'s rounded checkbox (its size stays 24 px: kept:mark24)',
+  'arc/read mark, read.*@*': 'step 5: X-Men\'s read checkbox',
+  'arc/row title*.*@*': 'step 5: the title, and a read one struck through',
+  'arc/row note.*@*': 'step 5: the note under the title',
+  'arc/bookmark*.*@*': 'step 5: the quiet star',
+  'extras/*.*@*': 'step 5: the core star after the title, and X-Men\'s gap note',
+  // step 6: the other tabs
+  'reading/*.*@*': 'step 6a: X-Men\'s Reading tab',
+  'reviews/*.*@*': 'step 6a: X-Men\'s review cards',
+  'settings/*.*@*': 'step 6b: Settings in X-Men\'s look, in the collapsible sections (John, 24 Oct)',
 };
 
-/* In-page: the computed values for one side of the map. Colours become
-   rgba() strings through a canvas, so "rgb(1, 2, 3)" and "#010203" compare equal.
-   effectiveColor is the text colour with its alpha times every opacity above it
-   (X-Men's years are white at opacity .85); gapAbove is the space between an
-   era box and the open body before it. */
-function measure(map, side, page) {
+/* In-page: the computed values for one side of one view's map. */
+function measure(rows, side) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 1;
   const cx = cv.getContext('2d', { willReadFrequently: true });
   const rgbA = c => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data]; };
   const str = d => 'rgba(' + [d[0], d[1], d[2], +(d[3] / 255).toFixed(2)].join(', ') + ')';
   const rgb = c => str(rgbA(c));
-  const pick = sel => { const m = /^(.*)@(\d+)$/.exec(sel); return m ? document.querySelectorAll(m[1])[+m[2] - 1] || null : document.querySelector(sel); };
-  const out = {};
-  for (const [what, xm, tpl, props, pg] of map) {
-    if (side === 'template' && (pg || 'main') !== page) continue;
-    const el = pick(side === 'x-men' ? xm : tpl);
+  const all = sel => { try { return [...document.querySelectorAll(sel)]; } catch (e) { return []; } };
+  const pick = sel => { const m = /^(.*)@(\d+)$/.exec(sel); return m ? all(m[1])[+m[2] - 1] || null : all(sel)[0] || null; };
+  const px = v => Math.round(v * 10) / 10 + 'px';
+  /* A <progress>'s fill: Chromium doesn't compute ::-webkit-progress-value, so
+     find the most specific rule for it that matches, and resolve its var(). */
+  const spec = sel => [/#[\w-]+/g, /(\.[\w-]+|\[[^\]]+\]|:(?!:)[\w-]+)/g, /(^|[\s>+~])[a-z]+/gi].map(re => (sel.match(re) || []).length);
+  const later = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  const progressFill = el => {
+    let best = null, bestSpec = null;
+    for (const sh of document.styleSheets) {
+      let rules; try { rules = sh.cssRules; } catch (e) { continue; }
+      for (const r of rules) {
+        if (!r.selectorText || !/::-webkit-progress-value/.test(r.selectorText)) continue;
+        for (const one of r.selectorText.split(',')) {
+          const base = one.replace('::-webkit-progress-value', '').trim();
+          if (!base || !el.matches(base)) continue;
+          const sp = spec(base);
+          if (!bestSpec || later(sp, bestSpec) >= 0) { best = r; bestSpec = sp; }
+        }
+      }
+    }
+    if (!best) return 'rgba(0, 0, 0, 0)';
+    const probe = document.createElement('i');
+    probe.style.background = best.style.background || best.style.backgroundColor;
+    el.parentElement.appendChild(probe);
+    const c = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return c;
+  };
+  const rect = {}, out = {};
+  for (const [what, xm, tpl] of rows) { const el = pick(side === 'x-men' ? xm : tpl); rect[what] = el ? el.getBoundingClientRect() : null; }
+  for (const [what, xm, tpl, props, opts] of rows) {
+    const sel = side === 'x-men' ? xm : tpl, el = pick(sel);
     if (!el) { out[what] = null; continue; }
-    const cs = getComputedStyle(el), v = {};
+    const cs = getComputedStyle(el), r = el.getBoundingClientRect(), a = opts && opts.anchor ? rect[opts.anchor] : null, v = {};
     for (const p of props) {
       let x = cs[p] === undefined ? null : cs[p];
       if (p === 'effectiveBackground') {
         x = 'rgba(0, 0, 0, 0)';
         for (let e = el; e; e = e.parentElement) { const c = rgb(getComputedStyle(e).backgroundColor); if (!/, 0\)$/.test(c)) { x = c; break; } }
       } else if (p === 'effectiveColor') {
-        const d = rgbA(cs.color); let a = d[3] / 255;
-        for (let e = el; e; e = e.parentElement) a *= parseFloat(getComputedStyle(e).opacity);
-        x = 'rgba(' + [d[0], d[1], d[2], +a.toFixed(2)].join(', ') + ')';
-      } else if (p === 'gapAbove') {
-        const top = el.getBoundingClientRect().top;
-        const bodies = [...document.querySelectorAll('.era-body')].filter(b => b.getClientRects().length && b.getBoundingClientRect().bottom <= top + 0.5);
-        x = bodies.length ? Math.round((top - bodies[bodies.length - 1].getBoundingClientRect().bottom) * 10) / 10 + 'px' : null;
-      } else if (/^box(Left|Width|Height)$/.test(p)) { const r = el.getBoundingClientRect(); x = Math.round({ boxLeft: r.left, boxWidth: r.width, boxHeight: r.height }[p] * 10) / 10 + 'px'; }
+        const d = rgbA(cs.color); let al = d[3] / 255;
+        for (let e = el; e; e = e.parentElement) al *= parseFloat(getComputedStyle(e).opacity);
+        x = 'rgba(' + [d[0], d[1], d[2], +al.toFixed(2)].join(', ') + ')';
+      } else if (p === 'fillColor') {
+        x = rgb(el.tagName === 'PROGRESS' ? progressFill(el) : cs.backgroundColor);
+      } else if (p === 'gapPrev') {
+        const m = /^(.*)@(\d+)$/.exec(sel), prev = m && +m[2] > 1 ? all(m[1])[+m[2] - 2] : null;
+        x = prev ? px(r.top - prev.getBoundingClientRect().bottom) : null;
+      } else if (p === 'scrollY') x = Math.round(window.scrollY) + 'px';
+      else if (/^box(Left|Width|Height|Top|Bottom)$/.test(p)) x = px({ boxLeft: r.left, boxWidth: r.width, boxHeight: r.height, boxTop: r.top, boxBottom: r.bottom }[p]);
+      else if (/^rel(Left|Top|Right|Bottom)$/.test(p)) x = a ? px({ relLeft: r.left - a.left, relTop: r.top - a.top, relRight: a.right - r.right, relBottom: a.bottom - r.bottom }[p]) : null;
       else if (/color$/i.test(p)) x = rgb(x);
       else if (p === 'boxShadow') x = x === 'none' ? 'none' : x.replace(/rgba?\([^)]*\)/g, c => rgb(c));
       else if (p === 'fontFamily') x = x.split(',')[0].replace(/["']/g, '').trim();
       else if (p === 'letterSpacing') x = x === 'normal' ? '0px' : x;
       else if (p === 'lineHeight' && x !== 'normal') x = (parseFloat(x) / parseFloat(cs.fontSize)).toFixed(2);
+      else if ((p === 'columnGap' || p === 'rowGap') && x === 'normal') x = '0px';
       v[p] = x;
     }
     out[what] = v;
@@ -127,16 +348,61 @@ function measure(map, side, page) {
   return out;
 }
 
-/* The folder tab, read from a screenshot of the first era box (Node side: it
-   needs the page's screenshot). Decoded by the page's own canvas, so no image
-   library is needed. Returns SHAPE_PROPS, or null when there is no era box. */
+/* In-page: every visible element (in the viewport, with a box, not hidden or
+   transparent) that no row, ONLY entry or wrapper covers. A row with text, or
+   an ONLY entry, covers its descendants too. Returns { key: count }. */
+function inventory(covers) {
+  const all = sel => { try { return [...document.querySelectorAll(sel.replace(/@\d+$/, ''))]; } catch (e) { return []; } };
+  const exact = new Set(), deep = [];
+  for (const [sel, leaf] of covers) for (const el of all(sel)) { exact.add(el); if (leaf) deep.push(el); }
+  const out = {};
+  for (const el of document.querySelectorAll('body *')) {
+    if (/^(SCRIPT|STYLE|TEMPLATE|BR|WBR|NOSCRIPT|svg|path|rect|g|line|circle|polyline|polygon)$/i.test(el.tagName)) continue;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) continue;
+    let seen = getComputedStyle(el).visibility !== 'hidden';
+    for (let e = el; e && seen; e = e.parentElement) if (parseFloat(getComputedStyle(e).opacity) === 0) seen = false;
+    if (!seen || exact.has(el) || deep.some(d => d !== el && d.contains(el))) continue;
+    const k = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList.length ? '.' + [...el.classList].join('.') : '');
+    out[k] = (out[k] || 0) + 1;
+  }
+  return out;
+}
+
+/* The selectors one side's inventory treats as covered: every view's rows
+   (an element measured in one view is covered in all of them, so the header
+   is measured once, on the landing), ONLY and the wrappers. */
+function covers(side) {
+  const s = side === 'x-men' ? 1 : 2, list = [];
+  for (const v of VIEWS) {
+    for (const row of MAP[v]) {
+      const leaf = row[4] && row[4].leaf !== undefined ? row[4].leaf : row[3].some(p => /^(font|color|effectiveColor)/.test(p));
+      list.push([row[s], leaf]);
+    }
+  }
+  for (const [sel] of ONLY[side]) list.push([sel, true]);
+  for (const sel of WRAPPERS[side]) list.push([sel, false]);
+  return list;
+}
+
+/* The folder tab, read from a screenshot of the first era box. Paper is the
+   page colour; the cut is where paper begins along a row of the tab, as a
+   fraction of the box's width, at its top, middle and bottom; fill and strip
+   are the colours painted there; hatch is the share of the tab's corner (its
+   last 14 px at the bottom) drawn darker than the fill. */
+const SHAPE = {
+  'x-men': { box: '.era-divider', tab: '.era-divider .tab', strip: '.era-divider .era-stats' },
+  template: { box: '.era-head', tab: '.era-head .bhead', strip: '.era-head .bfoot' },
+};
+const SHAPE_PROPS = ['cutTop', 'cutMiddle', 'cutBottom', 'fill', 'strip', 'hatch'];
+const NEAR = { cutTop: 0.015, cutMiddle: 0.015, cutBottom: 0.015, hatch: 0.12 };
 async function shape(page, side) {
   const sel = SHAPE[side];
   const box0 = await page.evaluate(s => { const b = document.querySelector(s); if (!b) return false; b.scrollIntoView({ block: 'center' }); return true; }, sel.box);
   if (!box0) return null;
   await page.waitForTimeout(50);
   const png = (await page.screenshot({ type: 'png' })).toString('base64');
-  return page.evaluate(async ([s, png]) => {
+  const out = await page.evaluate(async ([s, png]) => {
     const img = new Image();
     await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = 'data:image/png;base64,' + png; });
     const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
@@ -165,23 +431,99 @@ async function shape(page, side) {
     return { cutTop: cut(tab.top + 2), cutMiddle: cut(tab.top + tab.height / 2), cutBottom: cut(tab.bottom - 2), fill: str(fill),
              strip: strip ? str(px(box.left + 6, strip.top + strip.height / 2)) : null, hatch: all ? Math.round(dark / all * 10) / 10 : 0 };
   }, [sel, png]);
+  await page.evaluate(() => scrollTo(0, 0));
+  return out;
 }
 
-/* Getting each page into the measured state: the first era open, its first
-   arc open (X-Men opens arcs one at a time; the template opens an era's arcs). */
-async function prepareXMen(page) {
-  await page.waitForSelector('.era-divider .tab');
-  await page.click('.era-divider .tab');
-  await page.waitForSelector('.arc-row .arc-head');
-  await page.click('.arc-row .arc-head');
-  await page.waitForSelector('.issue-row .title');
-}
-async function prepareTemplate(page) {
-  await page.evaluate(() => {
-    document.querySelector('#tab-list').click();
-    document.querySelector('.ptools [data-act="expand-all"]').click();
-  });
-  await page.waitForSelector('.row .title');
-}
+/* Getting each page into each view, in VIEWS order, from the view before.
+   Both pages are driven the same way, through their own controls: the first
+   era opened, its first arc opened, its first issue marked read and its second
+   bookmarked; scrolled by SCROLL; a review of four stars written; the
+   Settings tab with its sections open. */
+const pause = page => page.waitForTimeout(80);
+const DRIVE = {
+  'x-men': {
+    async landing(page) { await page.waitForSelector('.era-divider .tab'); await page.evaluate(() => document.fonts.ready); },
+    async era(page) { await page.click('.era-divider .tab'); await page.waitForSelector('.era-body .arc-row'); },
+    async arc(page) {
+      await page.click('.arc-row .arc-head .arc-title');
+      await page.waitForSelector('.issue-row .tri-check');
+      await page.click('.issue-row .tri-check');
+      await page.click('.issue-row >> nth=1 >> .bookmark-btn');
+      await pause(page);
+    },
+    async scrolled(page) { await page.evaluate(y => scrollTo(0, y), SCROLL); await pause(page); },
+    async reading(page) { await page.evaluate(() => scrollTo(0, 0)); await page.click('.tabbar button[data-tab="reading"]'); await pause(page); },
+    async reviews(page) {
+      await page.click('.tabbar button[data-tab="checklist"]');
+      if (!(await page.$('.arc-row.expanded'))) await page.click('.arc-row .arc-head .arc-title');   // the tab re-renders: arcs close, eras stay open
+      await page.click('.arc-row.expanded [data-reviewtoggle]');
+      await page.click('.review-edit-panel .star-picker button >> nth=3');
+      await page.fill('.review-edit-panel .review-edit', 'A review for the comparison.');
+      await page.click('.review-edit-panel [data-savereview]');
+      await page.waitForSelector('#toast:not(.show)', { state: 'attached', timeout: 5000 });   // "Review saved" fades after 2.2 s
+      await page.evaluate(() => scrollTo(0, 0));
+      await page.click('.tabbar button[data-tab="reviews"]');
+      await pause(page);
+    },
+    async settings(page) { await page.click('.tabbar button[data-tab="settings"]'); await pause(page); },
+    async extras(page) {
+      await page.click('.tabbar button[data-tab="checklist"]');
+      const keys = await page.evaluate(() => {
+        /* global ISSUES */
+        const core = ISSUES.find(i => i.core), gap = ISSUES.find(i => i.isGap);
+        return [core && [core.era, core.era + '||' + core.arc], gap && [gap.era, gap.era + '||' + gap.arc]];
+      });
+      for (const k of keys.filter(Boolean)) {
+        const era = '.era-divider[data-era="' + k[0] + '"]';
+        if (!(await page.$(era + '.expanded'))) await page.click(era + ' .tab');
+        const arc = '.arc-row[data-arckey="' + k[1].replace(/"/g, '\\"') + '"]';
+        await page.waitForSelector(arc);
+        if (!(await page.$(arc + '.expanded'))) await page.click(arc + ' .arc-head .arc-title');
+      }
+      await pause(page);
+    },
+  },
+  template: {
+    async landing(page) { await page.waitForSelector('.era-head'); await page.evaluate(() => document.fonts.ready); },
+    async era(page) { await page.click('.era-head'); await page.waitForSelector('.era-body:not([hidden]) .arc'); },
+    async arc(page) {
+      if (await page.$('.arc-toggle')) await page.click('.arc-toggle');
+      await page.waitForSelector('.row:not(.inert) .mark');
+      await page.click('.row:not(.inert) .mark');
+      await page.click('.row:not(.inert) .mark');
+      await page.click('.row:not(.inert) >> nth=1 >> .b.bm');
+      await pause(page);
+    },
+    async scrolled(page) { await page.evaluate(y => scrollTo(0, y), SCROLL); await pause(page); },
+    async reading(page) { await page.evaluate(() => scrollTo(0, 0)); await page.click('#tab-reading'); await pause(page); },
+    async reviews(page) {
+      await page.click('#tab-list');
+      await page.click('.row:not(.inert) .b.rv');
+      await page.click('.review .star[data-n="4"]');
+      await page.fill('.review .rvtext', 'A review for the comparison.');
+      await page.waitForTimeout(500);
+      await page.evaluate(() => scrollTo(0, 0));
+      await page.click('#tab-reviews');
+      await pause(page);
+    },
+    async settings(page) {
+      await page.click('#tab-settings');
+      for (const h of await page.$$('#settings .sec-head[aria-expanded="false"]')) await h.click();
+      await pause(page);
+    },
+    async extras(page) {
+      await page.click('#tab-list');
+      for (const [e, a] of [[0, 1], [1, 7]]) {
+        const head = '.era[data-e="' + e + '"] > .era-head';
+        if ((await page.getAttribute(head, 'aria-expanded')) !== 'true') await page.click(head);
+        const t = '.era[data-e="' + e + '"] .arc[data-a="' + a + '"] .arc-toggle';
+        if ((await page.$(t)) && (await page.getAttribute(t, 'aria-expanded')) !== 'true') await page.click(t);
+      }
+      await pause(page);
+    },
+  },
+};
 
-module.exports = { WIDTH, HEIGHT, MAP, SHAPE, SHAPE_PROPS, NEAR, DIFFERENCES, measure, shape, prepareXMen, prepareTemplate };
+module.exports = { WIDTHS, HEIGHTS, WIDTH, HEIGHT, VIEWS, SCROLL, STEPS, CURRENT_STEP, MAP, ONLY, WRAPPERS, REASON, DIFFERENCES,
+                   SHAPE, SHAPE_PROPS, NEAR, measure, inventory, covers, shape, DRIVE };

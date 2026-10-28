@@ -183,22 +183,32 @@ One skin of the tracker's own, from `franchise.signature`:
 
 ### Pull matches the X-Men tracker
 
-- `test/layout/ref/x-men.json` holds X-Men's computed styles at 393 px, with
-  its commit. `test/layout/ref/pull-map.js` maps each template element to
-  X-Men's and lists the differences that remain, each with its reason.
-  - The era box is measured in full, on a fixture whose eras are top-level as
-    X-Men's are.
-  - The folder tab's shape is read from pixels: where the cut begins, the tab's
-    and strip's colours, the hatched corner.
-- `test/layout/45-pull.test.js` compares Pull with the reference and keeps the
-  list of differences true in both directions. Since session 7, 111 properties
-  match and 5 differences are left:
-  - two that a contrast rule keeps (the selected-tab underline, the search
-    outline);
-  - three for the read mark, which keeps the accessible 24 px (John, 9 Oct).
-- To re-capture after X-Men changes (read-only clone beside this repo):
-  `node test/layout/ref/capture-x-men.js ../X-men`. 45-pull re-checks the
-  reference against a local copy at `../X-men`, or wherever `X_MEN_DIR` points.
+- **The whole page, measured (session 8, John, 24 Oct).** `test/layout/ref/x-men.json`
+  holds the live X-Men tracker's computed styles and geometry in eight views (the
+  Checklist landing, an era open, an arc open, scrolled, Reading, Reviews, Settings, and
+  a core row with a gap note) at 320, 390 and 1024 px. It records the live URL, its
+  sha256 and the commit it equals, plus the folder tab's shape and the eleven era
+  colours. `test/layout/ref/pull-map.js` says which template element each X-Men element
+  is measured against, view by view, and how both pages are driven there.
+  - **The template side** is the `pull-ref` fixture in Pull: top-level eras with
+    X-Men's type names and its first six era colours.
+  - **Every visible element is accounted for.** It is mapped, a wrapper that draws
+    nothing, or listed in `ONLY` with the kept item that explains it. The capture
+    refuses to write a reference while an X-Men element is unmapped, and 45-pull
+    checks the template's side the same way.
+  - **Every difference left is in `DIFFERENCES`,** tied to a kept item (the Filters
+    panel, the title, per-issue reviews, the 24 px mark, the two outlines, Settings'
+    sections, other v3 features), to John's ruling, or to the step of session 8 that
+    fixes it. A step that is done may leave none (`CURRENT_STEP`).
+- `test/layout/45-pull.test.js` compares all of it and keeps both lists true in both
+  directions. At step 1 of session 8: 858 properties match, 966 differences are
+  listed, every one tied to a step.
+- To re-capture (session-only, with a read-only clone):
+  `node test/layout/ref/capture-x-men.js --dir ../X-men`. The live page must be
+  byte-identical to the clone's `index.html`. With `X_MEN_LIVE=1` and a local copy at
+  `../X-men` (or `X_MEN_DIR`), 45-pull re-captures and compares.
+- Side-by-side screenshots for John: `node test/layout/ref/side-by-side.js OUTDIR`
+  (X-Men live | Pull, every view, 390 px by default).
 
 ## The workbook
 
