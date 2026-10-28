@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   harness:
-    runs-on: ubuntu-latest
+    # Pinned (28 Oct): ubuntu-latest moved to 26.04, where playwright-core 1.56 can't install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
