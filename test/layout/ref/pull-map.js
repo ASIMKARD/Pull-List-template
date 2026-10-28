@@ -226,11 +226,11 @@ const DIFFERENCES = {
   'arc/read mark.boxWidth@*': 'kept:mark24: the mark keeps the accessible 24 px minimum, with the Button size setting (John, 9 Oct)',
   'arc/read mark.boxHeight@*': 'kept:mark24: as the width (22 px in X-Men)',
   // step 2 (done): what the header still draws differently, each from a ruling
-  'landing/offline line.effectiveColor@*': 'accessible: the offline line in the ink at 64 % (X-Men\'s 60 % is 4.25:1). John ruled 62 % (28 Oct, D), 4.51:1 here, but every skin × paper needs 63.1 % (40-look); awaiting John',
+  'landing/offline line.effectiveColor@*': 'accessible: the offline line in the ink at 64 %, the least that passes in every skin × paper with a step in hand (X-Men\'s 60 % is 4.25:1; John, 28 Oct)',
   'landing/subtitle.relTop@390': 'John (24 Oct): the offline line ends "· vN", so at 390 px it takes a second line and the lines under it sit 16 px lower',
   'scrolled/pinned header.boxBottom@320': 'John (24 Oct): the plan\'s finish-by date sits beside the time remaining, so at 320 px they take a line of their own',
   'scrolled/pinned header.boxBottom@390': 'John (24 Oct): the offline line ends "· vN" (its second line at 390 px)',
-  'arc/pinned chip.borderTopColor@*': 'accessible: a pinned chip\'s outline is the control outline, 3:1 on every paper it sits on (X-Men\'s #C9C4B5 is 1.37:1 there, G\'s #8F8A7C 2.71:1); awaiting John',
+  'arc/pinned chip.borderTopColor@*': 'accessible: a pinned chip\'s outline is the control outline, 3:1 on every paper it sits on (X-Men\'s #C9C4B5 is 1.37:1 there, G\'s #8F8A7C 2.71:1; John, 28 Oct)',
   'reviews/review card.box*@1024': 'step 6a: X-Men\'s review cards, 12 px in',
   // step 3: the era box and the open era's body
   'landing/era tab.paddingRight@1024': 'step 3: X-Men\'s 44 px tab padding at every width',

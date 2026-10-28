@@ -2573,7 +2573,7 @@
   /* On the x frame the header pins too, under the tabs (z-index), so what stays on
      screen is the taller of the two (the reference tracker's pinning; John, 24 Oct).
      It pins only while it takes at most 35 % of the screen: with the largest text on
-     a small phone the tabs pin alone (10-sweep; awaiting John, 28 Oct). */
+     a small phone the tabs pin alone (John, 28 Oct; 10-sweep). */
   function measureStack() {
     var st = $('#stack'), h = st ? st.offsetHeight : 0, root = document.documentElement;
     if (frameOf(settings.skin) === 'x') {

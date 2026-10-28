@@ -52,8 +52,8 @@
   --soft-h: var(--ink-h); --soft-s: calc(var(--ink-s) * .5);
   --bar-soft-h: var(--ink-h); --bar-soft-s: calc(var(--ink-s) * .5);
   --mark-edge-s: calc(var(--ink-s) * .5); --l-mark-edge: var(--l-edge);          /* a mark's outline: a control outline unless a skin says otherwise */
-  --offline-a: .64;      /* the x frame's offline line: the reference tracker's 60 % made to pass. John ruled 62 % (28 Oct), 4.51:1 on Pull's paper;
-                            every skin × paper needs 63.1 %, so 64 % keeps a step in hand (40-look; awaiting John) */
+  --offline-a: .64;      /* the x frame's offline line: the reference tracker's 60 % made to pass in every skin × paper, which needs 63.1 %;
+                            64 % keeps a step in hand (John, 28 Oct; 40-look) */
   /* era ramp (OKLCH, so one lightness reads the same at every hue): pale
      tints, readable text, hue stepped by the golden angle — no cap on eras */
   --era-h0: 30; --era-step: 137.508; --era-mono-h: 258;

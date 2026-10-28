@@ -3148,6 +3148,16 @@ Each X-Men visual that fails a check the template keeps (the table in step 1's c
 A, B, C, D, E and G are listed in 45-pull as `accessible:` in the step that builds them. F matches
 X-Men, so it needs no entry.
 
+### 28 Oct: step 2's three cases, ruled one by one
+- **The offline line: 64 %** (D revised). 62 % passes on Pull's own paper (4.51:1) but falls to
+  4.35:1 on the other papers and skins; every skin × paper needs 63.1 %, and 64 % keeps a step in hand.
+- **The pinned chips: the control outline** (`--edge`). The PINNED row sits on the paper, where
+  G's `#8F8A7C` is 2.71:1 (2.50:1 on rose); the control outline is 3:1 or more on every paper. G
+  stays as ruled for ⓘ and Mark arc, which sit on a card (step 4b).
+- **The pinned header: the tabs pin alone past 35 %.** The x frame's header pins under the tabs
+  while it takes at most 35 % of the screen; with the largest text on a 320 × 568 phone (38 %) only
+  the tabs pin.
+
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a
 checkpoint here and X-Men | Pull screenshots at 390 px sent to John. Every new check is
@@ -3383,7 +3393,7 @@ Every change is on the x frame (the shared skins); 47-frame-v9 holds the v9 fram
 
 **Harness:** 1651 assertions, 0 failed, 36 suites. **Layout:** 424 checks, 0 failed, 12 suites.
 
-### Three cases for John (built in the passing version; each awaits his ruling)
+### Three cases for John (ruled 28 Oct: each as built; see the decisions above)
 1. **The offline line.** John ruled 62 % (D, 28 Oct): 4.51:1 on Pull's paper, as shown. On the
    other papers and skins 62 % measures down to 4.35:1 (Pull on lilac); every skin × paper needs
    63.1 %. Built: 64 %, a step in hand.

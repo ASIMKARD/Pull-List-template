@@ -243,7 +243,7 @@ One skin of the tracker's own, from `franchise.signature`:
 - **The header pins under the tabs**, as X-Men's: the header is sticky at the top
   (z-index 40) and the tab stack (41) covers its top, so its lower lines and the
   progress stay in view. It pins only while it takes at most 35 % of the screen; with
-  the largest text on a 320 × 568 phone the tabs pin alone (`10-sweep`; awaiting John).
+  the largest text on a 320 × 568 phone the tabs pin alone (John, 28 Oct; `10-sweep`).
   `--stack-h` is what stays pinned, so jumps land below it (`60-stack`).
 - **Its lines:** the franchise name as the title (28 px, 24 px at 420 px and under in
   Pull: `--title-size-narrow`); X-Men's offline line, ending "· vN" and the offline
