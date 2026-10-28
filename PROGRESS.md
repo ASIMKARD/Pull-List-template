@@ -3305,6 +3305,14 @@ Absolute v9 (`27dca56`, served as it is) against the new template with Absolute'
   nothing. Step 2 turns it off by default on the x frame with the pinned header, for visitors who
   haven't chosen; the v9 frame keeps it on.
 
+### CI caught one more thing
+The first push failed 47-frame-v9 in CI only: GitHub's runner hints text fully by default, so every
+glyph rounds to whole pixels there, and text-sized boxes measured here moved by 1 or 2 px (the
+header count 131.3 px here, 133 in CI). Reproduced here by forcing full hinting: the same
+differences, to the tenth of a pixel. `test/layout/lib.js` now launches Chromium with
+`--font-render-hinting=none` on every machine; here that changes nothing (it was already the
+default), and in CI it draws text as here. CLAUDE.md has the trap.
+
 **Harness:** 1647 assertions, 0 failed, 36 suites. **Layout:** 421 checks, 0 failed, 12 suites.
 
 ### Step 2 begins with

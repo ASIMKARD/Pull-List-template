@@ -198,6 +198,12 @@ and Settings rows split their buttons. The page never got wider, so the sweep pa
 page overflow" is not "it fits": `10-sweep` now checks every control against every box
 that clips it.
 
+### CI draws text with full hinting — [applies]
+GitHub's Ubuntu runner hints text fully by default, which rounds every glyph to whole
+pixels. A text-sized box measured in a session moved by 1 or 2 px in CI (47-frame-v9,
+28 Oct). `test/layout/lib.js` launches Chromium without hinting on every machine, so
+measure anything exact through it, never through a browser of your own.
+
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:
 iterate `document.styleSheets` and test `el.matches(rule.selectorText)`.
