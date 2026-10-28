@@ -3332,3 +3332,71 @@ fallback fonts.
 line, then `.fbar` with Next unread and the new `.ftools` row, then the pinned header and
 `measureStack`; then 45-pull's header entries come off the list.
 
+## Session 8 checkpoint — step 2 done (the x frame's header and page frame), 28 Oct 2026
+
+Every change is on the x frame (the shared skins); 47-frame-v9 holds the v9 frame exactly.
+
+### Done
+- **One 760 px column** for the header, the tabs and the page.
+- **The header pins under the tabs, as X-Men's:** the header is sticky (z-index 40) and the
+  tab stack (41) covers its top, so the offline line, the subtitle and the progress stay in
+  view. `--stack-h` is what stays pinned, so jumps and era chips land below it.
+- **The header's lines:** the franchise name as the title (kept), 28 px, 24 px at 420 px
+  and under; X-Men's offline line, ending "· vN" and the offline mark; the strapline in the
+  subtitle's place.
+- **The progress line:** X-Men's 8 px track; the count on the left; on the right the plan's
+  finish-by date beside the time remaining (now "remaining", X-Men's word), then "+N untimed".
+- **The filter bar:** no card; the search box with a filled **Next unread →** beside it (at
+  320 px it takes two lines, as X-Men's); then the Filters button, Expand all and Collapse all
+  (kept); then "Showing X of Y". The header's tool row is gone on the x frame.
+- **The bookmarks bar** sits under the filter bar as X-Men's PINNED row.
+- **The tabs** share the bar equally with X-Men's padding, 12.5 px at every width.
+- **The mini bar is off by default on the x frame**, as X-Men's; the v9 frame keeps it on.
+  Visitors who have a saved setting keep it. The Display summary names the mini bar only
+  when it isn't its frame's default.
+- **How (`app.js`, `placeChrome`):** the page's markup stays the v9 frame's; the x frame moves
+  the same controls, and a switch back restores v9's order exactly.
+- **New checks, mutation-proved 11 of 11:**
+  - 10-sweep: the header pins whenever it takes at most 35 % of the screen, and never more
+    (every skin, 320 × 568 and 390 × 844, default and the largest text);
+  - 45-pull: the finish-by date sits right beside the time remaining at every width;
+  - 47-frame-v9: after signature → Pull → signature the landing is as recorded;
+  - 40-look and 45-root: the offline line, Next unread and the pinned chips' outline in
+    every skin × paper;
+  - 9h: the mini bar's default on each frame; 60-stack: `--stack-h` is what stays pinned.
+  - Proved by: the 35 % cap removed; the header never pinning; John's 62 %; G's outline on
+    the chips; the bookmarks bar and Next unread not put back on v9; the mini bar's default
+    wrong on either frame; `--stack-h` the stack alone; a 1 px header rule; the finish-by
+    date split from the time remaining.
+- **Tests changed on purpose:** the selectors that reached the tools through `.ptools` now
+  name the controls (both frames); 95-pace and 97-durations expect "remaining" in the header;
+  9h, 50-table and 60-stack seed the mini bar on where they measure it; 60-stack measures the
+  tab bar across the column and the pinned area.
+- **45-pull:** 1063 properties match X-Men (858 at step 1), 761 listed. In the header only
+  these are left, each from a ruling:
+  - the offline line's alpha (accessible: below);
+  - at 390 px the offline line takes two lines, because it ends "· vN" (John, 24 Oct);
+  - at 320 px the finish-by date and the time remaining take a line of their own (John, 24 Oct);
+  - the selected tab's underline and the search box's outline (kept: outlines);
+  - the pinned chips' outline (accessible: below).
+- **Docs:** BUILD-NOTES "The x frame's header"; FEATURE-INVENTORY F-17, F-58 and X-14.
+
+**Harness:** 1651 assertions, 0 failed, 36 suites. **Layout:** 424 checks, 0 failed, 12 suites.
+
+### Three cases for John (built in the passing version; each awaits his ruling)
+1. **The offline line.** John ruled 62 % (D, 28 Oct): 4.51:1 on Pull's paper, as shown. On the
+   other papers and skins 62 % measures down to 4.35:1 (Pull on lilac); every skin × paper needs
+   63.1 %. Built: 64 %, a step in hand.
+2. **The pinned chips' outline.** G (`#8F8A7C`) was measured against the card (3.02:1), but
+   the pinned bar sits on the paper, where it measures 2.71:1 (2.50:1 on rose). Built: the
+   control outline, 3:1 on every paper (3.29:1 on Pull's). G stays as ruled for ⓘ and Mark
+   arc, which sit on a card (step 4b).
+3. **The pinned header with the largest text.** On a 320 × 568 phone with the largest text the
+   header would take 38 % of the screen. Built: it pins only while it takes at most 35 % (the
+   plan's bound); there, the tabs pin alone.
+
+### Step 3 begins with
+`eraHtml` (`app.js`) on the x frame: the years under the name, then one strip (the count and
+"filtered", the bar, the time left or ✓, "+N untimed"); then each era's finish-by date as the
+first line of its open body; then 95-pace, 96 and 97 re-pointed from `.era-head .bfinish`.
+

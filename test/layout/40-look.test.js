@@ -58,14 +58,14 @@ module.exports = async function (t) {
     const b = basic(), srv = await serve(b.out);
 
     // ------------------------------------------------ contrast: 4 skins × 7 papers
-    const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
+    const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['offline line on paper (x frame, the ink at 64 %)', '.pbadge'], ['Next unread (x frame)', '.fbar .jump'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
       ['link on card', '.fhead .linkbtn'], ['pressed chip', '#fsecs .chip[aria-pressed="true"]'], ['unpressed chip', '#fsecs .chip[aria-pressed="false"]'],
       ['tab', '.tab[aria-selected="false"]'], ['selected tab', '.tab[aria-selected="true"]'], ['band name', '.band-head .bname'],
       ['row title', '.row:not(.inert) .title'], ['read mark', '.row[data-s="read"] .mark'], ['subnote', '.subnote'], ['credits', '.credits'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
-    const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '.ptools .tool', 'borderTopColor'],
+    const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
       ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],
-      ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor']];
+      ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor']];
     const fails = [], theme = [];
     let worst = { r: 99 };
     for (const skin of SKINS) {
@@ -77,6 +77,7 @@ module.exports = async function (t) {
           eval('(' + lib + ')')();
           const row = document.querySelector('.row:not(.inert) .mark');
           row.click(); row.click();                                   // unread → reading → read
+          document.querySelector('.row:not(.inert) .b.bm').click();   // a bookmark: the pinned bar shows
           const out = [];
           for (const [what, sel] of TEXT) {
             const el = document.querySelector(sel);

@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '1';
+const CURRENT_STEP = '2';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -102,7 +102,7 @@ const MAP = {
     ['row note', '.issue-row .issue-note', '.row .subnote', TEXT.concat(['relLeft', 'relTop']), { anchor: 'row with a note' }],
     ['bookmark', '.issue-row .bookmark-btn:not(.on)', '.row:not(.inert) .b.bm[aria-pressed="false"]', ['fontSize', 'color', 'backgroundColor', 'borderTopWidth', 'boxWidth', 'boxHeight', 'relRight'], { anchor: 'row' }],
     ['bookmark, on', '.issue-row .bookmark-btn.on', '.row .b.bm[aria-pressed="true"]', ['fontSize', 'color']],
-    ['pinned bar', '#pinnedBar .chip-row', '#pinbar', ['paddingTop', 'paddingLeft'], { leaf: false }],
+    ['pinned bar', '#pinnedBar .chip-row', '#pinbar .pinbar-in', ['paddingTop', 'paddingLeft'], { leaf: false }],
     ['pinned label', '#pinnedBar .chip-row > span', '#pinbar .pin-label', TEXT],
     ['pinned chip', '#pinnedBar .chip', '#pinbar .chip', TEXT.concat(PAD, EDGE, ['backgroundColor'])],
   ],
@@ -167,6 +167,7 @@ const ONLY = {
   ],
   template: [
     ['.ftoggle', 'kept:filters: the Filters button (John, 1 Oct)'],
+    ['.ftools', 'kept:filters: the Filters button, with Expand all and Collapse all beside it, under the search box (John, 1 and 24 Oct)'],
     ['#fshow', 'kept:filters: "Showing X of Y issues" belongs to the Filters panel (John, 1 Oct)'],
     ['#fbody', 'kept:filters: the collapsible sections (John, 1 Oct)'],
     ['.pfinish', 'John (24 Oct): the plan\'s finish-by date sits beside the time remaining'],
@@ -193,8 +194,6 @@ const ONLY = {
     ['#settings .filelabel', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings .bmlist', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     // the template as it stands at step 1; each goes in the step named
-    ['.ptools', 'step 2: Expand all and Collapse all move into the filter area, Next unread beside search'],
-    ['#mini', 'step 2: the mini bar goes off by default in the x frame (John, 24 Oct)'],
     ['.arc-head h3', 'step 4a: arc headings become cards'],
     ['.arc-head .blurb', 'step 4a: the blurb moves into the card\'s ⓘ panel'],
     ['.arc-acts', 'step 4a: Mark arc read and unread show in an open card only'],
@@ -210,7 +209,7 @@ const ONLY = {
 const WRAPPERS = {
   'x-men': ['#app', '.tabpanel', '#eraList', '#pinnedBar', '#eraList > div', '.era-divider + .era-body > div', '.arc-title', '.arc-title .meta',
     '.issue-body', '.overall-progress', '.reading-actions', '.reading-nav', '.settings-section > div:not([class])', '.setting-row > div:not([class])'],
-  template: ['main', '.pane', '#app', '#stack', '#pprog', '.badges', '.bstats', '#reader', '.racts', '.rnav', '.rpills', '#pinchips', '#settings', '#settings .sec-pad',
+  template: ['main', '.pane', '#app', '#stack', '#pprog', '.pstats .pright', '.pbadge .pver', '#pinbar', '.badges', '.bstats', '#reader', '.racts', '.rnav', '.rpills', '#pinchips', '#settings', '#settings .sec-pad',
     '#settings .sec-head', '#settings .sec-t', '#settings .sec-body', '#settings .sec-in', '#reviews', '.revlist', '.arc', '.arc-head', '.era', '.era-body', '.swatches'],
 };
 
@@ -226,27 +225,13 @@ const DIFFERENCES = {
   'landing/search box.borderTopColor@*': 'kept:outlines: X-Men\'s field outline is 1.53:1; Pull keeps the 3:1 control outline (John, 9 Oct)',
   'arc/read mark.boxWidth@*': 'kept:mark24: the mark keeps the accessible 24 px minimum, with the Button size setting (John, 9 Oct)',
   'arc/read mark.boxHeight@*': 'kept:mark24: as the width (22 px in X-Men)',
-  // step 2: the header, the pinned header, the filter area and the 760 px column
-  'landing/header.*@*': 'step 2: X-Men\'s header, sticky, with its 2 px rule, in the 760 px column',
-  'landing/title.*@*': 'step 2: the title\'s place in the header, and 28 px above 420 px',
-  'landing/offline line.*@*': 'step 2: X-Men\'s offline line, ending "· vN" (John, 24 Oct)',
-  'landing/subtitle.*@*': 'step 2: the strapline in the subtitle\'s place',
-  'landing/progress *.*@*': 'step 2: X-Men\'s 8 px track and its label',
-  'landing/read count.*@*': 'step 2: the read count on the left of the label',
-  'landing/time remaining.*@*': 'step 2: the time remaining on the right of the label',
-  'landing/tab bar.*@*': 'step 2: X-Men\'s tab bar, in the 760 px column',
-  'landing/tab.*@*': 'step 2: X-Men\'s tab padding and size at every width',
-  'landing/selected tab.fontSize@*': 'step 2: X-Men\'s tab size at every width',
-  'landing/filter bar.*@*': 'step 2: X-Men\'s filter bar',
-  'landing/search row.*@*': 'step 2: the search row, with Next unread beside it',
-  'landing/search box.boxHeight@*': 'step 2: X-Men\'s search box',
-  'landing/search box.paddingLeft@*': 'step 2: X-Men\'s search box',
-  'landing/next unread.*@*': 'step 2: Next unread as a filled button beside search (John, 24 Oct)',
-  'landing/era box.box*@1024': 'step 2: the 760 px column',
-  'era/era body.box*@1024': 'step 2: the 760 px column',
-  'reviews/review card.box*@1024': 'step 2: the 760 px column',
-  'arc/pinned *.*@*': 'step 2: X-Men\'s pinned bar under the filter bar',
-  'scrolled/*.*@*': 'step 2: the header pins under the tabs as X-Men\'s does (x frame, John, 24 and 28 Oct)',
+  // step 2 (done): what the header still draws differently, each from a ruling
+  'landing/offline line.effectiveColor@*': 'accessible: the offline line in the ink at 64 % (X-Men\'s 60 % is 4.25:1). John ruled 62 % (28 Oct, D), 4.51:1 here, but every skin × paper needs 63.1 % (40-look); awaiting John',
+  'landing/subtitle.relTop@390': 'John (24 Oct): the offline line ends "· vN", so at 390 px it takes a second line and the lines under it sit 16 px lower',
+  'scrolled/pinned header.boxBottom@320': 'John (24 Oct): the plan\'s finish-by date sits beside the time remaining, so at 320 px they take a line of their own',
+  'scrolled/pinned header.boxBottom@390': 'John (24 Oct): the offline line ends "· vN" (its second line at 390 px)',
+  'arc/pinned chip.borderTopColor@*': 'accessible: a pinned chip\'s outline is the control outline, 3:1 on every paper it sits on (X-Men\'s #C9C4B5 is 1.37:1 there, G\'s #8F8A7C 2.71:1); awaiting John',
+  'reviews/review card.box*@1024': 'step 6a: X-Men\'s review cards, 12 px in',
   // step 3: the era box and the open era's body
   'landing/era tab.paddingRight@1024': 'step 3: X-Men\'s 44 px tab padding at every width',
   'landing/era years.*@*': 'step 3: the years under the name (John, 24 Oct)',

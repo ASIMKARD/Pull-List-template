@@ -63,6 +63,13 @@ module.exports = async function (t) {
     const back = await state();
     t.eq('switching skins redraws the page on the new skin\'s frame: signature (v9) → Pull (x) → signature (v9)', [before, inPull, back],
          [{ root: 'v9', list: 'v9', foot: false }, { root: 'x', list: 'x', foot: true }, { root: 'v9', list: 'v9', foot: false }]);
+    // the x frame moves the header's and the filter bar's controls (app.js placeChrome); back on v9 every one is where it was
+    await pg.page.click('#tab-list');
+    await pg.page.evaluate(() => scrollTo(0, 0));
+    await FM.symbols(pg.page);
+    await FM.DRIVE.landing(pg.page);
+    const again = await pg.page.evaluate(([fn, L, P]) => eval('(' + fn + ')')(L, P), [FM.inventory.toString(), FM.LOOK, FM.PSEUDO]);
+    t.eq('…and back on v9 the landing at 390 px is as recorded: every control the x frame moved is in its v9 place again', FM.compare(ref.measured[390].landing, again).slice(0, 20), []);
     t.eq('…with no page errors', pg.errors, []);
     await pg.close();
     await srv.close();

@@ -38,6 +38,7 @@ function tally(D, marks, pred) {
   return { all, era, band };
 }
 const left = x => x.total - x.read - x.skip;
+const HEAD_WORD = 'remaining';     // the header's word on the x frame, the reference tracker's (John, 24 Oct); every fixture here opens on it
 
 /* Read every figure off the real DOM. */
 function readFigures(doc, D) {
@@ -60,9 +61,9 @@ function readFigures(doc, D) {
    / issues per week, top-level units only. `weeks` is compared as the full
    double (data-weeks), so "exactly" means bit-identical, not just the same day. */
 function oldFigures(D, T, m, w) {
-  const unit = (x, cumRemaining) => {
+  const unit = (x, cumRemaining, word = 'left') => {
     if (left(x) === 0) return { left: null, leftText: null, weeks: null, finish: null, finishText: null, untimed: 0 };
-    return { left: left(x) * m, leftText: timeText(left(x) * m) + ' left',
+    return { left: left(x) * m, leftText: timeText(left(x) * m) + ' ' + word,
              weeks: cumRemaining == null ? null : String(cumRemaining / w),
              finish: cumRemaining == null ? null : isoOf(cumRemaining / w),
              finishText: cumRemaining == null ? null : 'finish by ' + textOf(cumRemaining / w), untimed: 0 };
@@ -71,7 +72,7 @@ function oldFigures(D, T, m, w) {
   let cum = 0;
   const top = (bands ? T.band : T.era).map(x => { cum += left(x); return unit(x, cum); });
   return {
-    header: unit(T.all, left(T.all)),
+    header: unit(T.all, left(T.all), HEAD_WORD),
     bands: bands ? top : [],
     eras: bands ? T.era.map(x => unit(x, null)) : top
   };
@@ -80,10 +81,10 @@ function oldFigures(D, T, m, w) {
 /* The new model: own minutes; finish = cumulative minutes / (w x m). */
 function newFigures(D, T, m, w) {
   const mins = x => x.comics * m + x.fixed;
-  const unit = (x, cumMins) => {
+  const unit = (x, cumMins, word = 'left') => {
     if (left(x) === 0) return { left: null, leftText: null, weeks: null, finish: null, finishText: null, untimed: 0 };
     const onlyUntimed = left(x) === x.untimed;
-    return { left: onlyUntimed ? null : mins(x), leftText: onlyUntimed ? null : timeText(mins(x)) + ' left',
+    return { left: onlyUntimed ? null : mins(x), leftText: onlyUntimed ? null : timeText(mins(x)) + ' ' + word,
              weeks: cumMins == null ? null : String(cumMins / (w * m)),
              finish: cumMins == null ? null : isoOf(cumMins / (w * m)),
              finishText: cumMins == null ? null : 'finish by ' + textOf(cumMins / (w * m)), untimed: x.untimed };
@@ -91,7 +92,7 @@ function newFigures(D, T, m, w) {
   const bands = D.periods.length > 0;
   let cum = 0;
   const top = (bands ? T.band : T.era).map(x => { cum += mins(x); return unit(x, cum); });
-  return { header: unit(T.all, mins(T.all)), bands: bands ? top : [], eras: bands ? T.era.map(x => unit(x, null)) : top };
+  return { header: unit(T.all, mins(T.all), HEAD_WORD), bands: bands ? top : [], eras: bands ? T.era.map(x => unit(x, null)) : top };
 }
 
 /* Comics-only copies of basic and no-periods: the game and the show removed. */

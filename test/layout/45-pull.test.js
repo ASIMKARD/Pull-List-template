@@ -36,9 +36,15 @@ async function measureTemplate(url, w) {
   const pg = await open(url, { width: w, height: PM.HEIGHTS[w], reducedMotion: 'reduce',
     storage: { 'pull-ref:v3:settings': JSON.stringify({ v: 3, migrated: { format: 'v2' }, skin: 'pull' }) } });
   const page = pg.page, views = {}, uncovered = {};
-  let eraShape = null;
+  let eraShape = null, finish = null;
   for (const v of PM.VIEWS) {
     await PM.DRIVE.template[v](page);
+    if (v === 'landing') finish = await page.evaluate(() => {
+      const f = document.querySelector('#pprog .pfinish'), l = document.querySelector('#pprog .pleft');
+      if (!f || !l) return null;
+      const a = f.getBoundingClientRect(), b = l.getBoundingClientRect();
+      return { gap: Math.round(b.left - a.right), dy: Math.round(Math.abs(a.top - b.top)) };
+    });
     views[v] = await page.evaluate(([fn, rows]) => eval('(' + fn + ')')(rows, 'template'), [PM.measure.toString(), PM.MAP[v]]);
     const inv = await page.evaluate(([fn, cov]) => eval('(' + fn + ')')(cov), [PM.inventory.toString(), PM.covers('template')]);
     if (Object.keys(inv).length) uncovered[v] = inv;
@@ -47,7 +53,7 @@ async function measureTemplate(url, w) {
   const skin = await page.evaluate(() => document.documentElement.getAttribute('data-skin'));
   const used = await page.evaluate(sels => sels.map(s => { try { return document.querySelectorAll(s).length; } catch (e) { return 0; } }), PM.ONLY.template.map(o => o[0]));
   await pg.close();
-  return { views, uncovered, shape: eraShape, skin, used, errors: pg.errors };
+  return { views, uncovered, shape: eraShape, finish, skin, used, errors: pg.errors };
 }
 
 module.exports = async function (t) {
@@ -107,6 +113,8 @@ module.exports = async function (t) {
          unlisted.map(d => d.k + ': X-Men ' + JSON.stringify(d.a) + ', Pull ' + JSON.stringify(d.b)), []);
     t.eq('…and every listed difference is still one', pats.filter(([, re]) => !differ.some(d => re.test(d.k))).map(([p]) => p), []);
     t.eq('no page errors', errors, []);
+    t.eq('the plan\'s finish-by date sits right beside the time remaining, on its line, at every width (John, 24 Oct)',
+         PM.WIDTHS.filter(w => !got[w].finish || got[w].finish.dy > 1 || got[w].finish.gap < 0 || got[w].finish.gap > 16).map(w => w + ': ' + JSON.stringify(got[w].finish)), []);
 
     // ------------------------------------------------ the reference is still X-Men's
     // CI has no X-Men copy and the live site is outside it; a session re-captures and compares.

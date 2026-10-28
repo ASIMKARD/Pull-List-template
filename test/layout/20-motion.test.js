@@ -45,7 +45,7 @@ module.exports = async function (t) {
     await pg.page.click('#tab-settings');
     r = await toggle(pg.page, '.sec-head[data-g="s"][data-k="display"]', '#set-display');
     t.ok('reduced motion: a section opens at once, with no transition', r.anims.length === 0 && Math.abs(r.start - r.content) <= 1, JSON.stringify(r));
-    await pg.page.evaluate(() => { document.querySelector('#tab-list').click(); document.querySelector('[data-act="panel"]').click(); document.querySelector('.ptools [data-act="expand-all"]').click(); });
+    await pg.page.evaluate(() => { document.querySelector('#tab-list').click(); document.querySelector('[data-act="panel"]').click(); document.querySelector('[data-act="expand-all"]').click(); });
     t.eq('reduced motion: no element anywhere has a transition or animation duration', await pg.page.evaluate(moving), []);
     t.eq('no page errors (reduced motion)', pg.errors, []);
     await pg.close();
@@ -54,7 +54,7 @@ module.exports = async function (t) {
     // ------------------------------------------------ the signature skin can't bring motion back
     const ssrv = await serve(basic().out);
     pg = await open(ssrv.url, { width: 390, reducedMotion: 'reduce' });
-    await pg.page.evaluate(() => { document.querySelector('[data-act="panel"]').click(); document.querySelector('.ptools [data-act="expand-all"]').click(); });
+    await pg.page.evaluate(() => { document.querySelector('[data-act="panel"]').click(); document.querySelector('[data-act="expand-all"]').click(); });
     t.eq('the signature skin, reduced motion: the page is in it, and nothing anywhere moves',
          [await pg.page.evaluate(() => document.documentElement.getAttribute('data-skin')), await pg.page.evaluate(moving)], ['signature', []]);
     await pg.close();

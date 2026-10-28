@@ -80,17 +80,22 @@ are in `schema/dataset.schema.json`.
   `"frame": "v9"` in `franchise.signature` (Absolute's own skin).
   - The root carries `data-frame`. Every rule that belongs to the x frame is
     scoped `:root[data-frame="x"]`, and the render paths split only where the
-    structure differs (the era head's strip, so far), so the v9 frame is the old
-    rules and markup, untouched. A skin change that crosses frames draws the page
-    again.
+    structure differs (the era head's strip and the header's figures, so far), so
+    the v9 frame is the old rules and markup, untouched. A skin change that crosses
+    frames draws the page again.
+  - **The page's markup is the v9 frame's.** The x frame moves the same controls
+    (`app.js`, `placeChrome`), so each keeps its state and its listeners, and a move
+    back restores v9's order exactly (47-frame-v9 checks a signature → Pull →
+    signature round trip).
   - `test/layout/47-frame-v9.test.js` measures every visible element in five
     views at 320, 390 and 1024 px against a recorded reference
     (`test/layout/ref/frame-map.js`): the `sig-v9` fixture's in the template
     (`test/fixtures/sig-v9/frame-ref.json`), and a tracker's own frame-ref.json
     beside its `dataset.json` when its skin is on the v9 frame. Re-capture (`node test/layout/ref/capture-frame.js`) only after John
     has seen the difference.
-  - The v9 frame keeps v9's 6 px mini bar; the x frame's is 3 px (John, 13 and
-    28 Oct).
+  - The v9 frame keeps v9's 6 px mini bar, on by default; the x frame's is 3 px and
+    off by default, as the reference tracker's (John, 13, 24 and 28 Oct). The
+    Display summary names the mini bar only when it isn't its frame's default.
   - Within a frame a skin still never moves a control.
 - The Look settings (paper, era colours, text size, density, button size,
   marks, the dyslexia-friendly font) own their tokens; a skin can't override
@@ -224,13 +229,34 @@ One skin of the tracker's own, from `franchise.signature`:
     fixes it. A step that is done may leave none (`CURRENT_STEP`).
 - `test/layout/45-pull.test.js` compares all of it and keeps both lists true in both
   directions. At step 1 of session 8: 858 properties match, 966 differences are
-  listed, every one tied to a step.
+  listed, every one tied to a step. After step 2: 1063 match and 761 are listed.
 - To re-capture (session-only, with a read-only clone):
   `node test/layout/ref/capture-x-men.js --dir ../X-men`. The live page must be
   byte-identical to the clone's `index.html`. With `X_MEN_LIVE=1` and a local copy at
   `../X-men` (or `X_MEN_DIR`), 45-pull re-captures and compares.
 - Side-by-side screenshots for John: `node test/layout/ref/side-by-side.js OUTDIR`
   (X-Men live | Pull, every view, 390 px by default).
+
+### The x frame's header (session 8, step 2)
+
+- **One 760 px column**, centred: the header, the tabs and the page.
+- **The header pins under the tabs**, as X-Men's: the header is sticky at the top
+  (z-index 40) and the tab stack (41) covers its top, so its lower lines and the
+  progress stay in view. It pins only while it takes at most 35 % of the screen; with
+  the largest text on a 320 × 568 phone the tabs pin alone (`10-sweep`; awaiting John).
+  `--stack-h` is what stays pinned, so jumps land below it (`60-stack`).
+- **Its lines:** the franchise name as the title (28 px, 24 px at 420 px and under in
+  Pull: `--title-size-narrow`); X-Men's offline line, ending "· vN" and the offline
+  mark, the ink at 64 % (`--offline-a`); the strapline in the subtitle's place.
+- **The progress line:** an 8 px track (`--head-track`, `--head-fill`), then the count
+  on the left and, on the right, the plan's finish-by date, the time "remaining" and
+  "+N untimed" (`--stats-size`). At 320 px the right side takes a line of its own.
+- **The filter bar:** no card. The search box with Next unread beside it (filled,
+  `--jump-ink`), then the Filters button, Expand all and Collapse all, then "Showing X
+  of Y". The bookmarks bar sits under it, as X-Men's PINNED row, its chips in the
+  control outline (3:1 on every paper).
+- **The tabs** share the bar equally, X-Men's padding; Pull draws no rule under its
+  dark bar (`--tabs-rule`, Pull's layout).
 
 ## The workbook
 

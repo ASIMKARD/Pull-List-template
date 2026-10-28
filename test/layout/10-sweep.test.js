@@ -151,5 +151,33 @@ module.exports = async function (t) {
     await srv.close();
     t.eq('era names long enough to wrap, at 320 and 1024 px, in every skin with default and the largest text: no era text crosses its tab\'s cut (' + tabs + ' tabs)',
          lb.status === 0 ? wide : ['the build failed: ' + lb.stderr.slice(-200)], []);
+
+    // the pinned header (the x frame; John, 24 Oct): it pins under the tabs, as the reference tracker's, whenever it
+    // takes at most 35 % of the screen, and never more; with the largest text on a 320 × 568 phone the tabs pin alone
+    const pins = [], psrv = await serve(basic().out);
+    let worst = 0;
+    for (const skin of ['signature', 'paper', 'newsprint', 'pull', 'night']) {
+      for (const [w, h, look] of [[320, 568, {}], [390, 844, {}], [320, 568, { textSize: 'l', tap: 'large', density: 'roomy', dys: true }], [390, 844, { textSize: 'l' }]]) {
+        const pg = await open(psrv.url, { width: w, height: h, reducedMotion: 'reduce', storage: { [FK + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' }, skin }, look)) } });
+        await openAll(pg.page);
+        await pg.page.evaluate(() => window.scrollTo(0, 900));
+        await pg.page.waitForTimeout(50);
+        const m = await pg.page.evaluate(() => {
+          const ph = document.querySelector('#phead'), r = ph.getBoundingClientRect(), st = document.querySelector('#stack').getBoundingClientRect();
+          const pinned = getComputedStyle(ph).position === 'sticky' && Math.abs(r.top) < 1;
+          return { frame: document.documentElement.getAttribute('data-frame'), y: scrollY, pinned, fits: ph.offsetHeight <= innerHeight * 0.35,
+                   share: Math.max(st.bottom, pinned ? r.bottom : 0) / innerHeight };
+        });
+        const at = skin + ' @' + w + '×' + h + (look.textSize ? ' largest' : '');
+        worst = Math.max(worst, m.share);
+        if (m.frame !== 'x' || m.y < 800) pins.push(at + ': not on the x frame, scrolled (' + m.frame + ', ' + m.y + ')');
+        else if (m.share > 0.35) pins.push(at + ': ' + Math.round(m.share * 100) + ' % of the screen stays pinned');
+        else if (m.fits !== m.pinned) pins.push(at + ': the header ' + (m.pinned ? 'pins at more than 35 %' : 'fits in 35 % but doesn\'t pin'));
+        await pg.close();
+      }
+    }
+    await psrv.close();
+    t.eq('the x frame\'s header pins under the tabs whenever it takes at most 35 % of the screen, never more: every skin at 320 × 568 and 390 × 844, default and the largest text (worst ' +
+         Math.round(worst * 100) + ' %)', pins, []);
   } finally { await closeBrowser(); }
 };

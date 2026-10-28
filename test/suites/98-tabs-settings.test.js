@@ -98,7 +98,7 @@ module.exports = async function (t) {
   t.ok('back to combined: the lines go', !$('#pprog .pmedia'));
 
   // ----------------------------------------------- jump button (XM-19)
-  const next = () => $('.ptools [data-act="next"]');
+  const next = () => $('[data-act="next"]');
   t.ok('Next unread button shows by default', !next().hidden);
   $('#settings [data-act="pref"][data-k="showJump"]').click();
   t.ok('switching it off hides the button', next().hidden && stored(app, 'settings').showJump === false);

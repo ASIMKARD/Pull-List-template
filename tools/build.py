@@ -81,7 +81,7 @@ RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
 # bar edge to edge, its solid era boxes). Every other skin keeps the template's
 # layout and pale eras, so a signature skin may not set them; 80-guards checks
 # styles.css the same way.
-PULL_ONLY = {'--tabs-inset', '--era-solid',
+PULL_ONLY = {'--tabs-inset', '--tabs-rule', '--era-solid',
              '--era-inset', '--era-space', '--era-pad', '--era-head-gap', '--era-edge', '--era-foot-r', '--era-shadow',
              '--era-tab-a', '--era-tab-pad', '--era-cut', '--era-hatch-w', '--era-strip-pad', '--era-bar-h', '--era-bar-r',
              '--era-frame', '--era-frame-r', '--era-body-pad'}

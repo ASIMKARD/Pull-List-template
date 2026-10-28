@@ -239,8 +239,10 @@
     s.tab = s.tab || 'list';
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
+    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin() : s.skin;
+    /* the mini bar: on by default on the v9 frame (v2), off on the x frame, as the reference tracker's (John, 24 Oct) */
     [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true],
-     ['swipe', false], ['press', false], ['mini', true], ['banner', false], ['table', false]].forEach(function (d) {   // gestures off (3 Oct); mini on, banner and table off (v2)
+     ['swipe', false], ['press', false], ['mini', frameOf(s.skin) === 'v9'], ['banner', false], ['table', false]].forEach(function (d) {   // gestures off (3 Oct); banner and table off (v2)
       if (typeof s[d[0]] !== 'boolean') s[d[0]] = d[1];
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
@@ -249,7 +251,6 @@
     s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
     s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
-    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin() : s.skin;
     s.paper = PAPERS.some(function (p) { return p[0] === s.paper; }) ? s.paper : 'default';
     LOOK.forEach(function (l) { if (!lookOk(l, s[l[0]])) s[l[0]] = l[4]; });
     if (typeof s.dys !== 'boolean') s.dys = false;
@@ -551,10 +552,10 @@
     return t.ut ? '<span class="' + cls + '" data-untimed="' + t.ut + '" title="' + t.ut + ' left with no length in the data, so not in the time left">+' +
       t.ut + ' untimed</span>' : '';
   }
-  function leftHtml(t, cls) {
+  function leftHtml(t, cls, word) {
     if (remaining(t) === t.ut) return '';                            // only untimed rows left: no "0m left"
     var left = timeLeft(t);
-    return '<span class="' + cls + '" data-left-min="' + left.mins + '">' + left.text + ' left</span>';
+    return '<span class="' + cls + '" data-left-min="' + left.mins + '">' + left.text + ' ' + (word || 'left') + '</span>';
   }
   function statsHtml(t, finish) {
     var g = goal(t), done = remaining(t) === 0 && t.total > 0;
@@ -581,14 +582,17 @@
   function renderHeader(S) {
     var t = S.all, done = remaining(t) === 0;
     var fin = done ? null : finishBy(minutesLeft(t));
+    var finHtml = done ? '' : '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>';
     $('#pprog').innerHTML =
       '<progress class="bar pbar" max="' + (goal(t) || 1) + '" value="' + t.read + '" aria-label="Reading progress"></progress>' +
       '<p class="pstats"><span class="pcount">' + t.read + ' / ' + goal(t) + ' read' +
       (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
       (browsing() ? '<span class="pfiltered" title="Counting only what your search or browse filters show">filtered view</span>' : '') +
+      /* the x frame (John, 24 Oct): the count on the left; on the right the plan's finish-by date, then the
+         time remaining at the edge, as the reference tracker's. The v9 frame keeps its order. */
       (done ? '<span class="pdone">All caught up ✓</span>'
-            : leftHtml(t, 'pleft') + untimedHtml(t, 'puntimed') +
-              '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>' +
+            : frameOf(settings.skin) === 'x' ? '<span class="pright">' + finHtml + leftHtml(t, 'pleft', 'remaining') + untimedHtml(t, 'puntimed') + '</span>'
+            : leftHtml(t, 'pleft') + untimedHtml(t, 'puntimed') + finHtml) + '</p>' +
       (perFormat() ? '<ul class="pmedia">' + MEDIA_USED.map(function (m) {
         var x = S.med[m];
         return '<li class="pmed" data-m="' + m + '"><span class="pmed-name">' + escapeHtml(mediumLabel(m)) + '</span>' +
@@ -1432,7 +1436,7 @@
   function renderPinbar() {
     var list = bookmarked();
     $('#pinbar').hidden = !list.length;
-    $('#pinchips').innerHTML = list.map(function (i) {
+    $('#pinchips').innerHTML = (frameOf(settings.skin) === 'x' && list.length ? '<span class="pin-label" aria-hidden="true">PINNED</span>' : '') + list.map(function (i) {
       return '<button type="button" class="chip pin" data-act="bm-jump" data-id="' + escapeAttr(D.ids[i]) + '">★ ' +
         escapeHtml(D.issues[i][1]) + '</button>';
     }).join('');
@@ -1519,13 +1523,59 @@
     return res;
   }
 
+  /* The header and the filter bar on the frame's arrangement (session 8). The
+     page's own markup is the v9 frame's. The x frame (the reference tracker's)
+     moves the same controls, so each keeps its state and its listeners: the
+     version and the offline mark to the end of the offline line, Next unread
+     beside the search box, the Filters button with Expand all and Collapse all
+     in a row under it, and the bookmarks bar under the filter bar. A move back
+     restores v9's order exactly (47-frame-v9). */
+  var chrome = null;
+  function placeChrome() {
+    var x = frameOf(settings.skin) === 'x';
+    if (!chrome) {
+      chrome = { x: false, tools: $('.ptools'), badge: document.createElement('p'), ver: document.createElement('span'), ftools: document.createElement('div') };
+      chrome.badge.className = 'pbadge';
+      chrome.badge.textContent = 'Offline Edition — progress saves in this browser only, no account needed';
+      chrome.ver.className = 'pver';                       // "· vN" never wraps on its own
+      chrome.badge.append(chrome.ver);
+      chrome.ftools.className = 'ftools';
+    }
+    if (x === chrome.x) return;
+    chrome.x = x;
+    var tag = $('#buildtag'), net = $('#netState'), sep = tag.previousSibling, next = $('[data-act="next"]');
+    var all = [$('[data-act="expand-all"]'), $('[data-act="collapse-all"]')], tog = $('.ftoggle'), fbar = $('.fbar'), pin = $('#pinbar');
+    if (x) {
+      $('.ptitle').after(chrome.badge);
+      chrome.ver.append(sep, tag, net);
+      chrome.tools.remove();
+      fbar.append(next);
+      chrome.ftools.append(tog, all[0], all[1]);
+      fbar.after(chrome.ftools);
+      $('#fpanel').after(pin);
+    } else {
+      $('.pmeta').append(sep, tag, net);
+      chrome.badge.remove();
+      $('#pprog').after(chrome.tools);
+      chrome.tools.append(next, all[0], all[1]);
+      fbar.insertBefore(tog, $('#q'));
+      chrome.ftools.remove();
+      $('#fpanel').before(pin);
+    }
+    next.classList.toggle('jump', x);
+    next.innerHTML = x ? 'Next unread<span aria-hidden="true"> →</span>' : 'Next unread';
+    renderPinbar();
+    measureStack();
+  }
+
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
   var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css',
                 mini: 'stats', banner: 'stats', table: 'css' };
   function applyPrefs() {
     var root = document.documentElement;
-    $('.ptools [data-act="next"]').hidden = !settings.showJump;
+    placeChrome();
+    $('[data-act="next"]').hidden = !settings.showJump;
     root.setAttribute('data-badges', settings.badges ? '1' : '0');
     root.setAttribute('data-combo', settings.combo ? '1' : '0');
     root.setAttribute('data-reveal', settings.reveal ? '1' : '0');
@@ -2013,7 +2063,7 @@
       if (HAS.eras && settings.rev) bits.push('newest era first');
       if (settings.table) bits.push('table view');
       if (settings.banner) bits.push('banner');
-      if (!settings.mini) bits.push('no mini bar');
+      if (settings.mini !== (frameOf(settings.skin) === 'v9')) bits.push(settings.mini ? 'mini bar' : 'no mini bar');   // only when it isn't the frame's default
     } else if (k === 'touch') {
       bits.push(settings.swipe && settings.press ? 'Swipe and long-press on' : settings.swipe ? 'Swipe on' : settings.press ? 'Long-press on' : 'Gestures off');
     } else if (k === 'bulk') {
@@ -2520,11 +2570,20 @@
   /* The sticky stack's height (F-58), measured whenever it changes (the
      banner turning on, a wrap at a new width, a font landing). A
      ResizeObserver is not an event listener, so the budget is unchanged. */
+  /* On the x frame the header pins too, under the tabs (z-index), so what stays on
+     screen is the taller of the two (the reference tracker's pinning; John, 24 Oct).
+     It pins only while it takes at most 35 % of the screen: with the largest text on
+     a small phone the tabs pin alone (10-sweep; awaiting John, 28 Oct). */
   function measureStack() {
-    var st = $('#stack');
-    document.documentElement.style.setProperty('--stack-h', (st ? st.offsetHeight : 0) + 'px');
+    var st = $('#stack'), h = st ? st.offsetHeight : 0, root = document.documentElement;
+    if (frameOf(settings.skin) === 'x') {
+      var ph = $('#phead').offsetHeight, pin = ph <= window.innerHeight * 0.35;
+      root.setAttribute('data-headpin', pin ? '1' : '0');
+      if (pin) h = Math.max(h, ph);
+    }
+    root.style.setProperty('--stack-h', h + 'px');
   }
-  if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
+  if (window.ResizeObserver) { var stackObs = new window.ResizeObserver(measureStack); stackObs.observe($('#stack')); stackObs.observe($('#phead')); }
 
   applySignature();
   applyFranchise();

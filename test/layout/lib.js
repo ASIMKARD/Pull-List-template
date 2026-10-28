@@ -111,7 +111,7 @@ async function openAll(page) {
     const p = document.querySelector('[data-act="panel"]');
     if (p.getAttribute('aria-expanded') !== 'true') p.click();
     tap('#fsecs .sec-head[aria-expanded="false"]');
-    document.querySelector('.ptools [data-act="expand-all"]').click();
+    document.querySelector('[data-act="expand-all"]').click();
   });
 }
 async function openSettings(page) {

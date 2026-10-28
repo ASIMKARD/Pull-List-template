@@ -52,6 +52,8 @@
   --soft-h: var(--ink-h); --soft-s: calc(var(--ink-s) * .5);
   --bar-soft-h: var(--ink-h); --bar-soft-s: calc(var(--ink-s) * .5);
   --mark-edge-s: calc(var(--ink-s) * .5); --l-mark-edge: var(--l-edge);          /* a mark's outline: a control outline unless a skin says otherwise */
+  --offline-a: .64;      /* the x frame's offline line: the reference tracker's 60 % made to pass. John ruled 62 % (28 Oct), 4.51:1 on Pull's paper;
+                            every skin × paper needs 63.1 %, so 64 % keeps a step in hand (40-look; awaiting John) */
   /* era ramp (OKLCH, so one lightness reads the same at every hue): pale
      tints, readable text, hue stepped by the golden angle — no cap on eras */
   --era-h0: 30; --era-step: 137.508; --era-mono-h: 258;
@@ -70,6 +72,7 @@
   --line: hsl(var(--line-h) var(--line-s) var(--l-line));                     /* dividers, card outlines */
   --edge: hsl(var(--ink-h) calc(var(--ink-s) * .5) var(--l-edge));          /* control outlines: 3:1 on paper and card */
   --mark-edge: hsl(var(--ink-h) var(--mark-edge-s) var(--l-mark-edge));
+  --offline-ink: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / var(--offline-a));
   --track: hsl(var(--paper-h) calc(var(--paper-s) * .8) var(--l-track));
   --bar: hsl(var(--bar-h) var(--bar-s) var(--l-bar));                       /* the tab bar */
   --bar-ink: hsl(var(--ink-h) var(--ink-s) var(--l-bar-ink));
@@ -94,6 +97,8 @@
   --era-track: var(--track); --era-fill: var(--accent);
   --era-hatch: hsl(0 0% 0% / .12);                 /* the folder tab's hatched corner (drawn in Pull only) */
   --era-shadow-a: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / .08); --era-shadow-b: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / .06);
+  /* the x frame's header bar and Next unread; the template's colours unless a skin says otherwise */
+  --head-track: var(--track); --head-fill: var(--accent); --jump-ink: var(--accent-ink);
 
   /* ---- type, shape, space, motion ---- */
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -105,6 +110,7 @@
   --tab-size: 15px; --tab-fit: 4.2vw; --tab-case: none; --tab-track: 0;   /* four tabs fit at 320 px */
   /* type sizes per element (session 5, for Pull); each is multiplied by --scale */
   --title-size: 28px; --title-track: .02em; --title-lh: normal; --meta-size: 13px;
+  --title-size-narrow: var(--title-size); --stats-size: 13px;   /* the x frame: the title at 420 px and under, and the header's figures */
   --era-name-size: 17px; --era-meta-size: 13px; --intro-size: 14px; --intro-style: normal;
   --arc-size: 15px; --arc-weight: 700; --row-size: 15px; --row-weight: 400; --search-size: 15px;
   --body-track: 0; --word-space: 0;
@@ -120,6 +126,7 @@
      Pull's block below changes these. The build refuses them in a signature
      skin, and a guard checks that no other block sets them. */
   --tabs-inset: 16px;                              /* the tab bar's side margin: 0 runs it edge to edge */
+  --tabs-rule: 1px;                                /* the x frame's rule under the tab bar: none on a dark bar */
   /* the era box: the template's card here; Pull's folder tab (the reference tracker's, measured) in Pull's block */
   --era-inset: 16px; --era-space: var(--gap);      /* an era's side margin, and the space under it */
   --era-pad: 12px 14px; --era-head-gap: 6px; --era-edge: 1px; --era-foot-r: var(--radius); --era-shadow: none;
@@ -164,13 +171,15 @@
   --accent-h: 212.7273; --accent-s: 54.0984%; --l-accent: 23.9216%; --l-wash: 92%; --l-bar-mark: 44%;
   --era-ink-l: 1; --era-ink-c: 0; --era-mono-h: 20;
   --font-meta: var(--font-mono); --display-case: uppercase; --display-weight: 700;
-  --title-size: 24px; --title-track: .5px; --title-lh: 1.45; --meta-size: 12px;
+  --title-size: 28px; --title-size-narrow: 24px; --title-track: .5px; --title-lh: 1.45; --meta-size: 12px; --stats-size: 11px;
   --name-font: var(--font-display); --name-weight: 400; --name-case: uppercase; --name-track: .4px;
   --era-name-size: 19px; --era-meta-size: 11px; --intro-size: 12.5px; --intro-style: italic;
   --arc-size: 13.5px; --arc-weight: 600; --row-size: 13px; --row-weight: 500; --search-size: 14px;
-  --tab-size: 12.5px; --tab-fit: 3.7vw; --tab-case: uppercase; --tab-track: .3px;
+  --tab-size: 12.5px; --tab-fit: 3.907vw; --tab-case: uppercase; --tab-track: .3px;   /* 12.5 px at 320 px too, as the reference */
+  --head-track: var(--inset); --head-fill: var(--ink); --jump-ink: var(--card);
   --radius: 8px;
   --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
+  --tabs-rule: 0px;      /* no rule under its dark bar */
   --era-solid: 1;        /* solid era boxes, in the colours data.js gives each era */
   --era-years-ink: var(--on-solid-soft); --era-stats-ink: var(--on-solid); --era-accent-ink: var(--on-solid); --era-done-ink: var(--on-solid);
   --era-track: var(--on-solid-track); --era-fill: var(--on-solid-fill);
@@ -257,6 +266,49 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .fhead { display: flex; align-items: center; padding: 0 12px; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .fhead .linkbtn { margin-left: auto; }
 .fchips { padding: 4px 12px 10px; }
+
+/* ---- the x frame (session 8, John 24 Oct): the reference tracker's arrangement, for the shared
+   skins. The v9 frame (a signature skin's "frame": "v9") keeps the rules above, untouched; every
+   rule here is scoped to the x frame (47-frame-v9 holds the v9 frame exactly). ---- */
+/* one 760 px column; the header pins under the tabs, which stay on top (z-index) */
+:root[data-frame="x"] .phead, :root[data-frame="x"] .stack, :root[data-frame="x"] main { max-width: 760px; margin-left: auto; margin-right: auto; }
+:root[data-frame="x"] .phead { top: 0; z-index: 40; background: var(--paper); border-bottom: 2px solid var(--ink); padding: 14px 16px 10px; line-height: 1.45; }
+:root[data-frame="x"][data-headpin="1"] .phead { position: sticky; }   /* while it takes at most 35 % of the screen (app.js measureStack) */
+:root[data-frame="x"] .stack { z-index: 41; padding-bottom: 0; }
+:root[data-frame="x"] .ptitle { margin: 0 0 2px; }
+@media (max-width: 420px) { :root[data-frame="x"] .ptitle { font-size: calc(var(--title-size-narrow) * var(--scale)); } }
+:root[data-frame="x"] .pbadge { margin: -4px 0 1em; font-size: calc(11px * var(--scale)); color: var(--offline-ink); }
+:root[data-frame="x"] .pver { white-space: nowrap; }
+:root[data-frame="x"] .pmeta { margin: 0; }
+:root[data-frame="x"] .pprog { margin-top: 10px; }
+:root[data-frame="x"] progress.pbar { height: 8px; border: 1px solid var(--line); border-radius: 99px; background: var(--head-track); }
+:root[data-frame="x"] progress.pbar::-webkit-progress-bar { background: var(--head-track); border-radius: 99px; }
+:root[data-frame="x"] progress.pbar::-webkit-progress-value { background: var(--head-fill); border-radius: 99px; }
+:root[data-frame="x"] progress.pbar::-moz-progress-bar { background: var(--head-fill); border-radius: 99px; }
+/* the count on the left; the finish-by date, the time remaining and "+N untimed" on the right */
+:root[data-frame="x"] .pstats { margin: 4px 0 0; font-size: calc(var(--stats-size) * var(--scale)); }
+:root[data-frame="x"] .pstats > .pdone, :root[data-frame="x"] .pright { margin-left: auto; }
+:root[data-frame="x"] .pright { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; }
+/* the tabs: equal widths, the reference's padding */
+:root[data-frame="x"] .tabs { border-bottom-width: var(--tabs-rule); }
+:root[data-frame="x"] .tab { flex: 1 1 0; padding: 11px 4px; }
+/* the filter bar: the search box with Next unread beside it, then the Filters button, Expand all
+   and Collapse all; no card */
+:root[data-frame="x"] .fpanel { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 10px 16px; background: none; border: 0;
+  border-bottom: 1px solid var(--line); border-radius: 0; }
+:root[data-frame="x"] .fbar { align-items: stretch; padding: 0; }
+:root[data-frame="x"] .search { flex: 1 1 auto; height: auto; padding: 9px 12px; border-width: 1.5px; }   /* from its own width: at 320 px Next unread takes two lines, as the reference; it still gives way to large text */
+:root[data-frame="x"] .fbar .jump { padding: 6px 12px; border: 0; border-radius: 99px; background: var(--accent); color: var(--jump-ink);
+  font-size: calc(12px * var(--scale)); font-weight: 700; }
+:root[data-frame="x"] .ftools { display: flex; flex-wrap: wrap; gap: 6px; }
+:root[data-frame="x"] .ftools > button { padding: 5px 11px; border: 1.5px solid var(--edge); border-radius: 99px; background: var(--card); color: var(--ink-soft);
+  font-size: calc(12px * var(--scale)); font-weight: 600; }
+:root[data-frame="x"] .fshow { padding: 0; }
+/* the bookmarks bar under the filter bar, as the reference's PINNED row */
+:root[data-frame="x"] .pinbar-in { gap: 6px; align-items: center; margin: 0; padding: 8px 16px 0; }
+:root[data-frame="x"] .pin-label { flex: none; font-family: var(--font-meta); font-size: calc(10px * var(--scale)); color: var(--ink-soft); }
+:root[data-frame="x"] .chip.pin { padding: 5px 11px; border: 1.5px solid var(--edge); border-radius: 99px; background: var(--card); color: var(--ink-soft);
+  font-size: calc(12px * var(--scale)); font-weight: 600; }
 
 /* ---- one collapsible section: the filter panel's and Settings' (FP-11) ----
    The body stays in the DOM and opens by animating its grid row from 0fr to

@@ -78,7 +78,7 @@ const DATA_ROWS = [
 const ALWAYS = [
   { tab: 'list', what: 'search box', has: d => any(d, '#q') },
   { tab: 'list', what: 'four tabs', has: d => d.querySelectorAll('#tabs [role="tab"]').length === 4 },
-  { tab: 'list', what: 'Next unread, Expand all, Collapse all', has: d => any(d, '.ptools [data-act="next"]') && any(d, '.ptools [data-act="expand-all"]') && any(d, '.ptools [data-act="collapse-all"]') },
+  { tab: 'list', what: 'Next unread, Expand all, Collapse all', has: d => any(d, '[data-act="next"]') && any(d, '[data-act="expand-all"]') && any(d, '[data-act="collapse-all"]') },
   { tab: 'list', what: 'era banners', has: d => any(d, '#app .era-head') },
   { tab: 'list', what: 'marks and bookmarks on rows', has: d => any(d, '#app .row .mark') && any(d, '#app .row .bm') },
   { tab: 'list', what: 'review ✎ and Mark arc read', has: d => any(d, '#app .b.rv') && any(d, '#app [data-act="arc-mark"]') },
@@ -111,7 +111,7 @@ function audit(app, rows) {
   if (panel.getAttribute('aria-expanded') !== 'true') panel.click();
   let head, guard = 0;
   while ((head = d.querySelector('#fsecs .sec-head[aria-expanded="false"]')) && guard++ < 20) head.click();
-  d.querySelector('.ptools [data-act="expand-all"]').click();
+  d.querySelector('[data-act="expand-all"]').click();
   look('list');
   d.querySelector('#tab-reading').click();
   look('reading');

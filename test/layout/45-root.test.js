@@ -18,15 +18,16 @@ const PAPERS = ['default', 'warm', 'grey', 'rose', 'mint', 'sky', 'lilac'];
 const LARGEST = { textSize: 'l', tap: 'large', density: 'roomy', dys: true };
 const seed = s => ({ [KEY + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, s)) });
 
-const TEXT = [['body text on paper', 'body'], ['header title', '.ptitle'], ['header meta', '.pmeta'], ['header stats', '.pstats'],
+const TEXT = [['body text on paper', 'body'], ['header title', '.ptitle'], ['header meta', '.pmeta'], ['offline line (x frame)', '.pbadge'], ['header stats', '.pstats'],
+  ['Next unread (x frame)', '.fbar .jump'],
   ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'], ['link on card', '.fhead .linkbtn'],
   ['pressed chip', '#fsecs .chip[aria-pressed="true"]'], ['unpressed chip', '#fsecs .chip[aria-pressed="false"]'], ['search text', '#q'],
   ['tab', '.tab[aria-selected="false"]'], ['selected tab', '.tab[aria-selected="true"]'], ['band name', '.band-head .bname'],
   ['era intro', '.era-intro'], ['arc name', '.arc-head h3'], ['arc blurb', '.blurb'], ['row title', '.row[data-s="unread"]:not(.inert) .title'],
   ['read row title', '.row[data-s="read"] .title'], ['read mark', '.row[data-s="read"] .mark'], ['subnote', '.subnote'], ['credits', '.credits'],
   ['creator name', '.cname'], ['badge', '.row .b'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'],
-  ['Settings summary', '.sec-sum'], ['tool button', '.ptools .tool']];
-const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '.ptools .tool', 'borderTopColor'],
+  ['Settings summary', '.sec-sum'], ['tool button', '[data-act="expand-all"]']];
+const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
   ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],
   ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor']];
 
