@@ -3148,6 +3148,11 @@ Each X-Men visual that fails a check the template keeps (the table in step 1's c
 A, B, C, D, E and G are listed in 45-pull as `accessible:` in the step that builds them. F matches
 X-Men, so it needs no entry.
 
+### 28 Oct: step 3's case, ruled
+- **The era tab's right padding stays `max(44px, 12%)`.** A long name wraps before the cut at
+  every width. X-Men's 44 px lets it run under the clipped corner on wide screens; Pull differs
+  from X-Men only there (88 px at 1024 px).
+
 ### 28 Oct: step 2's three cases, ruled one by one
 - **The offline line: 64 %** (D revised). 62 % passes on Pull's own paper (4.51:1) but falls to
   4.35:1 on the other papers and skins; every skin × paper needs 63.1 %, and 64 % keeps a step in hand.
@@ -3452,7 +3457,7 @@ first line of its open body; then 95-pace, 96 and 97 re-pointed from `.era-head 
 
 **Harness:** 1651 assertions, 0 failed, 36 suites. **Layout:** 424 checks, 0 failed, 12 suites.
 
-### One case for John
+### One case for John (ruled 28 Oct: as built; see the decisions above)
 - **The tab's right padding at wide screens.** X-Men pads 44 px at every width. At 1024 px
   that lets a long era name run under the clipped corner, where X-Men cuts it off.
 - Built: session 7's `max(44px, 12%)`, so a long name wraps before the cut (10-sweep checks

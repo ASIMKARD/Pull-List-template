@@ -262,7 +262,7 @@ One skin of the tracker's own, from `franchise.signature`:
 
 - **The tab:** the name, and the years under it, as X-Men's. X-Men's ▸ chevron sits in its
   clipped corner and never shows, so Pull draws none. The tab's right padding stays
-  `max(44px, 12%)`, so a long name wraps before the cut (awaiting John).
+  `max(44px, 12%)`, so a long name wraps before the cut (John, 28 Oct).
 - **One strip under it:** the count ("1/21 read", X-Men's form) and "filtered" on the left,
   the bar between, 10 px from each side, and the time left, "+N untimed" or ✓ on the right
   (`app.js`, `eraFootHtml`).

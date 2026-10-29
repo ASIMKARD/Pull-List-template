@@ -233,7 +233,7 @@ const DIFFERENCES = {
   'arc/pinned chip.borderTopColor@*': 'accessible: a pinned chip\'s outline is the control outline, 3:1 on every paper it sits on (X-Men\'s #C9C4B5 is 1.37:1 there, G\'s #8F8A7C 2.71:1; John, 28 Oct)',
   'reviews/review card.box*@1024': 'step 6a: X-Men\'s review cards, 12 px in',
   // step 3 (done): the era box and the open era's body
-  'landing/era tab.paddingRight@1024': 'accessible: the tab keeps its text clear of the cut at every width, max(44 px, 12 %); X-Men\'s 44 px lets a long name run under its clipped corner at 1024 px (awaiting John)',
+  'landing/era tab.paddingRight@1024': 'accessible: the tab keeps its text clear of the cut at every width, max(44 px, 12 %); X-Men\'s 44 px lets a long name run under its clipped corner at 1024 px (John, 28 Oct)',
   'era/era intro.relTop@*': 'John (24 Oct): the era\'s finish-by date is the first line of its open body, so the intro sits under it',
   // step 4: arc cards
   'era/arc *.*@*': 'step 4b: X-Men\'s arc cards',
