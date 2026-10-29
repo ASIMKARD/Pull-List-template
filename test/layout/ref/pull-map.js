@@ -246,7 +246,6 @@ const DIFFERENCES = {
   'arc/bookmark.color@*': 'accessible: the quiet star #6D685B, X-Men\'s #C9C4B5 (1.53:1) made to pass 4.5:1 on the card on every paper (A revised to every paper, John, 29 Oct)',
   'arc/bookmark, on.color@*': 'accessible: a bookmark that is on in the gold #836400, X-Men\'s #B08A1F (2.83:1) made to pass on every paper (B revised to every paper, John, 29 Oct)',
   'extras/core star.color@*': 'accessible: the core star in the same gold (B; John, 29 Oct)',
-  'reviews/review era.color@*': 'John (13 Oct): the era in Pull\'s default palette, the reference\'s eleven each darkened only as far as white text on it needs; as text on the card that colour already passes 4.5:1 on every paper (the build\'s text shade)',
   'reviews/review stars.color@*': 'accessible: the review stars in the gold #836400 (B revised to every paper, John, 29 Oct)',
   'reviews/review edit.borderTopColor@*': 'accessible: Edit outlined as ⓘ and Mark arc are, #8A8577, 3:1 on its card on every paper (G revised to every paper, John, 29 Oct)',
   // step 6: the other tabs

@@ -3199,7 +3199,7 @@ list, and the `.rstate`, `#reviews .pane-h` and `#reviews .rev-top` ONLY entries
 - **Reviews are X-Men's cards**, per issue in reading order (kept: reviews): the era tag, the issue, the stars in the
   gold, the text, and **Edit**, which goes to the issue with its review open. The heading stays for screen readers
   only.
-- **An era's text shade.** The build gives every colour Pull draws an era in a text shade, darkened only as far as
+- **An era's text shade** (superseded the same day: John ruled the tag draws the colour as given). The build gave every colour Pull draws an era in a text shade, darkened only as far as
   4.5:1 on Pull's card on every paper needs (`pull_colour`). Anything drawn in an era's colour outside the era box
   carries `.eratok` and the era's tokens. `staleShell` now also requires the shade.
 - **45-pull:** both sides now show the same issue in Reading. X-Men opens at the first issue; the template resumes
@@ -3238,11 +3238,12 @@ list, and the `.rstate`, `#reviews .pane-h` and `#reviews .rev-top` ONLY entries
 
 **Harness:** 1698 assertions, 0 failed, 37 suites. **Layout:** 465 checks, 0 failed, 12 suites.
 
-### The case for John (step 6a): an era's own light colour as text
+### The case for John (step 6a): an era's own light colour as text — ruled: as given
 X-Men's review era tag is the era's colour as 10 px text on the card. Pull's palette colours pass as they are. A
 tracker's own light colour does not: the basic fixture's `#A6791E` measures 3.20–3.48:1 across the papers. Built,
 following the rule of 29 Oct (C, G, A and B): its text shade, `#8A6100`, 4.54:1 at the lowest. The tab keeps the
-colour as given (John, 12 Oct). Awaiting John.
+colour as given (John, 12 Oct). **Ruled (John, 29 Oct): the colour as given.** The text shade is gone (see the decisions,
+29 Oct, "step 6a's case").
 
 ### Step 6b begins with
 Settings on the x frame (45-pull's `settings/*.*@*`, the last step entry). Keep the collapsible sections (kept:
@@ -3376,6 +3377,17 @@ X-Men, so it needs no entry.
   worst paper needs:
   - A, the quiet ☆: `#6D685B` (lowest 4.55:1);
   - B, the gold (the core star, a bookmark that is on, and the review stars in step 6a): `#836400` (lowest 4.54:1).
+
+### 29 Oct: step 6a's case, ruled
+- **The review era tag draws its era's colour as given,** as X-Men's does and as the tab does (12 Oct), not a darkened
+  text shade. The palette's eleven pass as text on every paper as they are (lowest 4.54:1), so only a tracker's own
+  light colour falls short. Then:
+  - the build reports how it reads as text on each paper (`era.colour.onCard`) and warns;
+  - its hint passes as the tag too;
+  - 40-look lets it through only at exactly the reported ratio, and checks that Pull draws the tag in the era's colour
+    exactly.
+
+  The text shade is removed: nothing would read it.
 
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a

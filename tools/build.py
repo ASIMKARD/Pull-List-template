@@ -638,12 +638,12 @@ def strip_shade(rgb):
 
 def passing_shade(rgb):
     """A hint for a colour under AA: the same hue, darker, until white text, the
-    85 % years and white text on its strip all clear 4.5:1 (chroma kept where
-    the gamut allows)."""
+    85 % years, white text on its strip and the colour as text on Pull's card
+    (the review era tag) all clear 4.5:1 (chroma kept where the gamut allows)."""
     L, C, H = rgb_oklch(rgb)
     while L > 0:
         cand = oklch_rgb(L, min(C, max_chroma(L, H)), H)
-        if min(white_ratios(cand)) >= AA and contrast(WHITE, strip_shade(cand)) >= AA:
+        if min(white_ratios(cand)) >= AA and contrast(WHITE, strip_shade(cand)) >= AA and text_ratio(cand) >= AA:
             return cand
         L -= 0.001
     return (0, 0, 0)
@@ -735,14 +735,9 @@ def text_ratio(rgb):
 
 
 def pull_colour(hexcol):
-    """What Pull draws for a colour: its tab and strip, and its text shade (the
-    colour as text on a card, as the reference tracker's review era tags: darkened
-    by the palette's rule only as far as 4.5:1 on every paper needs; session 8),
-    as OKLCH numbers."""
+    """What Pull draws for a colour: its tab and strip as OKLCH numbers."""
     rgb = hex_rgb(hexcol)
-    text, _ = nudge(rgb, lambda c: text_ratio(c) >= AA)
-    return {'hex': hexcol.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
-            'text': oklch_parts(text), 'textHex': rgb_hex(text)}
+    return {'hex': hexcol.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb))}
 
 
 def build(dataset_path, previous_datajs=None, keep=None):
@@ -867,15 +862,18 @@ def build(dataset_path, previous_datajs=None, keep=None):
                 rgb = hex_rgb(col)
                 white, years = white_ratios(rgb)
                 strip = contrast(WHITE, strip_shade(rgb))
+                # the colour as text on Pull's card, on each paper: the x frame's review era tag draws it as given (John, 29 Oct)
+                on_card = {k: round(contrast(rgb, c), 3) for k, c in PULL_CARDS.items()}
                 out['colour'] = {'hex': col.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
-                                 'white': round(white, 3), 'years': round(years, 3), 'stripWhite': round(strip, 3)}
+                                 'white': round(white, 3), 'years': round(years, 3), 'stripWhite': round(strip, 3), 'onCard': on_card}
                 out['pull'] = pull_colour(col)            # Pull draws a tracker's own colour exactly
-                if min(white, years, strip) < AA:
+                if min(white, years, strip, text_ratio(rgb)) < AA:
                     hint = passing_shade(rgb)
                     under_aa.append(e.get('id'))
-                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1; on its strip %s: %.2f:1), under %.1f:1 (WCAG AA). '
-                                 'Pull draws it as given (John, 12 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
-                                 % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, AA, rgb_hex(hint), *white_ratios(hint)))
+                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1; on its strip %s: %.2f:1; as text on Pull\'s card, '
+                                 'the review era tag: %.2f:1 at the lowest), under %.1f:1 (WCAG AA). '
+                                 'Pull draws it as given (John, 12 and 29 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
+                                 % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, text_ratio(rgb), AA, rgb_hex(hint), *white_ratios(hint)))
         era_colours.append(out)
     pull_mono = pull_colour(palette[PULL_MONO]['hex'])
 

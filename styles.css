@@ -391,10 +391,11 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
   --era-st-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-sl, 0) + (1 - var(--era-split)) * var(--em-sl, 0)) + (1 - var(--era-pick)) * var(--era-tint-l));
   --era-st-c: calc(var(--era-pick) * (var(--era-split) * var(--ec-sc, 0) + (1 - var(--era-split)) * var(--em-sc, 0)) + (1 - var(--era-pick)) * var(--era-tint-c));
   --era-st-h: calc(var(--era-pick) * (var(--era-split) * var(--ec-sh, 0) + (1 - var(--era-split)) * var(--em-sh, 0)) + (1 - var(--era-pick)) * var(--era-h));
-  /* the era's colour as text on a card (Pull: the build's text shade, 4.5:1 on every paper); the era ink elsewhere */
-  --era-tx-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-tl, 0) + (1 - var(--era-split)) * var(--em-tl, 0)) + (1 - var(--era-pick)) * var(--era-text-l));
-  --era-tx-c: calc(var(--era-pick) * (var(--era-split) * var(--ec-tc, 0) + (1 - var(--era-split)) * var(--em-tc, 0)) + (1 - var(--era-pick)) * var(--era-text-c));
-  --era-tx-h: calc(var(--era-pick) * (var(--era-split) * var(--ec-th, 0) + (1 - var(--era-split)) * var(--em-th, 0)) + (1 - var(--era-pick)) * var(--era-h));
+  /* the era's colour as text on a card (the x frame's review era tag): in Pull the colour it draws the era in, as
+     given (John, 29 Oct); the era ink elsewhere */
+  --era-tx-l: calc(var(--era-pick) * var(--era-bg-l) + (1 - var(--era-pick)) * var(--era-text-l));
+  --era-tx-c: calc(var(--era-pick) * var(--era-bg-c) + (1 - var(--era-pick)) * var(--era-text-c));
+  --era-tx-h: calc(var(--era-pick) * var(--era-bg-h) + (1 - var(--era-pick)) * var(--era-h));
   /* Pull paints the tab and the strip (--era-tab-a 1) and the box itself goes clear; every other skin, the box */
   --era-tab: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h) / var(--era-tab-a));
   --era-strip: oklch(var(--era-st-l) var(--era-st-c) var(--era-st-h) / var(--era-tab-a));

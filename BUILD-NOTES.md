@@ -354,12 +354,12 @@ One skin of the tracker's own, from `franchise.signature`:
 - **Reviews** are the reference's cards, one per issue in reading order (John, 8 Oct): the era tag, the issue (it
   jumps there), the stars in the gold, the text, and Edit, which goes to the issue with its review open. The
   heading stays for screen readers only. Reviews kept from the previous version are listed the same way.
-- **An era's colour as text.** The review era tag is the reference's era colour as 10 px text on the card. The build
-  gives every colour Pull draws an era in a text shade (`tools/build.py`, `pull_colour`): the colour darkened by the
-  palette's rule only as far as 4.5:1 on every paper needs. The palette's colours already pass, so theirs is the
-  colour itself; a tracker's own light colour is darkened (the basic fixture's `#A6791E` gives `#8A6100`). The tab
-  and the strip keep the colour as given. Anything else drawn in an era's colour carries `.eratok` and the era's
-  tokens (`eraStyle`), so the era colour block applies to it.
+- **An era's colour as text.** The review era tag is the era's colour as 10 px text on the card, drawn as given
+  (John, 29 Oct), as the tab is. The palette's eleven colours pass 4.5:1 as text on every paper (the lowest 4.54:1). A
+  tracker's own colour may not: the build reports it on each paper (`era.colour.onCard`) and warns when the lowest is
+  under 4.5:1, and its hint passes as the tag too. 40-look lets such a tag through only at exactly the reported ratio,
+  and checks that Pull draws the tag in the era's colour exactly. Anything drawn in an era's colour outside the era box
+  carries `.eratok` and the era's tokens (`eraStyle`), so the era colour block applies to it.
 
 ## The workbook
 

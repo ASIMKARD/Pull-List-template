@@ -80,7 +80,7 @@ module.exports = async function (t) {
       ['Reading counter (x frame)', '#reader .rcount'], ['Reading era chip (x frame: white on its era in Pull)', '#reader .rpill.eratok'],
       ['Reading title (x frame)', '#reader .rtitle'], ['Reading arc line', '#reader .rmeta'], ['Reading Skip (x frame)', '#reader .rbtn.ghost'],
       ['Reading Mark Read (x frame)', '#reader .rbtn.solid'], ['Reading nav (x frame)', '#reader .rnav .linkbtn:not([disabled])'],
-      ['review era tag (x frame: the era\'s text shade)', '#reviews .rev-era'], ['review stars (x frame: the gold)', '#reviews .rev-stars'],
+      ['review era tag (x frame: its era\'s colour, as given)', '#reviews .rev-era'], ['review stars (x frame: the gold)', '#reviews .rev-stars'],
       ['review text (x frame)', '#reviews .rev-t'], ['review Edit (x frame)', '#reviews .rev-edit'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
     const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
@@ -88,7 +88,7 @@ module.exports = async function (t) {
       ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor'],
       ['ⓘ outline on its card (x frame)', '.card .info-btn', 'borderTopColor'], ['Mark arc outline on its card (x frame)', '.card .arc-acts .b', 'borderTopColor'],
       ['Edit outline on its review card (x frame)', '#reviews .rev-edit', 'borderTopColor'], ['Reading Skip outline (x frame)', '#reader .rbtn.ghost', 'borderTopColor']];
-    const fails = [], theme = [], cardsDrift = [], oneGold = [];
+    const fails = [], theme = [], cardsDrift = [], oneGold = [], asGiven = [];
     /* the build nudges Pull's type badges against its card on every paper (tools/build.py PULL_CARDS): they must be the cards drawn here */
     const PULL_CARDS = Object.fromEntries([...(require('fs').readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
       .matchAll(/'(\w+)': \((\d+), (\d+), (\d+)\)/g)].map(m => [m[1], [+m[2], +m[3], +m[4]]]));
@@ -122,7 +122,9 @@ module.exports = async function (t) {
           }
           const chip = document.querySelector('#reader .rpill.eratok');
           const golds = ['.row .core-star', '.row .b.bm[aria-pressed="true"]', '#reviews .rev-stars'].map(q => { const el = document.querySelector(q); return el ? getComputedStyle(el).color : 'missing ' + q; });
-          return { out, golds, chipEi: chip ? +((chip.getAttribute('style').match(/--ei:(\d+)/) || [])[1]) : -1,
+          const tag = document.querySelector('#reviews .rev-era'), item = tag && tag.closest('.rev-item');
+          return { out, golds, tag: tag ? window.__rgb(getComputedStyle(tag).color).slice(0, 3) : null,
+                   tagEi: item ? +((item.getAttribute('style').match(/--ei:(\d+)/) || [])[1]) : -1, chipEi: chip ? +((chip.getAttribute('style').match(/--ei:(\d+)/) || [])[1]) : -1,
                    card: window.__rgb(getComputedStyle(document.querySelector('.card')).backgroundColor).slice(0, 3),
                    meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
                    skin: document.documentElement.getAttribute('data-skin') };
@@ -132,9 +134,16 @@ module.exports = async function (t) {
              (John, 12 Oct) and passes only at exactly the ratio the build reported (as the era banners below) */
           const own = skin === 'pull' && /^Reading era chip/.test(what) && BD.eras[r.chipEi] && BD.eras[r.chipEi].colour;
           if (own && own.white < 4.5 && Math.abs(ratio - own.white) < 0.01) continue;
+          /* …and the review era tag is its era's colour as text, as given (John, 29 Oct): a tracker's own colour under 4.5:1
+             as text on the card passes only at exactly the ratio the build reported for this paper */
+          const tagOwn = skin === 'pull' && /^review era tag/.test(what) && BD.eras[r.tagEi] && BD.eras[r.tagEi].colour;
+          if (tagOwn && tagOwn.onCard && tagOwn.onCard[paper] < 4.5 && Math.abs(ratio - tagOwn.onCard[paper]) < 0.01) continue;
           if (need === 'missing' || ratio < need) fails.push(skin + '/' + paper + ': ' + what + ' ' + (need === 'missing' ? 'missing' : ratio.toFixed(2) + ' < ' + need));
           if (need === 4.5 && ratio < worst.r) worst = { r: ratio, at: skin + '/' + paper + ' ' + what };
         }
+        const want = BD.eras[r.tagEi] && require('../lib/colour').hexRgb(BD.eras[r.tagEi].pull.hex);
+        if (skin === 'pull' && (!r.tag || !want || r.tag.some((v, k) => Math.abs(v - want[k]) > 1)))
+          asGiven.push(paper + ': ' + (r.tag ? r.tag.join(',') : 'no tag') + ' for ' + (want ? BD.eras[r.tagEi].pull.hex : 'no era'));
         if (new Set(r.golds).size !== 1) oneGold.push(skin + '/' + paper + ': ' + r.golds.join(' | '));
         if (r.meta !== r.body) theme.push(skin + '/' + paper + ': ' + r.meta + ' vs ' + r.body);
         if (skin === 'pull' && JSON.stringify(r.card) !== JSON.stringify(PULL_CARDS[paper])) cardsDrift.push(paper + ': ' + r.card.join(',') + ' vs the build\'s ' + PULL_CARDS[paper]);
@@ -147,6 +156,7 @@ module.exports = async function (t) {
          worst.r.toFixed(2) + ', ' + worst.at + ')', fails, []);
     t.eq('the browser chrome (theme-color) follows each skin\'s paper (F-39)', theme, []);
     t.eq('the core star, a bookmark that is on and the review stars are one gold, in every skin × paper (x frame; B, John, 29 Oct)', oneGold, []);
+    t.eq('Pull draws the review era tag in its era\'s own colour, exactly as given, on every paper (John, 29 Oct)', asGiven, []);
     t.eq('Pull\'s card on every paper is the one the build darkens the type badges against (tools/build.py PULL_CARDS, ' + Object.keys(PULL_CARDS).length + ')',
          Object.keys(PULL_CARDS).length === PAPERS.length ? cardsDrift : ['PULL_CARDS names ' + Object.keys(PULL_CARDS).join(', ')], []);
 

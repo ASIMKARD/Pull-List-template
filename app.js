@@ -874,8 +874,7 @@
     var ok = function (c) { return c && Array.isArray(c.tab) && Array.isArray(c.strip) && c.tab.concat(c.strip).every(num); };
     var toks = function (p, c) {
       return ';--' + p + '-l:' + c.tab[0] + ';--' + p + '-c:' + c.tab[1] + ';--' + p + '-h:' + c.tab[2] +
-             ';--' + p + '-sl:' + c.strip[0] + ';--' + p + '-sc:' + c.strip[1] + ';--' + p + '-sh:' + c.strip[2] +
-             (Array.isArray(c.text) && c.text.every(num) ? ';--' + p + '-tl:' + c.text[0] + ';--' + p + '-tc:' + c.text[1] + ';--' + p + '-th:' + c.text[2] : '');
+             ';--' + p + '-sl:' + c.strip[0] + ';--' + p + '-sc:' + c.strip[1] + ';--' + p + '-sh:' + c.strip[2];
     };
     var era = D.eras[e], s = '--ei:' + e;
     if (ok(era.pull) && ok(D.pullMono)) s += ';--ec:1' + toks('ec', era.pull) + toks('em', D.pullMono);
@@ -1837,7 +1836,7 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.pullMono.text && D.typeColours && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.typeColours && typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {
