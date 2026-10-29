@@ -3364,6 +3364,90 @@ The proof that Absolute's own skin is v9's (G), writing nothing to Absolute:
 3. Side-by-side screenshots and a pixel diff against v9 served as Pages serves it, at 320, 390 and 1024 px in the
    five views. **None at all** is required.
 
+## Session 8 checkpoint — step 8 done (Absolute's own skin is v9's, G), 29 Oct 2026
+
+### Done
+**Nothing was written to Absolute.** The work used two scratch copies:
+- **v9 as it is:** `git archive 27dca56` (`v9-final`).
+- **The same, with this template copied in** as MIGRATING §2 copies it, and Absolute's own files kept (`dataset.json`,
+  `signature.css`, `icons/`, `README.md`, `CLAUDE.md`, `PROGRESS.md`, `.nojekyll`).
+  - Its signature block gained `"frame": "v9"`, the only change to its dataset.
+  - One build: v10 (`9a43dd507f47`), 134 rows, 2 eras; `--check` fresh.
+  - Its `app.js` and `styles.css` are this branch's byte for byte; `index.html` differs only by the build's stamps.
+
+**The results** (John, 28 Oct: none at all may differ):
+- **Inventory (47-frame-v9's measure):** v9's reference was captured from `27dca56` itself. Against it, the new copy
+  has **0 differences**: 982 elements in 15 views (landing, era open, an arc's rows, scrolled, Reading × 320, 390 and
+  1024 px), on the v9 frame in the signature skin.
+- **Pixels:** both copies were served with Pages' headers.
+  - Every differing pixel is inside the version label: "v9" → "v10", the one intended change.
+  - **0 differ outside it, in all 15 views.**
+
+  | View | 320 px | 390 px | 1024 px |
+  |---|---|---|---|
+  | landing | 96 | 96 | 100 |
+  | era open | 96 | 96 | 100 |
+  | an arc's rows | 0 | 0 | 0 |
+  | scrolled | 0 | 0 | 0 |
+  | Reading | 96 | 96 | 100 |
+
+  The label is off screen in the rows and scrolled views, so nothing differs there.
+- **The five touches,** found by name in both inventories and identical in every view they appear in:
+  - era numbers: 12;
+  - the row-number gutter: 30;
+  - the `[ ] [/] [X] [-]` marks: 30, all four states;
+  - the `//` arc prefix: 13;
+  - the full-width era bars: 12.
+
+**On the copy, with Absolute's data:**
+- **Gate:** passed (134 rows, 0 failures, 0 warnings).
+- **Harness:** 1719 assertions, 0 failed.
+- **Layout:** 477 checks, 0 failed, including:
+  - 47-frame-v9's root run against v9's reference (982 elements in 15 views);
+  - 55-decor: 2244 decorations measured;
+  - 45-root: contrast in five skins × 7 papers (worst text 4.55:1) and every control reachable (11,748 checked).
+
+**One template test was wrong; found here and fixed.**
+- **The problem:** 97-durations' root check expected the x frame's header word, "remaining". Absolute opens on the
+  v9 frame, which keeps v9's "left" (G). Every figure matched; only the word differed. Without the fix, Absolute's
+  CI would have failed at v10.
+- **The fix:** the oracle now takes the word from the frame the page opens on, and checks that the page opens on one.
+- **Mutation-proved 2 of 2:**
+  - the v9 frame given "remaining": 12 failures, on Absolute's copy;
+  - the x frame given "left": 56 failures, on the template.
+
+**Absolute in Pull against X-Men** (390 px: landing, an era, an arc, Reading). This is a look, not a map, because
+the data differs:
+- The era box's shape is X-Men's: the cut at .89 and .94, the hatch .4.
+- The box is 72.8 px against X-Men's 90.8, because Absolute's eras give no years. Each era sits 86.8 px below the
+  last (X-Men's: 104.8).
+- The eras take Pull's default palette: Foundations `#8A6100`, After Absolute Evil `#A6303C`.
+- With "· v10" the offline line takes a second line, as ruled on 24 Oct.
+- Nothing else is new.
+
+The screenshots are sent to John: five v9 | new | difference images, and four Absolute in Pull | X-Men pairs.
+
+**Harness (template):** 1720 assertions, 0 failed, 37 suites (+4: each dataset opens on a frame). **Layout
+(template):** 468 checks, 0 failed, 12 suites.
+
+### For E (Absolute v10), from this step
+- **Absolute's `frame-ref.json`** comes from v9 itself:
+  ```
+  git archive 27dca56 | tar -x -C DIR
+  node test/layout/ref/capture-frame.js --dir DIR --out frame-ref.json
+  ```
+  47-frame-v9's root run reads it from then on.
+- **The copy:** every file the template tracks, except its `PROGRESS.md`, `FEATURE-INVENTORY.md`, demo
+  `dataset.json`, `README.md`, `CLAUDE.md`, `icons/`, `workbook.xlsx` and the generated files.
+
+### Step 9 begins with
+The close-out:
+1. Docs. MIGRATING §5 gets how a signature skin keeps the v9 frame: `"frame": "v9"`, and a `frame-ref.json`
+   captured from the old version's tag. Then a pass over BUILD-NOTES, FEATURE-INVENTORY and the top of PROGRESS,
+   with this session's counts.
+2. `build.py --check`, the gate, both suites, push, CI.
+3. Open the template PR, and wait for John to merge it.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls
