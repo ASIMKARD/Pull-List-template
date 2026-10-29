@@ -3251,6 +3251,35 @@ filters, settings), restyled as X-Men's: mono section headings, X-Men's rows and
 Off stays X-Men's `#C9C4B5` exactly (F). Start with `renderSettings` in `app.js`, its `srow` and `pref` helpers, then
 the x-frame rules. Then the scrolled view at every width, and any `step 6` entry left.
 
+## Session 8 checkpoint — the eras the same size (John, 29 Oct), 29 Oct 2026
+
+### Done
+- **Measured first.** At 320, 390 and 1024 px X-Men's era box was 90.8 px and Pull's 86.9, a step of 104.8 px against
+  100.9. The names and years were the same face and size; all of it was line height. X-Men sets every line at 1.45,
+  Pull at `normal` (about 1.3 for Plex Sans). So any text over two or more lines (intros, blurbs, notes) read about 11 %
+  shorter, which is the 10–15 % John saw.
+- **Pull now sets every line at 1.45** (`--body-lh`; `normal` in the other skins, the v9 frame untouched). The era box,
+  its tab and its strip are X-Men's to the tenth of a pixel at every width (90.8, 62.8, 27.9; each era 104.8 px below
+  the last). A closed arc card is 55.8 px against 55.6.
+- **Found by measuring:**
+  - X-Men's buttons and fields keep the browser's line height; they don't inherit the page's. So the x frame's
+    controls do the same, at a bare element's weight, so class rules still win. Without it the tabs, search and
+    Next unread grew 2–5 px.
+  - The template's era and band heads, a card's name and a review's title are buttons, where X-Men's are plain
+    blocks. They keep the page's 1.45.
+  - The search box's own `font: inherit` needed `normal` as well.
+- **45-pull** now measures line height on every text (`TEXT`), the page's line height, and the era box's, tab's and
+  strip's heights. X-Men was re-captured after a drift check matched exactly (still `663fe46`). 1786 match (1648
+  before), 167 listed.
+- **Mutation-proved 4 of 4:** Pull back at `normal`; the controls at 1.45; the era head at `normal`; the search box at
+  1.45.
+- **Docs:** BUILD-NOTES "Line height"; FEATURE-INVENTORY X-20.
+
+**Harness:** 1700 assertions, 0 failed, 37 suites. **Layout:** 466 checks, 0 failed, 12 suites.
+
+### Next
+Step 6b, as "Step 6b begins with" under step 6a's checkpoint (Settings on the x frame).
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls
@@ -3388,6 +3417,10 @@ X-Men, so it needs no entry.
     exactly.
 
   The text shade is removed: nothing would read it.
+
+### 29 Oct: the eras the same size
+- **"Make the eras the same size (currently X-Men's seems 10–15 % bigger)."** Measured: line height, not size. Pull
+  takes X-Men's 1.45 for every line; its controls keep the browser's, as X-Men's do.
 
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a

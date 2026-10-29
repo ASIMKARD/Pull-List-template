@@ -9,7 +9,7 @@
   390,
   1024
  ],
- "mapHash": "92315455b5273f25",
+ "mapHash": "ce04c32d61c71563",
  "views": [
   "landing",
   "era",
@@ -26,7 +26,8 @@
     "landing": {
      "styles": {
       "page background": {
-       "backgroundColor": "rgba(231, 228, 220, 1)"
+       "backgroundColor": "rgba(231, 228, 220, 1)",
+       "lineHeight": "1.45"
       },
       "header": {
        "effectiveBackground": "rgba(231, 228, 220, 1)",
@@ -44,8 +45,8 @@
        "letterSpacing": "0.5px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
-       "color": "rgba(27, 25, 18, 1)",
        "lineHeight": "1.45",
+       "color": "rgba(27, 25, 18, 1)",
        "relLeft": "16px",
        "relTop": "14px"
       },
@@ -56,6 +57,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(27, 25, 18, 0.6)",
        "relLeft": "16px",
        "relTop": "46.8px"
@@ -67,6 +69,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "16px",
        "relTop": "89.7px"
@@ -95,6 +98,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "16px"
       },
@@ -105,6 +109,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relRight": "16px"
       },
@@ -122,6 +127,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(207, 202, 187, 1)",
        "paddingTop": "11px",
        "paddingBottom": "11px"
@@ -133,6 +139,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(255, 255, 255, 1)",
        "borderBottomColor": "rgba(28, 58, 94, 1)",
        "borderBottomWidth": "3px"
@@ -167,6 +174,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(242, 240, 233, 1)",
        "backgroundColor": "rgba(28, 58, 94, 1)",
        "borderTopWidth": "0px",
@@ -179,6 +187,7 @@
       "era box": {
        "boxLeft": "12px",
        "boxWidth": "296px",
+       "boxHeight": "90.8px",
        "borderTopLeftRadius": "8px",
        "borderTopRightRadius": "8px",
        "borderBottomRightRadius": "3px",
@@ -193,7 +202,8 @@
        "paddingTop": "12px",
        "paddingRight": "44px",
        "paddingBottom": "12px",
-       "paddingLeft": "16px"
+       "paddingLeft": "16px",
+       "boxHeight": "62.8px"
       },
       "era name": {
        "fontFamily": "Anton",
@@ -202,6 +212,7 @@
        "letterSpacing": "0.4px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.10",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relLeft": "16px",
        "relTop": "12px"
@@ -213,6 +224,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 0.85)",
        "relLeft": "16px",
        "relTop": "34.9px"
@@ -223,7 +235,8 @@
        "paddingBottom": "6px",
        "paddingLeft": "16px",
        "fontFamily": "IBM Plex Mono",
-       "fontSize": "11px"
+       "fontSize": "11px",
+       "boxHeight": "27.9px"
       },
       "era count": {
        "fontFamily": "IBM Plex Mono",
@@ -232,6 +245,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relLeft": "16px"
       },
@@ -252,6 +266,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relRight": "16px"
       }
@@ -277,6 +292,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "6px",
        "paddingLeft": "8px",
@@ -314,6 +330,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)",
        "whiteSpace": "nowrap",
        "textOverflow": "ellipsis",
@@ -327,6 +344,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(31, 122, 92, 1)",
        "backgroundColor": "rgba(30, 120, 90, 0.13)",
        "paddingTop": "1px",
@@ -341,6 +359,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "info button": {
@@ -350,6 +369,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "boxWidth": "24px",
@@ -366,6 +386,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relRight": "11px"
       }
@@ -390,6 +411,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "10px",
@@ -444,6 +466,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "41px"
       },
@@ -462,6 +485,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "41px",
        "relTop": "27.8px"
@@ -490,6 +514,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "pinned chip": {
@@ -499,6 +524,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "11px",
@@ -541,6 +567,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "textAlign": "center"
       },
@@ -556,6 +583,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(255, 255, 255, 1)",
        "backgroundColor": "rgba(166, 121, 30, 1)",
        "paddingTop": "3px",
@@ -569,8 +597,8 @@
        "letterSpacing": "0.3px",
        "textTransform": "none",
        "fontStyle": "normal",
-       "color": "rgba(27, 25, 18, 1)",
        "lineHeight": "1.15",
+       "color": "rgba(27, 25, 18, 1)",
        "textAlign": "center"
       },
       "reading arc": {
@@ -580,6 +608,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "reading note": {
@@ -589,6 +618,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "reading blurb": {
@@ -598,6 +628,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "borderTopStyle": "dashed",
        "borderTopColor": "rgba(201, 196, 181, 1)",
@@ -610,6 +641,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(27, 25, 18, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "paddingTop": "16px",
@@ -626,6 +658,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(231, 228, 220, 1)",
        "backgroundColor": "rgba(27, 25, 18, 1)",
        "paddingTop": "16px",
@@ -642,6 +675,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "8px"
       }
@@ -667,6 +701,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(166, 121, 30, 1)"
       },
       "review title": {
@@ -676,6 +711,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
       "review stars": {
@@ -685,6 +721,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(176, 138, 31, 1)"
       },
       "review text": {
@@ -694,6 +731,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "review edit": {
@@ -703,6 +741,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "4px",
        "paddingRight": "10px",
@@ -731,6 +770,7 @@
        "letterSpacing": "0.6px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "setting row": {
@@ -745,6 +785,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
       "segmented": {
@@ -760,6 +801,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "paddingTop": "6px",
@@ -785,6 +827,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(27, 25, 18, 1)",
        "paddingTop": "6px",
        "paddingRight": "10px",
@@ -813,6 +856,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(176, 138, 31, 1)",
        "marginLeft": "4px"
       },
@@ -823,6 +867,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "10px",
@@ -840,7 +885,8 @@
     "landing": {
      "styles": {
       "page background": {
-       "backgroundColor": "rgba(231, 228, 220, 1)"
+       "backgroundColor": "rgba(231, 228, 220, 1)",
+       "lineHeight": "1.45"
       },
       "header": {
        "effectiveBackground": "rgba(231, 228, 220, 1)",
@@ -858,8 +904,8 @@
        "letterSpacing": "0.5px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
-       "color": "rgba(27, 25, 18, 1)",
        "lineHeight": "1.45",
+       "color": "rgba(27, 25, 18, 1)",
        "relLeft": "16px",
        "relTop": "14px"
       },
@@ -870,6 +916,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(27, 25, 18, 0.6)",
        "relLeft": "16px",
        "relTop": "46.8px"
@@ -881,6 +928,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "16px",
        "relTop": "73.7px"
@@ -909,6 +957,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "16px"
       },
@@ -919,6 +968,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relRight": "16px"
       },
@@ -936,6 +986,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(207, 202, 187, 1)",
        "paddingTop": "11px",
        "paddingBottom": "11px"
@@ -947,6 +998,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(255, 255, 255, 1)",
        "borderBottomColor": "rgba(28, 58, 94, 1)",
        "borderBottomWidth": "3px"
@@ -981,6 +1033,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(242, 240, 233, 1)",
        "backgroundColor": "rgba(28, 58, 94, 1)",
        "borderTopWidth": "0px",
@@ -993,6 +1046,7 @@
       "era box": {
        "boxLeft": "12px",
        "boxWidth": "366px",
+       "boxHeight": "90.8px",
        "borderTopLeftRadius": "8px",
        "borderTopRightRadius": "8px",
        "borderBottomRightRadius": "3px",
@@ -1007,7 +1061,8 @@
        "paddingTop": "12px",
        "paddingRight": "44px",
        "paddingBottom": "12px",
-       "paddingLeft": "16px"
+       "paddingLeft": "16px",
+       "boxHeight": "62.8px"
       },
       "era name": {
        "fontFamily": "Anton",
@@ -1016,6 +1071,7 @@
        "letterSpacing": "0.4px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.10",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relLeft": "16px",
        "relTop": "12px"
@@ -1027,6 +1083,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 0.85)",
        "relLeft": "16px",
        "relTop": "34.9px"
@@ -1037,7 +1094,8 @@
        "paddingBottom": "6px",
        "paddingLeft": "16px",
        "fontFamily": "IBM Plex Mono",
-       "fontSize": "11px"
+       "fontSize": "11px",
+       "boxHeight": "27.9px"
       },
       "era count": {
        "fontFamily": "IBM Plex Mono",
@@ -1046,6 +1104,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relLeft": "16px"
       },
@@ -1066,6 +1125,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relRight": "16px"
       }
@@ -1091,6 +1151,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "6px",
        "paddingLeft": "8px",
@@ -1128,6 +1189,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)",
        "whiteSpace": "nowrap",
        "textOverflow": "ellipsis",
@@ -1141,6 +1203,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(31, 122, 92, 1)",
        "backgroundColor": "rgba(30, 120, 90, 0.13)",
        "paddingTop": "1px",
@@ -1155,6 +1218,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "info button": {
@@ -1164,6 +1228,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "boxWidth": "24px",
@@ -1180,6 +1245,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relRight": "11px"
       }
@@ -1204,6 +1270,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "10px",
@@ -1258,6 +1325,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "41px"
       },
@@ -1276,6 +1344,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "41px",
        "relTop": "27.8px"
@@ -1304,6 +1373,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "pinned chip": {
@@ -1313,6 +1383,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "11px",
@@ -1355,6 +1426,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "textAlign": "center"
       },
@@ -1370,6 +1442,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(255, 255, 255, 1)",
        "backgroundColor": "rgba(166, 121, 30, 1)",
        "paddingTop": "3px",
@@ -1383,8 +1456,8 @@
        "letterSpacing": "0.3px",
        "textTransform": "none",
        "fontStyle": "normal",
-       "color": "rgba(27, 25, 18, 1)",
        "lineHeight": "1.15",
+       "color": "rgba(27, 25, 18, 1)",
        "textAlign": "center"
       },
       "reading arc": {
@@ -1394,6 +1467,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "reading note": {
@@ -1403,6 +1477,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "reading blurb": {
@@ -1412,6 +1487,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "borderTopStyle": "dashed",
        "borderTopColor": "rgba(201, 196, 181, 1)",
@@ -1424,6 +1500,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(27, 25, 18, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "paddingTop": "16px",
@@ -1440,6 +1517,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(231, 228, 220, 1)",
        "backgroundColor": "rgba(27, 25, 18, 1)",
        "paddingTop": "16px",
@@ -1456,6 +1534,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "8px"
       }
@@ -1481,6 +1560,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(166, 121, 30, 1)"
       },
       "review title": {
@@ -1490,6 +1570,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
       "review stars": {
@@ -1499,6 +1580,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(176, 138, 31, 1)"
       },
       "review text": {
@@ -1508,6 +1590,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "review edit": {
@@ -1517,6 +1600,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "4px",
        "paddingRight": "10px",
@@ -1545,6 +1629,7 @@
        "letterSpacing": "0.6px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "setting row": {
@@ -1559,6 +1644,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
       "segmented": {
@@ -1574,6 +1660,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "paddingTop": "6px",
@@ -1599,6 +1686,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(27, 25, 18, 1)",
        "paddingTop": "6px",
        "paddingRight": "10px",
@@ -1627,6 +1715,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(176, 138, 31, 1)",
        "marginLeft": "4px"
       },
@@ -1637,6 +1726,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "10px",
@@ -1654,7 +1744,8 @@
     "landing": {
      "styles": {
       "page background": {
-       "backgroundColor": "rgba(231, 228, 220, 1)"
+       "backgroundColor": "rgba(231, 228, 220, 1)",
+       "lineHeight": "1.45"
       },
       "header": {
        "effectiveBackground": "rgba(231, 228, 220, 1)",
@@ -1672,8 +1763,8 @@
        "letterSpacing": "0.5px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
-       "color": "rgba(27, 25, 18, 1)",
        "lineHeight": "1.45",
+       "color": "rgba(27, 25, 18, 1)",
        "relLeft": "16px",
        "relTop": "14px"
       },
@@ -1684,6 +1775,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(27, 25, 18, 0.6)",
        "relLeft": "16px",
        "relTop": "52.6px"
@@ -1695,6 +1787,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "16px",
        "relTop": "79.5px"
@@ -1723,6 +1816,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "16px"
       },
@@ -1733,6 +1827,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relRight": "16px"
       },
@@ -1750,6 +1845,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(207, 202, 187, 1)",
        "paddingTop": "11px",
        "paddingBottom": "11px"
@@ -1761,6 +1857,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(255, 255, 255, 1)",
        "borderBottomColor": "rgba(28, 58, 94, 1)",
        "borderBottomWidth": "3px"
@@ -1795,6 +1892,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(242, 240, 233, 1)",
        "backgroundColor": "rgba(28, 58, 94, 1)",
        "borderTopWidth": "0px",
@@ -1807,6 +1905,7 @@
       "era box": {
        "boxLeft": "144px",
        "boxWidth": "736px",
+       "boxHeight": "90.8px",
        "borderTopLeftRadius": "8px",
        "borderTopRightRadius": "8px",
        "borderBottomRightRadius": "3px",
@@ -1821,7 +1920,8 @@
        "paddingTop": "12px",
        "paddingRight": "44px",
        "paddingBottom": "12px",
-       "paddingLeft": "16px"
+       "paddingLeft": "16px",
+       "boxHeight": "62.8px"
       },
       "era name": {
        "fontFamily": "Anton",
@@ -1830,6 +1930,7 @@
        "letterSpacing": "0.4px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.10",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relLeft": "16px",
        "relTop": "12px"
@@ -1841,6 +1942,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 0.85)",
        "relLeft": "16px",
        "relTop": "34.9px"
@@ -1851,7 +1953,8 @@
        "paddingBottom": "6px",
        "paddingLeft": "16px",
        "fontFamily": "IBM Plex Mono",
-       "fontSize": "11px"
+       "fontSize": "11px",
+       "boxHeight": "27.9px"
       },
       "era count": {
        "fontFamily": "IBM Plex Mono",
@@ -1860,6 +1963,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relLeft": "16px"
       },
@@ -1880,6 +1984,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "effectiveColor": "rgba(255, 255, 255, 1)",
        "relRight": "16px"
       }
@@ -1905,6 +2010,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "6px",
        "paddingLeft": "8px",
@@ -1942,6 +2048,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)",
        "whiteSpace": "nowrap",
        "textOverflow": "ellipsis",
@@ -1955,6 +2062,7 @@
        "letterSpacing": "0.3px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(31, 122, 92, 1)",
        "backgroundColor": "rgba(30, 120, 90, 0.13)",
        "paddingTop": "1px",
@@ -1969,6 +2077,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "info button": {
@@ -1978,6 +2087,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "boxWidth": "24px",
@@ -1994,6 +2104,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relRight": "11px"
       }
@@ -2018,6 +2129,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "10px",
@@ -2072,6 +2184,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "41px"
       },
@@ -2090,6 +2203,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "relLeft": "41px",
        "relTop": "27.8px"
@@ -2118,6 +2232,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "pinned chip": {
@@ -2127,6 +2242,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "11px",
@@ -2169,6 +2285,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "textAlign": "center"
       },
@@ -2184,6 +2301,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(255, 255, 255, 1)",
        "backgroundColor": "rgba(166, 121, 30, 1)",
        "paddingTop": "3px",
@@ -2197,8 +2315,8 @@
        "letterSpacing": "0.3px",
        "textTransform": "none",
        "fontStyle": "normal",
-       "color": "rgba(27, 25, 18, 1)",
        "lineHeight": "1.15",
+       "color": "rgba(27, 25, 18, 1)",
        "textAlign": "center"
       },
       "reading arc": {
@@ -2208,6 +2326,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "reading note": {
@@ -2217,6 +2336,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "reading blurb": {
@@ -2226,6 +2346,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "borderTopStyle": "dashed",
        "borderTopColor": "rgba(201, 196, 181, 1)",
@@ -2238,6 +2359,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(27, 25, 18, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "paddingTop": "16px",
@@ -2254,6 +2376,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(231, 228, 220, 1)",
        "backgroundColor": "rgba(27, 25, 18, 1)",
        "paddingTop": "16px",
@@ -2270,6 +2393,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "8px"
       }
@@ -2295,6 +2419,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(166, 121, 30, 1)"
       },
       "review title": {
@@ -2304,6 +2429,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
       "review stars": {
@@ -2313,6 +2439,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(176, 138, 31, 1)"
       },
       "review text": {
@@ -2322,6 +2449,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "review edit": {
@@ -2331,6 +2459,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "4px",
        "paddingRight": "10px",
@@ -2359,6 +2488,7 @@
        "letterSpacing": "0.6px",
        "textTransform": "uppercase",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)"
       },
       "setting row": {
@@ -2373,6 +2503,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
       "segmented": {
@@ -2388,6 +2519,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(87, 84, 74, 1)",
        "backgroundColor": "rgba(242, 240, 233, 1)",
        "paddingTop": "6px",
@@ -2413,6 +2545,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "normal",
        "color": "rgba(27, 25, 18, 1)",
        "paddingTop": "6px",
        "paddingRight": "10px",
@@ -2441,6 +2574,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "normal",
+       "lineHeight": "1.45",
        "color": "rgba(176, 138, 31, 1)",
        "marginLeft": "4px"
       },
@@ -2451,6 +2585,7 @@
        "letterSpacing": "0px",
        "textTransform": "none",
        "fontStyle": "italic",
+       "lineHeight": "1.45",
        "color": "rgba(87, 84, 74, 1)",
        "paddingTop": "5px",
        "paddingRight": "10px",

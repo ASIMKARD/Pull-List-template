@@ -31,7 +31,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
 const CURRENT_STEP = '6a';
 
-const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
+const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'lineHeight', 'color'];   // line height too (John, 29 Oct: the eras read bigger)
 /* Text drawn on a coloured box is compared by the colour you see: its colour
    times every opacity above it (X-Men's years are white at opacity .85). */
 const SEEN = TEXT.slice(0, -1).concat(['effectiveColor']);
@@ -45,7 +45,7 @@ const RADII = ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRight
    row's descendants are not covered by it; rows with text are leaves). */
 const MAP = {
   landing: [
-    ['page background', 'body', 'body', ['backgroundColor']],
+    ['page background', 'body', 'body', ['backgroundColor', 'lineHeight']],
     ['header', '.topbar', '#phead', ['effectiveBackground', 'boxLeft', 'boxWidth', 'borderBottomWidth', 'borderBottomStyle', 'borderBottomColor', 'position'], { leaf: false }],
     ['title', '.topbar h1', '.ptitle', TEXT.concat(['lineHeight', 'relLeft', 'relTop']), { anchor: 'header' }],
     ['offline line', '.topbar .offline-badge', '.pbadge', SEEN.concat(['relLeft', 'relTop']), { anchor: 'header' }],
@@ -62,12 +62,12 @@ const MAP = {
     ['search row', '.search-row', '.fbar', ['relLeft', 'relTop', 'relRight'], { anchor: 'filter bar', leaf: false }],
     ['search box', '#searchInput', '#q', ['fontFamily', 'fontSize', 'color', 'backgroundColor', 'borderTopColor', 'borderTopWidth', 'borderTopLeftRadius', 'boxHeight', 'paddingLeft']],
     ['next unread', '#jumpBtn', '.fbar .jump', TEXT.concat(['backgroundColor', 'borderTopWidth', 'borderTopLeftRadius', 'paddingLeft', 'paddingRight', 'boxHeight', 'relRight']), { anchor: 'filter bar' }],
-    ['era box', '.era-divider', '.era-head', ['boxLeft', 'boxWidth'].concat(RADII, ['borderTopWidth', 'boxShadow']), { leaf: false }],
+    ['era box', '.era-divider', '.era-head', ['boxLeft', 'boxWidth', 'boxHeight'].concat(RADII, ['borderTopWidth', 'boxShadow']), { leaf: false }],
     ['era spacing', '.era-divider@2', '.era-head@2', ['gapPrev']],
-    ['era tab', '.era-divider .tab', '.era-head .bhead', PAD, { leaf: false }],
+    ['era tab', '.era-divider .tab', '.era-head .bhead', PAD.concat(['boxHeight']), { leaf: false }],
     ['era name', '.era-divider .era-name', '.era-head .bname', SEEN.concat(['relLeft', 'relTop']), { anchor: 'era tab' }],
     ['era years', '.era-divider .era-years', '.era-head .byears', SEEN.concat(['relLeft', 'relTop']), { anchor: 'era tab' }],
-    ['era strip', '.era-divider .era-stats', '.era-head .bfoot', PAD.concat(['fontFamily', 'fontSize']), { leaf: false }],
+    ['era strip', '.era-divider .era-stats', '.era-head .bfoot', PAD.concat(['fontFamily', 'fontSize', 'boxHeight']), { leaf: false }],
     ['era count', '.era-divider .era-stats > span:first-child', '.era-head .bcount', SEEN.concat(['relLeft']), { anchor: 'era strip' }],
     ['era bar', '.era-divider .era-progress-track', '.era-head progress.bar', ['backgroundColor', 'boxHeight', 'borderTopLeftRadius', 'relSibLeft', 'relSibRight']],
     ['era bar fill', '.era-divider .era-progress-fill', '.era-head progress.bar', ['fillColor']],

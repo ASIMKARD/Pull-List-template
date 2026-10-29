@@ -361,6 +361,18 @@ One skin of the tracker's own, from `franchise.signature`:
   and checks that Pull draws the tag in the era's colour exactly. Anything drawn in an era's colour outside the era box
   carries `.eratok` and the era's tokens (`eraStyle`), so the era colour block applies to it.
 
+### Line height (John, 29 Oct: "make the eras the same size")
+
+- **Pull sets every line at the reference's 1.45** (`--body-lh`, `normal` in the other skins). At `normal` (about 1.3
+  for Plex Sans) each era box was 3.9 px short (86.9 px against 90.8), and any text over two or more lines read about
+  11 % shorter, which is how X-Men's eras looked 10–15 % bigger.
+- **Controls keep the browser's line height,** as the reference's do: a button or a field never inherits the page's
+  1.45 there. The rule is at a bare element's weight (`:where()`), so every class rule's own line height still wins.
+- **Buttons that are blocks of text** keep the page's line height, because the reference draws them as plain blocks:
+  the era and band heads, a card's name and a review's title.
+- 45-pull measures line height on every text and the height of the era box, its tab and its strip, so this can't
+  drift again. After this: 1786 match and 167 listed.
+
 ## The workbook
 
 - `tools/build_workbook.py` writes five sheets (Reading Order, Arcs, Eras,

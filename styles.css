@@ -124,7 +124,7 @@
   --title-size-narrow: var(--title-size); --stats-size: 13px; --arc-meta-size: 12px;   /* the x frame: the title at 420 px and under, and the header's figures */
   --era-name-size: 17px; --era-meta-size: 13px; --intro-size: 14px; --intro-style: normal;
   --arc-size: 15px; --arc-weight: 700; --row-size: 15px; --row-weight: 400; --search-size: 15px;
-  --body-track: 0; --word-space: 0;
+  --body-track: 0; --word-space: 0; --body-lh: normal;   /* the page's line height (Pull: the reference's 1.45) */
   --scale: 1;                                      /* text size (S-3): every font size is multiplied by it */
   --fs: calc(15px * var(--scale));
   --radius: 10px; --radius-sm: 6px; --gap: 10px;
@@ -197,6 +197,7 @@
   --era-text-l: .4; --era-text-c: .1;   /* …and so does an era's name on a card, were an era to come without its colours */
   --rbtn-radius: 10px;                  /* Reading's two buttons, as the reference's */
   --arc-meta-size: 10.5px;
+  --body-lh: 1.45;       /* every line at the reference's height (John, 29 Oct: its eras read 10–15 % bigger at `normal`) */
   /* the rows (session 8, step 5): the reference's checkbox, 2 px and 5 px round, read in the ink with the paper's
      glyph; its 11.5 px note and 11 px core star; the quiet star and the gold, each the reference's colour made to
      pass 4.5:1 on the card on every paper (A and B revised: #726D60 and #896900 passed on the default paper only; John, 29 Oct) */
@@ -255,9 +256,15 @@
 [hidden] { display: none; }
 * { box-sizing: border-box; }
 html { color-scheme: var(--scheme); }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: var(--fs);
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: var(--fs); line-height: var(--body-lh);
   letter-spacing: var(--body-track); word-spacing: var(--word-space); }
 button { font: inherit; color: inherit; cursor: pointer; }
+/* the x frame's controls keep the browser's line height, as the reference's do (they never inherit the page's 1.45);
+   :where() keeps this at a bare element's weight (after `button`'s `font: inherit`), so every class rule's own line height still wins */
+:where(:root[data-frame="x"]) button, :where(:root[data-frame="x"]) input, :where(:root[data-frame="x"]) select, :where(:root[data-frame="x"]) textarea { line-height: normal; }
+/* …except the buttons that are blocks of text the reference draws as plain blocks: the era and band heads, a card's name,
+   a review's title. They keep the page's line height */
+:root[data-frame="x"] :is(.era-head, .band-head, .arc-toggle, .rev-name) { line-height: var(--body-lh); }
 .muted { color: var(--ink-soft); }
 .loading, .empty { padding: 24px 16px; color: var(--ink-soft); }
 
@@ -324,7 +331,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 :root[data-frame="x"] .fpanel { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 10px 16px; background: none; border: 0;
   border-bottom: 1px solid var(--line); border-radius: 0; }
 :root[data-frame="x"] .fbar { align-items: stretch; padding: 0; }
-:root[data-frame="x"] .search { flex: 1 1 auto; height: auto; padding: 9px 12px; border-width: 1.5px; }   /* from its own width: at 320 px Next unread takes two lines, as the reference; it still gives way to large text */
+:root[data-frame="x"] .search { flex: 1 1 auto; height: auto; padding: 9px 12px; border-width: 1.5px; line-height: normal; }   /* from its own width: at 320 px Next unread takes two lines, as the reference; it still gives way to large text */
 :root[data-frame="x"] .fbar .jump { padding: 6px 12px; border: 0; border-radius: 99px; background: var(--accent); color: var(--jump-ink);
   font-size: calc(12px * var(--scale)); font-weight: 700; }
 :root[data-frame="x"] .ftools { display: flex; flex-wrap: wrap; gap: 6px; }
