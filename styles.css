@@ -52,6 +52,8 @@
   --soft-h: var(--ink-h); --soft-s: calc(var(--ink-s) * .5);
   --bar-soft-h: var(--ink-h); --bar-soft-s: calc(var(--ink-s) * .5);
   --mark-edge-s: calc(var(--ink-s) * .5); --l-mark-edge: var(--l-edge);          /* a mark's outline: a control outline unless a skin says otherwise */
+  --soft-edge-h: var(--ink-h); --soft-edge-s: calc(var(--ink-s) * .5); --l-soft-edge: var(--l-edge);   /* an outline on a card (x frame): a control outline unless a skin says otherwise */
+  --type-h0: 230; --type-step: 137.508; --type-tint-a: .1333;   /* arc types (x frame): hue by type, the badge's tint at 0x22 as the reference */
   --offline-a: .64;      /* the x frame's offline line: the reference tracker's 60 % made to pass in every skin × paper, which needs 63.1 %;
                             64 % keeps a step in hand (John, 28 Oct; 40-look) */
   /* era ramp (OKLCH, so one lightness reads the same at every hue): pale
@@ -73,6 +75,8 @@
   --edge: hsl(var(--ink-h) calc(var(--ink-s) * .5) var(--l-edge));          /* control outlines: 3:1 on paper and card */
   --mark-edge: hsl(var(--ink-h) var(--mark-edge-s) var(--l-mark-edge));
   --offline-ink: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / var(--offline-a));
+  --soft-edge: hsl(var(--soft-edge-h) var(--soft-edge-s) var(--l-soft-edge));
+  --type-ink-l: var(--era-ink-l); --type-ink-c: var(--era-ink-c);   /* a type's stripe and badge in the other skins: the era ink, at the type's hue */
   --track: hsl(var(--paper-h) calc(var(--paper-s) * .8) var(--l-track));
   --bar: hsl(var(--bar-h) var(--bar-s) var(--l-bar));                       /* the tab bar */
   --bar-ink: hsl(var(--ink-h) var(--ink-s) var(--l-bar-ink));
@@ -110,7 +114,7 @@
   --tab-size: 15px; --tab-fit: 4.2vw; --tab-case: none; --tab-track: 0;   /* four tabs fit at 320 px */
   /* type sizes per element (session 5, for Pull); each is multiplied by --scale */
   --title-size: 28px; --title-track: .02em; --title-lh: normal; --meta-size: 13px;
-  --title-size-narrow: var(--title-size); --stats-size: 13px;   /* the x frame: the title at 420 px and under, and the header's figures */
+  --title-size-narrow: var(--title-size); --stats-size: 13px; --arc-meta-size: 12px;   /* the x frame: the title at 420 px and under, and the header's figures */
   --era-name-size: 17px; --era-meta-size: 13px; --intro-size: 14px; --intro-style: normal;
   --arc-size: 15px; --arc-weight: 700; --row-size: 15px; --row-weight: 400; --search-size: 15px;
   --body-track: 0; --word-space: 0;
@@ -177,6 +181,9 @@
   --arc-size: 13.5px; --arc-weight: 600; --row-size: 13px; --row-weight: 500; --search-size: 14px;
   --tab-size: 12.5px; --tab-fit: 3.907vw; --tab-case: uppercase; --tab-track: .3px;   /* 12.5 px at 320 px too, as the reference */
   --head-track: var(--inset); --head-fill: var(--ink); --jump-ink: var(--card);
+  --soft-edge-h: 44.2105; --soft-edge-s: 7.5098%; --l-soft-edge: 50.3922%;   /* #8A8577: the reference's #C9C4B5 made to pass 3:1 on the card on every paper (G's #8F8A7C passes on the default paper only; awaiting John) */
+  --type-ink-l: .4; --type-ink-c: .1;   /* Pull's era ink is white (solid boxes); a card's type falls back to the template's */
+  --arc-meta-size: 10.5px;
   --radius: 8px;
   --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
   --tabs-rule: 0px;      /* no rule under its dark bar */
@@ -423,21 +430,39 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .arc { margin: 10px 0 0; overflow: hidden; }   /* a swiped row slides under the card edge, not past it */
 /* the x frame's arc cards (session 8, step 4a): the head toggles the card, ⓘ shows the blurb and the
    credits, and the rows are drawn when it first opens. Their look is step 4b's. */
-:root[data-frame="x"] .arc.card { margin: 0 0 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+:root[data-frame="x"] .arc.card {
+  /* its type's colour: in Pull the stripe and badge data.js gives it (--tc…); in the other skins the era ink at the type's hue */
+  --type-pick: calc(var(--tc, 0) * var(--era-solid));
+  --type-h: calc(var(--type-h0) + var(--ti, 0) * var(--type-step));
+  --type-sl: calc(var(--type-pick) * var(--ts-l, 0) + (1 - var(--type-pick)) * var(--type-ink-l));
+  --type-sc: calc(var(--type-pick) * var(--ts-c, 0) + (1 - var(--type-pick)) * var(--type-ink-c));
+  --type-sh: calc(var(--type-pick) * var(--ts-h, 0) + (1 - var(--type-pick)) * var(--type-h));
+  --type-bl: calc(var(--type-pick) * var(--tb-l, 0) + (1 - var(--type-pick)) * var(--type-ink-l));
+  --type-bc: calc(var(--type-pick) * var(--tb-c, 0) + (1 - var(--type-pick)) * var(--type-ink-c));
+  --type-bh: calc(var(--type-pick) * var(--tb-h, 0) + (1 - var(--type-pick)) * var(--type-h));
+  margin: 0 0 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); line-height: 1.45; }
 :root[data-frame="x"] .card > .arc-head { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; }
-:root[data-frame="x"] .card .arc-tab { flex: none; align-self: stretch; width: 5px; border-radius: 3px; background: var(--accent); }
+:root[data-frame="x"] .card .arc-tab { flex: none; align-self: stretch; width: 5px; border-radius: 3px; background: oklch(var(--type-sl) var(--type-sc) var(--type-sh)); }
 :root[data-frame="x"] .card .arc-head h3 { flex: 1; min-width: 0; }
 :root[data-frame="x"] .arc-toggle { display: block; width: 100%; min-height: 24px; padding: 0; border: 0; background: none; text-align: left; }
 :root[data-frame="x"] .arc-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-:root[data-frame="x"] .arc-sub { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: center; font-family: var(--font-meta); font-weight: 400;
-  font-size: calc(var(--era-meta-size) * var(--scale)); color: var(--ink-soft); }
-:root[data-frame="x"] .arc-frac { flex: none; font-family: var(--font-meta); color: var(--ink-soft); white-space: nowrap; }
+:root[data-frame="x"] .arc-sub { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: center; margin-top: 1px; font-family: var(--font-meta); font-weight: 400;
+  font-size: calc(var(--arc-meta-size) * var(--scale)); color: var(--ink-soft); }
+:root[data-frame="x"] .arc-sub .arc-meta { margin: 0; font-size: inherit; }
+:root[data-frame="x"] .type-badge { padding: 1px 6px; border-radius: 99px; font-size: calc(9px * var(--scale)); font-weight: 700; letter-spacing: .3px;
+  text-transform: uppercase; color: oklch(var(--type-bl) var(--type-bc) var(--type-bh));
+  background: color-mix(in srgb, oklch(var(--type-bl) var(--type-bc) var(--type-bh)) calc(var(--type-tint-a) * 100%), var(--card)); }   /* the tint mixed into the card, opaque, so it paints exactly as the build blends it */
+:root[data-frame="x"] .arc-frac { flex: none; font-family: var(--font-meta); font-size: calc(12px * var(--scale)); font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
 :root[data-frame="x"] .info-btn { flex: none; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;
-  border: 1.5px solid var(--edge); border-radius: 50%; background: var(--card); font-family: var(--font-meta); color: var(--ink-soft); }
-:root[data-frame="x"] .arc-chev { flex: none; color: var(--ink-soft); transition: transform calc(.2s * var(--motion)) ease; }
+  border: 1.5px solid var(--soft-edge); border-radius: 50%; background: var(--card); font-family: var(--font-meta); font-size: calc(12px * var(--scale));
+  font-weight: 700; color: var(--ink-soft); }
+:root[data-frame="x"] .arc-chev { flex: none; font-size: calc(12px * var(--scale)); color: var(--ink-soft); transition: transform calc(.2s * var(--motion)) ease; }
 :root[data-frame="x"] .card.open .arc-chev { transform: rotate(90deg); }
-:root[data-frame="x"] .arc-info { padding: 0 12px 10px; }
-:root[data-frame="x"] .arc-body > .arc-acts { padding: 0 10px 8px; }
+:root[data-frame="x"] .arc-info { padding: 8px 12px 10px; border-top: 1px dashed var(--line); }
+:root[data-frame="x"] .arc-body > .arc-acts { gap: 8px; margin: 0; padding: 0 10px 8px; }
+:root[data-frame="x"] .arc-acts .b { min-height: 24px; padding: 5px 10px; line-height: normal; border: 1.5px solid var(--soft-edge); border-radius: 99px; background: var(--card);
+  font-size: calc(11px * var(--scale)); font-weight: 600; color: var(--ink-soft); }
+:root[data-frame="x"] .arc-rows { border-top: 1px solid var(--line); }
 .arc-head { padding: 4px 4px 6px; }
 .arc-head h3 { margin: 0; font-size: calc(var(--arc-size) * var(--scale)); font-weight: var(--arc-weight); }
 .arc-meta { font-family: var(--font-meta); }

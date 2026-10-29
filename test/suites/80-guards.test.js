@@ -101,7 +101,12 @@ function stripDerived(body) {
       out += body.slice(i, m.index) + 'DERIVED'; i = j; re.lastIndex = j;
     }
   }
-  return out + body.slice(i);
+  out += body.slice(i);
+  /* a mix of derived colours and tokens is derived too (an arc type's badge tint, mixed into the card, session 8):
+     color-mix(in <space>, <colour> [<share>], <colour> [<share>]) where every colour is a token or DERIVED and every
+     share is made of tokens. A literal colour or share anywhere in it is not. */
+  return out.replace(/\bcolor-mix\(in [\w-]+((?:,\s*(?:DERIVED|var\(--[\w-]+\))(?:\s+calc\(var\(--[\w-]+\) \* 100%\))?)+)\)/g,
+    (m, args) => args.split(',').filter(a => a.trim()).length === 2 ? 'DERIVED' : m);
 }
 
 function makeSwContext(existing) {
@@ -188,9 +193,13 @@ module.exports = async function (t) {
   const derived = cssBlocks(css).filter(b => b.sel !== ':root' && COLOUR.test(b.body)).map(b => b.sel);
   t.ok('derived colours outside :root are drawn from tokens only (' + derived.join(', ') + ')', derived.length >= 2);
   const caught = x => COLOUR.test(stripDerived(x));
-  t.ok('the derived-colour exemption still catches literals: hsl(200 50% 50%), a literal alpha, a partly literal hsl, #fff, rgb()',
+  t.ok('the derived-colour exemption still catches literals: hsl(200 50% 50%), a literal alpha, a partly literal hsl, #fff, rgb(), a literal in a mix',
        caught('a: hsl(200 50% 50%)') && caught('a: hsl(var(--h) var(--s) var(--l) / .5)') && caught('a: hsl(var(--h) 50% 50%)') &&
-       caught('a: #fff') && caught('a: rgb(var(--r) var(--g) var(--b))') && caught('a: oklch(.9 .03 var(--h))'));
+       caught('a: #fff') && caught('a: rgb(var(--r) var(--g) var(--b))') && caught('a: oklch(.9 .03 var(--h))') &&
+       caught('a: color-mix(in srgb, #fff 10%, var(--card))') && caught('a: color-mix(in srgb, oklch(var(--a) var(--b) var(--c)) 13%, var(--card))') &&
+       caught('a: color-mix(in srgb, oklch(var(--a) .1 var(--c)) calc(var(--t) * 100%), var(--card))'));
+  t.ok('…and lets a mix of token-only colours through (a type badge\'s tint in its card)',
+       !caught('a: color-mix(in srgb, oklch(var(--a) var(--b) var(--c)) calc(var(--t) * 100%), var(--card))'));
   t.ok('…and lets a token-only formula through (an era wash from its index)',
        !caught('background: oklch(var(--a) var(--c) calc(var(--h0) + var(--ei, 0) * var(--step)))') && !caught('b: hsl(var(--h) var(--s) var(--l))'));
   t.ok('that block is :root (the single token source)', coloured.length === 1 && coloured[0].sel === ':root');

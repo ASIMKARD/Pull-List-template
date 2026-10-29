@@ -229,7 +229,7 @@ One skin of the tracker's own, from `franchise.signature`:
     fixes it. A step that is done may leave none (`CURRENT_STEP`).
 - `test/layout/45-pull.test.js` compares all of it and keeps both lists true in both
   directions. At step 1 of session 8: 858 properties match, 966 differences are
-  listed, every one tied to a step. After step 2: 1063 match and 761 are listed.
+  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480.
 - To re-capture (session-only, with a read-only clone):
   `node test/layout/ref/capture-x-men.js --dir ../X-men`. The live page must be
   byte-identical to the clone's `index.html`. With `X_MEN_LIVE=1` and a local copy at
@@ -293,6 +293,31 @@ One skin of the tracker's own, from `franchise.signature`:
   change opens the cards it matches; an era chip opens the era with its cards shut.
 - "Label on each row" keeps its rows, and the v9 frame keeps its arc headings.
 - `test/suites/9l-cards.test.js` checks all of it.
+- **The look (step 4b).**
+  - **Type colours come from the build.** `data.js` carries `typeColours`, one entry per
+    type in the data's order (`tools/build.py`, `pull_type`). Pull draws them; every other
+    skin draws a wash by type index, as era washes are (`--type-h0`, `--type-step`).
+    - **The stripe** is X-Men's colour for the type's name (`PULL_TYPES`, X-Men's
+      TYPE_COLORS), exactly; any other name gets X-Men's fallback, `#666666`.
+    - **The badge** is the same colour, darkened by the palette's rule (OKLCH lightness only,
+      0.0005 a step, chroma kept) only as far as it must go. Its text then passes 4.5:1 on
+      its own tint, a 13.33 % mix of the colour into the card, on **every** paper
+      (`PULL_CARDS`, the seven cards Pull draws). SPIN-OFF and EVENT pass as they are.
+    - **`PULL_CARDS` must equal the cards drawn.** 40-look reads Pull's card on every paper
+      and fails if they differ.
+  - **The tint is opaque:** `color-mix(in srgb, <badge> 13.33%, var(--card))`, so contrast
+    is measured on the colour actually painted. 80-guards accepts a `color-mix` only when
+    every colour and share in it is a token.
+  - **Pull's measured card:** 1.45 line height, a 10.5 px year line, a 9 px badge, a 12 px
+    count, a 24 × 24 ⓘ, Mark arc buttons with a 1.5 px outline, and a 1 px rule above the
+    rows. The other skins keep their own sizes (`--arc-meta-size`).
+  - **ⓘ and Mark arc** are outlined in `--soft-edge`, which is Pull's `#8A8577` (3:1 on every
+    paper) and the control outline in every other skin.
+  - **C and G as built pass on every paper** (awaiting John, step 4b). John's rulings
+    passed on Pull's own paper but measured 4.23–4.42:1 (badges) and 2.82–2.94:1 (outline)
+    on the grey, sky, rose and lilac papers. Built: MAIN `#206381`, SOLO `#00694D`, MINI
+    `#994300` (ruled `#266886`, `#0A6E51`, `#A04600`), and the outline `#8A8577` (ruled
+    `#8F8A7C`). `20-build` checks each badge is the least darkening that passes.
 
 ## The workbook
 

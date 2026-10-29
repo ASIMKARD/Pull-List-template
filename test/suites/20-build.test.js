@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir } = require('../lib/helpers');
+const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir, pullRef } = require('../lib/helpers');
 const C = require('../lib/colour');
 const shade = rgb => rgb.map(v => Math.max(v - 25, 0));      // the reference tracker's strip: each channel 25 darker
 
@@ -167,6 +167,27 @@ module.exports = async function (t) {
       const r = build(path.join(bad, 'dataset.json'), { label: 'bad-colour' });
       t.ok('a malformed colour fails the build: ' + JSON.stringify(v), r.status === 1 && /era rising: colour must be #RRGGBB/.test(r.stderr), r.stderr.split('\n')[0]);
     }
+  }
+
+  // Pull's arc-type colours (session 8; John, 24 and 28 Oct): each stripe the reference tracker's colour exactly, each
+  // badge darkened only as far as its text must be to pass on its own tint, on Pull's card on every paper
+  {
+    const XM = { MAIN: '#2C6E8C', 'SPIN-OFF': '#7B3F94', SOLO: '#1F7A5C', MINI: '#C0622A', EVENT: '#A6303C' };   // X-Men index.html TYPE_COLORS (663fe46); '#666' for any other
+    const TD = loadData(pullRef().out), TC = TD.typeColours || [];
+    const CARDS = [...(fs.readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/\((\d+), (\d+), (\d+)\)/g)].map(m => [+m[1], +m[2], +m[3]]);
+    const badge = h => { const rgb = C.hexRgb(h); return Math.min(...CARDS.map(card => C.contrast(rgb, C.over(rgb, 34 / 255, card)))); };
+    t.eq('every arc type has a stripe in the reference tracker\'s colour for its name, exactly, and a badge (' + TD.types.join(', ') + ')',
+         TC.map(c => c.hex), TD.types.map(n => XM[n] || '#666666'));
+    t.ok('…the build knows Pull\'s card on all seven papers', CARDS.length === 7);
+    t.eq('every badge passes 4.5:1 on its own tint (at 0x22) on Pull\'s card on every paper, as the build reports', TC.filter(c => badge(c.badgeHex) < 4.5 ||
+         Math.abs(badge(c.badgeHex) - c.ratio) > 0.0005).map(c => c.badgeHex + ' ' + badge(c.badgeHex).toFixed(3)), []);
+    t.eq('…the ones that pass as they are are untouched: SPIN-OFF and EVENT', TC.filter(c => !c.nudged).map(c => TD.types[TC.indexOf(c)]), ['SPIN-OFF', 'EVENT']);
+    const STEP = 0.0005, cand = (src, k) => { const [L, Cs, H] = C.rgbOklch(C.hexRgb(src)), x = L - k * STEP; return C.rgbHex(C.oklchRgb(x, C.inGamut(x, Cs, H) ? Cs : C.maxChroma(x, H), H)); };
+    t.eq('…and each darkening is the least that passes: one step (0.0005 of lightness) less still fails', TC.filter(c => c.nudged).filter(c =>
+         cand(c.hex, c.nudged.steps) !== c.badgeHex || badge(cand(c.hex, c.nudged.steps - 1)) >= 4.5).map(c => c.hex), []);
+    t.eq('…and every stripe and badge is OKLCH numbers that come back to its colour', TC.filter(c => C.rgbHex(C.oklchRgb(...c.stripe)) !== c.hex ||
+         C.rgbHex(C.oklchRgb(...c.badge)) !== c.badgeHex).map(c => c.hex), []);
   }
 
   // Pull's default palette (John, 13 Oct): the reference tracker's eleven era colours, each nudged only as far as it must

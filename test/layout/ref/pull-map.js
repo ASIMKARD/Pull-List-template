@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '4a';
+const CURRENT_STEP = '4b';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -91,7 +91,7 @@ const MAP = {
     ['open arc', '.arc-row.expanded', '.era-body .arc', ['effectiveBackground', 'boxWidth'], { leaf: false }],
     ['arc actions', '.arc-row.expanded .arc-actions', '.era-body .arc .arc-acts', ['paddingLeft', 'paddingBottom', 'columnGap', 'relLeft'], { anchor: 'open arc', leaf: false }],
     ['arc action', '.arc-row.expanded .arc-actions button', '.era-body .arc .arc-acts .b', TEXT.concat(PAD, EDGE, ['backgroundColor', 'boxHeight'])],
-    ['issue list', '.arc-row.expanded .issue-list', '.era-body .arc .arc-body', ['borderTopWidth', 'borderTopColor'], { leaf: false }],
+    ['issue list', '.arc-row.expanded .issue-list', '.era-body .arc .arc-rows', ['borderTopWidth', 'borderTopColor'], { leaf: false }],
     ['row', '.issue-row', '.row:not(.inert)', ['effectiveBackground', 'borderBottomColor', 'borderBottomWidth', 'paddingTop', 'paddingLeft', 'columnGap'], { leaf: false }],
     ['read mark', '.issue-row .tri-check', '.row:not(.inert) .mark', ['boxWidth', 'boxHeight', 'backgroundColor'].concat(EDGE, ['relLeft']), { anchor: 'row' }],
     ['read mark, read', '.issue-row.state-read .tri-check', '.row[data-s="read"] .mark', ['backgroundColor', 'color', 'fontSize', 'fontWeight']],
@@ -208,7 +208,7 @@ const WRAPPERS = {
     '.issue-body', '.overall-progress', '.reading-actions', '.reading-nav', '.settings-section > div:not([class])', '.setting-row > div:not([class])'],
   template: ['main', '.pane', '#app', '#stack', '#pprog', '.pstats .pright', '.pbadge .pver', '#pinbar', '.badges', '.bstats', '#reader', '.racts', '.rnav', '.rpills', '#pinchips', '#settings', '#settings .sec-pad',
     '#settings .sec-head', '#settings .sec-t', '#settings .sec-body', '#settings .sec-in', '#reviews', '.revlist', '.arc', '.arc-head', '.era', '.era-body', '.swatches',
-    '.card .arc-head h3', '.arc-toggle', '.arc-sub'],
+    '.card .arc-head h3', '.arc-toggle', '.arc-sub', '.arc-body'],
 };
 
 /* The differences left, each tied to a kept item, to John's ruling, or to the
@@ -233,12 +233,12 @@ const DIFFERENCES = {
   // step 3 (done): the era box and the open era's body
   'landing/era tab.paddingRight@1024': 'accessible: the tab keeps its text clear of the cut at every width, max(44 px, 12 %); X-Men\'s 44 px lets a long name run under its clipped corner at 1024 px (John, 28 Oct)',
   'era/era intro.relTop@*': 'John (24 Oct): the era\'s finish-by date is the first line of its open body, so the intro sits under it',
-  // step 4: arc cards
-  'era/arc *.*@*': 'step 4b: X-Men\'s arc cards',
-  'era/type badge.*@*': 'step 4b: the type badge',
-  'era/info button.*@*': 'step 4b: the ⓘ button',
-  'arc/arc action*.*@*': 'step 4b: Mark arc read and unread in an open card',
-  'arc/issue list.*@*': 'step 4b: the card\'s list of issues',
+  // step 4b (done): the arc cards
+  'era/type badge.color@*': 'accessible: the type badges darkened to pass on their tint on every paper (MAIN #206381, SOLO #00694D, MINI #994300; C was ruled on the default paper; awaiting John)',
+  'era/type badge.backgroundColor@*': 'accessible: …and the tint follows the badge\'s colour, mixed into the card (C; awaiting John)',
+  'era/info button.borderTopColor@*': 'accessible: ⓘ\'s outline #8A8577, 3:1 on its card on every paper (X-Men\'s #C9C4B5 is 1.53:1; G\'s #8F8A7C passes on the default paper only; awaiting John)',
+  'arc/arc action.borderTopColor@*': 'accessible: Mark arc read and unread outlined as ⓘ (G; awaiting John)',
+  'arc/arc action.boxHeight@320': 'kept:reviews: X-Men\'s third button, Rate & review, makes its row wrap at 320 px; reviews are per issue, with ✎ on every row (John, 8 Oct)',
   // step 5: issue rows
   'arc/row.*@*': 'step 5: X-Men\'s rows',
   'arc/read mark.*@*': 'step 5: X-Men\'s rounded checkbox (its size stays 24 px: kept:mark24)',

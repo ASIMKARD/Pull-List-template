@@ -670,13 +670,13 @@ def passes_aa(rgb):
     return min(white_ratios(rgb)) >= AA and contrast(WHITE, strip_shade(rgb)) >= AA
 
 
-def nudge(rgb):
-    """The least darkening that passes: OKLCH lightness lowered a step at a time,
-    hue and chroma kept. Where the gamut runs out first (a yellow holds less
-    chroma as it darkens), the chroma follows the gamut's edge, so the colour
-    stays inside sRGB. Returns (rgb, None) for a colour that already passes,
-    else (rgb, {'steps', 'l', 'c', 'edge'})."""
-    if passes_aa(rgb):
+def nudge(rgb, ok=passes_aa):
+    """The least darkening that passes (ok: an era box's white text by default):
+    OKLCH lightness lowered a step at a time, hue and chroma kept. Where the
+    gamut runs out first (a yellow holds less chroma as it darkens), the chroma
+    follows the gamut's edge, so the colour stays inside sRGB. Returns (rgb, None)
+    for a colour that already passes, else (rgb, {'steps', 'l', 'c', 'edge'})."""
+    if ok(rgb):
         return rgb, None
     L, C, H = rgb_oklch(rgb)
     k = 0
@@ -685,7 +685,7 @@ def nudge(rgb):
         x = L - k * NUDGE_STEP
         c = C if in_gamut(x, C, H) else max_chroma(x, H)
         cand = oklch_rgb(x, c, H)
-        if passes_aa(cand):
+        if ok(cand):
             return cand, {'steps': k, 'l': round(x, 4), 'c': round(c, 4), 'edge': c < C}
     return (0, 0, 0), {'steps': k, 'l': 0, 'c': 0, 'edge': True}
 
@@ -699,6 +699,34 @@ def pull_palette():
         out.append({'source': src, 'hex': rgb_hex(rgb), 'nudged': how, 'white': round(white, 3), 'years': round(years, 3),
                     'strip': round(contrast(WHITE, strip_shade(rgb)), 3)})
     return out
+
+
+# The reference tracker's arc-type colours (session 8; John, 24 and 28 Oct): an arc
+# card's stripe in its type's colour, exactly; its type badge in that colour on a
+# 13 % tint of itself, darkened only as far as the badge's text must be to pass on
+# Pull's card on every paper. Ruling C (MAIN #266886, SOLO #0A6E51, MINI #A04600)
+# passes on the default paper only; on every paper it takes MAIN #206381, SOLO
+# #00694D, MINI #994300 (awaiting John). SPIN-OFF and EVENT pass as they are. A
+# type the table doesn't name takes its fallback.
+PULL_TYPES = {'MAIN': '#2C6E8C', 'SPIN-OFF': '#7B3F94', 'SOLO': '#1F7A5C', 'MINI': '#C0622A', 'EVENT': '#A6303C'}
+PULL_TYPE_OTHER = '#666666'
+# Pull's card on each paper swatch, as styles.css draws it (40-look checks they agree)
+PULL_CARDS = {'default': (242, 240, 233), 'warm': (248, 241, 227), 'grey': (236, 237, 239), 'rose': (247, 228, 230),
+              'mint': (231, 244, 238), 'sky': (227, 238, 248), 'lilac': (238, 230, 245)}
+BADGE_ALPHA = 34 / 255                    # the badge's tint: its colour at 0x22, as the reference
+
+
+def badge_ratio(rgb):
+    """The badge's text on its own tint, on the card where it is lowest."""
+    return min(contrast(rgb, over(rgb, BADGE_ALPHA, card)) for card in PULL_CARDS.values())
+
+
+def pull_type(name):
+    """What Pull draws for an arc type: its stripe and its badge, as OKLCH numbers."""
+    src = PULL_TYPES.get(str(name).upper(), PULL_TYPE_OTHER)
+    badge, how = nudge(hex_rgb(src), lambda c: badge_ratio(c) >= AA)
+    return {'hex': src, 'stripe': oklch_parts(hex_rgb(src)), 'badgeHex': rgb_hex(badge), 'badge': oklch_parts(badge),
+            'ratio': round(badge_ratio(badge), 3), 'nudged': how}
 
 
 def pull_colour(hexcol):
@@ -1295,6 +1323,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
                      'blurb': p.get('blurb', ''), 'eras': [ERA[x] for x in p['eras']]} for p in periods],
         'strands': strands,
         'types': types,
+        'typeColours': [pull_type(t) for t in types],   # Pull's arc cards (session 8): a stripe and a badge per type
         'tiers': tiers,
         'media': media,
         'characters': [c.get('name', c.get('id')) for c in chars],

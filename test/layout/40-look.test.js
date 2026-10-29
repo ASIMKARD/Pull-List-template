@@ -30,9 +30,20 @@ const PAGE_LIB = () => {
   const cv = document.createElement('canvas'); cv.width = cv.height = 1;
   const cx = cv.getContext('2d', { willReadFrequently: true });
   window.__rgb = c => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data]; };
+  /* the colour behind an element: translucent backgrounds (a type badge's tint) painted, bottom up, over what is
+     under them, the way the page paints them (reading a translucent colour back first would lose its precision) */
   window.__bg = el => {
-    for (let e = el; e; e = e.parentElement) { const c = window.__rgb(getComputedStyle(e).backgroundColor); if (c[3] > 0) return c; }
-    return [255, 255, 255, 255];
+    const layers = [];
+    for (let e = el; e; e = e.parentElement) {
+      const css = getComputedStyle(e).backgroundColor, c = window.__rgb(css);
+      if (c[3] === 0) continue;
+      layers.push(css);
+      if (c[3] === 255) break;
+    }
+    if (!layers.length || window.__rgb(layers[layers.length - 1])[3] !== 255) layers.push('#ffffff');
+    cx.clearRect(0, 0, 1, 1);
+    for (let k = layers.length - 1; k >= 0; k--) { cx.fillStyle = '#000'; cx.fillStyle = layers[k]; cx.fillRect(0, 0, 1, 1); }
+    return [...cx.getImageData(0, 0, 1, 1).data];
   };
   const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
   window.__lum = lum;
@@ -58,15 +69,19 @@ module.exports = async function (t) {
     const b = basic(), srv = await serve(b.out);
 
     // ------------------------------------------------ contrast: 4 skins × 7 papers
-    const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['offline line on paper (x frame, the ink at 64 %)', '.pbadge'], ['Next unread (x frame)', '.fbar .jump'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
+    const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['offline line on paper (x frame, the ink at 64 %)', '.pbadge'], ['Next unread (x frame)', '.fbar .jump'], ['type badge on its tint (x frame)', '.card .type-badge'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
       ['link on card', '.fhead .linkbtn'], ['pressed chip', '#fsecs .chip[aria-pressed="true"]'], ['unpressed chip', '#fsecs .chip[aria-pressed="false"]'],
       ['tab', '.tab[aria-selected="false"]'], ['selected tab', '.tab[aria-selected="true"]'], ['band name', '.band-head .bname'],
       ['row title', '.row:not(.inert) .title'], ['read mark', '.row[data-s="read"] .mark'], ['subnote', '.subnote'], ['credits', '.credits'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
     const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
       ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],
-      ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor']];
-    const fails = [], theme = [];
+      ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor'],
+      ['ⓘ outline on its card (x frame)', '.card .info-btn', 'borderTopColor'], ['Mark arc outline on its card (x frame)', '.card .arc-acts .b', 'borderTopColor']];
+    const fails = [], theme = [], cardsDrift = [];
+    /* the build nudges Pull's type badges against its card on every paper (tools/build.py PULL_CARDS): they must be the cards drawn here */
+    const PULL_CARDS = Object.fromEntries([...(require('fs').readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/'(\w+)': \((\d+), (\d+), (\d+)\)/g)].map(m => [m[1], [+m[2], +m[3], +m[4]]]));
     let worst = { r: 99 };
     for (const skin of SKINS) {
       for (const paper of PAPERS) {
@@ -85,12 +100,16 @@ module.exports = async function (t) {
             const bg = window.__bg(el);
             out.push([what, window.__ratio(window.__text(el, bg), bg), 4.5]);
           }
+          const badges = [...document.querySelectorAll('.card .type-badge')];   // every arc type, not only the first card's
+          out.push(['every type badge on its tint (x frame, ' + badges.length + ')', badges.length ? Math.min(...badges.map(b => { const bg = window.__bg(b); return window.__ratio(window.__text(b, bg), bg); })) : 0,
+                    badges.length ? 4.5 : 'missing']);
           for (const [what, sel, prop] of EDGE) {
             const el = document.querySelector(sel);
             if (!el) { out.push([what, 0, 'missing']); continue; }
             out.push([what, window.__ratio(window.__rgb(getComputedStyle(el)[prop]), window.__bg(el.parentElement)), 3]);
           }
-          return { out, meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
+          return { out, card: window.__rgb(getComputedStyle(document.querySelector('.card')).backgroundColor).slice(0, 3),
+                   meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
                    skin: document.documentElement.getAttribute('data-skin') };
         }, [PAGE_LIB.toString(), TEXT, EDGE]);
         for (const [what, ratio, need] of r.out) {
@@ -98,6 +117,7 @@ module.exports = async function (t) {
           if (need === 4.5 && ratio < worst.r) worst = { r: ratio, at: skin + '/' + paper + ' ' + what };
         }
         if (r.meta !== r.body) theme.push(skin + '/' + paper + ': ' + r.meta + ' vs ' + r.body);
+        if (skin === 'pull' && JSON.stringify(r.card) !== JSON.stringify(PULL_CARDS[paper])) cardsDrift.push(paper + ': ' + r.card.join(',') + ' vs the build\'s ' + PULL_CARDS[paper]);
         if (r.skin !== skin) fails.push(skin + '/' + paper + ': the page is in ' + r.skin);
         if (pg.errors.length) fails.push(skin + '/' + paper + ': errors ' + pg.errors.join(' | '));
         await pg.close();
@@ -106,6 +126,8 @@ module.exports = async function (t) {
     t.eq('contrast in every skin × paper: ' + TEXT.length + ' text pairs at 4.5:1 and ' + EDGE.length + ' outlines at 3:1 (worst text ' +
          worst.r.toFixed(2) + ', ' + worst.at + ')', fails, []);
     t.eq('the browser chrome (theme-color) follows each skin\'s paper (F-39)', theme, []);
+    t.eq('Pull\'s card on every paper is the one the build darkens the type badges against (tools/build.py PULL_CARDS, ' + Object.keys(PULL_CARDS).length + ')',
+         Object.keys(PULL_CARDS).length === PAPERS.length ? cardsDrift : ['PULL_CARDS names ' + Object.keys(PULL_CARDS).join(', ')], []);
 
     // ------------------------------------------------ era banners: 64 eras, every skin, split and one colour
     // Every text in the box (the first era complete, so its ✓ shows). Pull's are solid with white text

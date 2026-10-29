@@ -3052,6 +3052,71 @@ Absolute's, so it isn't changed here. The trial run on its data (step 6) covered
 and the derived colours. Its two eras will now be Pull's first two palette colours, `#8A6100` and
 `#A6303C`, and the next update re-runs everything on its data.
 
+## Session 8 checkpoint — step 4b done (arc cards: the look), 29 Oct 2026
+
+### Done
+- **The build emits the type colours** (`typeColours` in `data.js`, one per type, in the data's order;
+  `tools/build.py`, `pull_type`).
+  - **Pull's stripes** are X-Men's TYPE_COLORS for the type's name, exactly (`PULL_TYPES`); any other
+    name gets X-Men's fallback, `#666666`.
+  - **Pull's badges** are the same colour, darkened by the palette's rule only as far as their text
+    needs for 4.5:1 on their own tint, on every one of Pull's seven papers (`PULL_CARDS`). SPIN-OFF
+    and EVENT are untouched.
+  - **The other skins** draw washes by type index, as era washes are.
+  - **`staleShell`** also requires `typeColours`, so a new `app.js` never meets an old `data.js`.
+- **The tint is opaque:** a `color-mix` of the badge colour into the card, so contrast is measured on
+  what is painted. 80-guards accepts a `color-mix` only when every part is a token, with self-tests
+  that a literal colour or share inside one is still caught.
+- **Pull's measured card:** 1.45 line height, the 10.5 px year line, the 9 px badge, the 12 px count,
+  the 24 × 24 ⓘ, Mark arc's buttons, and the rule above the rows.
+- **ⓘ and Mark arc** are outlined in a new `--soft-edge`: Pull's `#8A8577`; the control outline elsewhere.
+- **Focus rings: none is cut, so no inset rule.** The cards keep `overflow: hidden` (for swipe). In Chromium
+  each of the 189 controls in the open cards was focused from the keyboard, in Pull, Paper and Night at 320, 390
+  and 1024 px. Every ring (`:focus-visible`, the browser's own) sits inside every box that clips it. The
+  measure caught a ring pushed 12 px toward the card's edge (cut by 4 px), so it can see one.
+- **Checks:**
+  - 20-build: each stripe is X-Men's colour for its name; there are seven cards; every badge passes on
+    every card, at the ratio the build reports; each darkening is the least that passes; the OKLCH
+    numbers round-trip.
+  - 40-look: every type badge on its tint, and the outlines, in every skin × paper. Translucent layers
+    are now composited. Pull's card on every paper equals the build's `PULL_CARDS`.
+  - 45-pull: the `era/arc *`, `type badge`, `info button`, `arc action*` and `issue list` entries are
+    off the list; what's left of the card is tied to a kept item or to C and G.
+- **Mutation-proved 8 of 8:**
+  - the badges darkened against Pull's paper only;
+  - a badge darkened a step too far;
+  - a stripe drawn in its badge's colour;
+  - the tint translucent again;
+  - ⓘ and Mark arc in G's `#8F8A7C`;
+  - the build's rose card drifting from the one drawn;
+  - the other skins' type ink too light;
+  - the card at the body's line height.
+- **45-pull:** 1317 match (1240 at step 4a), 480 listed.
+- **Docs:** BUILD-NOTES "The x frame's arc cards" (the look); FEATURE-INVENTORY X-17.
+
+**Harness:** 1682 assertions, 0 failed, 37 suites. **Layout:** 425 checks, 0 failed, 12 suites.
+
+### The case for John (step 4b): C and G on every paper
+John ruled C (the type badges) and G (the ⓘ and Mark arc outlines) on Pull's own paper. Pull's card
+changes with the paper swatch, and on four papers the ruled colours fall short:
+
+| | Ruled | On grey, sky, rose, lilac | Built (every paper) | Lowest built |
+|---|---|---|---|---|
+| MAIN badge | `#266886` | 4.24–4.39:1 | `#206381` | 4.52:1 |
+| SOLO badge | `#0A6E51` | 4.26–4.42:1 | `#00694D` | 4.54:1 |
+| MINI badge | `#A04600` | 4.23–4.41:1 | `#994300` | 4.50:1 |
+| ⓘ, Mark arc | `#8F8A7C` | 2.82–2.94:1 | `#8A8577` | 3.02:1 |
+
+The built colours are listed in 45-pull as "awaiting John" until he rules.
+
+### Step 5 begins with
+The issue rows on the x frame: `rowHtml` in `app.js` gets an x-only path (the note under the title,
+the core ★ inline after it, then the quiet ☆/★ bookmark, ✎ and "look up ↗" in the right-hand
+cluster; flashback and alt notes under the title). Then Pull's measured row values (`styles.css`),
+then 45-pull's `arc/issue *` entries off the list. Table view and the framed body's sides
+(50-table) must still hold. The rows move toward the card's clipped edges, so step 5 also adds the focus-ring measure to
+`10-sweep`: no focus ring inside a card cut by a box that clips it, mutation-proved.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls

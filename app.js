@@ -737,13 +737,25 @@
     return read + '/' + (total - skip);
   }
   function cardId(k) { return 'arc-' + k.replace(/:/g, '-'); }
+  /* A card's type colour for the stylesheet, as tokens (like eraStyle): its type's
+     index, for the other skins' hue, and in Pull the stripe and the badge data.js
+     gives the type (the reference tracker's colours, the badge nudged to pass). */
+  function typeStyle(t) {
+    var c = D.typeColours && D.typeColours[t], num = function (v) { return typeof v === 'number' && isFinite(v); };
+    var s = '--ti:' + t;
+    if (c && Array.isArray(c.stripe) && Array.isArray(c.badge) && c.stripe.concat(c.badge).every(num)) {
+      s += ';--tc:1;--ts-l:' + c.stripe[0] + ';--ts-c:' + c.stripe[1] + ';--ts-h:' + c.stripe[2] +
+           ';--tb-l:' + c.badge[0] + ';--tb-c:' + c.badge[1] + ';--tb-h:' + c.badge[2];
+    }
+    return s;
+  }
   function cardHtml(e, c, isOpen) {
     var arc = D.arcs[c.a], again = c.n > 0, id = cardId(c.k);
     var meta = [arc.y, arc.i ? 'importance ' + arc.i + '/5' : ''].filter(Boolean).join(' · ');   // V-12
     var cred = again ? '' : creditsHtml(c.rows[0]);
     var blurb = arc.b && !again && arc.b !== D.eras[e].intro ? arc.b : '';
     var type = HAS.types && D.types[arc.t] ? '<span class="type-badge" data-t="' + arc.t + '">' + escapeHtml(D.types[arc.t]) + '</span>' : '';
-    return '<div class="arc card' + (isOpen ? ' open' : '') + '" data-a="' + c.a + '" data-k="' + c.k + '"><div class="arc-head"><span class="arc-tab" aria-hidden="true"></span>' +
+    return '<div class="arc card' + (isOpen ? ' open' : '') + '" data-a="' + c.a + '" data-k="' + c.k + '" style="' + typeStyle(arc.t) + '"><div class="arc-head"><span class="arc-tab" aria-hidden="true"></span>' +
       '<h3><button type="button" class="arc-toggle" data-act="arc" aria-expanded="' + isOpen + '" aria-controls="' + id + '-body">' +
       '<span class="arc-name">' + escapeHtml(arc.n) + (again ? ' · cont.' : '') + '</span>' +
       (type || meta ? '<span class="arc-sub">' + type + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') + '</span>' : '') +
@@ -759,7 +771,7 @@
     return (c.n ? '' : eventNote(c.a)) + '<div class="arc-acts">' +
       '<button type="button" class="b" data-act="arc-mark" data-a="' + c.a + '" data-st="read">Mark arc read</button>' +
       '<button type="button" class="b" data-act="arc-mark" data-a="' + c.a + '" data-st="unread">Mark arc unread</button></div>' +
-      c.rows.map(rowHtml).join('');
+      '<div class="arc-rows">' + c.rows.map(rowHtml).join('') + '</div>';     // the reference's issue list, under its rule
   }
   function setCardOpen(k, on) {
     open.a[k] = on;
@@ -1748,7 +1760,7 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.typeColours && typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {
