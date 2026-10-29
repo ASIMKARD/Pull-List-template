@@ -195,7 +195,7 @@
   --arc-meta-size: 10.5px;
   /* the rows (session 8, step 5): the reference's checkbox, 2 px and 5 px round, read in the ink with the paper's
      glyph; its 11.5 px note and 11 px core star; the quiet star and the gold, each the reference's colour made to
-     pass 4.5:1 on the card on every paper (A #726D60 and B #896900 passed on the default paper only; awaiting John) */
+     pass 4.5:1 on the card on every paper (A and B revised: #726D60 and #896900 passed on the default paper only; John, 29 Oct) */
   --mark-edge-w: 2px; --mark-radius: 5px; --mark-weight: 700; --mark-on: var(--ink); --mark-on-ink: var(--paper);
   --note-size: 11.5px; --core-size: 11px; --gapnote-bg: var(--inset);
   --quiet-h: 43.3333; --quiet-s: 9%; --l-quiet: 39.2157%;    /* #6D685B, from the reference's #C9C4B5 (A) */

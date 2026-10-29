@@ -3163,7 +3163,7 @@ then 45-pull's `arc/issue *` entries off the list. Table view and the framed bod
 
 **Harness:** 1688 assertions, 0 failed, 37 suites. **Layout:** 464 checks, 0 failed, 12 suites.
 
-### The case for John (step 5): A and B on every paper
+### The case for John (step 5): A and B on every paper — ruled
 A (the quiet ☆) and B (the gold: the core star, a bookmark that is on) were ruled on Pull's own paper. As with C and
 G (29 Oct), on four papers they fall short:
 
@@ -3173,7 +3173,8 @@ G (29 Oct), on four papers they fall short:
 | B, the gold | `#896900` | 4.21–4.39:1 | `#836400` | 4.54:1 |
 
 Each built colour is X-Men's (`#C9C4B5`, `#B08A1F`) darkened by the palette's rule only as far as the worst paper
-needs. B's review stars follow in step 6a. The built colours are listed in 45-pull as "awaiting John" until he rules.
+needs. B's review stars follow in step 6a. **Ruled (John, 29 Oct): the every-paper colours, as built.** 45-pull's reasons cite
+the ruling.
 
 ### Step 6a begins with
 Reading and Reviews on the x frame. Start with `renderReading` in `app.js`: X-Men's centred card (an era chip, the
@@ -3301,6 +3302,13 @@ X-Men, so it needs no entry.
   - the badges: MAIN `#206381`, SOLO `#00694D` and MINI `#994300` (lowest 4.50:1); SPIN-OFF and
     EVENT unchanged; the stripes keep X-Men's exact colours;
   - the ⓘ and Mark arc outline: `#8A8577` (lowest 3.02:1).
+
+### 29 Oct: step 5's case, ruled
+- **A and B pass on every paper** (A and B revised), as C and G do. The 28 Oct colours passed on Pull's own paper
+  only: 4.21–4.40:1 on the grey, sky, rose and lilac papers. Each is X-Men's own colour darkened only as far as the
+  worst paper needs:
+  - A, the quiet ☆: `#6D685B` (lowest 4.55:1);
+  - B, the gold (the core star, a bookmark that is on, and the review stars in step 6a): `#836400` (lowest 4.54:1).
 
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a

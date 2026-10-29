@@ -335,7 +335,7 @@ One skin of the tracker's own, from `franchise.signature`:
   capability (`HAS.reveal`) says.
 - **The quiet controls** have no outline and no fill, at least `--bm-box` (24 px, ruling E; 44 px with large
   buttons), in `--quiet`; a bookmark that is on is in `--gold`. In Pull these are A and B made to pass 4.5:1 on the
-  card on every paper: `#6D685B` and `#836400` (awaiting John). In the other skins, the soft ink and the accent.
+  card on every paper: `#6D685B` and `#836400` (A and B revised, John, 29 Oct). In the other skins, the soft ink and the accent.
 - **A gap note** is one line in the titles' column, its ↷ or ⟳ inline, on `--gapnote-bg` (Pull: the inset).
 - **Table view** ellipsises the title and keeps the core star after it.
 - **An event's note** in a card is inset as Mark arc is, so its button's focus ring clears the card's edge, which
