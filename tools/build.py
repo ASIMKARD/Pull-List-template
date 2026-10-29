@@ -705,8 +705,8 @@ def pull_palette():
 # card's stripe in its type's colour, exactly; its type badge in that colour on a
 # 13 % tint of itself, darkened only as far as the badge's text must be to pass on
 # Pull's card on every paper. Ruling C (MAIN #266886, SOLO #0A6E51, MINI #A04600)
-# passes on the default paper only; on every paper it takes MAIN #206381, SOLO
-# #00694D, MINI #994300 (awaiting John). SPIN-OFF and EVENT pass as they are. A
+# passed on the default paper only; on every paper it takes MAIN #206381, SOLO
+# #00694D, MINI #994300 (C revised, John, 29 Oct). SPIN-OFF and EVENT pass as they are. A
 # type the table doesn't name takes its fallback.
 PULL_TYPES = {'MAIN': '#2C6E8C', 'SPIN-OFF': '#7B3F94', 'SOLO': '#1F7A5C', 'MINI': '#C0622A', 'EVENT': '#A6303C'}
 PULL_TYPE_OTHER = '#666666'

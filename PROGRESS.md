@@ -3096,7 +3096,7 @@ and the derived colours. Its two eras will now be Pull's first two palette colou
 
 **Harness:** 1682 assertions, 0 failed, 37 suites. **Layout:** 425 checks, 0 failed, 12 suites.
 
-### The case for John (step 4b): C and G on every paper
+### The case for John (step 4b): C and G on every paper — ruled
 John ruled C (the type badges) and G (the ⓘ and Mark arc outlines) on Pull's own paper. Pull's card
 changes with the paper swatch, and on four papers the ruled colours fall short:
 
@@ -3107,7 +3107,7 @@ changes with the paper swatch, and on four papers the ruled colours fall short:
 | MINI badge | `#A04600` | 4.23–4.41:1 | `#994300` | 4.50:1 |
 | ⓘ, Mark arc | `#8F8A7C` | 2.82–2.94:1 | `#8A8577` | 3.02:1 |
 
-The built colours are listed in 45-pull as "awaiting John" until he rules.
+**Ruled (John, 29 Oct): the every-paper colours, as built.** 45-pull's reasons cite the ruling.
 
 ### Step 5 begins with
 The issue rows on the x frame: `rowHtml` in `app.js` gets an x-only path (the note under the title,
@@ -3227,6 +3227,15 @@ X-Men, so it needs no entry.
 - **The pinned header: the tabs pin alone past 35 %.** The x frame's header pins under the tabs
   while it takes at most 35 % of the screen; with the largest text on a 320 × 568 phone (38 %) only
   the tabs pin.
+
+### 29 Oct: step 4b's case, ruled
+- **C and G pass on every paper** (C and G revised). Pull's card changes with the paper swatch, and
+  the 28 Oct colours passed on Pull's own paper only: 4.23–4.42:1 for the badges and 2.82–2.94:1 for
+  the outline on the grey, sky, rose and lilac papers. Each is now darkened only as far as the worst
+  paper needs:
+  - the badges: MAIN `#206381`, SOLO `#00694D` and MINI `#994300` (lowest 4.50:1); SPIN-OFF and
+    EVENT unchanged; the stripes keep X-Men's exact colours;
+  - the ⓘ and Mark arc outline: `#8A8577` (lowest 3.02:1).
 
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a

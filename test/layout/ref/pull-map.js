@@ -234,10 +234,10 @@ const DIFFERENCES = {
   'landing/era tab.paddingRight@1024': 'accessible: the tab keeps its text clear of the cut at every width, max(44 px, 12 %); X-Men\'s 44 px lets a long name run under its clipped corner at 1024 px (John, 28 Oct)',
   'era/era intro.relTop@*': 'John (24 Oct): the era\'s finish-by date is the first line of its open body, so the intro sits under it',
   // step 4b (done): the arc cards
-  'era/type badge.color@*': 'accessible: the type badges darkened to pass on their tint on every paper (MAIN #206381, SOLO #00694D, MINI #994300; C was ruled on the default paper; awaiting John)',
-  'era/type badge.backgroundColor@*': 'accessible: …and the tint follows the badge\'s colour, mixed into the card (C; awaiting John)',
-  'era/info button.borderTopColor@*': 'accessible: ⓘ\'s outline #8A8577, 3:1 on its card on every paper (X-Men\'s #C9C4B5 is 1.53:1; G\'s #8F8A7C passes on the default paper only; awaiting John)',
-  'arc/arc action.borderTopColor@*': 'accessible: Mark arc read and unread outlined as ⓘ (G; awaiting John)',
+  'era/type badge.color@*': 'accessible: the type badges darkened to pass on their tint on every paper (MAIN #206381, SOLO #00694D, MINI #994300; C revised to every paper, John, 29 Oct)',
+  'era/type badge.backgroundColor@*': 'accessible: …and the tint follows the badge\'s colour, mixed into the card (C; John, 29 Oct)',
+  'era/info button.borderTopColor@*': 'accessible: ⓘ\'s outline #8A8577, 3:1 on its card on every paper (X-Men\'s #C9C4B5 is 1.53:1; G revised to every paper, John, 29 Oct)',
+  'arc/arc action.borderTopColor@*': 'accessible: Mark arc read and unread outlined as ⓘ (G; John, 29 Oct)',
   'arc/arc action.boxHeight@320': 'kept:reviews: X-Men\'s third button, Rate & review, makes its row wrap at 320 px; reviews are per issue, with ✎ on every row (John, 8 Oct)',
   // step 5: issue rows
   'arc/row.*@*': 'step 5: X-Men\'s rows',

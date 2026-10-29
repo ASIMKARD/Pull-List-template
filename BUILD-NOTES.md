@@ -313,7 +313,7 @@ One skin of the tracker's own, from `franchise.signature`:
     rows. The other skins keep their own sizes (`--arc-meta-size`).
   - **ⓘ and Mark arc** are outlined in `--soft-edge`, which is Pull's `#8A8577` (3:1 on every
     paper) and the control outline in every other skin.
-  - **C and G as built pass on every paper** (awaiting John, step 4b). John's rulings
+  - **C and G pass on every paper** (John, 29 Oct). His first rulings (28 Oct)
     passed on Pull's own paper but measured 4.23–4.42:1 (badges) and 2.82–2.94:1 (outline)
     on the grey, sky, rose and lilac papers. Built: MAIN `#206381`, SOLO `#00694D`, MINI
     `#994300` (ruled `#266886`, `#0A6E51`, `#A04600`), and the outline `#8A8577` (ruled

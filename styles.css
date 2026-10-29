@@ -181,7 +181,7 @@
   --arc-size: 13.5px; --arc-weight: 600; --row-size: 13px; --row-weight: 500; --search-size: 14px;
   --tab-size: 12.5px; --tab-fit: 3.907vw; --tab-case: uppercase; --tab-track: .3px;   /* 12.5 px at 320 px too, as the reference */
   --head-track: var(--inset); --head-fill: var(--ink); --jump-ink: var(--card);
-  --soft-edge-h: 44.2105; --soft-edge-s: 7.5098%; --l-soft-edge: 50.3922%;   /* #8A8577: the reference's #C9C4B5 made to pass 3:1 on the card on every paper (G's #8F8A7C passes on the default paper only; awaiting John) */
+  --soft-edge-h: 44.2105; --soft-edge-s: 7.5098%; --l-soft-edge: 50.3922%;   /* #8A8577: the reference's #C9C4B5 made to pass 3:1 on the card on every paper (G revised: #8F8A7C passed on the default paper only; John, 29 Oct) */
   --type-ink-l: .4; --type-ink-c: .1;   /* Pull's era ink is white (solid boxes); a card's type falls back to the template's */
   --arc-meta-size: 10.5px;
   --radius: 8px;
