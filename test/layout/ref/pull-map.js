@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '5';
+const CURRENT_STEP = '6a';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -195,10 +195,8 @@ const ONLY = {
     ['#settings .about', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings .filelabel', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings .bmlist', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
+    ['#reviews .pane-h', 'kept:reviews: the Reviews heading with its count, for screen readers only (the reference shows none), so it measures 1 px'],
     // the template as it stands at step 1; each goes in the step named
-    ['.rstate', 'step 6a: the read state moves into the counter, as X-Men'],
-    ['#reviews .pane-h', 'step 6a: the Reviews heading'],
-    ['#reviews .rev-top', 'step 6a: the review list becomes X-Men\'s cards'],
   ],
 };
 
@@ -229,7 +227,6 @@ const DIFFERENCES = {
   'scrolled/pinned header.boxBottom@320': 'John (24 Oct): the plan\'s finish-by date sits beside the time remaining, so at 320 px they take a line of their own',
   'scrolled/pinned header.boxBottom@390': 'John (24 Oct): the offline line ends "· vN" (its second line at 390 px)',
   'arc/pinned chip.borderTopColor@*': 'accessible: a pinned chip\'s outline is the control outline, 3:1 on every paper it sits on (X-Men\'s #C9C4B5 is 1.37:1 there, G\'s #8F8A7C 2.71:1; John, 28 Oct)',
-  'reviews/review card.box*@1024': 'step 6a: X-Men\'s review cards, 12 px in',
   // step 3 (done): the era box and the open era's body
   'landing/era tab.paddingRight@1024': 'accessible: the tab keeps its text clear of the cut at every width, max(44 px, 12 %); X-Men\'s 44 px lets a long name run under its clipped corner at 1024 px (John, 28 Oct)',
   'era/era intro.relTop@*': 'John (24 Oct): the era\'s finish-by date is the first line of its open body, so the intro sits under it',
@@ -249,9 +246,10 @@ const DIFFERENCES = {
   'arc/bookmark.color@*': 'accessible: the quiet star #6D685B, X-Men\'s #C9C4B5 (1.53:1) made to pass 4.5:1 on the card on every paper (A revised to every paper, John, 29 Oct)',
   'arc/bookmark, on.color@*': 'accessible: a bookmark that is on in the gold #836400, X-Men\'s #B08A1F (2.83:1) made to pass on every paper (B revised to every paper, John, 29 Oct)',
   'extras/core star.color@*': 'accessible: the core star in the same gold (B; John, 29 Oct)',
+  'reviews/review era.color@*': 'John (13 Oct): the era in Pull\'s default palette, the reference\'s eleven each darkened only as far as white text on it needs; as text on the card that colour already passes 4.5:1 on every paper (the build\'s text shade)',
+  'reviews/review stars.color@*': 'accessible: the review stars in the gold #836400 (B revised to every paper, John, 29 Oct)',
+  'reviews/review edit.borderTopColor@*': 'accessible: Edit outlined as ⓘ and Mark arc are, #8A8577, 3:1 on its card on every paper (G revised to every paper, John, 29 Oct)',
   // step 6: the other tabs
-  'reading/*.*@*': 'step 6a: X-Men\'s Reading tab',
-  'reviews/*.*@*': 'step 6a: X-Men\'s review cards',
   'settings/*.*@*': 'step 6b: Settings in X-Men\'s look, in the collapsible sections (John, 24 Oct)',
 };
 
@@ -484,7 +482,11 @@ const DRIVE = {
       await pause(page);
     },
     async scrolled(page) { await page.evaluate(y => scrollTo(0, y), SCROLL); await pause(page); },
-    async reading(page) { await page.evaluate(() => scrollTo(0, 0)); await page.click('#tab-reading'); await pause(page); },
+    async reading(page) {     // the reference opens Reading at its first issue; the template resumes at the first not done (v3), so step back to it
+      await page.evaluate(() => scrollTo(0, 0)); await page.click('#tab-reading');
+      if (await page.$('#reader [data-act="rd-prev"]:not([disabled])')) await page.click('#reader [data-act="rd-prev"]');
+      await pause(page);
+    },
     async reviews(page) {
       await page.click('#tab-list');
       await page.click('.row:not(.inert) .b.rv');

@@ -3183,6 +3183,73 @@ the counter and the key hint kept (kept: v3). Then `renderReviews`: X-Men's revi
 (kept: reviews), with the review stars in B's gold. Then 45-pull's `reading/*` and `reviews/*` entries come off the
 list, and the `.rstate`, `#reviews .pane-h` and `#reviews .rev-top` ONLY entries go.
 
+## Session 8 checkpoint — step 6a done (the x frame's Reading and Reviews), 29 Oct 2026
+
+### Done
+- **Reading is X-Men's view** (`xReadingHtml`; the v9 frame's card untouched).
+  - The counter carries the state once there is one ("1 of 45 · READ", "· BEATEN", "· SKIPPED"). The separate state
+    line goes.
+  - The issue is centred on the page, with no card:
+    - the era chip in the era's own colour;
+    - the title in the display face;
+    - "arc · TYPE · ★ CORE", the type as written;
+    - the note in italics, and the blurb under a dashed rule.
+  - Skip and Mark Read are X-Men's two large buttons, in the ink in Pull; then the nav row. The key hint stays
+    (kept: v3).
+- **Reviews are X-Men's cards**, per issue in reading order (kept: reviews): the era tag, the issue, the stars in the
+  gold, the text, and **Edit**, which goes to the issue with its review open. The heading stays for screen readers
+  only.
+- **An era's text shade.** The build gives every colour Pull draws an era in a text shade, darkened only as far as
+  4.5:1 on Pull's card on every paper needs (`pull_colour`). Anything drawn in an era's colour outside the era box
+  carries `.eratok` and the era's tokens. `staleShell` now also requires the shade.
+- **45-pull:** both sides now show the same issue in Reading. X-Men opens at the first issue; the template resumes
+  at the first not done (kept: v3), so its driver steps back once. 1645 match (1428 at step 5), 167 listed. Reading
+  matches X-Men entirely. Reviews differ in three colours, each already ruled:
+  - the era tag: Pull's palette, John 13 Oct;
+  - the stars: B;
+  - Edit's outline: G.
+- **Checks:**
+  - 9a-reading: the counter and the type, both frames;
+  - 9b-reviews: the card's parts, Edit, both frames;
+  - 20-build: every text shade is the least that passes, as OKLCH;
+  - 40-look: the Reading chip, counter, title, arc line, Skip, Mark Read and nav; the review era tag, stars, text
+    and Edit; Edit's and Skip's outlines; in every skin × paper. A tracker's own colour under 4.5:1 passes on the
+    chip only at exactly the ratio the build reported, as on the tab.
+  - 40-look also checks **one gold**: the core star, a bookmark that is on and the review stars are one colour.
+    45-pull lists the stars' colour as a difference without pinning it, so nothing had caught the stars in the
+    accent.
+- **Mutation-proved 12 of 12:**
+  - the x Reading view on the v9 frame;
+  - the state left out of the counter;
+  - the type lower-cased;
+  - no text shade;
+  - a shade darkened past the least;
+  - the era tag in the tab's colour;
+  - Edit that only jumps;
+  - the heading shown;
+  - the chip in the accent wash;
+  - the buttons at 6 px;
+  - the stars in the accent;
+  - Reading back on a card.
+
+  A shade aiming for 4.51:1 instead of 4.50:1 changed nothing on these colours (an equivalent mutant), so the
+  proof aims for 4.55:1.
+- **Docs:** BUILD-NOTES "The x frame's Reading and Reviews"; FEATURE-INVENTORY X-19, F-2 and F-3.
+
+**Harness:** 1698 assertions, 0 failed, 37 suites. **Layout:** 465 checks, 0 failed, 12 suites.
+
+### The case for John (step 6a): an era's own light colour as text
+X-Men's review era tag is the era's colour as 10 px text on the card. Pull's palette colours pass as they are. A
+tracker's own light colour does not: the basic fixture's `#A6791E` measures 3.20–3.48:1 across the papers. Built,
+following the rule of 29 Oct (C, G, A and B): its text shade, `#8A6100`, 4.54:1 at the lowest. The tab keeps the
+colour as given (John, 12 Oct). Awaiting John.
+
+### Step 6b begins with
+Settings on the x frame (45-pull's `settings/*.*@*`, the last step entry). Keep the collapsible sections (kept:
+filters, settings), restyled as X-Men's: mono section headings, X-Men's rows and labels, and switches for on/off.
+Off stays X-Men's `#C9C4B5` exactly (F). Start with `renderSettings` in `app.js`, its `srow` and `pref` helpers, then
+the x-frame rules. Then the scrolled view at every width, and any `step 6` entry left.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls

@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir, pullRef } = require('../lib/helpers');
+const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir, pullRef, basic } = require('../lib/helpers');
 const C = require('../lib/colour');
 const shade = rgb => rgb.map(v => Math.max(v - 25, 0));      // the reference tracker's strip: each channel 25 darker
 
@@ -188,6 +188,24 @@ module.exports = async function (t) {
          cand(c.hex, c.nudged.steps) !== c.badgeHex || badge(cand(c.hex, c.nudged.steps - 1)) >= 4.5).map(c => c.hex), []);
     t.eq('…and every stripe and badge is OKLCH numbers that come back to its colour', TC.filter(c => C.rgbHex(C.oklchRgb(...c.stripe)) !== c.hex ||
          C.rgbHex(C.oklchRgb(...c.badge)) !== c.badgeHex).map(c => c.hex), []);
+  }
+
+  // an era's colour as text on Pull's card (session 8, step 6a: the x frame's review era tag): darkened by the palette's rule
+  // only as far as 4.5:1 on every paper needs; the tab and the strip keep the colour itself
+  {
+    const CARDS = [...(fs.readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/\((\d+), (\d+), (\d+)\)/g)].map(m => [+m[1], +m[2], +m[3]]);
+    const onCards = h => Math.min(...CARDS.map(card => C.contrast(C.hexRgb(h), card)));
+    const STEP = 0.0005, cand = (src, k) => { const [L, Cs, H] = C.rgbOklch(C.hexRgb(src)), x = L - k * STEP; return C.rgbHex(C.oklchRgb(x, C.inGamut(x, Cs, H) ? Cs : C.maxChroma(x, H), H)); };
+    const least = src => { if (onCards(src) >= 4.5) return src.toUpperCase(); for (let k = 1; k < 4000; k++) if (onCards(cand(src, k)) >= 4.5) return cand(src, k); return null; };
+    const all = [];
+    for (const out of [basic().out, pullRef().out]) { const XD = loadData(out); XD.eras.forEach(e => all.push(e.pull)); all.push(XD.pullMono); }
+    t.eq('every colour Pull draws an era in has a text shade, the least darkening that passes 4.5:1 on its card on every paper (' + all.length + ')',
+         all.filter(p => !p.textHex || p.textHex !== least(p.hex)).map(p => p.hex + ' → ' + p.textHex + ' (the least: ' + least(p.hex) + ')'), []);
+    t.eq('…as OKLCH numbers that come back to it', all.filter(p => !Array.isArray(p.text) || C.rgbHex(C.oklchRgb(...p.text)) !== p.textHex).map(p => p.hex), []);
+    const dawn = all.find(p => p.hex === '#A6791E');
+    t.ok('…a light colour is darkened (the basic fixture\'s own #A6791E), one that passes is left as it is (the palette\'s)', !!dawn && dawn.textHex !== dawn.hex &&
+         all.some(p => p.hex !== '#A6791E' && p.textHex === p.hex));
   }
 
   // Pull's default palette (John, 13 Oct): the reference tracker's eleven era colours, each nudged only as far as it must

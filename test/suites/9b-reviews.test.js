@@ -4,7 +4,8 @@
    reading order and jumps; reviews the list has no issue for are listed,
    never dropped. The per-arc store of earlier builds is never written. */
 'use strict';
-const { loadData, boot, wait, basic } = require('../lib/helpers');
+const path = require('path');
+const { loadData, boot, wait, basic, build, FIX } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -84,6 +85,15 @@ module.exports = async function (t) {
   t.ok('each shows the issue, its stars, its arc and era, and the text', firstItem.textContent.indexOf(D.issues[idx(firstLive)][1]) >= 0 &&
        /★★★★★/.test(firstItem.textContent) && /Classic\./.test(firstItem.textContent) &&
        firstItem.querySelector('.rev-era').textContent === D.arcs[D.issues[idx(firstLive)][2]].n + ' · ' + D.eras[0].name);
+  t.eq('the x frame draws each as the reference tracker\'s card: its era and arc, the issue, the stars, the text, then Edit',
+       [...firstItem.children].map(c => c.className), ['rev-era', 'linkbtn rev-name', 'rev-stars', 'rev-t', 'rev-edit']);
+  t.ok('…in its era\'s colour tokens, with the heading kept for screen readers only', firstItem.classList.contains('eratok') &&
+       /--ei:0/.test(firstItem.getAttribute('style')) && $('#reviews .pane-h').classList.contains('vh'));
+  $(`#reviews [data-act="rv-edit"][data-id="${firstLive}"]`).click();
+  const edRow = $(`.row[data-i="${idx(firstLive)}"]`);
+  t.ok('Edit goes to the issue with its review open, ready to change (x frame)', !$('#pane-list').hidden && visible(edRow) &&
+       edRow.nextElementSibling && edRow.nextElementSibling.classList.contains('review') && edRow.querySelector('.b.rv').getAttribute('aria-expanded') === 'true');
+  $('#tab-reviews').click();
   const kept = $$('#reviews .kept .rev-item').map(x => x.textContent);
   t.ok('reviews that match no issue are kept and listed, never dropped', kept.length === 2 && kept.some(x => /issue-since-removed/.test(x) && /From an older list/.test(x)) &&
        kept.some(x => /199901001/.test(x) && /Old per-issue note/.test(x)));
@@ -92,6 +102,18 @@ module.exports = async function (t) {
   t.ok('…whose ✎ shows the rating', $(`.row[data-i="${idx(lastLive)}"] .b.rv`).textContent === '✎ ★★');
   t.ok('no runtime errors (Reviews tab)', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
+
+  {   // the v9 frame keeps its review list (John, 25 Oct)
+    const v9 = build(path.join(FIX, 'sig-v9', 'dataset.json'), { label: 'reviews-v9' }), D9 = loadData(v9.out);
+    const a9 = boot(v9.out, { now: NOW, storage: { [D9.franchise.key + ':v3:issue-reviews']: JSON.stringify({ [D9.ids[0]]: { r: 3, t: 'Kept.' } }) } });
+    await wait(20);
+    a9.document.querySelector('#tab-reviews').click();
+    const it = a9.document.querySelector('#reviews .rev-item');
+    t.ok('the v9 frame keeps its review list: a top line with the name, stars and era, no Edit, the heading shown',
+         a9.document.documentElement.getAttribute('data-frame') === 'v9' && !!it.querySelector('.rev-top .rev-name') && !it.querySelector('.rev-edit') &&
+         !a9.document.querySelector('#reviews .pane-h').classList.contains('vh'));
+    a9.window.close();
+  }
 
   // ---- layout C: every row carries its ✎ too
   app = boot(b.out, { now: NOW, storage: Object.assign({}, base, { [ns + 'settings']: JSON.stringify({ v: 3, migrated: { format: 'v2' }, layout: 'rows' }) }) });

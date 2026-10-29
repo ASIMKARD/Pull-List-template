@@ -729,10 +729,20 @@ def pull_type(name):
             'ratio': round(badge_ratio(badge), 3), 'nudged': how}
 
 
+def text_ratio(rgb):
+    """A colour as text on Pull's card, on the paper where it is lowest."""
+    return min(contrast(rgb, card) for card in PULL_CARDS.values())
+
+
 def pull_colour(hexcol):
-    """What Pull draws for a colour: its tab and strip as OKLCH numbers."""
+    """What Pull draws for a colour: its tab and strip, and its text shade (the
+    colour as text on a card, as the reference tracker's review era tags: darkened
+    by the palette's rule only as far as 4.5:1 on every paper needs; session 8),
+    as OKLCH numbers."""
     rgb = hex_rgb(hexcol)
-    return {'hex': hexcol.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb))}
+    text, _ = nudge(rgb, lambda c: text_ratio(c) >= AA)
+    return {'hex': hexcol.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
+            'text': oklch_parts(text), 'textHex': rgb_hex(text)}
 
 
 def build(dataset_path, previous_datajs=None, keep=None):

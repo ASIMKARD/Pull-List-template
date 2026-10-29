@@ -83,6 +83,7 @@
   --mark-on: var(--accent); --mark-on-ink: var(--accent-ink);     /* a read mark (x frame) */
   --gapnote-bg: var(--card);                                         /* a gap note's line (x frame) */
   --type-ink-l: var(--era-ink-l); --type-ink-c: var(--era-ink-c);   /* a type's stripe and badge in the other skins: the era ink, at the type's hue */
+  --era-text-l: var(--era-ink-l); --era-text-c: var(--era-ink-c);   /* an era's name as text on a card (x frame) in the other skins: the era ink */
   --track: hsl(var(--paper-h) calc(var(--paper-s) * .8) var(--l-track));
   --bar: hsl(var(--bar-h) var(--bar-s) var(--l-bar));                       /* the tab bar */
   --bar-ink: hsl(var(--ink-h) var(--ink-s) var(--l-bar-ink));
@@ -135,6 +136,7 @@
   --mark-edge-w: 1px; --mark-weight: 400;          /* the x frame's mark: its outline and its glyph's weight */
   --note-size: 13px; --core-size: 13px;            /* the x frame's note under a title, and the core star after it */
   --bm-box: 24px;                                  /* the x frame's quiet row controls: 24 px (ruling E), 44 px with large buttons */
+  --rbtn-radius: var(--radius-sm);                 /* the x frame's Reading buttons */
   /* Pull's layout exception (John, 9 Oct): the template's layout here, and only
      Pull's block below changes these. The build refuses them in a signature
      skin, and a guard checks that no other block sets them. */
@@ -192,6 +194,8 @@
   --head-track: var(--inset); --head-fill: var(--ink); --jump-ink: var(--card);
   --soft-edge-h: 44.2105; --soft-edge-s: 7.5098%; --l-soft-edge: 50.3922%;   /* #8A8577: the reference's #C9C4B5 made to pass 3:1 on the card on every paper (G revised: #8F8A7C passed on the default paper only; John, 29 Oct) */
   --type-ink-l: .4; --type-ink-c: .1;   /* Pull's era ink is white (solid boxes); a card's type falls back to the template's */
+  --era-text-l: .4; --era-text-c: .1;   /* …and so does an era's name on a card, were an era to come without its colours */
+  --rbtn-radius: 10px;                  /* Reading's two buttons, as the reference's */
   --arc-meta-size: 10.5px;
   /* the rows (session 8, step 5): the reference's checkbox, 2 px and 5 px round, read in the ink with the paper's
      glyph; its 11.5 px note and 11 px core star; the quiet star and the gold, each the reference's colour made to
@@ -377,7 +381,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
    default palette's) and --em… the one "One colour" draws, tab and strip each,
    as OKLCH numbers from data.js. The switches are 0 or 1, so each blend picks
    one side exactly: a pale wash in every skin but Pull. */
-.era {
+.era, .eratok {      /* .eratok: anything else drawn in an era's colour (the x frame's Reading chip and review cards) */
   --era-h: calc(var(--era-h0) + var(--ei, 0) * var(--era-step));
   --era-pick: calc(var(--ec, 0) * var(--era-solid));
   --era-bg-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-l, 0) + (1 - var(--era-split)) * var(--em-l, 0)) + (1 - var(--era-pick)) * var(--era-tint-l));
@@ -387,6 +391,10 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
   --era-st-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-sl, 0) + (1 - var(--era-split)) * var(--em-sl, 0)) + (1 - var(--era-pick)) * var(--era-tint-l));
   --era-st-c: calc(var(--era-pick) * (var(--era-split) * var(--ec-sc, 0) + (1 - var(--era-split)) * var(--em-sc, 0)) + (1 - var(--era-pick)) * var(--era-tint-c));
   --era-st-h: calc(var(--era-pick) * (var(--era-split) * var(--ec-sh, 0) + (1 - var(--era-split)) * var(--em-sh, 0)) + (1 - var(--era-pick)) * var(--era-h));
+  /* the era's colour as text on a card (Pull: the build's text shade, 4.5:1 on every paper); the era ink elsewhere */
+  --era-tx-l: calc(var(--era-pick) * (var(--era-split) * var(--ec-tl, 0) + (1 - var(--era-split)) * var(--em-tl, 0)) + (1 - var(--era-pick)) * var(--era-text-l));
+  --era-tx-c: calc(var(--era-pick) * (var(--era-split) * var(--ec-tc, 0) + (1 - var(--era-split)) * var(--em-tc, 0)) + (1 - var(--era-pick)) * var(--era-text-c));
+  --era-tx-h: calc(var(--era-pick) * (var(--era-split) * var(--ec-th, 0) + (1 - var(--era-split)) * var(--em-th, 0)) + (1 - var(--era-pick)) * var(--era-h));
   /* Pull paints the tab and the strip (--era-tab-a 1) and the box itself goes clear; every other skin, the box */
   --era-tab: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h) / var(--era-tab-a));
   --era-strip: oklch(var(--era-st-l) var(--era-st-c) var(--era-st-h) / var(--era-tab-a));
@@ -659,6 +667,29 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .rnav .linkbtn[disabled] { color: var(--ink-soft); cursor: default; }
 .rkeys { margin: 10px 0 0; font-size: calc(12px * var(--scale)); }
 @media (hover: none) { .rkeys { display: none; } }     /* the key hint is for keyboards */
+/* the x frame's Reading tab (session 8, step 6a), as the reference's: the counter, the issue centred on the page
+   (no card), then the two buttons and the nav row; the era chip in its era's colour, white on it in Pull */
+:root[data-frame="x"] .reader { display: flex; flex-direction: column; min-height: 70vh; margin: 0; padding: 24px 20px; }
+:root[data-frame="x"] .rcount { font-size: calc(12px * var(--scale)); text-align: center; }
+:root[data-frame="x"] .rcard { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 20px 0;
+  background: none; border: 0; border-radius: 0; text-align: center; }
+:root[data-frame="x"] .rpills { justify-content: center; margin: 0; }
+:root[data-frame="x"] .rpill.eratok { padding: 3px 10px; border-radius: 99px; font-family: var(--font-meta); font-size: calc(11px * var(--scale)); font-weight: 700;
+  background: oklch(var(--era-bg-l) var(--era-bg-c) var(--era-bg-h)); color: oklch(var(--era-ink-l) var(--era-ink-c) var(--era-h)); }
+:root[data-frame="x"] .rtitle { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: calc(28px * var(--scale)); letter-spacing: .3px; line-height: 1.15; }
+@media (max-width: 420px) { :root[data-frame="x"] .rtitle { font-size: calc(22px * var(--scale)); } }
+:root[data-frame="x"] .rmeta { font-size: calc(14px * var(--scale)); }
+:root[data-frame="x"] .rnote { max-width: 440px; margin: 6px 0 0; font-size: calc(13.5px * var(--scale)); font-style: italic; color: var(--ink-soft); }
+:root[data-frame="x"] .rblurb { max-width: 440px; margin: 14px 0 0; padding-top: 14px; border-top-style: dashed; font-size: calc(13px * var(--scale)); }
+:root[data-frame="x"] .racts { gap: 12px; margin: 0; padding: 10px 0; }
+:root[data-frame="x"] .rbtn { padding: 16px; line-height: normal; border: var(--mark-edge-w) solid var(--mark-on); border-radius: var(--rbtn-radius);
+  font-size: calc(15px * var(--scale)); font-weight: 700; }
+:root[data-frame="x"] .rbtn.solid { background: var(--mark-on); color: var(--mark-on-ink); }
+:root[data-frame="x"] .rbtn.ghost { background: var(--card); color: var(--ink); }
+:root[data-frame="x"] .rnav { margin: 0; padding-top: 6px; }
+:root[data-frame="x"] .rnav .linkbtn { padding: 8px; font-size: calc(13px * var(--scale)); font-weight: 600; color: var(--ink-soft); }
+:root[data-frame="x"] .rnav .linkbtn[disabled] { opacity: .3; }     /* the reference's; a disabled control needs no contrast */
+:root[data-frame="x"] .rkeys { text-align: center; }
 
 /* ---- reviews ---- */
 .arc-head h3 { display: inline; margin-right: 8px; }
@@ -678,6 +709,16 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .rev-era { font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .rev-stars { color: var(--accent); letter-spacing: .05em; }
 .rev-t { margin: 6px 0 0; font-size: calc(14px * var(--scale)); white-space: pre-wrap; }
+/* the x frame's review cards (session 8, step 6a), as the reference's: the era (in its colour as text), the issue,
+   the stars in the gold, the text, and Edit; per issue, in reading order (John, 8 Oct) */
+:root[data-frame="x"] .reviews { margin: 0; }
+:root[data-frame="x"] .rev-item { margin: 10px 12px; padding: 12px; border-radius: var(--radius-sm); }
+:root[data-frame="x"] .rev-era { display: block; font-family: var(--font-meta); font-size: calc(10px * var(--scale)); color: oklch(var(--era-tx-l) var(--era-tx-c) var(--era-tx-h)); }
+:root[data-frame="x"] .rev-item .rev-name { display: block; min-height: 24px; text-align: left; font-size: calc(13.5px * var(--scale)); color: var(--ink); }
+:root[data-frame="x"] .rev-stars { display: block; margin: 4px 0; font-size: calc(15px * var(--scale)); letter-spacing: 0; color: var(--gold); }
+:root[data-frame="x"] .rev-t { margin: 0; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
+:root[data-frame="x"] .rev-edit { margin-top: 8px; min-height: 24px; padding: 4px 10px; border: 1.5px solid var(--soft-edge); border-radius: 99px; background: var(--card);
+  font-size: calc(11px * var(--scale)); font-weight: 600; color: var(--ink-soft); }
 
 /* ---- bulk marking and touch ---- */
 .arc-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }

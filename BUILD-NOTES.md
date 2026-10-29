@@ -229,7 +229,7 @@ One skin of the tracker's own, from `franchise.signature`:
     fixes it. A step that is done may leave none (`CURRENT_STEP`).
 - `test/layout/45-pull.test.js` compares all of it and keeps both lists true in both
   directions. At step 1 of session 8: 858 properties match, 966 differences are
-  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480; after step 5, 1428 and 384.
+  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480; after step 5, 1428 and 384; after step 6a, 1645 and 167.
 - To re-capture (session-only, with a read-only clone):
   `node test/layout/ref/capture-x-men.js --dir ../X-men`. The live page must be
   byte-identical to the clone's `index.html`. With `X_MEN_LIVE=1` and a local copy at
@@ -340,6 +340,26 @@ One skin of the tracker's own, from `franchise.signature`:
 - **Table view** ellipsises the title and keeps the core star after it.
 - **An event's note** in a card is inset as Mark arc is, so its button's focus ring clears the card's edge, which
   clips for swipe. `10-sweep` focuses every control in every card and checks its ring.
+
+### The x frame's Reading and Reviews (session 8, step 6a)
+
+- **Reading** is the reference's view, not a card (`xReadingHtml`):
+  - the counter, "N of M", adds the state once there is one ("· READ", "· BEATEN", "· SKIPPED");
+  - the issue centred on the page: its era chip in the era's own colour (white on it in Pull; the wash and the era ink
+    elsewhere), the title in the display face (28 px, 22 px at 420 px and under), "arc · TYPE" with the type as
+    written and "★ CORE", the note in italics, the blurb under a dashed rule;
+  - Skip and Mark Read, 15 px 700, outlined in `--mark-edge-w` and `--mark-on` (Pull: 2 px, the ink), round to
+    `--rbtn-radius` (Pull 10 px); the nav row in the soft ink, a disabled step at .3 opacity;
+  - the key hint, kept (v3).
+- **Reviews** are the reference's cards, one per issue in reading order (John, 8 Oct): the era tag, the issue (it
+  jumps there), the stars in the gold, the text, and Edit, which goes to the issue with its review open. The
+  heading stays for screen readers only. Reviews kept from the previous version are listed the same way.
+- **An era's colour as text.** The review era tag is the reference's era colour as 10 px text on the card. The build
+  gives every colour Pull draws an era in a text shade (`tools/build.py`, `pull_colour`): the colour darkened by the
+  palette's rule only as far as 4.5:1 on every paper needs. The palette's colours already pass, so theirs is the
+  colour itself; a tracker's own light colour is darkened (the basic fixture's `#A6791E` gives `#8A6100`). The tab
+  and the strip keep the colour as given. Anything else drawn in an era's colour carries `.eratok` and the era's
+  tokens (`eraStyle`), so the era colour block applies to it.
 
 ## The workbook
 

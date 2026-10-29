@@ -66,7 +66,7 @@ const PAGE_LIB = () => {
 
 module.exports = async function (t) {
   try {
-    const b = basic(), srv = await serve(b.out);
+    const b = basic(), srv = await serve(b.out), BD = loadData(b.out);
 
     // ------------------------------------------------ contrast: 4 skins × 7 papers
     const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['offline line on paper (x frame, the ink at 64 %)', '.pbadge'], ['Next unread (x frame)', '.fbar .jump'], ['type badge on its tint (x frame)', '.card .type-badge'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
@@ -77,20 +77,28 @@ module.exports = async function (t) {
       ['quiet bookmark (x frame)', '.row .b.bm[aria-pressed="false"]'], ['bookmark that is on (x frame: the gold)', '.row .b.bm[aria-pressed="true"]'],
       ['✎ (x frame: quiet)', '.row .b.rv'], ['look up (x frame: quiet)', '.row .b.mu'], ['gap note (x frame)', '.row.inert .title'],
       ['a flashback\'s note (x frame)', '.subnote .subkind'],
+      ['Reading counter (x frame)', '#reader .rcount'], ['Reading era chip (x frame: white on its era in Pull)', '#reader .rpill.eratok'],
+      ['Reading title (x frame)', '#reader .rtitle'], ['Reading arc line', '#reader .rmeta'], ['Reading Skip (x frame)', '#reader .rbtn.ghost'],
+      ['Reading Mark Read (x frame)', '#reader .rbtn.solid'], ['Reading nav (x frame)', '#reader .rnav .linkbtn:not([disabled])'],
+      ['review era tag (x frame: the era\'s text shade)', '#reviews .rev-era'], ['review stars (x frame: the gold)', '#reviews .rev-stars'],
+      ['review text (x frame)', '#reviews .rev-t'], ['review Edit (x frame)', '#reviews .rev-edit'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
     const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
       ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],
       ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor'],
-      ['ⓘ outline on its card (x frame)', '.card .info-btn', 'borderTopColor'], ['Mark arc outline on its card (x frame)', '.card .arc-acts .b', 'borderTopColor']];
-    const fails = [], theme = [], cardsDrift = [];
+      ['ⓘ outline on its card (x frame)', '.card .info-btn', 'borderTopColor'], ['Mark arc outline on its card (x frame)', '.card .arc-acts .b', 'borderTopColor'],
+      ['Edit outline on its review card (x frame)', '#reviews .rev-edit', 'borderTopColor'], ['Reading Skip outline (x frame)', '#reader .rbtn.ghost', 'borderTopColor']];
+    const fails = [], theme = [], cardsDrift = [], oneGold = [];
     /* the build nudges Pull's type badges against its card on every paper (tools/build.py PULL_CARDS): they must be the cards drawn here */
     const PULL_CARDS = Object.fromEntries([...(require('fs').readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
       .matchAll(/'(\w+)': \((\d+), (\d+), (\d+)\)/g)].map(m => [m[1], [+m[2], +m[3], +m[4]]]));
     let worst = { r: 99 };
     for (const skin of SKINS) {
       for (const paper of PAPERS) {
-        const pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed('fixture', { skin, paper }) });
+        const pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: Object.assign(seed('fixture', { skin, paper }),
+          { 'fixture:v3:issue-reviews': JSON.stringify({ 'fixture-hero-1980-1': { r: 4, t: 'A review to measure.' } }) }) });
         await openAll(pg.page);
+        await pg.page.evaluate(() => { document.querySelector('#tab-reading').click(); document.querySelector('#tab-reviews').click(); });   // both drawn, then left
         await openSettings(pg.page);
         const r = await pg.page.evaluate(([lib, TEXT, EDGE]) => {
           eval('(' + lib + ')')();
@@ -112,14 +120,22 @@ module.exports = async function (t) {
             if (!el) { out.push([what, 0, 'missing']); continue; }
             out.push([what, window.__ratio(window.__rgb(getComputedStyle(el)[prop]), window.__bg(el.parentElement)), 3]);
           }
-          return { out, card: window.__rgb(getComputedStyle(document.querySelector('.card')).backgroundColor).slice(0, 3),
+          const chip = document.querySelector('#reader .rpill.eratok');
+          const golds = ['.row .core-star', '.row .b.bm[aria-pressed="true"]', '#reviews .rev-stars'].map(q => { const el = document.querySelector(q); return el ? getComputedStyle(el).color : 'missing ' + q; });
+          return { out, golds, chipEi: chip ? +((chip.getAttribute('style').match(/--ei:(\d+)/) || [])[1]) : -1,
+                   card: window.__rgb(getComputedStyle(document.querySelector('.card')).backgroundColor).slice(0, 3),
                    meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
                    skin: document.documentElement.getAttribute('data-skin') };
         }, [PAGE_LIB.toString(), TEXT, EDGE]);
         for (const [what, ratio, need] of r.out) {
+          /* Reading's era chip is white on its era, as the tab is: a tracker's own colour under 4.5:1 is drawn as given in Pull
+             (John, 12 Oct) and passes only at exactly the ratio the build reported (as the era banners below) */
+          const own = skin === 'pull' && /^Reading era chip/.test(what) && BD.eras[r.chipEi] && BD.eras[r.chipEi].colour;
+          if (own && own.white < 4.5 && Math.abs(ratio - own.white) < 0.01) continue;
           if (need === 'missing' || ratio < need) fails.push(skin + '/' + paper + ': ' + what + ' ' + (need === 'missing' ? 'missing' : ratio.toFixed(2) + ' < ' + need));
           if (need === 4.5 && ratio < worst.r) worst = { r: ratio, at: skin + '/' + paper + ' ' + what };
         }
+        if (new Set(r.golds).size !== 1) oneGold.push(skin + '/' + paper + ': ' + r.golds.join(' | '));
         if (r.meta !== r.body) theme.push(skin + '/' + paper + ': ' + r.meta + ' vs ' + r.body);
         if (skin === 'pull' && JSON.stringify(r.card) !== JSON.stringify(PULL_CARDS[paper])) cardsDrift.push(paper + ': ' + r.card.join(',') + ' vs the build\'s ' + PULL_CARDS[paper]);
         if (r.skin !== skin) fails.push(skin + '/' + paper + ': the page is in ' + r.skin);
@@ -130,6 +146,7 @@ module.exports = async function (t) {
     t.eq('contrast in every skin × paper: ' + TEXT.length + ' text pairs at 4.5:1 and ' + EDGE.length + ' outlines at 3:1 (worst text ' +
          worst.r.toFixed(2) + ', ' + worst.at + ')', fails, []);
     t.eq('the browser chrome (theme-color) follows each skin\'s paper (F-39)', theme, []);
+    t.eq('the core star, a bookmark that is on and the review stars are one gold, in every skin × paper (x frame; B, John, 29 Oct)', oneGold, []);
     t.eq('Pull\'s card on every paper is the one the build darkens the type badges against (tools/build.py PULL_CARDS, ' + Object.keys(PULL_CARDS).length + ')',
          Object.keys(PULL_CARDS).length === PAPERS.length ? cardsDrift : ['PULL_CARDS names ' + Object.keys(PULL_CARDS).join(', ')], []);
 

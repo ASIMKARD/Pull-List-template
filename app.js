@@ -874,7 +874,8 @@
     var ok = function (c) { return c && Array.isArray(c.tab) && Array.isArray(c.strip) && c.tab.concat(c.strip).every(num); };
     var toks = function (p, c) {
       return ';--' + p + '-l:' + c.tab[0] + ';--' + p + '-c:' + c.tab[1] + ';--' + p + '-h:' + c.tab[2] +
-             ';--' + p + '-sl:' + c.strip[0] + ';--' + p + '-sc:' + c.strip[1] + ';--' + p + '-sh:' + c.strip[2];
+             ';--' + p + '-sl:' + c.strip[0] + ';--' + p + '-sc:' + c.strip[1] + ';--' + p + '-sh:' + c.strip[2] +
+             (Array.isArray(c.text) && c.text.every(num) ? ';--' + p + '-tl:' + c.text[0] + ';--' + p + '-tc:' + c.text[1] + ';--' + p + '-th:' + c.text[2] : '');
     };
     var era = D.eras[e], s = '--ei:' + e;
     if (ok(era.pull) && ok(D.pullMono)) s += ';--ec:1' + toks('ec', era.pull) + toks('em', D.pullMono);
@@ -1481,14 +1482,28 @@
     var known = Object.keys(reviews).filter(mine).sort(function (x, y) { return ID_I[x] - ID_I[y]; });
     var orphans = Object.keys(reviews).filter(function (id) { return !mine(id); });
     var legacy = (load('legacy-unmatched', null) || { reviews: {} }).reviews || {};
+    var x = frameOf(settings.skin) === 'x';
+    /* the x frame's review card (the reference tracker's): its era and arc, the issue, the stars, the text, and Edit */
+    var xItem = function (i, id, rv) {
+      var e = i === undefined ? -1 : D.issueEra[i];
+      return '<li class="rev-item' + (e >= 0 ? ' eratok" style="' + eraStyle(e) : '') + '">' +
+        (e >= 0 ? '<span class="rev-era">' + escapeHtml(D.arcs[D.issues[i][2]].n) + ' · ' + escapeHtml(D.eras[e].name) + '</span>' +
+          '<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-id="' + escapeAttr(id) + '">' + escapeHtml(D.issues[i][1]) + '</button>'
+          : '<span class="rev-name">' + escapeHtml(id) + '</span>') +
+        (rv.r ? '<span class="rev-stars" aria-label="' + rv.r + ' of 5 stars">' + stars(rv.r) + '</span>' : '') +
+        (rv.t ? '<p class="rev-t">' + escapeHtml(rv.t) + '</p>' : '') +
+        (e >= 0 ? '<button type="button" class="rev-edit" data-act="rv-edit" data-id="' + escapeAttr(id) + '" aria-label="' +
+          escapeAttr('Edit the review of ' + D.issues[i][1]) + '">Edit</button>' : '') + '</li>';
+    };
     var item = function (name, rv, extra) {
       return '<li class="rev-item"><div class="rev-top">' + name +
         (rv.r ? '<span class="rev-stars" aria-label="' + rv.r + ' of 5 stars">' + stars(rv.r) + '</span>' : '') + (extra || '') + '</div>' +
         (rv.t ? '<p class="rev-t">' + escapeHtml(rv.t) + '</p>' : '') + '</li>';
     };
-    var h = '<h2 class="pane-h">Reviews' + (known.length ? ' · ' + known.length : '') + '</h2>';
+    var h = '<h2 class="pane-h' + (x ? ' vh' : '') + '">Reviews' + (known.length ? ' · ' + known.length : '') + '</h2>';   // the x frame: for screen readers, as the reference shows none
     h += known.length ? '<ol class="revlist">' + known.map(function (id) {
       var i = ID_I[id];
+      if (x) return xItem(i, id, reviews[id]);
       return item('<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-id="' + escapeAttr(id) + '">' + escapeHtml(D.issues[i][1]) + '</button>',
         reviews[id], '<span class="rev-era">' + escapeHtml(D.arcs[D.issues[i][2]].n) + ' · ' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>');
     }).join('') + '</ol>' : '<p class="muted">No reviews yet. Tap ✎ on any issue to rate it.</p>';
@@ -1497,7 +1512,8 @@
     if (kept.length) {
       h += '<h3 class="ssub">Kept from the previous version</h3><p class="muted">These could not be matched to an issue in this list. ' +
         'They are kept, never dropped.</p><ul class="revlist kept">' + kept.map(function (k) {
-          return item('<span class="rev-name">' + escapeHtml(k[0]) + '</span>', { r: +k[1].r || 0, t: k[1].t || '' });
+          var rv = { r: +k[1].r || 0, t: k[1].t || '' };
+          return x ? xItem(undefined, k[0], rv) : item('<span class="rev-name">' + escapeHtml(k[0]) + '</span>', rv);
         }).join('') + '</ul>';
     }
     $('#reviews').innerHTML = h;
@@ -1538,6 +1554,7 @@
     var i = list[at], r = D.issues[i], arc = D.arcs[r[2]], st = stateOf(i), id = D.ids[i];
     var pinned = progress.bookmarks.indexOf(id) !== -1, done = doneLabel(i);
     reader.id = id;
+    if (frameOf(settings.skin) === 'x') { host.innerHTML = xReadingHtml(i, at, list.length, st, pinned, done); return; }
     host.innerHTML = '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + list.length.toLocaleString('en-GB') + '</p>' +
       '<p class="rpills"><span class="rpill">' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>' +
@@ -1556,6 +1573,30 @@
       '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
       '<button type="button" class="linkbtn" data-act="rd-next"' + (at === list.length - 1 ? ' disabled' : '') + '>Next →</button>' +
       '</div><p class="muted rkeys">Keys: ← → step · R ' + escapeHtml(done.toLowerCase()) + ' · X skip · / search</p></div>';
+  }
+  /* The x frame's Reading tab (John, 24 Oct; the reference tracker's): the counter, with the state in it once there
+     is one; then the issue centred on the page (its era in the era's own colour, the title in the display face,
+     "arc · TYPE", the note and the blurb); then Skip and Mark Read, and the nav row. The key hint stays (v3). */
+  function xReadingHtml(i, at, n, st, pinned, done) {
+    var r = D.issues[i], arc = D.arcs[r[2]], e = D.issueEra[i], id = D.ids[i];
+    return '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + n.toLocaleString('en-GB') +
+      (st !== 'unread' ? ' · ' + escapeHtml(labelOf(i, st).toUpperCase()) : '') + '</p>' +
+      '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
+      '<p class="rpills"><span class="rpill eratok" style="' + eraStyle(e) + '">' + escapeHtml(D.eras[e].name) + '</span>' +
+      (HAS.media ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
+      '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
+      '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]] + (r[5] ? ' · ★ CORE' : '')) + '</p>' +
+      (r[7] ? '<p class="rnote">' + escapeHtml(r[7]) + '</p>' : '') +
+      (arc.b ? '<p class="rblurb">' + escapeHtml(arc.b) + '</p>' : '') + '</div>' +
+      '<div class="racts">' +
+      '<button type="button" class="rbtn ghost" data-act="rd-skip" aria-pressed="' + (st === 'skip') + '">' + (st === 'skip' ? 'Skipped' : 'Skip') + '</button>' +
+      '<button type="button" class="rbtn solid" data-act="rd-done" aria-pressed="' + (st === 'read') + '">' +
+      escapeHtml(st === 'read' ? done + ' ✓' : 'Mark ' + done) + '</button></div>' +
+      '<div class="rnav">' +
+      '<button type="button" class="linkbtn" data-act="rd-prev"' + (at === 0 ? ' disabled' : '') + '>← Previous</button>' +
+      '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
+      '<button type="button" class="linkbtn" data-act="rd-next"' + (at === n - 1 ? ' disabled' : '') + '>Next →</button>' +
+      '</div><p class="muted rkeys">Keys: ← → step · R ' + escapeHtml(done.toLowerCase()) + ' · X skip · / search</p>';
   }
   function readerStep(delta) {
     var list = readerList(), at = list.indexOf(ID_I[reader.id]);
@@ -1796,7 +1837,7 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.typeColours && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.pullMono.text && D.typeColours && typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {
@@ -2554,6 +2595,12 @@
         break;
       }
       case 'rv-jump': jumpToIssue(b.dataset.id); break;
+      case 'rv-edit': {      // the x frame's Edit: to the issue, its review open
+        jumpToIssue(b.dataset.id);
+        var rvb = ID_I[b.dataset.id] === undefined ? null : $('.row[data-i="' + ID_I[b.dataset.id] + '"] .b.rv');
+        if (rvb && rvb.getAttribute('aria-expanded') !== 'true') toggleReview(rvb);
+        break;
+      }
       case 'rd-done': readerMark('read'); break;
       case 'rd-skip': readerMark('skip'); break;
       case 'rd-prev': readerStep(-1); break;
