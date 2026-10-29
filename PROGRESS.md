@@ -3117,6 +3117,71 @@ then 45-pull's `arc/issue *` entries off the list. Table view and the framed bod
 (50-table) must still hold. The rows move toward the card's clipped edges, so step 5 also adds the focus-ring measure to
 `10-sweep`: no focus ring inside a card cut by a box that clips it, mutation-proved.
 
+## Session 8 checkpoint — step 5 done (the x frame's rows), 29 Oct 2026
+
+### Done
+- **The x frame draws X-Men's rows** (`xRowHtml`). The v9 frame's `rowHtml` is untouched.
+  - **In order:** the mark; the title with the core star after it and the note under it; then look up ↗, ✎ and the
+    ☆ bookmark. The bookmark sits rightmost, where X-Men's sits; ✎ and look up go before it (kept: reviews and v3).
+  - **Flashbacks and alts:** their note sits under the title ("↺ flashback · …"), so the x frame has no note badge or
+    popover. Tap to reveal still covers plain notes only, as its capability says.
+  - **A gap note** is one line in the titles' column, its glyph inline.
+- **The mark** is X-Men's checkbox:
+  - 2 px, 5 px round, on the card;
+  - read in the ink with the paper's ✓ at 700; skipped ― on a dashed outline;
+  - unread empty: the Box style's glyphs on the x frame, while the v9 frame keeps ☐ ✓ ⊘;
+  - its size stays with the Button size setting (kept: mark24), so the titles' column starts at 53 px, not X-Men's 41.
+- **The title:** read, struck through in the soft ink; skipped, italic. The note is 11.5 px, 1 px under it. Its line
+  now takes the title's height (the strut of `.rbody`'s own font had put the note 3 px low).
+- **The quiet controls:** no outline or fill, 24 × 24 px (E; 44 px with large buttons), in `--quiet`. A bookmark that
+  is on, and the core star, are in `--gold`. Pull draws A and B to pass on every paper (the case below).
+- **Found by the new focus-ring check:** an event's "Complete view adds N issues" sat at the card's edge, which cut
+  2 px off its ring. It is now inset as Mark arc is. (The pull-ref fixture has no events, so step 4b's probe missed it.)
+- **45-pull:** the unread mark is now measured as well: a map row, with X-Men re-captured after a drift check matched
+  exactly (still `663fe46`). That found Pull's unread box filled with the paper (X-Men's is the card). 1428 match
+  (1317 at step 4b), 384 listed.
+- **Checks:**
+  - 10-sweep: no focus ring inside a card cut, every set at every width;
+  - 40-look: the read title, the core star, the quiet and the lit bookmark, ✎, look up, the gap note and a
+    flashback's note, in every skin × paper;
+  - 90-render, 91-marks, 9g-look, 9h: the parts in both frames.
+- **Mutation-proved 14 of 14:**
+  - the x row on the v9 frame;
+  - the read title's strike leaking into v9;
+  - the core star unnamed;
+  - a flashback's note back behind a badge;
+  - a gap note in its v9 box;
+  - the bookmark before ✎;
+  - the note 3 px low;
+  - the star button at 22 px;
+  - A as ruled;
+  - B as ruled;
+  - the event note at the card's edge;
+  - the x frame's box with v9's glyphs, and the reverse;
+  - the unread box on the paper.
+- **Docs:** BUILD-NOTES "The x frame's rows"; FEATURE-INVENTORY X-18, plus F-7, F-8, S-5, T-8 and T-9.
+
+**Harness:** 1688 assertions, 0 failed, 37 suites. **Layout:** 464 checks, 0 failed, 12 suites.
+
+### The case for John (step 5): A and B on every paper
+A (the quiet ☆) and B (the gold: the core star, a bookmark that is on) were ruled on Pull's own paper. As with C and
+G (29 Oct), on four papers they fall short:
+
+| | Ruled | On grey, sky, rose, lilac | Built (every paper) | Lowest built |
+|---|---|---|---|---|
+| A, the quiet ☆ | `#726D60` | 4.22–4.40:1 | `#6D685B` | 4.55:1 |
+| B, the gold | `#896900` | 4.21–4.39:1 | `#836400` | 4.54:1 |
+
+Each built colour is X-Men's (`#C9C4B5`, `#B08A1F`) darkened by the palette's rule only as far as the worst paper
+needs. B's review stars follow in step 6a. The built colours are listed in 45-pull as "awaiting John" until he rules.
+
+### Step 6a begins with
+Reading and Reviews on the x frame. Start with `renderReading` in `app.js`: X-Men's centred card (an era chip, the
+Anton title, "arc · type", the note and the blurb; Skip and Mark Read; the nav row), with the read state moved into
+the counter and the key hint kept (kept: v3). Then `renderReviews`: X-Men's review cards, per issue in reading order
+(kept: reviews), with the review stars in B's gold. Then 45-pull's `reading/*` and `reviews/*` entries come off the
+list, and the `.rstate`, `#reviews .pane-h` and `#reviews .rev-top` ONLY entries go.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls

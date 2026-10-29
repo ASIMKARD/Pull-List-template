@@ -225,7 +225,12 @@
   ];
   function lookOf(k) { return LOOK.filter(function (l) { return l[0] === k; })[0]; }
   function lookOk(l, v) { return l[3].some(function (o) { return o[0] === v; }); }
-  function glyph(st) { return (GLYPHS[settings.marks] || GLYPHS.box)[st]; }
+  /* the x frame's Box is the reference tracker's checkbox: empty while unread, ― when skipped (its outline dashed) */
+  var X_BOX = { unread: '', reading: '◐', read: '✓', skip: '―' };
+  function glyph(st) {
+    var g = GLYPHS[settings.marks] ? settings.marks : 'box';
+    return (g === 'box' && frameOf(settings.skin) === 'x' ? X_BOX : GLYPHS[g])[st];
+  }
   /* ONE settings store. Defaults are filled in here and nowhere else, so a
      restored snapshot or an imported backup gets exactly the same treatment. */
   function withDefaults(s) {
@@ -681,6 +686,7 @@
   var ROW_W = Math.max(2, String(N).length), ERA_W = Math.max(2, String(D.eras.length).length);
   function padN(n, w) { var s = String(n); while (s.length < w) s = '0' + s; return s; }
   function rowHtml(i) {
+    if (frameOf(settings.skin) === 'x') return xRowHtml(i);
     var r = D.issues[i], flags = r[6], id = D.ids[i];
     if (flags & INERT) {
       return '<div class="row inert" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '">' +
@@ -708,6 +714,36 @@
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
       glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
       '<span class="badges">' + badges + '</span>' + sub + '</div>';
+  }
+  /* The x frame's row (John, 24 Oct; the reference tracker's): the mark, then the
+     title with the core star after it and the note under it, then look up, ✎ and
+     the bookmark at the row's right end. A flashback's or an alt's note sits under
+     the title too (tap to reveal still covers plain notes only, as HAS.reveal
+     says); a gap note is one line in the titles' column. */
+  function xRowHtml(i) {
+    var r = D.issues[i], flags = r[6], id = D.ids[i];
+    var attrs = ' data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '"';
+    if (flags & INERT) {
+      return '<div class="row inert"' + attrs + '><div class="rbody"><span class="title"><span class="inert-glyph" aria-hidden="true">' +
+        (flags & FL.RENUM ? '⟳' : '↷') + '</span>' + escapeHtml(r[1]) + '</span>' +
+        (r[7] ? '<p class="subnote">' + escapeHtml(r[7]) + '</p>' : '') + '</div></div>';
+    }
+    var st = stateOf(i), bm = progress.bookmarks.indexOf(id) !== -1;
+    var kind = flags & FL.FB ? '↺ flashback' : flags & FL.ALT ? 'alt' : '';
+    var note = kind ? r[7] || (flags & FL.FB ? 'Published later than it reads: this story fills in earlier events.' : 'A separate continuity from the main line.') : r[7];
+    var hide = !kind && note && settings.reveal;
+    var acts = (hide ? '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>' : '') +
+      (HAS.lookup ? '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl + encodeURIComponent(r[1])) +
+        '" target="_blank" rel="noopener" aria-label="' + escapeAttr('Look up ' + r[1]) + '"><span class="b-t">look up </span>↗</a>' : '') +
+      rvButton(i) +
+      '<button type="button" class="b bm" data-act="bm" aria-pressed="' + bm + '" aria-label="Bookmark ' + escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
+    return '<div class="row"' + attrs + ' data-s="' + st + '">' +
+      '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' + glyph(st) + '</button>' +
+      '<div class="rbody"><span class="title">' + escapeHtml(r[1]) + '</span>' +
+      (r[5] ? '<span class="core-star" role="img" aria-label="core">★</span>' : '') +
+      (settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '') +
+      (note ? '<p class="subnote"' + (hide ? ' hidden' : '') + '>' + (kind ? '<span class="subkind">' + kind + '</span> · ' : '') + escapeHtml(note) + '</p>' : '') +
+      '</div><span class="badges">' + acts + '</span></div>';
   }
 
   /* The x frame's arc cards (John, 24 Oct; the reference tracker's): an open era

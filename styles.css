@@ -54,6 +54,8 @@
   --mark-edge-s: calc(var(--ink-s) * .5); --l-mark-edge: var(--l-edge);          /* a mark's outline: a control outline unless a skin says otherwise */
   --soft-edge-h: var(--ink-h); --soft-edge-s: calc(var(--ink-s) * .5); --l-soft-edge: var(--l-edge);   /* an outline on a card (x frame): a control outline unless a skin says otherwise */
   --type-h0: 230; --type-step: 137.508; --type-tint-a: .1333;   /* arc types (x frame): hue by type, the badge's tint at 0x22 as the reference */
+  --quiet-h: var(--soft-h); --quiet-s: var(--soft-s); --l-quiet: var(--l-soft);       /* a row's quiet controls (x frame: ☆, ✎, look up): the soft ink unless a skin says otherwise */
+  --gold-h: var(--accent-h); --gold-s: var(--accent-s); --l-gold: var(--l-accent);   /* the core star and a bookmark that is on (x frame): the accent unless a skin says otherwise */
   --offline-a: .64;      /* the x frame's offline line: the reference tracker's 60 % made to pass in every skin × paper, which needs 63.1 %;
                             64 % keeps a step in hand (John, 28 Oct; 40-look) */
   /* era ramp (OKLCH, so one lightness reads the same at every hue): pale
@@ -76,6 +78,10 @@
   --mark-edge: hsl(var(--ink-h) var(--mark-edge-s) var(--l-mark-edge));
   --offline-ink: hsl(var(--ink-h) var(--ink-s) var(--l-ink) / var(--offline-a));
   --soft-edge: hsl(var(--soft-edge-h) var(--soft-edge-s) var(--l-soft-edge));
+  --quiet: hsl(var(--quiet-h) var(--quiet-s) var(--l-quiet));
+  --gold: hsl(var(--gold-h) var(--gold-s) var(--l-gold));
+  --mark-on: var(--accent); --mark-on-ink: var(--accent-ink);     /* a read mark (x frame) */
+  --gapnote-bg: var(--card);                                         /* a gap note's line (x frame) */
   --type-ink-l: var(--era-ink-l); --type-ink-c: var(--era-ink-c);   /* a type's stripe and badge in the other skins: the era ink, at the type's hue */
   --track: hsl(var(--paper-h) calc(var(--paper-s) * .8) var(--l-track));
   --bar: hsl(var(--bar-h) var(--bar-s) var(--l-bar));                       /* the tab bar */
@@ -126,6 +132,9 @@
   --tap: 34px; --tap-glyph: 18px; --b-min: 30px;   /* button size (S-20) */
   --tap-dense: 24px;                               /* table view's targets: never under 24 px, 44 px with large buttons */
   --mark-radius: var(--radius-sm);                 /* mark style (S-5) */
+  --mark-edge-w: 1px; --mark-weight: 400;          /* the x frame's mark: its outline and its glyph's weight */
+  --note-size: 13px; --core-size: 13px;            /* the x frame's note under a title, and the core star after it */
+  --bm-box: 24px;                                  /* the x frame's quiet row controls: 24 px (ruling E), 44 px with large buttons */
   /* Pull's layout exception (John, 9 Oct): the template's layout here, and only
      Pull's block below changes these. The build refuses them in a signature
      skin, and a guard checks that no other block sets them. */
@@ -184,6 +193,13 @@
   --soft-edge-h: 44.2105; --soft-edge-s: 7.5098%; --l-soft-edge: 50.3922%;   /* #8A8577: the reference's #C9C4B5 made to pass 3:1 on the card on every paper (G revised: #8F8A7C passed on the default paper only; John, 29 Oct) */
   --type-ink-l: .4; --type-ink-c: .1;   /* Pull's era ink is white (solid boxes); a card's type falls back to the template's */
   --arc-meta-size: 10.5px;
+  /* the rows (session 8, step 5): the reference's checkbox, 2 px and 5 px round, read in the ink with the paper's
+     glyph; its 11.5 px note and 11 px core star; the quiet star and the gold, each the reference's colour made to
+     pass 4.5:1 on the card on every paper (A #726D60 and B #896900 passed on the default paper only; awaiting John) */
+  --mark-edge-w: 2px; --mark-radius: 5px; --mark-weight: 700; --mark-on: var(--ink); --mark-on-ink: var(--paper);
+  --note-size: 11.5px; --core-size: 11px; --gapnote-bg: var(--inset);
+  --quiet-h: 43.3333; --quiet-s: 9%; --l-quiet: 39.2157%;    /* #6D685B, from the reference's #C9C4B5 (A) */
+  --gold-h: 45.8015; --gold-s: 100%; --l-gold: 25.6863%;     /* #836400, from the reference's #B08A1F (B) */
   --radius: 8px;
   --tabs-inset: 0px;     /* the tab bar edge to edge, in Pull only (John, 9 Oct) */
   --tabs-rule: 0px;      /* no rule under its dark bar */
@@ -225,7 +241,7 @@
 :root[data-density="compact"] { --row-pad: 4px; --gap: 6px; }
 :root[data-density="roomy"] { --row-pad: 13px; --gap: 14px; }
 :root[data-tap="compact"] { --tap: 26px; --tap-glyph: 16px; --b-min: 26px; }
-:root[data-tap="large"] { --tap: 44px; --tap-glyph: 22px; --b-min: 44px; --tap-dense: 44px; }
+:root[data-tap="large"] { --tap: 44px; --tap-glyph: 22px; --b-min: 44px; --tap-dense: 44px; --bm-box: 44px; }
 :root[data-marks="dot"] { --mark-radius: 50%; }
 :root[data-dys="1"] { --font-body: 'Comic Sans MS', 'Trebuchet MS', Verdana, sans-serif; --body-track: .02em; --word-space: .08em; }
 
@@ -459,10 +475,32 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 :root[data-frame="x"] .arc-chev { flex: none; font-size: calc(12px * var(--scale)); color: var(--ink-soft); transition: transform calc(.2s * var(--motion)) ease; }
 :root[data-frame="x"] .card.open .arc-chev { transform: rotate(90deg); }
 :root[data-frame="x"] .arc-info { padding: 8px 12px 10px; border-top: 1px dashed var(--line); }
+:root[data-frame="x"] .arc-body > .evnote { margin: 0; padding: 2px 10px 6px; }   /* inset as Mark arc is, so its button's focus ring clears the card's edge */
 :root[data-frame="x"] .arc-body > .arc-acts { gap: 8px; margin: 0; padding: 0 10px 8px; }
 :root[data-frame="x"] .arc-acts .b { min-height: 24px; padding: 5px 10px; line-height: normal; border: 1.5px solid var(--soft-edge); border-radius: 99px; background: var(--card);
   font-size: calc(11px * var(--scale)); font-weight: 600; color: var(--ink-soft); }
 :root[data-frame="x"] .arc-rows { border-top: 1px solid var(--line); }
+/* the x frame's rows (session 8, step 5), as the reference's: the mark, then the title with the core star after it
+   and the note under it, then the quiet controls with the bookmark at the right end. The mark keeps the
+   Button size setting (John, 9 Oct). A gap note is one line in the titles' column. */
+:root[data-frame="x"] .row { flex-wrap: nowrap; column-gap: 9px; padding: var(--row-pad) calc(10px + var(--row-gutter)) var(--row-pad) 10px; }
+:root[data-frame="x"] .row .mark { border-width: var(--mark-edge-w); background: var(--card); font-weight: var(--mark-weight); }
+:root[data-frame="x"] .row[data-s="read"] .mark { background: var(--mark-on); color: var(--mark-on-ink); border-color: var(--mark-on); }
+:root[data-frame="x"] .row[data-s="skip"] .mark { border-style: dashed; color: var(--ink-soft); }
+:root[data-frame="x"] .rbody { flex: 1 1 auto; min-width: 0; font-size: calc(var(--row-size) * var(--scale)); }   /* the title's size, so its line is the title's height */
+:root[data-frame="x"] .row[data-s="read"] .title { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--line); }
+:root[data-frame="x"] .row[data-s="skip"] .title { color: var(--ink-soft); text-decoration: none; font-style: italic; }
+:root[data-frame="x"] .core-star { margin-left: 4px; font-size: calc(var(--core-size) * var(--scale)); font-weight: var(--row-weight); color: var(--gold); }
+:root[data-frame="x"] .rbody .subnote { margin: 1px 0 0; font-size: calc(var(--note-size) * var(--scale)); }
+:root[data-frame="x"] .row .badges { flex: none; flex-wrap: nowrap; align-items: center; gap: 2px; }
+:root[data-frame="x"] .row .badges .b { min-width: var(--bm-box); min-height: var(--bm-box); padding: 0 2px; border: 0; background: none;
+  justify-content: center; color: var(--quiet); }
+:root[data-frame="x"] .row .b.bm { font-size: calc(16px * var(--scale)); }
+:root[data-frame="x"] .row .b.bm[aria-pressed="true"] { color: var(--gold); }
+:root[data-frame="x"] .row.inert { padding: 5px calc(10px + var(--row-gutter)) 5px calc(10px + var(--tap) + 9px); background: var(--gapnote-bg);
+  font-size: calc(var(--note-size) * var(--scale)); }
+:root[data-frame="x"] .row.inert .title { font-size: inherit; font-weight: 400; }
+:root[data-frame="x"] .inert-glyph { margin-right: .5em; }
 .arc-head { padding: 4px 4px 6px; }
 .arc-head h3 { margin: 0; font-size: calc(var(--arc-size) * var(--scale)); font-weight: var(--arc-weight); }
 .arc-meta { font-family: var(--font-meta); }
@@ -562,7 +600,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .eranav-in .chip { flex: none; margin: 0; white-space: nowrap; }
 .erasel { height: 36px; padding: 0 8px; border: 1px solid var(--edge); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit; }
 .arclabel { display: block; font-size: calc(12px * var(--scale)); color: var(--ink-soft); }
-:root[data-badges="0"] .badges { display: none; }
+:root[data-badges="0"] .badges, :root[data-badges="0"] .core-star { display: none; }
 /* combo badge: a row that is both bookmarked and read gets a filled star */
 :root[data-combo="1"] .row[data-s="read"] .bm[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
@@ -600,6 +638,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 :root[data-table="1"] .row .b { min-height: var(--tap-dense); min-width: var(--tap-dense); padding: 0 3px; justify-content: center; }
 :root[data-table="1"] .row .b.core { min-width: 0; padding: 0 2px; }   /* a label, not a target: room for the per-issue ✎ at 320 px */
 :root[data-table="1"] .row .b-t { display: none; }      /* badge words fold away; glyphs and accessible names stay */
+:root[data-frame="x"][data-table="1"] .rbody { display: flex; align-items: baseline; }   /* the title ellipsised, the core star kept after it */
+:root[data-frame="x"][data-table="1"] .core-star { flex: none; }
 
 /* ---- reading tab ---- */
 .reader { margin: 0 16px; }

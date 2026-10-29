@@ -49,7 +49,10 @@ module.exports = async function (t) {
   t.ok('migrated row renders under its legacy id', !!$('.row[data-id="198706004"]'));
   t.ok('mark buttons are delegation-tagged (T-4)', $$('.row:not(.inert) .mark').every(m => m.dataset.act === 'mark'));
   t.ok('mark labels follow the medium (game: Not started)', /Not started$/.test($('.row[data-id="fixture-quest-1987"] .mark').getAttribute('aria-label')));
-  t.ok('core badge shown on core rows', !!$('.row[data-id="fixture-hero-quiet-storm-1986"] .b.core'));
+  const coreStar = $('.row[data-id="fixture-hero-quiet-storm-1986"] .core-star');
+  t.ok('a core row shows the core star right after its title, named "core" (x frame; the v9 frame\'s badge: 91-marks)', !!coreStar &&
+       coreStar.previousElementSibling.classList.contains('title') && coreStar.getAttribute('aria-label') === 'core' && !$('.row .b.core'));
+  t.ok('…and only core rows do', $$('.row:not(.inert)').every(r => !!r.querySelector('.core-star') === !!D.issues[+r.dataset.i][5]));
   t.ok('lookup link uses the configured searchUrl', $('.row[data-id="fixture-hero-1980-21"] a.mu').href.startsWith('https://example.invalid/search?q='));
   // closing keeps the body, reopening does not rebuild it
   $(`.era[data-e="${storm}"] > .era-head`).click();
@@ -67,7 +70,10 @@ module.exports = async function (t) {
   t.ok('markup in a title never becomes an element', vo && vo.children.length === 0);
   const fbRow = $('.row[data-id="vela-year-zero-1984-1"]');
   t.ok('flashback reads first in its era', $(`.era[data-e="${rising}"] .row`) === fbRow);
-  t.ok('flashback carries a note badge', !!(fbRow && fbRow.querySelector('.b.note')));
+  const fbNote = fbRow && fbRow.querySelector('.rbody > .subnote');
+  t.ok('a flashback\'s note sits under its title, named as one (x frame; the v9 frame\'s badge: 91-marks)', !!fbNote && !fbNote.hidden &&
+       !!fbNote.querySelector('.subkind') && fbNote.querySelector('.subkind').textContent === '↺ flashback' && /set before the first issue/.test(fbNote.textContent) && !fbRow.querySelector('.b.note'));
+  t.ok('a gap note is one line in the titles\' column, its glyph inline, no box (x frame)', !!gap.querySelector('.rbody > .title > .inert-glyph') && !gap.querySelector('.mark-inert'));
 
   // ---- expand all / collapse all (T-74, F-26) ----
   t.ok('expand/collapse buttons exist (T-74)', !!$('[data-act="expand-all"]') && !!$('[data-act="collapse-all"]'));

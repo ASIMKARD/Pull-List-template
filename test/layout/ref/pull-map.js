@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '4b';
+const CURRENT_STEP = '5';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -95,6 +95,7 @@ const MAP = {
     ['row', '.issue-row', '.row:not(.inert)', ['effectiveBackground', 'borderBottomColor', 'borderBottomWidth', 'paddingTop', 'paddingLeft', 'columnGap'], { leaf: false }],
     ['read mark', '.issue-row .tri-check', '.row:not(.inert) .mark', ['boxWidth', 'boxHeight', 'backgroundColor'].concat(EDGE, ['relLeft']), { anchor: 'row' }],
     ['read mark, read', '.issue-row.state-read .tri-check', '.row[data-s="read"] .mark', ['backgroundColor', 'color', 'fontSize', 'fontWeight']],
+    ['read mark, unread', '.issue-row.state-unread .tri-check', '.row[data-s="unread"] .mark', ['backgroundColor'].concat(EDGE)],
     ['row title', '.issue-row .title', '.row:not(.inert) .title', TEXT.concat(['relLeft']), { anchor: 'row' }],
     ['row title, read', '.issue-row.state-read .title', '.row[data-s="read"] .title', ['color', 'textDecorationLine', 'textDecorationColor']],
     ['row with a note', '.issue-row:has(.issue-note)', '.row:has(.subnote)', ['paddingTop'], { leaf: false }],
@@ -195,7 +196,6 @@ const ONLY = {
     ['#settings .filelabel', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings .bmlist', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     // the template as it stands at step 1; each goes in the step named
-    ['.b.core', 'step 5: the core marker becomes X-Men\'s star after the title'],
     ['.rstate', 'step 6a: the read state moves into the counter, as X-Men'],
     ['#reviews .pane-h', 'step 6a: the Reviews heading'],
     ['#reviews .rev-top', 'step 6a: the review list becomes X-Men\'s cards'],
@@ -208,7 +208,7 @@ const WRAPPERS = {
     '.issue-body', '.overall-progress', '.reading-actions', '.reading-nav', '.settings-section > div:not([class])', '.setting-row > div:not([class])'],
   template: ['main', '.pane', '#app', '#stack', '#pprog', '.pstats .pright', '.pbadge .pver', '#pinbar', '.badges', '.bstats', '#reader', '.racts', '.rnav', '.rpills', '#pinchips', '#settings', '#settings .sec-pad',
     '#settings .sec-head', '#settings .sec-t', '#settings .sec-body', '#settings .sec-in', '#reviews', '.revlist', '.arc', '.arc-head', '.era', '.era-body', '.swatches',
-    '.card .arc-head h3', '.arc-toggle', '.arc-sub', '.arc-body'],
+    '.card .arc-head h3', '.arc-toggle', '.arc-sub', '.arc-body', '.rbody'],
 };
 
 /* The differences left, each tied to a kept item, to John's ruling, or to the
@@ -240,13 +240,15 @@ const DIFFERENCES = {
   'arc/arc action.borderTopColor@*': 'accessible: Mark arc read and unread outlined as ⓘ (G; John, 29 Oct)',
   'arc/arc action.boxHeight@320': 'kept:reviews: X-Men\'s third button, Rate & review, makes its row wrap at 320 px; reviews are per issue, with ✎ on every row (John, 8 Oct)',
   // step 5: issue rows
-  'arc/row.*@*': 'step 5: X-Men\'s rows',
-  'arc/read mark.*@*': 'step 5: X-Men\'s rounded checkbox (its size stays 24 px: kept:mark24)',
-  'arc/read mark, read.*@*': 'step 5: X-Men\'s read checkbox',
-  'arc/row title*.*@*': 'step 5: the title, and a read one struck through',
-  'arc/row note.*@*': 'step 5: the note under the title',
-  'arc/bookmark*.*@*': 'step 5: the quiet star',
-  'extras/*.*@*': 'step 5: the core star after the title, and X-Men\'s gap note',
+  'arc/read mark, read.fontSize@*': 'kept:mark24: the mark\'s 34 px box draws the 18 px glyph X-Men\'s own 34 px (large-touch) box does',
+  'arc/row title.relLeft@*': 'kept:mark24: the titles\' column starts after the mark (10 + 34 + 9 px; X-Men\'s 22 px mark gives 41)',
+  'arc/row note.relLeft@*': 'kept:mark24: the note sits under the title, in its column',
+  'extras/gap note.paddingLeft@*': 'kept:mark24: a gap note starts in the titles\' column, as X-Men\'s does',
+  'arc/bookmark.boxWidth@*': 'accessible: the star button at 24 × 24 px, its glyph unchanged (E; John, 28 Oct)',
+  'arc/bookmark.boxHeight@*': 'accessible: …24 px high (E; John, 28 Oct)',
+  'arc/bookmark.color@*': 'accessible: the quiet star #6D685B, X-Men\'s #C9C4B5 (1.53:1) made to pass 4.5:1 on the card on every paper (A #726D60 passes on the default paper only; awaiting John)',
+  'arc/bookmark, on.color@*': 'accessible: a bookmark that is on in the gold #836400, X-Men\'s #B08A1F (2.83:1) made to pass on every paper (B #896900 passes on the default paper only; awaiting John)',
+  'extras/core star.color@*': 'accessible: the core star in the same gold (B; awaiting John)',
   // step 6: the other tabs
   'reading/*.*@*': 'step 6a: X-Men\'s Reading tab',
   'reviews/*.*@*': 'step 6a: X-Men\'s review cards',

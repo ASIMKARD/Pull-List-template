@@ -73,6 +73,10 @@ module.exports = async function (t) {
       ['link on card', '.fhead .linkbtn'], ['pressed chip', '#fsecs .chip[aria-pressed="true"]'], ['unpressed chip', '#fsecs .chip[aria-pressed="false"]'],
       ['tab', '.tab[aria-selected="false"]'], ['selected tab', '.tab[aria-selected="true"]'], ['band name', '.band-head .bname'],
       ['row title', '.row:not(.inert) .title'], ['read mark', '.row[data-s="read"] .mark'], ['subnote', '.subnote'], ['credits', '.credits'],
+      ['read row title (x frame: the soft ink, struck through)', '.row[data-s="read"] .title'], ['core star (x frame: the gold)', '.row .core-star'],
+      ['quiet bookmark (x frame)', '.row .b.bm[aria-pressed="false"]'], ['bookmark that is on (x frame: the gold)', '.row .b.bm[aria-pressed="true"]'],
+      ['✎ (x frame: quiet)', '.row .b.rv'], ['look up (x frame: quiet)', '.row .b.mu'], ['gap note (x frame)', '.row.inert .title'],
+      ['a flashback\'s note (x frame)', '.subnote .subkind'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
     const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
       ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],

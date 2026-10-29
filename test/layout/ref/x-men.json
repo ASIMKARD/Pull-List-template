@@ -9,7 +9,7 @@
   390,
   1024
  ],
- "mapHash": "518ea6a93cd18a6c",
+ "mapHash": "92315455b5273f25",
  "views": [
   "landing",
   "era",
@@ -429,6 +429,13 @@
        "color": "rgba(231, 228, 220, 1)",
        "fontSize": "13px",
        "fontWeight": "700"
+      },
+      "read mark, unread": {
+       "backgroundColor": "rgba(242, 240, 233, 1)",
+       "borderTopWidth": "2px",
+       "borderTopStyle": "solid",
+       "borderTopColor": "rgba(27, 25, 18, 1)",
+       "borderTopLeftRadius": "5px"
       },
       "row title": {
        "fontFamily": "IBM Plex Sans",
@@ -1237,6 +1244,13 @@
        "fontSize": "13px",
        "fontWeight": "700"
       },
+      "read mark, unread": {
+       "backgroundColor": "rgba(242, 240, 233, 1)",
+       "borderTopWidth": "2px",
+       "borderTopStyle": "solid",
+       "borderTopColor": "rgba(27, 25, 18, 1)",
+       "borderTopLeftRadius": "5px"
+      },
       "row title": {
        "fontFamily": "IBM Plex Sans",
        "fontSize": "13px",
@@ -2043,6 +2057,13 @@
        "color": "rgba(231, 228, 220, 1)",
        "fontSize": "13px",
        "fontWeight": "700"
+      },
+      "read mark, unread": {
+       "backgroundColor": "rgba(242, 240, 233, 1)",
+       "borderTopWidth": "2px",
+       "borderTopStyle": "solid",
+       "borderTopColor": "rgba(27, 25, 18, 1)",
+       "borderTopLeftRadius": "5px"
       },
       "row title": {
        "fontFamily": "IBM Plex Sans",

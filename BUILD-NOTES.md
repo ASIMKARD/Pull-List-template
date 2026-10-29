@@ -229,7 +229,7 @@ One skin of the tracker's own, from `franchise.signature`:
     fixes it. A step that is done may leave none (`CURRENT_STEP`).
 - `test/layout/45-pull.test.js` compares all of it and keeps both lists true in both
   directions. At step 1 of session 8: 858 properties match, 966 differences are
-  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480.
+  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480; after step 5, 1428 and 384.
 - To re-capture (session-only, with a read-only clone):
   `node test/layout/ref/capture-x-men.js --dir ../X-men`. The live page must be
   byte-identical to the clone's `index.html`. With `X_MEN_LIVE=1` and a local copy at
@@ -318,6 +318,28 @@ One skin of the tracker's own, from `franchise.signature`:
     on the grey, sky, rose and lilac papers. Built: MAIN `#206381`, SOLO `#00694D`, MINI
     `#994300` (ruled `#266886`, `#0A6E51`, `#A04600`), and the outline `#8A8577` (ruled
     `#8F8A7C`). `20-build` checks each badge is the least darkening that passes.
+
+### The x frame's rows (session 8, step 5)
+
+- **As the reference's.** The mark, then the title with the core star after it and the note under it, then the
+  quiet controls (look up ↗, ✎, ☆) with the bookmark at the row's right end (`app.js`, `xRowHtml`). The v9 frame's
+  rows are drawn by `rowHtml` as before.
+- **The mark** is the reference's checkbox: on the card, its outline `--mark-edge-w` (Pull 2 px) and `--mark-radius`
+  (Pull 5 px); read in `--mark-on` with `--mark-on-ink` (Pull: the ink, and the paper's ✓). Its size stays with the
+  Button size setting (John, 9 Oct), so the titles' column starts after it. The Box style draws the reference's
+  glyphs: none while unread, ✓ read, ― skipped on a dashed outline, ◐ reading. The v9 frame keeps ☐ ✓ ⊘.
+- **The title:** read, in the soft ink struck through in the line colour; skipped, in the soft ink and italic. The
+  core star follows it (`--core-size`, the gold), named "core" for screen readers.
+- **The note** sits under the title (`--note-size`). A flashback's or an alt's note does too, after "↺ flashback ·"
+  or "alt ·", so the x frame has no note badge or popover. Tap to reveal still covers plain notes only, as its
+  capability (`HAS.reveal`) says.
+- **The quiet controls** have no outline and no fill, at least `--bm-box` (24 px, ruling E; 44 px with large
+  buttons), in `--quiet`; a bookmark that is on is in `--gold`. In Pull these are A and B made to pass 4.5:1 on the
+  card on every paper: `#6D685B` and `#836400` (awaiting John). In the other skins, the soft ink and the accent.
+- **A gap note** is one line in the titles' column, its ↷ or ⟳ inline, on `--gapnote-bg` (Pull: the inset).
+- **Table view** ellipsises the title and keeps the core star after it.
+- **An event's note** in a card is inset as Mark arc is, so its button's focus ring clears the card's edge, which
+  clips for swipe. `10-sweep` focuses every control in every card and checks its ring.
 
 ## The workbook
 

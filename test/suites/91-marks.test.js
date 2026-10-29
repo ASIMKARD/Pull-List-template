@@ -1,7 +1,8 @@
 /* Four-state marks through one path: row, banners and header all move, and
    the mark persists keyed on the stable id. */
 'use strict';
-const { loadData, boot, wait, basic, openCards } = require('../lib/helpers');
+const path = require('path');
+const { loadData, boot, wait, basic, openCards, build, FIX } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic();
@@ -65,11 +66,22 @@ module.exports = async function (t) {
   $('.band[data-b="0"] > .band-head').click();
   $(`.era[data-e="${rising}"] > .era-head`).click();
   openCards($(`.era[data-e="${rising}"]`));
-  const note = () => $('.row[data-id="vela-year-zero-1984-1"] .b.note');
-  note().click();
-  t.ok('delegated note badge opens a popover (T-8)', !!$('.notepop') && /set before the first issue/.test($('.notepop').textContent));
-  note().click();
-  t.ok('delegated note badge closes again (T-9)', !$('.notepop'));
+  t.ok('the x frame shows a flashback\'s note under its title, with no note badge (T-8)', !$('.row[data-id="vela-year-zero-1984-1"] .b.note') &&
+       /set before the first issue/.test($('.row[data-id="vela-year-zero-1984-1"] .subnote').textContent));
+  {   // the v9 frame keeps its badges: the core badge, and the note badge's popover
+    const v9 = build(path.join(FIX, 'sig-v9', 'dataset.json'), { label: 'marks-v9' }), a9 = boot(v9.out, { storage: {} });
+    await wait(20);
+    const d9 = a9.document, q9 = s => d9.querySelector(s);
+    q9('[data-act="expand-all"]').click();
+    const note = () => q9('.row[data-id="vela-year-zero-1984-1"] .b.note');
+    t.ok('the v9 frame keeps the core badge and the note badge (John, 25 Oct)', d9.documentElement.getAttribute('data-frame') === 'v9' &&
+         !!q9('.row .b.core') && !q9('.row .core-star') && !!note());
+    note().click();
+    t.ok('…its note badge opens a popover (T-8)', !!q9('.notepop') && /set before the first issue/.test(q9('.notepop').textContent));
+    note().click();
+    t.ok('…and closes it again (T-9)', !q9('.notepop'));
+    a9.window.close();
+  }
 
   // reboot with the stored state
   const saved = {};

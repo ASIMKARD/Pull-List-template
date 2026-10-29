@@ -65,8 +65,9 @@ module.exports = async function (t) {
   pref('table').click();
   t.eq('table view is a root flag', d.documentElement.getAttribute('data-table'), '1');
   $('#tab-list').click();
-  const core = $('.row .b.core'), mu = $('.row .b.mu');
-  t.eq('badge words sit in a span table view can fold away; the text reads the same', [core.textContent, mu.textContent], ['★ core', 'look up ↗']);
+  const mu = $('.row .b.mu');
+  t.eq('badge words sit in a span table view can fold away; the text reads the same', mu.textContent, 'look up ↗');
+  t.ok('…and the core star stays a star, named "core" (x frame)', $$('.row .core-star').length > 0 && $$('.row .core-star').every(s => s.textContent === '★' && s.getAttribute('aria-label') === 'core'));
   t.ok('the look-up link keeps a full name when its words fold away', /^Look up /.test(mu.getAttribute('aria-label')));
   t.ok('…and so does the flashback note button', !$('.row .b.note') || $$('.row .b.note').every(x => !!x.getAttribute('aria-label')));
   t.ok('the summary says table view', /table view/.test($('.sset[data-k="display"] .sec-sum').textContent));
