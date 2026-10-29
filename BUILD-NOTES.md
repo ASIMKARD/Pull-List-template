@@ -80,9 +80,10 @@ are in `schema/dataset.schema.json`.
   `"frame": "v9"` in `franchise.signature` (Absolute's own skin).
   - The root carries `data-frame`. Every rule that belongs to the x frame is
     scoped `:root[data-frame="x"]`, and the render paths split only where the
-    structure differs (the era head's strip and the header's figures, so far), so
-    the v9 frame is the old rules and markup, untouched. A skin change that crosses
-    frames draws the page again.
+    structure differs: the header and its tools, the era head and body, the arc
+    cards, the rows, Reading, Reviews and Settings' on/off rows. So the v9 frame is
+    the old rules and markup, untouched. A skin change that crosses frames draws the
+    page again.
   - **The page's markup is the v9 frame's.** The x frame moves the same controls
     (`app.js`, `placeChrome`), so each keeps its state and its listeners, and a move
     back restores v9's order exactly (47-frame-v9 checks a signature → Pull →
@@ -92,7 +93,8 @@ are in `schema/dataset.schema.json`.
     (`test/layout/ref/frame-map.js`): the `sig-v9` fixture's in the template
     (`test/fixtures/sig-v9/frame-ref.json`), and a tracker's own frame-ref.json
     beside its `dataset.json` when its skin is on the v9 frame. Re-capture (`node test/layout/ref/capture-frame.js`) only after John
-    has seen the difference.
+    has seen the difference. A tracker moving onto this template with its own skin
+    on the v9 frame captures its reference from its old version (`MIGRATING.md` §5).
   - The v9 frame keeps v9's 6 px mini bar, on by default; the x frame's is 3 px and
     off by default, as the reference tracker's (John, 13, 24 and 28 Oct). The
     Display summary names the mini bar only when it isn't its frame's default.
@@ -233,11 +235,13 @@ One skin of the tracker's own, from `franchise.signature`:
     checks the template's side the same way.
   - **Every difference left is in `DIFFERENCES`,** tied to a kept item (the Filters
     panel, the title, per-issue reviews, the 24 px mark, the two outlines, Settings'
-    sections, other v3 features), to John's ruling, or to the step of session 8 that
-    fixes it. A step that is done may leave none (`CURRENT_STEP`).
+    sections, other v3 features), to an accessibility ruling, to an element X-Men draws
+    where it never shows (`unseen`), or to John's ruling. While session 8 ran, a
+    difference could also name the step that would fix it, and a step that was done
+    could leave none. The session is closed (`CURRENT_STEP` is `9`), so none may.
 - `test/layout/45-pull.test.js` compares all of it and keeps both lists true in both
   directions. At step 1 of session 8: 858 properties match, 966 differences are
-  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480; after step 5, 1428 and 384; after step 6a, 1645 and 167.
+  listed, every one tied to a step. After step 2: 1063 match and 761 are listed; after step 4b, 1317 and 480; after step 5, 1428 and 384; after step 6a, 1645 and 167; with the eras the same size, 1786 and 167; and after step 6b, 1900 and 80, none of them tied to a step.
 - To re-capture (session-only, with a read-only clone):
   `node test/layout/ref/capture-x-men.js --dir ../X-men`. The live page must be
   byte-identical to the clone's `index.html`. With `X_MEN_LIVE=1` and a local copy at

@@ -11,7 +11,7 @@
 (function start() {
   'use strict';
   var D = window.TRACKER_DATA;
-  var SKIN_OK = '4';            // the skin beacon (F-57): the token contract styles.css must declare (4: the era box's strip, session 7)
+  var SKIN_OK = '5';            // the skin beacon (F-57): the token contract styles.css must declare (4: the era box's strip, session 7; 5: the x frame, session 8)
   if (staleShell()) return;
   var N = D.issues.length;
   var FL = D.flagBits;

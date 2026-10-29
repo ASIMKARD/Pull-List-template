@@ -150,7 +150,7 @@
   --era-frame: 0px; --era-frame-r: 0px; --era-body-pad: 0;               /* an open era's body */
   --stack-h: 0px;        /* the sticky stack's height, measured at runtime (F-58) */
   --motion: 1;           /* every transition's duration is multiplied by this; reduced motion sets 0 */
-  --skin-ok: 4;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
+  --skin-ok: 5;          /* the skin beacon (F-57): app.js warns when the stylesheet it loaded is older */
 }
 
 /* ---- skins (V-5): token sets only. A skin never moves or hides a control,

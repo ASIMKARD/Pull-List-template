@@ -54,6 +54,10 @@ hand-edit what the build writes. Commit and push only when every run is clean.
   `test/suites/80-guards.test.js` refuse the rest. The one exception is Pull's
   folder-tab era boxes and edge-to-edge tab bar (John, 9 Oct). Only Pull's
   block sets the tokens named in `PULL_ONLY` (`tools/build.py`).
+- **Two frames (John, 25 Oct).** The shared skins are drawn on the x frame, the
+  X-Men tracker's arrangement; x-only rules are scoped `:root[data-frame="x"]`. A
+  signature skin may keep the v9 frame (`franchise.signature.frame`, `"v9"`), and
+  `test/layout/47-frame-v9.test.js` fails on any change to it (`MIGRATING.md` §5).
 - **An era's own colour (`eras[].colour`) is drawn exactly, in Pull only.** The
   build warns when white text on it is under 4.5:1 and never changes it. Without
   one, Pull uses its default palette (the X-Men tracker's eleven, era i taking

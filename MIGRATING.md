@@ -79,6 +79,20 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
 - A tracker with a look of its own recreates it as its signature skin
   (`BUILD-NOTES.md`, "The signature skin slot"), measured side by side with the
   old copy. What can't be done without moving a control goes to John.
+- **A signature skin that must keep its old arrangement** (Absolute's, John 25 Oct)
+  sets `franchise.signature.frame` to `"v9"`: the template's arrangement as it was up
+  to v9, exactly (`BUILD-NOTES.md`, "Two frames"). The shared skins still get the
+  X-Men layout. Capture its reference from the old version's tag, into frame-ref.json
+  beside `dataset.json`:
+
+  ```
+  git archive vN-final | tar -x -C DIR
+  node test/layout/ref/capture-frame.js --dir DIR --out frame-ref.json
+  ```
+
+  From then on `test/layout/47-frame-v9.test.js` holds the skin there in CI: every
+  visible element, in five views at 320, 390 and 1024 px. Re-capture only after John
+  has seen a difference (on Absolute's data, session 8 measured 982 elements in 15 views; none changed).
 - **Era colours carry over exactly** (`eras[].colour`, `BUILD-NOTES.md`, "Era
   colours"). Pull draws them as given (John, 12 Oct).
   - The build warns, and never fails, for any colour that puts white text under
@@ -99,7 +113,9 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
   until they're clean. The suites check the repo's own dataset as it is:
   `test/layout/45-root.test.js` measures it in every skin it offers (contrast
   on every paper, its era banners, every control reachable), and
-  `test/layout/10-sweep.test.js` sweeps it at 320, 360 and 390 px.
+  `test/layout/10-sweep.test.js` sweeps it at 320, 360 and 390 px. With its
+  signature skin on the v9 frame, 47-frame-v9 also measures it against its
+  frame-ref.json.
 
 ## 7. Prove it in real Chromium
 

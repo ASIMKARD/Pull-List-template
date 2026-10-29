@@ -80,8 +80,8 @@ its `vN-final` tag restores the old version as it was. Absolute's rollback tags 
 | `tools/verify_gate.py`, `tools/verify.py`, `tools/verify.lock` | the verify gate; `verify.py` is Research-Repo's, pinned byte for byte — never edit it here |
 | `tools/version_tag.py`, `.github/workflows/version-tag.yml` | version tags: a merge into `main` that changes the readable version is tagged `vN` (John, 12 Oct); never moves or touches an existing tag |
 | `README.md`, `BUILD-NOTES.md`, `MIGRATING.md`, `.claude/skills/comic-tracker-build/` | start a tracker; conventions; migrating; the Skill. `25-docs` checks every path and command they name |
-| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`). Same runner; CI runs it |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`, `gate/*`); `test/lib/colour.js`, the tests' own copy of the colour maths (OKLCH, the sRGB gamut, contrast) |
+| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`), the v9 frame's guard (47-frame-v9). Same runner; CI runs it |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `pull-ref` (the X-Men comparison's data), `sig-v9` (the v9 frame's guard), `broken/*`, `gate/*`); `test/lib/colour.js`, the tests' own copy of the colour maths (OKLCH, the sRGB gamut, contrast) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)

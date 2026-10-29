@@ -27,9 +27,9 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
 
 /* The steps of session 8, in order (PROGRESS.md). A difference tied to a step
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
-   have fixed it. */
+   have fixed it. Session 8 is closed (step 9), so no difference may be tied to a step. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '6b';
+const CURRENT_STEP = '9';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'lineHeight', 'color'];   // line height too (John, 29 Oct: the eras read bigger)
 /* Text drawn on a coloured box is compared by the colour you see: its colour

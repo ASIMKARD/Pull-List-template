@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1645 assertions, 0 failed, 36 suites (session 7, before the PR: Pull's default palette, the 3 px mini bar). **Layout suite (real Chromium, in CI too):** 409 checks, 0 failed, 11 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1645 (+ 409).
+**Harness:** 1720 assertions, 0 failed, 37 suites (session 8, the template PR: the X-Men layout for the shared skins, Absolute's own skin kept on v9's). **Layout suite (real Chromium, in CI too):** 468 checks, 0 failed, 12 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
 
 ---
 
@@ -3447,6 +3447,60 @@ The close-out:
    with this session's counts.
 2. `build.py --check`, the gate, both suites, push, CI.
 3. Open the template PR, and wait for John to merge it.
+
+## Session 8 checkpoint — step 9 done (close-out; the template PR), 29 Oct 2026
+
+### Done
+- **45-pull is locked.** `CURRENT_STEP` is `9`, the last step, so a difference can no longer be tied to a step.
+  1900 properties match; the 80 listed are each a kept item, an accessibility ruling, unseen, or John's ruling.
+- **The skin beacon is 5** (`--skin-ok`, `SKIN_OK`).
+  - Session 7 raised it to 4 when the era box's markup changed, so that an older stylesheet meeting new markup is
+    loaded again.
+  - Session 8 changed far more markup: the x frame's header, rows, cards, Reading, Reviews and Settings. A 4 could
+    not tell `main`'s stylesheet from this one. Absolute v9's (3) is caught either way.
+- **Docs:**
+  - BUILD-NOTES: "Two frames" names every place the render paths split, and points to MIGRATING for keeping the v9
+    frame. "Pull matches the X-Men tracker" has the counts to the end, with none tied to a step.
+  - MIGRATING: §5 covers a signature skin that keeps the v9 frame, with its frame-ref.json captured from the old
+    version's tag. §6's suites include 47-frame-v9.
+  - The Skill: the two frames.
+  - CLAUDE.md's repo map: 47-frame-v9, and the `pull-ref` and `sig-v9` fixtures.
+  - FEATURE-INVENTORY:
+    - the legend gains S7 and S8;
+    - X-8 is session 8's whole-page measure;
+    - X-13 has step 8's proof;
+    - X-14 to X-22 are in order.
+- **Mutation-proved 2 of 2:**
+  - a reason tied to step 7 fails 45-pull now, and passed under the old `6b`;
+  - a stylesheet with beacon 4 fails 80-guards.
+- **The template PR** opens from this commit (base `main`, `4db1ba1`; 23 commits). Nothing deploys when it merges:
+  the template is not a live tracker, and its key (`starter`) makes no version tag.
+
+**Harness:** 1720 assertions, 0 failed, 37 suites. **Layout:** 468 checks, 0 failed, 12 suites.
+
+### E begins with (after John merges the template PR)
+Absolute v10, in place (John approved edits to Absolute for v10 only):
+1. **Confirm the rollback tag.** `v9-final` must point at `27dca56` on GitHub. If it doesn't, stop and tell John.
+2. **Absolute's session branch from its `main`:**
+   - Copy in the merged template, as step 8 did. That is every file the template tracks, except its
+     `PROGRESS.md`, `FEATURE-INVENTORY.md`, demo `dataset.json`, `README.md`, `CLAUDE.md`, `icons/`,
+     `workbook.xlsx` and the generated files. Absolute's own files stay.
+   - Its signature block gains `"frame": "v9"`.
+   - frame-ref.json beside `dataset.json`, from `git archive 27dca56` (MIGRATING §5).
+   - Absolute's CLAUDE.md: the in-place route is the standard now (23 Oct), not a one-off, and the two frames.
+   - Its PROGRESS.
+3. **New issues since v9.**
+   - List them with their DC Database dates, fetched and cached in a new Research-Repo folder,
+     `sessions/<date>-absolute-v10/` (add-only).
+   - John sees a change report before any go in.
+4. **The checks:**
+   - the build, the gate and both suites on Absolute's data, 47-frame-v9 included;
+   - the v9 → v10 in-place proof in Chromium with Pages' headers. Marks, a bookmark, a review and the skin must
+     survive one reload, and the old worker and its cache must hand over.
+5. **Then Absolute's PR.** After John merges it:
+   - every file verified live by sha256;
+   - the `v10` tag appears (the workflow comes with the copy);
+   - live Absolute in Pull measured against live X-Men at 390 px, with screenshots.
 
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
