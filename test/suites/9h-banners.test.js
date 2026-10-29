@@ -5,7 +5,7 @@
    test/layout/50-table. */
 'use strict';
 const path = require('path');
-const { boot, wait, basic, mixed, build, loadData, openSettings, FIX } = require('../lib/helpers');
+const { boot, wait, basic, mixed, build, loadData, openSettings, FIX, openCards } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic(), D = loadData(b.out), ns = D.franchise.key + ':v3:';
@@ -49,6 +49,7 @@ module.exports = async function (t) {
   $('#tab-list').click();
   $('.band-head').click();
   $('.era-head').click();
+  openCards($('.era'));
   const row = $('.row:not(.inert)');
   row.querySelector('.mark').click(); row.querySelector('.mark').click();             // reading, then read
   t.eq('a mark moves the banner with the header (no full re-render)', line().querySelector('.pbl-count').textContent, header().join(' / ') + ' read');

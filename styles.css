@@ -421,6 +421,23 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 
 /* ---- arcs and rows ---- */
 .arc { margin: 10px 0 0; overflow: hidden; }   /* a swiped row slides under the card edge, not past it */
+/* the x frame's arc cards (session 8, step 4a): the head toggles the card, ⓘ shows the blurb and the
+   credits, and the rows are drawn when it first opens. Their look is step 4b's. */
+:root[data-frame="x"] .arc.card { margin: 0 0 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+:root[data-frame="x"] .card > .arc-head { display: flex; align-items: center; gap: 8px; padding: 9px 10px; cursor: pointer; }
+:root[data-frame="x"] .card .arc-tab { flex: none; align-self: stretch; width: 5px; border-radius: 3px; background: var(--accent); }
+:root[data-frame="x"] .card .arc-head h3 { flex: 1; min-width: 0; }
+:root[data-frame="x"] .arc-toggle { display: block; width: 100%; min-height: 24px; padding: 0; border: 0; background: none; text-align: left; }
+:root[data-frame="x"] .arc-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root[data-frame="x"] .arc-sub { display: flex; flex-wrap: wrap; gap: 0 6px; align-items: center; font-family: var(--font-meta); font-weight: 400;
+  font-size: calc(var(--era-meta-size) * var(--scale)); color: var(--ink-soft); }
+:root[data-frame="x"] .arc-frac { flex: none; font-family: var(--font-meta); color: var(--ink-soft); white-space: nowrap; }
+:root[data-frame="x"] .info-btn { flex: none; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;
+  border: 1.5px solid var(--edge); border-radius: 50%; background: var(--card); font-family: var(--font-meta); color: var(--ink-soft); }
+:root[data-frame="x"] .arc-chev { flex: none; color: var(--ink-soft); transition: transform calc(.2s * var(--motion)) ease; }
+:root[data-frame="x"] .card.open .arc-chev { transform: rotate(90deg); }
+:root[data-frame="x"] .arc-info { padding: 0 12px 10px; }
+:root[data-frame="x"] .arc-body > .arc-acts { padding: 0 10px 8px; }
 .arc-head { padding: 4px 4px 6px; }
 .arc-head h3 { margin: 0; font-size: calc(var(--arc-size) * var(--scale)); font-weight: var(--arc-weight); }
 .arc-meta { font-family: var(--font-meta); }

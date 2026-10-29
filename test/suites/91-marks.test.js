@@ -1,7 +1,7 @@
 /* Four-state marks through one path: row, banners and header all move, and
    the mark persists keyed on the stable id. */
 'use strict';
-const { loadData, boot, wait, basic } = require('../lib/helpers');
+const { loadData, boot, wait, basic, openCards } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic();
@@ -14,6 +14,7 @@ module.exports = async function (t) {
   const band = d.querySelector(`.era[data-e="${storm}"]`).closest('.band').dataset.b;
   $(`.band[data-b="${band}"] > .band-head`).click();
   $(`.era[data-e="${storm}"] > .era-head`).click();
+  openCards($(`.era[data-e="${storm}"]`));
 
   const row = () => $('.row[data-id="fixture-hero-1980-21"]');
   const mk = () => row().querySelector('.mark');
@@ -63,6 +64,7 @@ module.exports = async function (t) {
   const rising = D.eras.findIndex(e => e.id === 'rising');
   $('.band[data-b="0"] > .band-head').click();
   $(`.era[data-e="${rising}"] > .era-head`).click();
+  openCards($(`.era[data-e="${rising}"]`));
   const note = () => $('.row[data-id="vela-year-zero-1984-1"] .b.note');
   note().click();
   t.ok('delegated note badge opens a popover (T-8)', !!$('.notepop') && /set before the first issue/.test($('.notepop').textContent));
@@ -79,6 +81,7 @@ module.exports = async function (t) {
   t.ok('stored marks count in the header after reboot', /^2 \//.test(d2.querySelector('#pprog .pcount').textContent));
   d2.querySelector(`.band[data-b="${band}"] > .band-head`).click();
   d2.querySelector(`.era[data-e="${storm}"] > .era-head`).click();
+  openCards(d2.querySelector(`.era[data-e="${storm}"]`));
   t.ok('stored marks restore on rows after reboot', d2.querySelector('.row[data-id="198706004"]').dataset.s === 'read');
   t.ok('no runtime errors', app2.errors.length === 0 && app.errors.length === 0, app.errors.concat(app2.errors).join(' | '));
   app2.window.close();

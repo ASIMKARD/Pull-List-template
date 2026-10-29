@@ -274,6 +274,26 @@ One skin of the tracker's own, from `franchise.signature`:
   (`relSibLeft`, `relSibRight`), so a fixture whose counts are shorter than X-Men's
   still compares.
 
+### The x frame's arc cards (session 8, step 4a)
+
+- **An open era shows its arcs as cards, all shut**, as X-Men's. A card is one run of an
+  arc's rows in the era's order, so an arc the order splits gets "· cont." cards, as the
+  headings did (`app.js`, `eraCards`).
+- **The head:** the stripe, the name (a button that opens and shuts the card), the type
+  badge (only when two or more types are in use) with the year and importance, the
+  count of its own rows, ⓘ and the chevron. A tap anywhere on the head but ⓘ opens or
+  shuts it.
+- **ⓘ** (only when the arc has a blurb or credits) shows them under the head without
+  opening the card.
+- **An open card** draws its rows the first time: the event's note, Mark arc read and
+  Mark arc unread, then the rows. Open cards are session-only, as eras are
+  (`open.a`, keyed `era:arc:n`).
+- **What opens them:** Expand all and Collapse all reach every card; a jump (Next
+  unread, a bookmark, a review, Reading) opens the row's own card; a search or a filter
+  change opens the cards it matches; an era chip opens the era with its cards shut.
+- "Label on each row" keeps its rows, and the v9 frame keeps its arc headings.
+- `test/suites/9l-cards.test.js` checks all of it.
+
 ## The workbook
 
 - `tools/build_workbook.py` writes five sheets (Reading Order, Arcs, Eras,

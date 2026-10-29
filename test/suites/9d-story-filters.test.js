@@ -36,10 +36,10 @@ module.exports = async function (t) {
        !!$('#fsec-story .chip[data-k="events"][data-v="complete"]'));
   t.ok('Essential view: the header counts the essential issues', +goal() === D.counts.total);
   W_jump('shattered-sky-1987-1');
-  const evHead = () => $(`.arc[data-a="${evArc}"] .arc-head`);
-  t.ok('the event\'s own heading says "Complete view adds 2 issues" (V-10)', /Complete view adds 2 issues/.test(evHead().textContent));
-  const otherHeads = $$('.arc-head').filter(h => +h.closest('.arc').dataset.a !== evArc);
-  t.ok('…and only that heading (chapters merged into other arcs get no note)', otherHeads.every(h => !/Complete view/.test(h.textContent)));
+  const evHead = () => $(`.arc[data-a="${evArc}"]`);                  // the event's card: its note opens the card's body
+  t.ok('the event\'s own card says "Complete view adds 2 issues" (V-10)', /Complete view adds 2 issues/.test(evHead().querySelector('.arc-body').textContent));
+  const otherHeads = $$('.arc').filter(h => +h.dataset.a !== evArc);
+  t.ok('…and only that card (chapters merged into other arcs get no note)', otherHeads.every(h => !/Complete view/.test(h.textContent)));
   t.ok('complete-only chapters are not listed in Essential view', !$('.row[data-id="other-guy-1985-22"]'));
   evHead().querySelector('.evnote button').click();
   t.ok('tapping it switches to Complete view: totals recompute', +goal() === D.counts.completeTotal);
@@ -108,7 +108,7 @@ module.exports = async function (t) {
   $('[data-act="clear"]').click();
   ['story', 'chars', 'creators'].forEach(k => { if ($(`#fsecs .sec-head[data-k="${k}"]`).getAttribute('aria-expanded') !== 'true') $(`#fsecs .sec-head[data-k="${k}"]`).click(); });
   W_jump('fixture-hero-1980-1');
-  const nameBtn = $('.era[data-e="0"] .arc-head .credits .cname');
+  const nameBtn = $('.era[data-e="0"] .arc-info .credits .cname');      // the card's ⓘ panel holds its credits
   const tapped = nameBtn.dataset.n;
   t.ok('credited names on arc heads are buttons; the credits read as before', !!nameBtn && /^Writer: .+ · Art: .+$/.test(nameBtn.closest('.credits').textContent));
   nameBtn.click();

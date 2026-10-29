@@ -3469,3 +3469,54 @@ first line of its open body; then 95-pace, 96 and 97 re-pointed from `.era-head 
 rows rendered on a card's first open; then `setAll`, `jumpToIssue`, a search match and an era
 chip opening cards; then 90-render, 92, 94, 99, 9c, 9d and 9j.
 
+## Session 8 checkpoint — step 4a done (arc cards: structure and behaviour), 28 Oct 2026
+
+### Done
+- **An open era shows its arcs as cards, all shut**, as X-Men's.
+  - A card is one run of an arc's rows in the era's order (`eraCards`), so an arc the order
+    splits gets "· cont." cards, as the headings did.
+  - Rows are drawn when a card first opens; reopening keeps them.
+- **The head:**
+  - the stripe;
+  - the name, a button that opens and shuts the card;
+  - the type badge (only with two or more types in use) with the year and importance;
+  - the count of its own rows, which marks move;
+  - ⓘ and the chevron.
+
+  A tap anywhere on the head but ⓘ opens or shuts it.
+- **ⓘ**, only when the arc has a blurb or credits, shows them without opening the card.
+- **An open card** holds the event's note, Mark arc read and Mark arc unread, then the rows.
+- **What reaches the cards:**
+  - Expand all and Collapse all;
+  - a jump (Next unread, bookmarks, reviews, Reading) opens the row's own card;
+  - a search or a filter change opens the cards it matches;
+  - an era chip opens the era with its cards shut.
+- **Unchanged:** "Label on each row" keeps its rows, and the v9 frame keeps its arc headings.
+- **The pull-ref fixture:** Team Hero #1–#6 now date April to September 1963, after Origin
+  Tale's three. Each arc then reads as one run, as X-Men's first arcs do; before, the two
+  interleaved month by month, so the first card held one issue.
+- **New suite `9l-cards`** (22 checks), mutation-proved 11 of 11:
+  - cards drawn open;
+  - rows drawn into shut cards;
+  - the head's parts not toggling;
+  - every opening rebuilding the rows;
+  - ⓘ opening the card;
+  - the count not refreshed;
+  - Expand all, a jump or a search leaving cards shut;
+  - the cards branch winning in "Label on each row";
+  - cards on the v9 frame.
+- **Tests changed on purpose:** 90-render, 91, 92, 99, 9c, 9d, 9g and 9h open the cards
+  (`openCards` in `test/lib/helpers.js`) where they look for rows. 90-render now says an
+  open era shows shut cards and no rows. 9c and 9d find Mark arc, the event's note and the
+  credits inside the card.
+- **45-pull:** 1240 match (1102 at step 3), 557 listed.
+- **Docs:** BUILD-NOTES "The x frame's arc cards"; FEATURE-INVENTORY X-16.
+
+**Harness:** 1675 assertions, 0 failed, 37 suites. **Layout:** 424 checks, 0 failed, 12 suites.
+
+### Step 4b begins with
+The type colours: `tools/build.py` emits a table (X-Men's TYPE_COLORS by name in Pull,
+nudged per C; washes by type index in the other skins), then the card's stripe and badge from
+it, then Pull's measured card values (`styles.css`, the x frame's card rules), then 45-pull's
+`era/arc *`, `type badge`, `info button`, `arc action*` and `issue list` entries off the list.
+

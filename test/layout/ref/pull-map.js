@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '3';
+const CURRENT_STEP = '4a';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'color'];
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -195,9 +195,6 @@ const ONLY = {
     ['#settings .filelabel', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings .bmlist', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     // the template as it stands at step 1; each goes in the step named
-    ['.arc-head h3', 'step 4a: arc headings become cards'],
-    ['.arc-head .blurb', 'step 4a: the blurb moves into the card\'s ⓘ panel'],
-    ['.arc-acts', 'step 4a: Mark arc read and unread show in an open card only'],
     ['.b.core', 'step 5: the core marker becomes X-Men\'s star after the title'],
     ['.rstate', 'step 6a: the read state moves into the counter, as X-Men'],
     ['#reviews .pane-h', 'step 6a: the Reviews heading'],
@@ -210,7 +207,8 @@ const WRAPPERS = {
   'x-men': ['#app', '.tabpanel', '#eraList', '#pinnedBar', '#eraList > div', '.era-divider + .era-body > div', '.arc-title', '.arc-title .meta',
     '.issue-body', '.overall-progress', '.reading-actions', '.reading-nav', '.settings-section > div:not([class])', '.setting-row > div:not([class])'],
   template: ['main', '.pane', '#app', '#stack', '#pprog', '.pstats .pright', '.pbadge .pver', '#pinbar', '.badges', '.bstats', '#reader', '.racts', '.rnav', '.rpills', '#pinchips', '#settings', '#settings .sec-pad',
-    '#settings .sec-head', '#settings .sec-t', '#settings .sec-body', '#settings .sec-in', '#reviews', '.revlist', '.arc', '.arc-head', '.era', '.era-body', '.swatches'],
+    '#settings .sec-head', '#settings .sec-t', '#settings .sec-body', '#settings .sec-in', '#reviews', '.revlist', '.arc', '.arc-head', '.era', '.era-body', '.swatches',
+    '.card .arc-head h3', '.arc-toggle', '.arc-sub'],
 };
 
 /* The differences left, each tied to a kept item, to John's ruling, or to the
@@ -239,7 +237,6 @@ const DIFFERENCES = {
   'era/arc *.*@*': 'step 4b: X-Men\'s arc cards',
   'era/type badge.*@*': 'step 4b: the type badge',
   'era/info button.*@*': 'step 4b: the ⓘ button',
-  'arc/open arc.*@*': 'step 4b: an open arc card',
   'arc/arc action*.*@*': 'step 4b: Mark arc read and unread in an open card',
   'arc/issue list.*@*': 'step 4b: the card\'s list of issues',
   // step 5: issue rows

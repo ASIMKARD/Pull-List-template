@@ -540,7 +540,7 @@
   /* ======================================================================
      RENDER — string templates only
      ====================================================================== */
-  var open = { b: {}, e: {} };          // session-only: never persisted
+  var open = { b: {}, e: {}, a: {} };   // session-only: never persisted (a: the x frame's arc cards, 'era:arc:n')
   var rendered = {};                     // era index -> body rendered
   var wasNarrowing = false;              // leaving a search/filter returns to the collapsed landing
   var expandMatches = false;             // only a change made during THIS visit auto-expands matches;
@@ -710,6 +710,69 @@
       '<span class="badges">' + badges + '</span>' + sub + '</div>';
   }
 
+  /* The x frame's arc cards (John, 24 Oct; the reference tracker's): an open era
+     shows its arcs as collapsed cards, and a card draws its rows when it first
+     opens. A card is one run of an arc's rows in the era's order, so an arc the
+     order splits gets "· cont." cards, as the headings did. Its head toggles it;
+     ⓘ shows the blurb and the credits. "Label on each row" keeps its rows. */
+  var CARDS = {}, CARD_ROWS = {};        // era -> its cards as last drawn; card key -> its rows
+  function eraCards(e) {
+    var filt = narrowing(), out = [], cur = null, seen = {};
+    orderedEraRows(e).forEach(function (i) {
+      if (filt ? !matches(i) : !inView(i)) return;
+      if (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE)) return;   // gap notes off (XM-10)
+      var a = D.issues[i][2];
+      if (!cur || cur.a !== a) {
+        seen[a] = (seen[a] || 0) + 1;
+        cur = { k: e + ':' + a + ':' + (seen[a] - 1), a: a, n: seen[a] - 1, rows: [] };
+        out.push(cur);
+      }
+      cur.rows.push(i);
+    });
+    return out;
+  }
+  function cardFrac(rows) {
+    var read = 0, total = 0, skip = 0;
+    rows.forEach(function (i) { if (!counted(i)) return; total++; var st = stateOf(i); if (st === 'read') read++; else if (st === 'skip') skip++; });
+    return read + '/' + (total - skip);
+  }
+  function cardId(k) { return 'arc-' + k.replace(/:/g, '-'); }
+  function cardHtml(e, c, isOpen) {
+    var arc = D.arcs[c.a], again = c.n > 0, id = cardId(c.k);
+    var meta = [arc.y, arc.i ? 'importance ' + arc.i + '/5' : ''].filter(Boolean).join(' · ');   // V-12
+    var cred = again ? '' : creditsHtml(c.rows[0]);
+    var blurb = arc.b && !again && arc.b !== D.eras[e].intro ? arc.b : '';
+    var type = HAS.types && D.types[arc.t] ? '<span class="type-badge" data-t="' + arc.t + '">' + escapeHtml(D.types[arc.t]) + '</span>' : '';
+    return '<div class="arc card' + (isOpen ? ' open' : '') + '" data-a="' + c.a + '" data-k="' + c.k + '"><div class="arc-head"><span class="arc-tab" aria-hidden="true"></span>' +
+      '<h3><button type="button" class="arc-toggle" data-act="arc" aria-expanded="' + isOpen + '" aria-controls="' + id + '-body">' +
+      '<span class="arc-name">' + escapeHtml(arc.n) + (again ? ' · cont.' : '') + '</span>' +
+      (type || meta ? '<span class="arc-sub">' + type + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') + '</span>' : '') +
+      '</button></h3><span class="arc-frac">' + cardFrac(c.rows) + '</span>' +
+      (blurb || cred ? '<button type="button" class="info-btn" data-act="arc-info" aria-expanded="false" aria-controls="' + id + '-info" aria-label="' +
+        escapeAttr('About ' + arc.n) + '">i</button>' : '') +
+      '<span class="arc-chev" aria-hidden="true">▸</span></div>' +
+      (blurb || cred ? '<div class="arc-info" id="' + id + '-info" hidden>' + (blurb ? '<p class="blurb">' + escapeHtml(blurb) + '</p>' : '') +
+        (cred ? '<p class="credits">' + cred + '</p>' : '') + '</div>' : '') +
+      '<div class="arc-body" id="' + id + '-body"' + (isOpen ? '' : ' hidden') + '>' + (isOpen ? cardBodyHtml(c) : '') + '</div></div>';
+  }
+  function cardBodyHtml(c) {
+    return (c.n ? '' : eventNote(c.a)) + '<div class="arc-acts">' +
+      '<button type="button" class="b" data-act="arc-mark" data-a="' + c.a + '" data-st="read">Mark arc read</button>' +
+      '<button type="button" class="b" data-act="arc-mark" data-a="' + c.a + '" data-st="unread">Mark arc unread</button></div>' +
+      c.rows.map(rowHtml).join('');
+  }
+  function setCardOpen(k, on) {
+    open.a[k] = on;
+    var card = $('.arc[data-k="' + k + '"]');
+    if (!card) return;
+    var body = card.querySelector('.arc-body');
+    if (on && !body.firstChild && CARD_ROWS[k]) body.innerHTML = cardBodyHtml({ k: k, a: +card.dataset.a, n: +k.split(':')[2], rows: CARD_ROWS[k] });
+    body.hidden = !on;
+    card.classList.toggle('open', on);
+    card.querySelector('.arc-toggle').setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function cardsOn() { return frameOf(settings.skin) === 'x' && settings.layout !== 'rows'; }
+
   function eraBodyHtml(e) {
     var filt = narrowing(), html = '', curArc = -1, seen = {};
     if (settings.layout === 'rows') {                         // layout C (X-1): per-row arc labels, no arc heads
@@ -718,6 +781,16 @@
         html += rowHtml(i);
       });
       return eraFinishHtml(e) + (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
+    }
+    if (cardsOn()) {                                          // the x frame: collapsed cards; a search or filter change opens the ones it matches
+      var auto = filt && expandMatches;
+      CARDS[e] = eraCards(e);
+      html = CARDS[e].map(function (c) {
+        CARD_ROWS[c.k] = c.rows;
+        if (auto) open.a[c.k] = true;
+        return cardHtml(e, c, !!open.a[c.k]);
+      }).join('');
+      return eraFinishHtml(e) + (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + html;
     }
     orderedEraRows(e).forEach(function (i) {
       if (filt ? !matches(i) : !inView(i)) return;
@@ -774,16 +847,16 @@
 
   function renderList() {
     var S = computeStats(), fins = finishMap(S), filt = narrowing();
-    rendered = {};
+    rendered = {}; CARDS = {}; CARD_ROWS = {};
     eraFin = HAS.bands ? {} : fins;
     $('#app').setAttribute('data-frame', frameOf(settings.skin));      // the frame this list was drawn for
-    if (!filt && wasNarrowing) open = { b: {}, e: {} };
+    if (!filt && wasNarrowing) open = { b: {}, e: {}, a: {} };
     wasNarrowing = filt;
     var visEra = D.eras.map(function () { return !filt; }), any = false;
     if (filt) {
       for (var i = 0; i < N; i++) if (matches(i)) { visEra[D.issueEra[i]] = true; any = true; }
       if (expandMatches) {
-        open = { b: {}, e: {} };
+        open = { b: {}, e: {}, a: {} };
         visEra.forEach(function (v, e) { if (v) { open.e[e] = true; if (BAND_OF_ERA[e] >= 0) open.b[BAND_OF_ERA[e]] = true; } });
       }
     }
@@ -823,7 +896,8 @@
       var head = $('.era[data-e="' + e + '"] > .era-head');
       if (!head) return;
       var tmp = document.createElement('div');
-      if (x) {                                              // the strip, and the finish-by line at the top of the body
+      if (x) {                                              // the strip, the finish-by line at the top of the body, and the cards' counts
+        (CARDS[e] || []).forEach(function (c) { var f = $('.arc[data-k="' + c.k + '"] .arc-frac'); if (f) f.textContent = cardFrac(c.rows); });
         tmp.innerHTML = eraFootHtml(S.era[e]);
         head.querySelector('.bfoot').replaceWith(tmp.firstChild);
         var body = head.nextElementSibling, line = body.firstElementChild && body.firstElementChild.classList.contains('efinish') ? body.firstElementChild : null;
@@ -1139,7 +1213,7 @@
     settings.order = keepOrder;
     settings.events = 'essential';                            // shown as an active chip, so Clear all clears it
     $('#q').value = '';
-    open = { b: {}, e: {} };
+    open = { b: {}, e: {}, a: {} };
     refilter();
   }
 
@@ -1242,7 +1316,12 @@
   }
   function setAll(on) {
     D.periods.forEach(function (p, b) { if (!$('.band[data-b="' + b + '"]').hidden) setBandOpen(b, on); });
-    D.eras.forEach(function (era, e) { var s = $('.era[data-e="' + e + '"]'); if (s && !s.hidden) setEraOpen(e, on); });
+    D.eras.forEach(function (era, e) {
+      var s = $('.era[data-e="' + e + '"]');
+      if (!s || s.hidden) return;
+      setEraOpen(e, on);
+      if (cardsOn()) (CARDS[e] || []).forEach(function (c) { setCardOpen(c.k, on); });   // and every arc card in it
+    });
   }
 
   function jumpToIssue(id) {
@@ -1256,6 +1335,7 @@
     var e = D.issueEra[i];
     if (BAND_OF_ERA[e] >= 0) setBandOpen(BAND_OF_ERA[e], true);
     setEraOpen(e, true);
+    if (cardsOn()) (CARDS[e] || []).forEach(function (c) { if (c.rows.indexOf(i) !== -1) setCardOpen(c.k, true); });   // the card it sits in
     var row = $('.row[data-i="' + i + '"]');
     if (!row) return false;
     row.scrollIntoView({ block: 'center' });
@@ -2351,6 +2431,8 @@
   function onClick(ev) {
     checkOnline();
     if (swallowClick) { swallowClick = false; if (ev.target.closest('.band-head, .era-head, .arc-head')) return; }
+    var cardHead = !ev.target.closest('button, a') && ev.target.closest('.arc[data-k] > .arc-head');   // a card's stripe, count, chevron or empty space
+    if (cardHead) { setCardOpen(cardHead.parentNode.dataset.k, cardHead.querySelector('.arc-toggle').getAttribute('aria-expanded') !== 'true'); return; }
     var b = ev.target.closest('[data-act]');
     if (!b) return;
     var act = b.dataset.act, i;
@@ -2369,6 +2451,13 @@
         break;
       }
       case 'era': { var e = +b.closest('.era').dataset.e; setEraOpen(e, !open.e[e]); break; }
+      case 'arc': setCardOpen(b.closest('.arc').dataset.k, b.getAttribute('aria-expanded') !== 'true'); break;
+      case 'arc-info': {
+        var info = document.getElementById(b.getAttribute('aria-controls')), showInfo = info.hidden;
+        info.hidden = !showInfo;
+        b.setAttribute('aria-expanded', showInfo ? 'true' : 'false');
+        break;
+      }
       case 'band': { var bd = +b.closest('.band').dataset.b; setBandOpen(bd, !open.b[bd]); break; }
       case 'panel': {
         var body = $('#fbody'), show = body.hidden;

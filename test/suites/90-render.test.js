@@ -1,7 +1,7 @@
 /* Rendering against the real DOM: collapsed landing, goal banners, lazy eras,
    arcs, rows, escaping. */
 'use strict';
-const { loadData, boot, wait, basic, noPeriods, stress } = require('../lib/helpers');
+const { loadData, boot, wait, basic, noPeriods, stress, openCards } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic();
@@ -34,9 +34,12 @@ module.exports = async function (t) {
   t.ok('opening a band renders no rows yet', $$('.row').length === 0);
   const storm = D.eras.findIndex(e => e.id === 'storm');
   $(`.era[data-e="${storm}"] > .era-head`).click();
+  t.ok('opening an era shows its arcs as cards, every one closed, and renders no rows yet (the x frame; John, 24 Oct)',
+       $$(`.era[data-e="${storm}"] .arc.card`).length > 1 && $$(`.era[data-e="${storm}"] .arc-toggle`).every(b => b.getAttribute('aria-expanded') === 'false') && $$('.row').length === 0);
+  openCards($(`.era[data-e="${storm}"]`));
   const want = D.issueEra.map((e, i) => i).filter(i => D.issueEra[i] === storm && !D.issueCompleteOnly[i]);
   const rows = $$('.row');
-  t.ok('opening an era renders exactly its in-view rows', rows.length === want.length && rows.every(r => D.issueEra[+r.dataset.i] === storm), rows.length + ' vs ' + want.length);
+  t.ok('opening its cards renders exactly its in-view rows', rows.length === want.length && rows.every(r => D.issueEra[+r.dataset.i] === storm), rows.length + ' vs ' + want.length);
   t.ok('Complete-only tie-ins are not rendered in Essential view', !$$('.row').some(r => /other-guy|bystander/.test(r.dataset.id)));
   t.ok('every rendered row appears once', new Set(rows.map(r => r.dataset.i)).size === rows.length);
   t.ok('a recurring arc is marked cont.', $$(`.era[data-e="${storm}"] .arc-head h3`).some(h => /Stormfront · cont\./.test(h.textContent)));
@@ -56,6 +59,7 @@ module.exports = async function (t) {
   const rising = D.eras.findIndex(e => e.id === 'rising');
   $('.band[data-b="0"] > .band-head').click();
   $(`.era[data-e="${rising}"] > .era-head`).click();
+  openCards($(`.era[data-e="${rising}"]`));
   const gap = $('.row[data-id="gap-1983-hiatus"]');
   t.ok('inert row renders with no mark button (F-7)', gap && gap.classList.contains('inert') && !gap.querySelector('.mark'));
   const vo = $('.row[data-id="vela-and-orrin-1984-1"] .title');
@@ -96,7 +100,9 @@ module.exports = async function (t) {
   t.ok('5,000 rows: landing renders zero rows', d3.querySelectorAll('.row').length === 0);
   t.ok('5,000 rows: one banner per era', d3.querySelectorAll('.era').length === s.eras);
   d3.querySelector('.era[data-e="17"] > .era-head').click();
-  t.ok('5,000 rows: opening one era renders only its rows', d3.querySelectorAll('.row').length === s.perEra &&
+  t.ok('5,000 rows: opening one era renders its cards and no rows', d3.querySelectorAll('.row').length === 0 && d3.querySelectorAll('.era[data-e="17"] .arc.card').length > 0);
+  openCards(d3.querySelector('.era[data-e="17"]'));
+  t.ok('5,000 rows: opening its cards renders only its rows', d3.querySelectorAll('.row').length === s.perEra &&
        [...d3.querySelectorAll('.row')].every(r => r.closest('.era').dataset.e === '17'));
   a3.window.close();
 

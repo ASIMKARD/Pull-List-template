@@ -6,7 +6,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { ROOT, build, boot, wait, basic, loadData, copyFixture, readJSON, writeJSON, openSettings } = require('../lib/helpers');
+const { ROOT, build, boot, wait, basic, loadData, copyFixture, readJSON, writeJSON, openSettings, openCards } = require('../lib/helpers');
 
 const ATTRS = ['data-skin', 'data-paper', 'data-eras', 'data-text', 'data-density', 'data-tap', 'data-marks', 'data-dys'];
 
@@ -70,6 +70,7 @@ module.exports = async function (t) {
   // ------------------------------------------------ mark styles change the glyphs (S-5, XM-17)
   $('#tab-list').click();
   $('.era-head').click();
+  openCards($('.era'));
   const row = $('.row:not(.inert)'), mark = () => row.querySelector('.mark').textContent;
   const glyphs = {};
   for (const style of ['box', 'dot', 'tick']) {
