@@ -313,6 +313,41 @@ module.exports = async function (t) {
       await psrv.close();
     }
 
+    // ------------------------------------------------ "One colour" in the tracker's accent (John, 19 and 24 Oct)
+    // with no accent (the navy), a dark one (drawn as given) and Absolute's crimson (darkened as the build says): every era
+    // exactly that colour, its strip the reference's shade, and white, the 85 % years and the strip each at 4.5:1 or more
+    {
+      const bad = [], seen = [];
+      for (const [label, accent] of [['none', undefined], ['dark', '#7A1F2B'], ['crimson', '#E8113F']]) {
+        const dir = copyFixture('basic', 'look-accent-' + label), ds = readJSON(path.join(dir, 'dataset.json'));
+        if (accent) ds.franchise.accent = accent; else delete ds.franchise.accent;
+        writeJSON(path.join(dir, 'dataset.json'), ds);
+        const ab = build(path.join(dir, 'dataset.json'), { label: 'look-accent-' + label + '-out' }), AD = loadData(ab.out), asrv = await serve(ab.out);
+        const pg = await open(asrv.url, { width: 390, reducedMotion: 'reduce', storage: seed('fixture', { skin: 'pull', eraHues: 'mono' }) });
+        await openAll(pg.page);
+        const r = await pg.page.evaluate(lib => {
+          eval('(' + lib + ')')();
+          return [...document.querySelectorAll('.era-head')].map(h => {
+            const bg = window.__eraBg(h.querySelector('.bname'))[0], sbg = window.__eraBg(h.querySelector('.bcount'))[0];
+            return { bg: bg.slice(0, 3), sbg: sbg.slice(0, 3), white: window.__ratio(window.__text(h.querySelector('.bname'), bg), bg),
+                     years: window.__ratio(window.__text(h.querySelector('.byears'), bg), bg), strip: window.__ratio(window.__text(h.querySelector('.bcount'), sbg), sbg) };
+          });
+        }, PAGE_LIB.toString());
+        const want = C.hexRgb(AD.pullMono.hex), swant = want.map(v => Math.max(v - 25, 0));
+        seen.push(label + ' ' + AD.pullMono.hex);
+        if (!r.length) bad.push(label + ': no era banners');
+        r.forEach((e, i) => {
+          if (e.bg.join() !== want.join()) bad.push(label + ' era ' + i + ': ' + C.rgbHex(e.bg) + ', not ' + AD.pullMono.hex);
+          if (e.sbg.join() !== swant.join()) bad.push(label + ' era ' + i + ': its strip ' + C.rgbHex(e.sbg) + ', not ' + C.rgbHex(swant));
+          if (e.white < 4.5 || e.years < 4.5 || e.strip < 4.5) bad.push(label + ' era ' + i + ': ' + [e.white, e.years, e.strip].map(x => x.toFixed(2)).join('/'));
+        });
+        if (pg.errors.length) bad.push(label + ': errors ' + pg.errors.join(' | '));
+        await pg.close(); await asrv.close();
+      }
+      t.eq('"One colour" draws every era in the tracker\'s accent as the build gives it, its strip in the reference\'s shade, and every text on them at 4.5:1 or more (' +
+           seen.join(', ') + ')', bad.slice(0, 6), []);
+    }
+
     // ------------------------------------------------ reachability: every control, every skin (V-5)
     const unreachable = [];
     let counted = 0;

@@ -87,6 +87,9 @@ Keep the old `franchise.key` (e.g. `absolute`): v3 stores progress under
     (4.18:1).
   - Eras without a colour get Pull's default palette: the same eleven, five of them nudged darker to
     pass (`BUILD-NOTES.md`). A migrated X-Men can leave its colours out and still look like X-Men.
+- **Set the tracker's accent** (`franchise.accent`, `#RRGGBB`), if it has one, for Pull's "One colour" (John, 19 and
+  24 Oct). The build darkens it only as far as white text, the 85 % years and the strip need. Without one, "One colour"
+  is the X-Men tracker's navy `#1C3A5E`. `franchise.theme` is the browser chrome's colour, not the accent.
 
 ## 6. Dates, credits and the gate
 

@@ -197,8 +197,16 @@ One skin of the tracker's own, from `franchise.signature`:
 
     The other six are drawn as they are (white text 5.65:1 or more).
   - A tracker's own colours are never nudged: they are drawn exactly as given.
-- "One colour" (the Era colours setting) gives every era the palette's navy
-  `#1C3A5E`, the X-Men tracker's accent, and sets a tracker's colours aside.
+- "One colour" (the Era colours setting) gives every era one colour and sets a tracker's colours aside
+  (John, 19 and 24 Oct):
+  - the tracker's own accent, `franchise.accent`, darkened by the palette's rule only as far as white text, the
+    85 % years and the strip need for 4.5:1, its hue kept (Absolute's crimson `#E8113F` would be drawn `#C90033`;
+    a dark accent like `#7A1F2B` is drawn as given);
+  - without one, the palette's navy `#1C3A5E`, the X-Men tracker's accent.
+
+  The build reports what it drew (`oneColour`: the source, the colour and the nudge), and warns if that colour reads
+  under 4.5:1 as the review era tag. 20-build checks no accent, a dark one, two light ones (one at the gamut's edge)
+  and malformed ones; 40-look draws three in Chromium.
 - Tested in `test/suites/20-build.test.js` (the source against the recorded
   measurement, every default passing, each nudge the least that passes, 52 eras
   cycling, tracker colours untouched) and `test/layout/40-look.test.js` (in

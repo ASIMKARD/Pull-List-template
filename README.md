@@ -22,8 +22,8 @@ one build step, an offline web app, a generated workbook, and two test suites
    is a complete invented franchise that uses every feature.
    - `franchise`: `key` (unique across every tracker you host: it namespaces
      saved progress, the QR prefix and the cache name), `wordmark`, `title`,
-     `strapline`, `span`, `theme`, and optionally `background`, `searchUrl`,
-     `icons`, `skins` / `skin`, `signature`, `storage`, `versionStart`.
+     `strapline`, `span`, `theme`, and optionally `background`, `accent` (Pull's "One
+     colour"), `searchUrl`, `icons`, `skins` / `skin`, `signature`, `storage`, `versionStart`.
    - `eras` with ranks from 5000, spaced 10; `periods` (optional bands);
      `strands`, `types`, `tiers`, `media`; `arcs`.
    - Rows inline (`rows`) or one file per era (`sources`, schema

@@ -269,6 +269,38 @@ module.exports = async function (t) {
          PD.eras.filter(e => C.rgbHex(C.oklchRgb(...e.pull.tab)) !== e.pull.hex || C.rgbHex(C.oklchRgb(...e.pull.strip)) !== C.rgbHex(shade(C.hexRgb(e.pull.hex)))).map(e => e.id), []);
     t.eq('"One colour" draws every era in the palette\'s navy, the reference tracker\'s accent', PD.pullMono && PD.pullMono.hex, PAL[10].hex);
   }
+  // "One colour" in the tracker's accent (John, 19 and 24 Oct): franchise.accent, darkened by the palette's rule only as far as
+  // white text, the 85 % years and the strip need, its hue kept; the navy without one; a tracker's own era colours untouched
+  {
+    const passes = rgb => C.contrast(C.WHITE, rgb) >= 4.5 && C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb) >= 4.5 && C.contrast(C.WHITE, shade(rgb)) >= 4.5;
+    const STEP = 0.0005, cand = (src, k) => { const [L, Cs, H] = C.rgbOklch(C.hexRgb(src)), x = L - k * STEP; return C.rgbHex(C.oklchRgb(x, C.inGamut(x, Cs, H) ? Cs : C.maxChroma(x, H), H)); };
+    const least = src => { if (passes(C.hexRgb(src))) return src.toUpperCase(); for (let k = 1; k < 4000; k++) if (passes(C.hexRgb(cand(src, k)))) return cand(src, k); return null; };
+    const withAccent = (label, accent) => {
+      const dir = copyFixture('basic', label), ds = readJSON(path.join(dir, 'dataset.json'));
+      if (accent === undefined) delete ds.franchise.accent; else ds.franchise.accent = accent;
+      writeJSON(path.join(dir, 'dataset.json'), ds);
+      const r = build(path.join(dir, 'dataset.json'), { label: label + '-out' });
+      return { r, D: r.status === 0 ? loadData(r.out) : null };
+    };
+    const none = withAccent('accent-none'), dark = withAccent('accent-dark', '#7A1F2B');
+    const light = withAccent('accent-crimson', '#E8113F'), yellow = withAccent('accent-yellow', '#E0A040');
+    t.eq('without an accent, "One colour" is the palette\'s navy, and the report says so', [none.D && none.D.pullMono.hex, none.r.report && none.r.report.oneColour],
+         [PAL[10].hex, { source: null, hex: PAL[10].hex, nudged: null }]);
+    t.eq('a dark accent is drawn as given: #7A1F2B', [dark.D && dark.D.pullMono.hex, dark.r.report && dark.r.report.oneColour.nudged], ['#7A1F2B', null]);
+    const hue = h => C.rgbOklch(C.hexRgb(h))[2];
+    for (const [name, x, src] of [['a light accent (Absolute\'s crimson)', light, '#E8113F'], ['a yellow one, where the gamut runs out first', yellow, '#E0A040']]) {
+      const got = x.D && x.D.pullMono.hex;
+      t.ok(name + ' is darkened only as far as it must be: ' + src + ' → ' + got + ', passing, and one step less still fails',
+           !!got && got === least(src) && passes(C.hexRgb(got)) && got !== src && x.r.report.oneColour.source === src && x.r.report.oneColour.nudged.steps > 0);
+      t.ok('…its hue kept (' + hue(src).toFixed(1) + '° → ' + (got ? hue(got).toFixed(1) : '?') + '°, within the 8-bit rounding)', !!got && Math.abs(hue(got) - hue(src)) < 1.5);
+    }
+    t.eq('…and an accent never touches a tracker\'s own era colours: dawn and storm drawn as given beside it', light.D && light.D.eras.filter(e => e.colour).map(e => e.pull.hex), ['#A6791E', '#A6303C']);
+    t.ok('…nor the tab and strip it draws in: the strip is the reference\'s shade of the drawn colour', !!light.D && C.rgbHex(C.oklchRgb(...light.D.pullMono.strip)) === C.rgbHex(shade(C.hexRgb(light.D.pullMono.hex))));
+    for (const bad of ['red', '#12345', '#GGGGGG', 7]) {
+      const b = withAccent('accent-bad', bad);
+      t.ok('a malformed accent fails the build: ' + JSON.stringify(bad), b.r.status === 1 && /franchise\.accent must be #RRGGBB/.test(b.r.stderr), b.r.stderr.split('\n')[0]);
+    }
+  }
   // the build run on its own (tools/ without the app shell, as the verify gate's tests run it): it still builds
   {
     const dir = tmpdir('tools-only');

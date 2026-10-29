@@ -3325,6 +3325,45 @@ palette's rule (white text, the 85 % years and the strip at 4.5:1, hue kept), or
 20-build: no accent, a dark accent drawn as given, and a light accent nudged minimally. Then 40-look: all three in
 Chromium with `data-eras="mono"`.
 
+## Session 8 checkpoint — step 7 done ("One colour" in the tracker's accent), 29 Oct 2026
+
+### Done
+- **`franchise.accent`** (optional, `#RRGGBB`; schema and build) is the colour Pull's "One colour" draws every era in.
+  It is darkened by the palette's rule only as far as white text, the 85 % years and the strip need for 4.5:1, its
+  hue kept. Without one, "One colour" is the navy `#1C3A5E`, as before. A tracker's own era colours are untouched.
+  A malformed accent fails the build.
+- **The build reports what it drew** (`oneColour`: source, colour, nudge). It warns if that colour reads under
+  4.5:1 as the review era tag; it doesn't for any accent tried.
+- **What Absolute would get:** its crimson `#E8113F` drawn `#C90033` (white 5.95:1, years 4.52:1, strip 7.34:1;
+  127 steps). Absolute keeps the navy until John sets its accent. Its `theme`, `#0D0616`, is the browser chrome's
+  colour, not an accent.
+- **The schema's era colour text** no longer says Pull derives a colour from the era's hue. It names the default
+  palette and the review era tag.
+- **Checks:**
+  - 20-build: no accent; a dark accent drawn as given; Absolute's crimson and a yellow at the gamut's edge, each the
+    least darkening that passes, the hue within the 8-bit rounding; malformed ones fail; the eras' own colours
+    untouched.
+  - 40-look: the three in Chromium with "One colour" on. Every era is that colour exactly, its strip the shade, and
+    every text on it 4.5:1 or more.
+- **Mutation-proved 6 of 6:**
+  - the accent ignored;
+  - drawn unnudged (twice, in the build and in Chromium);
+  - darkened past the least;
+  - a malformed accent accepted;
+  - the accent laid over the eras' own colours.
+- **Docs:** BUILD-NOTES "Era colours"; MIGRATING (set the accent); README; FEATURE-INVENTORY X-22.
+- 45-pull is unchanged, because pull-ref has no accent: 1900 match, 80 listed.
+
+**Harness:** 1716 assertions, 0 failed, 37 suites. **Layout:** 468 checks, 0 failed, 12 suites.
+
+### Step 8 begins with
+The proof that Absolute's own skin is v9's (G), writing nothing to Absolute:
+1. A scratch copy of Absolute's `main` with this template copied in, its signature block gaining `"frame": "v9"`.
+2. On that copy: the gate, the harness and the layout suite, 47-frame-v9 against a `frame-ref.json` captured from v9
+   (`27dca56`), 55-decor and 45-root.
+3. Side-by-side screenshots and a pixel diff against v9 served as Pages serves it, at 320, 390 and 1024 px in the
+   five views. **None at all** is required.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls

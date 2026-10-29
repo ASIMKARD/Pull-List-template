@@ -657,8 +657,9 @@ def oklch_parts(rgb):
 
 # Pull's default palette (John, 13 Oct): the reference tracker's eleven era
 # colours, in its order, as test/layout/ref/x-men.json records them (20-build
-# checks the two agree). "One colour" gives every era the last, its navy, which
-# is also the reference tracker's accent.
+# checks the two agree). "One colour" gives every era the tracker's own accent
+# (franchise.accent; John, 19 and 24 Oct), nudged by the same rule; without one,
+# the palette's last, its navy, which is also the reference tracker's accent.
 PULL_PALETTE = ['#A6791E', '#A6303C', '#7B3F94', '#2C6E8C', '#1F7A5C', '#B08A1F',
                 '#C0622A', '#C21E6D', '#9C4A3C', '#4A2E5C', '#1C3A5E']
 PULL_MONO = 10
@@ -875,7 +876,20 @@ def build(dataset_path, previous_datajs=None, keep=None):
                                  'Pull draws it as given (John, 12 and 29 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
                                  % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, text_ratio(rgb), AA, rgb_hex(hint), *white_ratios(hint)))
         era_colours.append(out)
-    pull_mono = pull_colour(palette[PULL_MONO]['hex'])
+    # "One colour": the tracker's accent, darkened only as far as white text, the 85 % years and the strip need; else the navy
+    accent = fr.get('accent')
+    if accent is not None and (not isinstance(accent, str) or not COLOUR_RX.match(accent)):
+        errs.append('franchise.accent must be #RRGGBB (got %r)' % (accent,))
+        accent = None
+    if accent is None:
+        mono_rgb, mono_how = hex_rgb(palette[PULL_MONO]['hex']), None
+    else:
+        mono_rgb, mono_how = nudge(hex_rgb(accent))
+    pull_mono = pull_colour(rgb_hex(mono_rgb))
+    one_colour = {'source': accent.upper() if accent else None, 'hex': pull_mono['hex'], 'nudged': mono_how}
+    if text_ratio(mono_rgb) < AA:
+        warns.append('franchise.accent %s: "One colour" draws every era in %s, which reads %.2f:1 as the review era tag on Pull\'s card at the lowest, '
+                     'under %.1f:1 (WCAG AA)' % (accent, pull_mono['hex'], text_ratio(mono_rgb), AA))
 
     periods = ds.get('periods') or []
     if periods:
@@ -1384,7 +1398,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
               'durationsCoverage': dur_coverage, 'creators': len(creator_names),
               'versionStart': version_start, 'deliverables': deliverables,
-              'eraColours': {'set': sum(1 for c in era_colours if 'colour' in c), 'underAA': under_aa}}
+              'eraColours': {'set': sum(1 for c in era_colours if 'colour' in c), 'underAA': under_aa}, 'oneColour': one_colour}
     return payload, report
 
 
