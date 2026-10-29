@@ -202,7 +202,7 @@ One skin of the tracker's own, from `franchise.signature`:
 - "One colour" (the Era colours setting) gives every era one colour and sets a tracker's colours aside
   (John, 19 and 24 Oct):
   - the tracker's own accent, `franchise.accent`, darkened by the palette's rule only as far as white text, the
-    85 % years and the strip need for 4.5:1, its hue kept (Absolute's crimson `#E8113F` would be drawn `#C90033`;
+    85 % years and the strip need for 4.5:1, its hue kept (Absolute's crimson, v7's `#E8123C`, is drawn `#C90030`;
     a dark accent like `#7A1F2B` is drawn as given);
   - without one, the palette's navy `#1C3A5E`, the X-Men tracker's accent.
 

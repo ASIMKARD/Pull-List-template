@@ -283,12 +283,12 @@ module.exports = async function (t) {
       return { r, D: r.status === 0 ? loadData(r.out) : null };
     };
     const none = withAccent('accent-none'), dark = withAccent('accent-dark', '#7A1F2B');
-    const light = withAccent('accent-crimson', '#E8113F'), yellow = withAccent('accent-yellow', '#E0A040');
+    const light = withAccent('accent-crimson', '#E8123C'), yellow = withAccent('accent-yellow', '#E0A040');
     t.eq('without an accent, "One colour" is the palette\'s navy, and the report says so', [none.D && none.D.pullMono.hex, none.r.report && none.r.report.oneColour],
          [PAL[10].hex, { source: null, hex: PAL[10].hex, nudged: null }]);
     t.eq('a dark accent is drawn as given: #7A1F2B', [dark.D && dark.D.pullMono.hex, dark.r.report && dark.r.report.oneColour.nudged], ['#7A1F2B', null]);
     const hue = h => C.rgbOklch(C.hexRgb(h))[2];
-    for (const [name, x, src] of [['a light accent (Absolute\'s crimson)', light, '#E8113F'], ['a yellow one, where the gamut runs out first', yellow, '#E0A040']]) {
+    for (const [name, x, src] of [['a light accent (Absolute\'s crimson)', light, '#E8123C'], ['a yellow one, where the gamut runs out first', yellow, '#E0A040']]) {
       const got = x.D && x.D.pullMono.hex;
       t.ok(name + ' is darkened only as far as it must be: ' + src + ' → ' + got + ', passing, and one step less still fails',
            !!got && got === least(src) && passes(C.hexRgb(got)) && got !== src && x.r.report.oneColour.source === src && x.r.report.oneColour.nudged.steps > 0);

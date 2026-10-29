@@ -318,7 +318,7 @@ module.exports = async function (t) {
     // exactly that colour, its strip the reference's shade, and white, the 85 % years and the strip each at 4.5:1 or more
     {
       const bad = [], seen = [];
-      for (const [label, accent] of [['none', undefined], ['dark', '#7A1F2B'], ['crimson', '#E8113F']]) {
+      for (const [label, accent] of [['none', undefined], ['dark', '#7A1F2B'], ['crimson', '#E8123C']]) {
         const dir = copyFixture('basic', 'look-accent-' + label), ds = readJSON(path.join(dir, 'dataset.json'));
         if (accent) ds.franchise.accent = accent; else delete ds.franchise.accent;
         writeJSON(path.join(dir, 'dataset.json'), ds);

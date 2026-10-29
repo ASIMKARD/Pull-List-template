@@ -3334,9 +3334,12 @@ Chromium with `data-eras="mono"`.
   A malformed accent fails the build.
 - **The build reports what it drew** (`oneColour`: source, colour, nudge). It warns if that colour reads under
   4.5:1 as the review era tag; it doesn't for any accent tried.
-- **What Absolute would get:** its crimson `#E8113F` drawn `#C90033` (white 5.95:1, years 4.52:1, strip 7.34:1;
-  127 steps). Absolute keeps the navy until John sets its accent. Its `theme`, `#0D0616`, is the browser chrome's
-  colour, not an accent.
+- **What Absolute would get:** its crimson, v7's `#E8123C`, drawn `#C90030` (white 5.96:1, years 4.53:1, strip
+  7.35:1; 127 steps). Absolute keeps the navy until John sets its accent. Its `theme`, `#0D0616`, is the browser
+  chrome's colour, not an accent.
+  - *Corrected 29 Oct:* this line first gave `#E8113F` → `#C90033`. That was a near-miss, never Absolute's colour.
+    v7's stylesheet uses `#E8123C` 95 times; the v9 skin draws it as `hsl(348, 86%, 49%)` = `#E8113C`. Both are
+    drawn `#C90030`. The tests' crimson case now uses `#E8123C`.
 - **The schema's era colour text** no longer says Pull derives a colour from the era's hue. It names the default
   palette and the review era tag.
 - **Checks:**
@@ -3643,6 +3646,15 @@ X-Men, so it needs no entry.
 ### 29 Oct: the eras the same size
 - **"Make the eras the same size (currently X-Men's seems 10–15 % bigger)."** Measured: line height, not size. Pull
   takes X-Men's 1.45 for every line; its controls keep the browser's, as X-Men's do.
+
+### 29 Oct: Absolute v10
+- **Absolute Cassandra Cain: The Shadow's Hand #1 goes in,** as SOLO, optional, under the Catwoman strand. v9 had
+  flagged it when the scope was locked.
+- **DC All In Saga: Darkseid vs. the World #1 goes in as optional** (EVENT), though the DC Database files it under
+  Prime Earth.
+- **Absolute's `franchise.accent` is its signature crimson,** so "One colour" in Pull draws it as the build darkens it:
+  `#E8123C` → `#C90030`. Absolute's own skin is unaffected.
+- **The change report for the new rows goes to John before they are added,** as for v8 and v9.
 
 ## Session 8 plan (approved 28 Oct 2026)
 Each step ends committed, pushed and green (the harness, the layout suite and CI), with a
