@@ -3280,6 +3280,51 @@ the x-frame rules. Then the scrolled view at every width, and any `step 6` entry
 ### Next
 Step 6b, as "Step 6b begins with" under step 6a's checkpoint (Settings on the x frame).
 
+## Session 8 checkpoint — step 6b done (the x frame's Settings), 29 Oct 2026
+
+### Done
+- **Settings are drawn in X-Men's look, the sections still collapsible** (John, 24 Oct). Each section is a band with a
+  rule under it, its head in the mono face; the icon, summary and chevron are kept. Rows are 9 px apart, the label
+  and the control at either end.
+- **Every on/off setting is a switch on its own row** (`prefs`; the v9 frame keeps its chips). A group of one carries
+  the setting's words under its name ("Order" / "Newest era first"); a larger group gets a sub-heading. A switch that
+  is off is the line colour exactly (F). The switch keeps `data-act="pref"`, `data-k` and `aria-pressed`, so
+  `togglePref` and every test selector are unchanged.
+- **The segmented control is X-Men's joined pill.** Its segments wrap their own words, so "Issues per week" fits at
+  320 px with the largest text (looked at, and 10-sweep: nothing cut).
+- **The small buttons** are X-Men's, outlined in the control outline. Backup's two buttons, which sit outside a row,
+  are now 8 px apart (they touched). **The swatches** are 24 px (E).
+- **45-pull:**
+  - a new map row, `setting desc` (X-Men's `.setting-desc`), with X-Men re-captured after an exact drift check;
+  - 1900 match (1786 before), 80 listed;
+  - the two Settings differences left are both ruled: the buttons' outline (as the pinned chips) and the swatch size
+    (E). **No `step` entry remains in the list.**
+- **Checks:**
+  - 98-tabs-settings: the x frame's switches, the one-setting row and the group, and the v9 frame's chips;
+  - 40-look: the Settings heading, sub-heading, a setting's words, an unpressed segment, a button, the segmented and
+    button outlines, and a switch that is on;
+  - 20-motion: now scans `::before` and `::after`, and sees the knob.
+- **Mutation-proved 9 of 9:**
+  - chips back on the x frame;
+  - switches on the v9 frame;
+  - a one-setting row without its words;
+  - the pill unjoined;
+  - the buttons in `#C9C4B5`;
+  - the swatches at 22 px;
+  - the heading in the body face;
+  - the knob moving under reduced motion;
+  - an off switch not in the line colour.
+- **Docs:** BUILD-NOTES "The x frame's Settings"; FEATURE-INVENTORY X-21 and F-4.
+
+**Harness:** 1704 assertions, 0 failed, 37 suites. **Layout:** 467 checks, 0 failed, 12 suites.
+
+### Step 7 begins with
+"One colour" with the tracker's accent (B, John 19 and 24 Oct). Start with `schema/dataset.schema.json`: an optional
+`franchise.accent` (`#RRGGBB`). Then `tools/build.py`: `pull_mono` takes `pull_colour` of the accent nudged by the
+palette's rule (white text, the 85 % years and the strip at 4.5:1, hue kept), or the navy `#1C3A5E` without one. Then
+20-build: no accent, a dark accent drawn as given, and a light accent nudged minimally. Then 40-look: all three in
+Chromium with `data-eras="mono"`.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls

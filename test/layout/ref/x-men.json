@@ -9,7 +9,7 @@
   390,
   1024
  ],
- "mapHash": "ce04c32d61c71563",
+ "mapHash": "5b1caa8b042cb554",
  "views": [
   "landing",
   "era",
@@ -787,6 +787,17 @@
        "fontStyle": "normal",
        "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
+      },
+      "setting desc": {
+       "fontFamily": "IBM Plex Sans",
+       "fontSize": "11px",
+       "fontWeight": "400",
+       "letterSpacing": "0px",
+       "textTransform": "none",
+       "fontStyle": "normal",
+       "lineHeight": "1.45",
+       "color": "rgba(87, 84, 74, 1)",
+       "marginTop": "1px"
       },
       "segmented": {
        "borderTopWidth": "1px",
@@ -1647,6 +1658,17 @@
        "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
       },
+      "setting desc": {
+       "fontFamily": "IBM Plex Sans",
+       "fontSize": "11px",
+       "fontWeight": "400",
+       "letterSpacing": "0px",
+       "textTransform": "none",
+       "fontStyle": "normal",
+       "lineHeight": "1.45",
+       "color": "rgba(87, 84, 74, 1)",
+       "marginTop": "1px"
+      },
       "segmented": {
        "borderTopWidth": "1px",
        "borderTopStyle": "solid",
@@ -2505,6 +2527,17 @@
        "fontStyle": "normal",
        "lineHeight": "1.45",
        "color": "rgba(27, 25, 18, 1)"
+      },
+      "setting desc": {
+       "fontFamily": "IBM Plex Sans",
+       "fontSize": "11px",
+       "fontWeight": "400",
+       "letterSpacing": "0px",
+       "textTransform": "none",
+       "fontStyle": "normal",
+       "lineHeight": "1.45",
+       "color": "rgba(87, 84, 74, 1)",
+       "marginTop": "1px"
       },
       "segmented": {
        "borderTopWidth": "1px",

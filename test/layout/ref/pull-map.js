@@ -29,7 +29,7 @@ const SCROLL = 300;                      // the scrolled view: both pages scroll
    that is done (at or before CURRENT_STEP) fails 45-pull: that step should
    have fixed it. */
 const STEPS = ['1', '1b', '2', '3', '4a', '4b', '5', '6a', '6b', '7', '8', '9'];
-const CURRENT_STEP = '6a';
+const CURRENT_STEP = '6b';
 
 const TEXT = ['fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'fontStyle', 'lineHeight', 'color'];   // line height too (John, 29 Oct: the eras read bigger)
 /* Text drawn on a coloured box is compared by the colour you see: its colour
@@ -137,6 +137,7 @@ const MAP = {
     ['settings heading', '.settings-section h3', '#settings .sec-name', TEXT],
     ['setting row', '.setting-row', '#settings .srow', ['paddingTop', 'paddingBottom', 'columnGap'], { leaf: false }],
     ['setting label', '.setting-label', '#settings .slabel', TEXT],
+    ['setting desc', '.setting-desc', '#settings .sdesc', TEXT.concat(['marginTop'])],
     ['segmented', '.settings-section .segmented', '#settings .seg', EDGE, { leaf: false }],
     ['segment', '.settings-section .segmented button:not(.on)', '#settings .segbtn[aria-pressed="false"]', TEXT.concat(['backgroundColor', 'paddingTop', 'paddingLeft'])],
     ['segment, on', '.settings-section .segmented button.on', '#settings .segbtn[aria-pressed="true"]', ['backgroundColor', 'color']],
@@ -159,7 +160,6 @@ const ONLY = {
     ['.filterbar .chip-row', 'kept:filters: the type, era and preset chips are in the Filters panel (John, 1 Oct)'],
     ['.arc-actions [data-reviewtoggle]', 'kept:reviews: reviews are per issue, with ✎ on every row (John, 8 Oct)'],
     ['.review-edit-panel', 'kept:reviews: reviews are per issue (John, 8 Oct)'],
-    ['.setting-desc', 'kept:settings: Settings keep the template\'s collapsible sections and their own rows (John, 24 Oct)'],
     ['.settings-section .row-buttons', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['.settings-section select', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['.refresh-box', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
@@ -183,7 +183,6 @@ const ONLY = {
     ['#settings .sec-sum', 'kept:settings: as the icon (John, 24 Oct)'],
     ['#settings .sec-chev', 'kept:settings: as the icon (John, 24 Oct)'],
     ['#settings .sctl', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
-    ['#settings .chip', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings select', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings textarea', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
     ['#settings .muted', 'kept:settings: the template\'s own rows (John, 24 Oct)'],
@@ -246,10 +245,12 @@ const DIFFERENCES = {
   'arc/bookmark.color@*': 'accessible: the quiet star #6D685B, X-Men\'s #C9C4B5 (1.53:1) made to pass 4.5:1 on the card on every paper (A revised to every paper, John, 29 Oct)',
   'arc/bookmark, on.color@*': 'accessible: a bookmark that is on in the gold #836400, X-Men\'s #B08A1F (2.83:1) made to pass on every paper (B revised to every paper, John, 29 Oct)',
   'extras/core star.color@*': 'accessible: the core star in the same gold (B; John, 29 Oct)',
+  'settings/settings button.borderTopColor@*': 'accessible: Settings\' buttons in the control outline, 3:1 on the paper they sit on (X-Men\'s #C9C4B5 is 1.53:1), as the pinned chips (G; John, 28 Oct)',
+  'settings/swatch.boxWidth@*': 'accessible: the paper swatches at 24 × 24 px, X-Men\'s 22 px under the target size (E; John, 28 Oct)',
+  'settings/swatch.boxHeight@*': 'accessible: …24 px high (E; John, 28 Oct)',
   'reviews/review stars.color@*': 'accessible: the review stars in the gold #836400 (B revised to every paper, John, 29 Oct)',
   'reviews/review edit.borderTopColor@*': 'accessible: Edit outlined as ⓘ and Mark arc are, #8A8577, 3:1 on its card on every paper (G revised to every paper, John, 29 Oct)',
   // step 6: the other tabs
-  'settings/*.*@*': 'step 6b: Settings in X-Men\'s look, in the collapsible sections (John, 24 Oct)',
 };
 
 /* In-page: the computed values for one side of one view's map. */

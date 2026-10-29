@@ -373,6 +373,25 @@ One skin of the tracker's own, from `franchise.signature`:
 - 45-pull measures line height on every text and the height of the era box, its tab and its strip, so this can't
   drift again. After this: 1786 match and 167 listed.
 
+### The x frame's Settings (session 8, step 6b)
+
+- **The sections stay collapsible** (John, 24 Oct), each drawn as the reference's: a band with a rule under it, its head
+  in the mono face, 11 px, upper case, in the soft ink. The icon, the summary and the chevron stay.
+- **Rows** are 9 px apart, with the label and its control at either end.
+- **On/off settings are switches** (`prefs` in `app.js`), one row each:
+  - a group of one is a row with the group's name and the setting's words under it ("Order" / "Newest era first");
+  - a larger group is a sub-heading over a row per setting;
+  - a switch that is off is the line colour, exactly as the reference's (F); one that is on is in `--mark-on`;
+  - its knob moves in `calc(.15s * var(--motion))`, which 20-motion now measures in `::before` and `::after` too.
+
+  The v9 frame keeps its chips.
+- **The segmented control** is one joined pill outlined in `--mark-on`. Its segments share it and wrap their own words,
+  so "Issues per week" fits at 320 px with the largest text.
+- **Buttons** are the reference's small ones, outlined in the control outline, 3:1 on the paper they sit on (as the
+  pinned chips). **Swatches** are 24 px (E).
+- 45-pull: two Settings differences are left, each ruled; no `step` entry remains anywhere. After this step: 1900 match,
+  80 listed.
+
 ## The workbook
 
 - `tools/build_workbook.py` writes five sheets (Reading Order, Arcs, Eras,

@@ -82,12 +82,17 @@ module.exports = async function (t) {
       ['Reading Mark Read (x frame)', '#reader .rbtn.solid'], ['Reading nav (x frame)', '#reader .rnav .linkbtn:not([disabled])'],
       ['review era tag (x frame: its era\'s colour, as given)', '#reviews .rev-era'], ['review stars (x frame: the gold)', '#reviews .rev-stars'],
       ['review text (x frame)', '#reviews .rev-t'], ['review Edit (x frame)', '#reviews .rev-edit'],
+      ['Settings heading (x frame: mono, the soft ink)', '#settings .sset .sec-name'], ['Settings sub-heading (x frame)', '#settings .ssub'],
+      ['a setting\'s words (x frame)', '#settings .sdesc'], ['an unpressed segment (x frame: on the card)', '#settings .segbtn[aria-pressed="false"]'],
+      ['a Settings button (x frame)', '#settings .tool'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
     const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
       ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],
       ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor'],
       ['ⓘ outline on its card (x frame)', '.card .info-btn', 'borderTopColor'], ['Mark arc outline on its card (x frame)', '.card .arc-acts .b', 'borderTopColor'],
-      ['Edit outline on its review card (x frame)', '#reviews .rev-edit', 'borderTopColor'], ['Reading Skip outline (x frame)', '#reader .rbtn.ghost', 'borderTopColor']];
+      ['Edit outline on its review card (x frame)', '#reviews .rev-edit', 'borderTopColor'], ['Reading Skip outline (x frame)', '#reader .rbtn.ghost', 'borderTopColor'],
+      ['segmented outline (x frame)', '#settings .sset .seg', 'borderTopColor'], ['Settings button outline (x frame)', '#settings .tool', 'borderTopColor'],
+      ['a switch that is on (x frame)', '#settings .tog[aria-pressed="true"]', 'backgroundColor']];
     const fails = [], theme = [], cardsDrift = [], oneGold = [], asGiven = [];
     /* the build nudges Pull's type badges against its card on every paper (tools/build.py PULL_CARDS): they must be the cards drawn here */
     const PULL_CARDS = Object.fromEntries([...(require('fs').readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]

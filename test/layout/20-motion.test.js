@@ -5,11 +5,12 @@
 const { mixed, basic } = require('../lib/helpers');
 const { serve, open, closeBrowser } = require('./lib');
 
-/* Elements with any non-zero transition or animation duration. */
-const moving = () => [...document.querySelectorAll('*')].filter(el => {
-  const cs = getComputedStyle(el), on = v => v.split(',').some(d => parseFloat(d) > 0);
-  return on(cs.transitionDuration) || on(cs.animationDuration);
-}).map(el => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''));
+/* Elements, and the ::before and ::after they draw (a switch's knob moves in one), with any non-zero transition or
+   animation duration. */
+const moving = () => [...document.querySelectorAll('*')].flatMap(el => ['', '::before', '::after'].filter(p => {
+  const cs = getComputedStyle(el, p || null), on = v => v.split(',').some(d => parseFloat(d) > 0);
+  return (!p || cs.content !== 'none') && (on(cs.transitionDuration) || on(cs.animationDuration));
+}).map(p => el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : '') + p));
 
 module.exports = async function (t) {
   try {
@@ -37,6 +38,7 @@ module.exports = async function (t) {
     t.ok('a filter-panel section animates the same way (one component)', r.anims.includes('grid-template-rows') && Math.abs(r.end - r.content) <= 1, JSON.stringify(r));
     const normal = await pg.page.evaluate(moving);
     t.ok('the scan sees transitions when motion is allowed (' + normal.length + ' elements)', normal.length > 0);
+    t.ok('…a switch\'s knob among them (the x frame\'s Settings)', normal.some(x => /^button\.tog::after$/.test(x)), normal.filter(x => /tog/.test(x)).join(' | '));
     t.eq('no page errors (motion)', pg.errors, []);
     await pg.close();
 

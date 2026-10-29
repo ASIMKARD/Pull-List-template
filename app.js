@@ -2282,6 +2282,20 @@
   function pref(k, label) {
     return '<button type="button" class="chip" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '">' + escapeHtml(label) + '</button>';
   }
+  /* On/off settings, a group of them under one name. The v9 frame shows them as chips in one row; the x frame as the
+     reference tracker's switches (John, 24 Oct), one row each: a group of one is a row with the group's name and the
+     setting's words under it, a larger group a sub-heading over a row per setting. */
+  function prefs(group, list) {
+    list = list.filter(Boolean);
+    if (frameOf(settings.skin) !== 'x') return srow(group, list.map(function (p) { return pref(p[0], p[1]); }).join(''));
+    var row = function (k, label, desc) {
+      return '<div class="srow trow"><span class="slabel">' + escapeHtml(label) + (desc ? '<span class="sdesc">' + escapeHtml(desc) + '</span>' : '') + '</span>' +
+        '<div class="sctl"><button type="button" class="tog" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '" aria-label="' +
+        escapeAttr(desc ? group + ': ' + desc : label) + '"></button></div></div>';
+    };
+    if (list.length === 1) return row(list[0][0], group, list[0][1]);
+    return '<h3 class="ssub">' + escapeHtml(group) + '</h3>' + list.map(function (p) { return row(p[0], p[1]); }).join('');
+  }
   function bookmarksHtml() {
     var list = bookmarked();
     if (!list.length) return '<p class="muted">No bookmarks yet. Tap ☆ on any row.</p>';
@@ -2316,7 +2330,7 @@
       (HAS.media ? '<p class="muted shelp pace-dur">Comics are timed at your minutes per issue; shows and games count their own length.</p>' +
         srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
       (HAS.events ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
-      srow('Next unread button', pref('showJump', 'Show it')));
+      prefs('Next unread button', [['showJump', 'Show it']]));
     var lookSeg = function (k, label, opts, cur) {
       return '<div class="seg" role="group" aria-label="' + escapeAttr(label) + '">' + opts.map(function (o) {
         return '<button type="button" class="segbtn" data-act="look" data-k="' + k + '" data-v="' + escapeAttr(o[0]) + '" aria-pressed="' +
@@ -2332,16 +2346,16 @@
       LOOK.filter(function (l) { return l[0] !== 'eraHues' || HAS.eras; }).map(function (l) {
         return srow(l[2], lookSeg(l[0], l[2], l[3], settings[l[0]]));
       }).join('') +
-      srow('Reading aid', pref('dys', 'Dyslexia-friendly font')));
+      prefs('Reading aid', [['dys', 'Dyslexia-friendly font']]));
     h += sset('display',
-      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
-        (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '') + pref('table', 'Table view')) +
-      srow('Progress', pref('mini', 'Mini progress bar') + pref('banner', 'Persistent banner')) +
-      (HAS.eras ? srow('Order', pref('rev', 'Newest era first')) : '') +
+      prefs('Rows', [['badges', 'Badges'], ['combo', 'Combo badge'], HAS.reveal && ['reveal', 'Tap to reveal notes'],
+        HAS.gapNotes && ['gapNotes', 'Gap notes'], ['table', 'Table view']]) +
+      prefs('Progress', [['mini', 'Mini progress bar'], ['banner', 'Persistent banner']]) +
+      (HAS.eras ? prefs('Order', [['rev', 'Newest era first']]) : '') +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
       (HAS.eras ? srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)) : ''));
     h += sset('touch',
-      srow('Gestures', pref('swipe', 'Swipe to mark') + pref('press', 'Long-press to mark all read')) +
+      prefs('Gestures', [['swipe', 'Swipe to mark'], ['press', 'Long-press to mark all read']]) +
       '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold ' + (HAS.bands ? 'a band, era' : 'an era') +
       ' or arc heading to mark everything in it read; Undo puts every row back.</p>');
     var eraOpts = function (cur) {
