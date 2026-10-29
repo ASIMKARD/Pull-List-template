@@ -1,10 +1,11 @@
-/* Under the tab bar (session 4, step 5): the mini progress bar (F-17, on by
-   default) and the persistent banner (F-16, off by default, one line or one
+/* Under the tab bar (session 4, step 5): the mini progress bar (F-17; on by
+   default on the v9 frame, off on the x frame, John 24 Oct) and the persistent banner (F-16, off by default, one line or one
    per format), both showing exactly the header's figures; and table view
    (F-49, S-7), a display option. Heights and widths are measured in
    test/layout/50-table. */
 'use strict';
-const { boot, wait, basic, mixed, loadData, openSettings } = require('../lib/helpers');
+const path = require('path');
+const { boot, wait, basic, mixed, build, loadData, openSettings, FIX, openCards } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic(), D = loadData(b.out), ns = D.franchise.key + ':v3:';
@@ -16,7 +17,7 @@ module.exports = async function (t) {
   const pref = k => $('[data-act="pref"][data-k="' + k + '"]');
 
   // ------------------------------------------------ defaults
-  t.ok('the mini progress bar shows by default (F-17, S-10)', !$('#mini').hidden);
+  t.ok('the mini progress bar is off by default on the x frame, as the reference tracker\'s (John, 24 Oct; F-17, S-10)', $('#mini').hidden);
   t.ok('the persistent banner is off by default (T-51, S-11)', $('#pbanner').hidden && $('#pbannerIn').innerHTML === '');
   t.ok('both sit under the tab bar, outside the panes, so every tab has them', $('#tabs').nextElementSibling === $('#pbanner') &&
        $('#pbanner').nextElementSibling === $('#mini') && !$('#mini').closest('.pane'));
@@ -25,7 +26,15 @@ module.exports = async function (t) {
   t.eq('the mini bar shows the header\'s figures (read of goal)', [+$('#miniBar').value, +$('#miniBar').max], header());
   openSettings(app, ['display']);
   t.ok('Display offers the mini bar, the banner (T-50) and table view (S-7)', !!pref('mini') && !!pref('banner') && !!pref('table') &&
-       pref('mini').getAttribute('aria-pressed') === 'true' && pref('banner').getAttribute('aria-pressed') === 'false' && pref('table').getAttribute('aria-pressed') === 'false');
+       pref('mini').getAttribute('aria-pressed') === 'false' && pref('banner').getAttribute('aria-pressed') === 'false' && pref('table').getAttribute('aria-pressed') === 'false');
+  {
+    const v9 = build(path.join(FIX, 'sig-v9', 'dataset.json'), { label: 'mini-v9' }), a9 = boot(v9.out, { storage: {} });
+    await wait(20);
+    t.ok('…and on by default on the v9 frame, as v9 (a signature skin\'s "frame": "v9"; John, 28 Oct)',
+         a9.document.documentElement.getAttribute('data-frame') === 'v9' && !a9.document.querySelector('#mini').hidden);
+  }
+  pref('mini').click();
+  t.ok('turning the mini bar on shows it', !$('#mini').hidden);
 
   // ------------------------------------------------ the banner
   pref('banner').click();
@@ -33,11 +42,14 @@ module.exports = async function (t) {
   t.eq('one combined line for comics-and-more read as one list', $$('#pbannerIn .pbl').length, 1);
   const line = () => $('#pbannerIn .pbl');
   t.eq('…with the header\'s count', line().querySelector('.pbl-count').textContent, header().join(' / ') + ' read');
-  t.eq('…and the header\'s time left', line().querySelector('.pbl-left').textContent, $('#pprog .pleft').textContent);
-  t.ok('the Display summary says the banner is on', /banner/.test($('.sset[data-k="display"] .sec-sum').textContent));
+  t.eq('…and the header\'s time left (the header says "remaining" on the x frame)', [line().querySelector('.pbl-left').dataset.leftMin, line().querySelector('.pbl-left').textContent.replace(/ left$/, '')],
+       [$('#pprog .pleft').dataset.leftMin, $('#pprog .pleft').textContent.replace(/ remaining$/, '')]);
+  const sumWith = $('.sset[data-k="display"] .sec-sum').textContent;
+  t.ok('the Display summary says the banner and the mini bar are on (the x frame\'s default is off)', /banner/.test(sumWith) && /· mini bar/.test(sumWith), sumWith);
   $('#tab-list').click();
   $('.band-head').click();
   $('.era-head').click();
+  openCards($('.era'));
   const row = $('.row:not(.inert)');
   row.querySelector('.mark').click(); row.querySelector('.mark').click();             // reading, then read
   t.eq('a mark moves the banner with the header (no full re-render)', line().querySelector('.pbl-count').textContent, header().join(' / ') + ' read');
@@ -47,14 +59,15 @@ module.exports = async function (t) {
   pref('mini').click();
   pref('banner').click();
   t.ok('both turn off: hidden, and the banner empties', $('#mini').hidden && $('#pbanner').hidden && $('#pbannerIn').innerHTML === '');
-  t.ok('the summary says so', /no mini bar/.test($('.sset[data-k="display"] .sec-sum').textContent));
+  t.ok('the summary says so', /\bbanner\b/.test(sumWith) && /mini bar/.test(sumWith) && !/banner|mini bar/.test($('.sset[data-k="display"] .sec-sum').textContent));
 
   // ------------------------------------------------ table view
   pref('table').click();
   t.eq('table view is a root flag', d.documentElement.getAttribute('data-table'), '1');
   $('#tab-list').click();
-  const core = $('.row .b.core'), mu = $('.row .b.mu');
-  t.eq('badge words sit in a span table view can fold away; the text reads the same', [core.textContent, mu.textContent], ['★ core', 'look up ↗']);
+  const mu = $('.row .b.mu');
+  t.eq('badge words sit in a span table view can fold away; the text reads the same', mu.textContent, 'look up ↗');
+  t.ok('…and the core star stays a star, named "core" (x frame)', $$('.row .core-star').length > 0 && $$('.row .core-star').every(s => s.textContent === '★' && s.getAttribute('aria-label') === 'core'));
   t.ok('the look-up link keeps a full name when its words fold away', /^Look up /.test(mu.getAttribute('aria-label')));
   t.ok('…and so does the flashback note button', !$('.row .b.note') || $$('.row .b.note').every(x => !!x.getAttribute('aria-label')));
   t.ok('the summary says table view', /table view/.test($('.sset[data-k="display"] .sec-sum').textContent));

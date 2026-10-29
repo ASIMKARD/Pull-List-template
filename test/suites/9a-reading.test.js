@@ -4,7 +4,8 @@
    labels follow the medium (T-52). S-17 is re-expressed here: the checklist
    always lands collapsed, and the Reading tab is where "resume" lives. */
 'use strict';
-const { loadData, boot, wait, typeInto, mixed } = require('../lib/helpers');
+const path = require('path');
+const { loadData, boot, wait, typeInto, mixed, build, FIX } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -29,11 +30,13 @@ module.exports = async function (t) {
   t.ok('the stepper shows a title (T-118)', $('#reader .rtitle').textContent === 'Mixed Quest (1990)');
   t.ok('it resumes at the first entry not yet done (read and skipped ones are passed over)', cur() === 'mixed-quest-1990');
   t.ok('"n of N" counts the view, inert gap notes excluded', $('#reader .rcount').textContent === '3 of 13');
-  t.ok('era pill, format pill, and arc · type', /One/.test($('#reader .rpills').textContent) && /Games/.test($('#reader .rpills').textContent) &&
-       $('#reader .rmeta').textContent === 'The Game · game');
+  t.ok('era pill, format pill, and arc · type (the type as written, as the reference tracker shows it: x frame)', /One/.test($('#reader .rpills').textContent) &&
+       /Games/.test($('#reader .rpills').textContent) && $('#reader .rmeta').textContent === 'The Game · GAME');
+  t.ok('…the era pill in its era\'s colour tokens (x frame)', $('#reader .rpill').classList.contains('eratok') && /--ei:/.test($('#reader .rpill').getAttribute('style')));
 
   // ---- labels follow the medium (T-52)
-  t.ok('a game reads "Not started" and offers "Mark Beaten" (T-52)', $('#reader .rstate').textContent === 'Not started' && btn('rd-done').textContent === 'Mark Beaten');
+  t.ok('a game not started offers "Mark Beaten", and the counter names no state yet (T-52; x frame: the state lives in the counter)',
+       btn('rd-done').textContent === 'Mark Beaten' && $('#reader .rcount').textContent === '3 of 13' && !$('#reader .rstate'));
 
   // ---- D-1: a Reading-tab mark moves every counter
   const era0 = () => $('.era[data-e="0"] > .era-head .bcount').textContent;
@@ -43,22 +46,24 @@ module.exports = async function (t) {
   btn('rd-done').click();
   t.ok('the done button persists the mark (T-119)', stored('progress').marks['mixed-quest-1990'] === 'read');
   t.ok('header, band and era counters all move (D-1)', hdr() !== before[0] && band0() !== before[1] && era0() !== before[2] &&
-       /^2 \//.test(hdr()) && /^2 \//.test(band0()) && /^2 \//.test(era0()), [hdr(), band0(), era0()].join(' | '));
+       /^2 \//.test(hdr()) && /^2 \//.test(band0()) && /^2\//.test(era0()), [hdr(), band0(), era0()].join(' | '));   // an era strip reads "2/N" on the x frame
   t.ok('…and the time left drops by the game\'s 1500 minutes (two comics were already done)', $('#pprog .pleft').dataset.leftMin === String(1708 - 15 - 15 - 1500));
   t.ok('marking steps on to the next entry', cur() === 'mixed-hero-1990-3' && btn('rd-done').textContent === 'Mark Read');
   btn('rd-prev').click();
   t.ok('Previous goes back; a done game shows "Beaten ✓"', cur() === 'mixed-quest-1990' && btn('rd-done').textContent === 'Beaten ✓' &&
        btn('rd-done').getAttribute('aria-pressed') === 'true');
+  t.eq('…and the counter says so, in the game\'s own word (x frame)', $('#reader .rcount').textContent, '3 of 13 · BEATEN');
   btn('rd-done').click();
   t.ok('tapping "Beaten ✓" again clears the mark and stays put', cur() === 'mixed-quest-1990' && !stored('progress').marks['mixed-quest-1990'] &&
        btn('rd-done').textContent === 'Mark Beaten');
   btn('rd-next').click(); btn('rd-next').click();
   t.ok('a show offers "Mark Watched"', cur() === 'mixed-toons-1991-s1e1' && btn('rd-done').textContent === 'Mark Watched' &&
-       $('#reader .rstate').textContent === 'Unwatched');
+       !/·/.test($('#reader .rcount').textContent));
   btn('rd-skip').click();
   t.ok('Skip marks it skipped and steps on', stored('progress').marks['mixed-toons-1991-s1e1'] === 'skip' && cur() === 'mixed-toons-1991-s1e2');
   btn('rd-prev').click();
-  t.ok('…shown as "Skipped" when you go back', btn('rd-skip').textContent === 'Skipped' && btn('rd-skip').getAttribute('aria-pressed') === 'true');
+  t.ok('…shown as "Skipped" when you go back', btn('rd-skip').textContent === 'Skipped' && btn('rd-skip').getAttribute('aria-pressed') === 'true' &&
+       / · SKIPPED$/.test($('#reader .rcount').textContent));
 
   // ---- the checklist row follows a Reading-tab mark (one setMark path)
   app.window.PullList.jumpToIssue('mixed-toons-1991-s1e1');
@@ -102,6 +107,17 @@ module.exports = async function (t) {
   await typeInto(app, '#q', '');
   t.ok('no runtime errors', app.errors.length === 0, app.errors.join(' | '));
   app.window.close();
+
+  {   // the v9 frame keeps its Reading card: the state on its own line, the type in lower case (John, 25 Oct)
+    const v9 = build(path.join(FIX, 'sig-v9', 'dataset.json'), { label: 'reading-v9' }), a9 = boot(v9.out, { storage: {} });
+    await wait(20);
+    a9.document.querySelector('#tab-reading').click();
+    const r9 = a9.document.querySelector('#reader');
+    t.ok('the v9 frame keeps its Reading card: the counter, the state line and the lower-case type inside the card',
+         a9.document.documentElement.getAttribute('data-frame') === 'v9' && !!r9.querySelector('.rcard > .rcount') &&
+         r9.querySelector('.rstate').textContent === 'Unread' && / · [a-z][a-z -]*$/.test(r9.querySelector('.rmeta').textContent));
+    a9.window.close();
+  }
 
   // ---- S-17 re-expressed: boot on Reading, checklist still collapsed
   app = boot(mx.out, { now: NOW, storage: {

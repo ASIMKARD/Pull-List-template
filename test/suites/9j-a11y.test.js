@@ -29,7 +29,7 @@ module.exports = async function (t) {
   // ------------------------------------------------ open everything, visit every tab
   $('[data-act="panel"]').click();
   openSections(app, 'f');
-  $('.ptools [data-act="expand-all"]').click();
+  $('[data-act="expand-all"]').click();
   $('.row .b.rv').click();                                             // a review editor open too
   const seenIds = new Set(), dupes = new Set(), unnamed = [], badRefs = [], badStates = [];
   const audit = where => {

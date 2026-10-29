@@ -66,6 +66,11 @@ class BuildError(Exception):
 # things look, never where they are, so the build refuses anything else.
 # --------------------------------------------------------------------------
 SIGNATURE = 'signature'
+# The frames (John, 25 Oct): "x" is the shared skins' layout, X-Men's arrangement;
+# "v9" is the template's arrangement as it was up to v9, which a signature skin
+# may keep ("frame": "v9", Absolute's own skin). styles.css scopes every x-only
+# rule to :root[data-frame="x"], so the v9 frame is today's rules, untouched.
+FRAMES = ('x', 'v9')
 SIG_SCOPE = ':root[data-skin="signature"]'
 # :root tokens a skin may not set. Every token a Look setting's block sets
 # (paper, era colours, text size, density, buttons, marks, the dyslexia font)
@@ -76,7 +81,7 @@ RUNTIME_TOKENS = {'--fs', '--stack-h', '--motion', '--skin-ok', '--qr-paper'}
 # bar edge to edge, its solid era boxes). Every other skin keeps the template's
 # layout and pale eras, so a signature skin may not set them; 80-guards checks
 # styles.css the same way.
-PULL_ONLY = {'--tabs-inset', '--era-solid',
+PULL_ONLY = {'--tabs-inset', '--tabs-rule', '--era-solid',
              '--era-inset', '--era-space', '--era-pad', '--era-head-gap', '--era-edge', '--era-foot-r', '--era-shadow',
              '--era-tab-a', '--era-tab-pad', '--era-cut', '--era-hatch-w', '--era-strip-pad', '--era-bar-h', '--era-bar-r',
              '--era-frame', '--era-frame-r', '--era-body-pad'}
@@ -340,7 +345,12 @@ def signature_skin(sig, base, shell_root, errs):
                 css = ''
             rules = signature_rules(css, rel, inputs, shell_root, errs)
     css = '\n'.join(faces + ['%s {\n%s\n}' % (SIG_SCOPE, '\n'.join(lines))] + rules) + '\n'
-    return {'name': name, 'css': css}
+    # the arrangement it is drawn on (John, 25 Oct): the shared skins' X-Men layout, or v9's, kept exactly
+    frame = sig.get('frame', 'x')
+    if frame not in FRAMES:
+        errs.append('%s.frame must be one of %s: %r' % (w, ', '.join(FRAMES), frame))
+        frame = 'x'
+    return {'name': name, 'css': css, 'frame': frame}
 
 
 def signature_rules(css, rel, inputs, shell_root, errs):
@@ -628,12 +638,12 @@ def strip_shade(rgb):
 
 def passing_shade(rgb):
     """A hint for a colour under AA: the same hue, darker, until white text, the
-    85 % years and white text on its strip all clear 4.5:1 (chroma kept where
-    the gamut allows)."""
+    85 % years, white text on its strip and the colour as text on Pull's card
+    (the review era tag) all clear 4.5:1 (chroma kept where the gamut allows)."""
     L, C, H = rgb_oklch(rgb)
     while L > 0:
         cand = oklch_rgb(L, min(C, max_chroma(L, H)), H)
-        if min(white_ratios(cand)) >= AA and contrast(WHITE, strip_shade(cand)) >= AA:
+        if min(white_ratios(cand)) >= AA and contrast(WHITE, strip_shade(cand)) >= AA and text_ratio(cand) >= AA:
             return cand
         L -= 0.001
     return (0, 0, 0)
@@ -647,8 +657,9 @@ def oklch_parts(rgb):
 
 # Pull's default palette (John, 13 Oct): the reference tracker's eleven era
 # colours, in its order, as test/layout/ref/x-men.json records them (20-build
-# checks the two agree). "One colour" gives every era the last, its navy, which
-# is also the reference tracker's accent.
+# checks the two agree). "One colour" gives every era the tracker's own accent
+# (franchise.accent; John, 19 and 24 Oct), nudged by the same rule; without one,
+# the palette's last, its navy, which is also the reference tracker's accent.
 PULL_PALETTE = ['#A6791E', '#A6303C', '#7B3F94', '#2C6E8C', '#1F7A5C', '#B08A1F',
                 '#C0622A', '#C21E6D', '#9C4A3C', '#4A2E5C', '#1C3A5E']
 PULL_MONO = 10
@@ -660,13 +671,13 @@ def passes_aa(rgb):
     return min(white_ratios(rgb)) >= AA and contrast(WHITE, strip_shade(rgb)) >= AA
 
 
-def nudge(rgb):
-    """The least darkening that passes: OKLCH lightness lowered a step at a time,
-    hue and chroma kept. Where the gamut runs out first (a yellow holds less
-    chroma as it darkens), the chroma follows the gamut's edge, so the colour
-    stays inside sRGB. Returns (rgb, None) for a colour that already passes,
-    else (rgb, {'steps', 'l', 'c', 'edge'})."""
-    if passes_aa(rgb):
+def nudge(rgb, ok=passes_aa):
+    """The least darkening that passes (ok: an era box's white text by default):
+    OKLCH lightness lowered a step at a time, hue and chroma kept. Where the
+    gamut runs out first (a yellow holds less chroma as it darkens), the chroma
+    follows the gamut's edge, so the colour stays inside sRGB. Returns (rgb, None)
+    for a colour that already passes, else (rgb, {'steps', 'l', 'c', 'edge'})."""
+    if ok(rgb):
         return rgb, None
     L, C, H = rgb_oklch(rgb)
     k = 0
@@ -675,7 +686,7 @@ def nudge(rgb):
         x = L - k * NUDGE_STEP
         c = C if in_gamut(x, C, H) else max_chroma(x, H)
         cand = oklch_rgb(x, c, H)
-        if passes_aa(cand):
+        if ok(cand):
             return cand, {'steps': k, 'l': round(x, 4), 'c': round(c, 4), 'edge': c < C}
     return (0, 0, 0), {'steps': k, 'l': 0, 'c': 0, 'edge': True}
 
@@ -689,6 +700,39 @@ def pull_palette():
         out.append({'source': src, 'hex': rgb_hex(rgb), 'nudged': how, 'white': round(white, 3), 'years': round(years, 3),
                     'strip': round(contrast(WHITE, strip_shade(rgb)), 3)})
     return out
+
+
+# The reference tracker's arc-type colours (session 8; John, 24 and 28 Oct): an arc
+# card's stripe in its type's colour, exactly; its type badge in that colour on a
+# 13 % tint of itself, darkened only as far as the badge's text must be to pass on
+# Pull's card on every paper. Ruling C (MAIN #266886, SOLO #0A6E51, MINI #A04600)
+# passed on the default paper only; on every paper it takes MAIN #206381, SOLO
+# #00694D, MINI #994300 (C revised, John, 29 Oct). SPIN-OFF and EVENT pass as they are. A
+# type the table doesn't name takes its fallback.
+PULL_TYPES = {'MAIN': '#2C6E8C', 'SPIN-OFF': '#7B3F94', 'SOLO': '#1F7A5C', 'MINI': '#C0622A', 'EVENT': '#A6303C'}
+PULL_TYPE_OTHER = '#666666'
+# Pull's card on each paper swatch, as styles.css draws it (40-look checks they agree)
+PULL_CARDS = {'default': (242, 240, 233), 'warm': (248, 241, 227), 'grey': (236, 237, 239), 'rose': (247, 228, 230),
+              'mint': (231, 244, 238), 'sky': (227, 238, 248), 'lilac': (238, 230, 245)}
+BADGE_ALPHA = 34 / 255                    # the badge's tint: its colour at 0x22, as the reference
+
+
+def badge_ratio(rgb):
+    """The badge's text on its own tint, on the card where it is lowest."""
+    return min(contrast(rgb, over(rgb, BADGE_ALPHA, card)) for card in PULL_CARDS.values())
+
+
+def pull_type(name):
+    """What Pull draws for an arc type: its stripe and its badge, as OKLCH numbers."""
+    src = PULL_TYPES.get(str(name).upper(), PULL_TYPE_OTHER)
+    badge, how = nudge(hex_rgb(src), lambda c: badge_ratio(c) >= AA)
+    return {'hex': src, 'stripe': oklch_parts(hex_rgb(src)), 'badgeHex': rgb_hex(badge), 'badge': oklch_parts(badge),
+            'ratio': round(badge_ratio(badge), 3), 'nudged': how}
+
+
+def text_ratio(rgb):
+    """A colour as text on Pull's card, on the paper where it is lowest."""
+    return min(contrast(rgb, card) for card in PULL_CARDS.values())
 
 
 def pull_colour(hexcol):
@@ -819,17 +863,33 @@ def build(dataset_path, previous_datajs=None, keep=None):
                 rgb = hex_rgb(col)
                 white, years = white_ratios(rgb)
                 strip = contrast(WHITE, strip_shade(rgb))
+                # the colour as text on Pull's card, on each paper: the x frame's review era tag draws it as given (John, 29 Oct)
+                on_card = {k: round(contrast(rgb, c), 3) for k, c in PULL_CARDS.items()}
                 out['colour'] = {'hex': col.upper(), 'tab': oklch_parts(rgb), 'strip': oklch_parts(strip_shade(rgb)),
-                                 'white': round(white, 3), 'years': round(years, 3), 'stripWhite': round(strip, 3)}
+                                 'white': round(white, 3), 'years': round(years, 3), 'stripWhite': round(strip, 3), 'onCard': on_card}
                 out['pull'] = pull_colour(col)            # Pull draws a tracker's own colour exactly
-                if min(white, years, strip) < AA:
+                if min(white, years, strip, text_ratio(rgb)) < AA:
                     hint = passing_shade(rgb)
                     under_aa.append(e.get('id'))
-                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1; on its strip %s: %.2f:1), under %.1f:1 (WCAG AA). '
-                                 'Pull draws it as given (John, 12 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
-                                 % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, AA, rgb_hex(hint), *white_ratios(hint)))
+                    warns.append('%s: white text on its colour %s is %.2f:1 (the years at 85 %%: %.2f:1; on its strip %s: %.2f:1; as text on Pull\'s card, '
+                                 'the review era tag: %.2f:1 at the lowest), under %.1f:1 (WCAG AA). '
+                                 'Pull draws it as given (John, 12 and 29 Oct). The nearest shade of its hue where all pass: %s (%.2f:1, %.2f:1)'
+                                 % (w, col.upper(), white, years, rgb_hex(strip_shade(rgb)), strip, text_ratio(rgb), AA, rgb_hex(hint), *white_ratios(hint)))
         era_colours.append(out)
-    pull_mono = pull_colour(palette[PULL_MONO]['hex'])
+    # "One colour": the tracker's accent, darkened only as far as white text, the 85 % years and the strip need; else the navy
+    accent = fr.get('accent')
+    if accent is not None and (not isinstance(accent, str) or not COLOUR_RX.match(accent)):
+        errs.append('franchise.accent must be #RRGGBB (got %r)' % (accent,))
+        accent = None
+    if accent is None:
+        mono_rgb, mono_how = hex_rgb(palette[PULL_MONO]['hex']), None
+    else:
+        mono_rgb, mono_how = nudge(hex_rgb(accent))
+    pull_mono = pull_colour(rgb_hex(mono_rgb))
+    one_colour = {'source': accent.upper() if accent else None, 'hex': pull_mono['hex'], 'nudged': mono_how}
+    if text_ratio(mono_rgb) < AA:
+        warns.append('franchise.accent %s: "One colour" draws every era in %s, which reads %.2f:1 as the review era tag on Pull\'s card at the lowest, '
+                     'under %.1f:1 (WCAG AA)' % (accent, pull_mono['hex'], text_ratio(mono_rgb), AA))
 
     periods = ds.get('periods') or []
     if periods:
@@ -1285,6 +1345,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
                      'blurb': p.get('blurb', ''), 'eras': [ERA[x] for x in p['eras']]} for p in periods],
         'strands': strands,
         'types': types,
+        'typeColours': [pull_type(t) for t in types],   # Pull's arc cards (session 8): a stripe and a badge per type
         'tiers': tiers,
         'media': media,
         'characters': [c.get('name', c.get('id')) for c in chars],
@@ -1337,7 +1398,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
               'durationsCoverage': dur_coverage, 'creators': len(creator_names),
               'versionStart': version_start, 'deliverables': deliverables,
-              'eraColours': {'set': sum(1 for c in era_colours if 'colour' in c), 'underAA': under_aa}}
+              'eraColours': {'set': sum(1 for c in era_colours if 'colour' in c), 'underAA': under_aa}, 'oneColour': one_colour}
     return payload, report
 
 

@@ -1,0 +1,23 @@
+/* A signature skin on the v9 frame (John, 25 Oct): the template's arrangement as
+   it was up to v9, kept exactly, with the five kinds of touch Absolute's own skin
+   has (v7's): era numbers, a row-number gutter, glyph marks, a prefix on arc
+   headings and full-width era bars. test/layout/47-frame-v9 measures it against
+   frame-ref.json, so a later template change can't move any of it. */
+:root[data-skin="signature"] .era-head {
+  border-left: 4px solid var(--accent);
+  box-shadow: -16px 0 0 var(--accent-wash), 16px 0 0 var(--accent-wash);
+}
+:root[data-skin="signature"] .row::after {
+  content: attr(data-n);
+  position: absolute; top: var(--row-pad); right: 6px;
+  font-family: var(--font-mono); font-size: calc(10px * var(--scale)); line-height: 1.6;
+  color: var(--ink-soft);
+}
+:root[data-skin="signature"][data-table="1"] .row::after { content: none; }
+:root[data-skin="signature"] .arc-head h3::before { content: "// "; color: var(--accent); }
+:root[data-skin="signature"] .era-head .bname::before { content: attr(data-n) " "; font-family: var(--font-mono); }
+:root[data-skin="signature"] .row .mark { font-size: 0; }
+:root[data-skin="signature"] .row .mark::after { content: "[ ]"; font-family: var(--font-mono); font-size: calc(13px * var(--scale)); }
+:root[data-skin="signature"] .row[data-s="reading"] .mark::after { content: "[/]"; }
+:root[data-skin="signature"] .row[data-s="read"] .mark::after { content: "[X]"; }
+:root[data-skin="signature"] .row[data-s="skip"] .mark::after { content: "[-]"; }

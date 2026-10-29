@@ -1,7 +1,7 @@
 /* Filter panel (approved mockup) and search: matches open themselves, clearing
    returns to the collapsed landing, everything stays lazy. */
 'use strict';
-const { loadData, boot, wait, typeInto, basic, stress } = require('../lib/helpers');
+const { loadData, boot, wait, typeInto, basic, stress, openCards } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic();
@@ -129,6 +129,7 @@ module.exports = async function (t) {
   const rising = D.eras.findIndex(e => e.id === 'rising');
   $('.band[data-b="0"] > .band-head').click();
   $(`.era[data-e="${rising}"] > .era-head`).click();
+  openCards($(`.era[data-e="${rising}"]`));
   const ids = $$(`.era[data-e="${rising}"] .row`).map(r => r.dataset.id);
   t.ok('publication order puts the 1984 flashback after the 1983 issues', ids.indexOf('vela-year-zero-1984-1') > ids.indexOf('orrin-1983-4'));
   $('.chip[data-k="order"][data-v="reading"]').click();

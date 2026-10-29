@@ -73,7 +73,7 @@ module.exports = async function (t) {
     // ------------------------------------------------ the banner and the mini bar, every tab, per format
     const msrv = await serve(mixed().out), over = [];
     for (const skin of SKINS) {
-      const pg = await open(msrv.url, { width: 320, reducedMotion: 'reduce', storage: seed('mixed', { skin, banner: true, progressMode: 'medium' }) });
+      const pg = await open(msrv.url, { width: 320, reducedMotion: 'reduce', storage: seed('mixed', { skin, banner: true, mini: true, progressMode: 'medium' }) });   // the mini bar on: the x frame's default is off
       await eachTab(pg.page, async tab => {
         const m = await pg.page.evaluate(() => ({ sw: document.documentElement.scrollWidth, vw: innerWidth,
           banner: document.querySelector('#pbanner').getBoundingClientRect().height, lines: document.querySelectorAll('#pbannerIn .pbl').length,

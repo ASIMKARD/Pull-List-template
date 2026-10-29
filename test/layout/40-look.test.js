@@ -30,9 +30,20 @@ const PAGE_LIB = () => {
   const cv = document.createElement('canvas'); cv.width = cv.height = 1;
   const cx = cv.getContext('2d', { willReadFrequently: true });
   window.__rgb = c => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data]; };
+  /* the colour behind an element: translucent backgrounds (a type badge's tint) painted, bottom up, over what is
+     under them, the way the page paints them (reading a translucent colour back first would lose its precision) */
   window.__bg = el => {
-    for (let e = el; e; e = e.parentElement) { const c = window.__rgb(getComputedStyle(e).backgroundColor); if (c[3] > 0) return c; }
-    return [255, 255, 255, 255];
+    const layers = [];
+    for (let e = el; e; e = e.parentElement) {
+      const css = getComputedStyle(e).backgroundColor, c = window.__rgb(css);
+      if (c[3] === 0) continue;
+      layers.push(css);
+      if (c[3] === 255) break;
+    }
+    if (!layers.length || window.__rgb(layers[layers.length - 1])[3] !== 255) layers.push('#ffffff');
+    cx.clearRect(0, 0, 1, 1);
+    for (let k = layers.length - 1; k >= 0; k--) { cx.fillStyle = '#000'; cx.fillStyle = layers[k]; cx.fillRect(0, 0, 1, 1); }
+    return [...cx.getImageData(0, 0, 1, 1).data];
   };
   const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
   window.__lum = lum;
@@ -55,28 +66,50 @@ const PAGE_LIB = () => {
 
 module.exports = async function (t) {
   try {
-    const b = basic(), srv = await serve(b.out);
+    const b = basic(), srv = await serve(b.out), BD = loadData(b.out);
 
     // ------------------------------------------------ contrast: 4 skins × 7 papers
-    const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
+    const TEXT = [['body text on paper', 'body'], ['header meta on paper', '.pmeta'], ['offline line on paper (x frame, the ink at 64 %)', '.pbadge'], ['Next unread (x frame)', '.fbar .jump'], ['type badge on its tint (x frame)', '.card .type-badge'], ['card text', '#fsecs .sec-name'], ['soft text on card', '#fshow'],
       ['link on card', '.fhead .linkbtn'], ['pressed chip', '#fsecs .chip[aria-pressed="true"]'], ['unpressed chip', '#fsecs .chip[aria-pressed="false"]'],
       ['tab', '.tab[aria-selected="false"]'], ['selected tab', '.tab[aria-selected="true"]'], ['band name', '.band-head .bname'],
       ['row title', '.row:not(.inert) .title'], ['read mark', '.row[data-s="read"] .mark'], ['subnote', '.subnote'], ['credits', '.credits'],
+      ['read row title (x frame: the soft ink, struck through)', '.row[data-s="read"] .title'], ['core star (x frame: the gold)', '.row .core-star'],
+      ['quiet bookmark (x frame)', '.row .b.bm[aria-pressed="false"]'], ['bookmark that is on (x frame: the gold)', '.row .b.bm[aria-pressed="true"]'],
+      ['✎ (x frame: quiet)', '.row .b.rv'], ['look up (x frame: quiet)', '.row .b.mu'], ['gap note (x frame)', '.row.inert .title'],
+      ['a flashback\'s note (x frame)', '.subnote .subkind'],
+      ['Reading counter (x frame)', '#reader .rcount'], ['Reading era chip (x frame: white on its era in Pull)', '#reader .rpill.eratok'],
+      ['Reading title (x frame)', '#reader .rtitle'], ['Reading arc line', '#reader .rmeta'], ['Reading Skip (x frame)', '#reader .rbtn.ghost'],
+      ['Reading Mark Read (x frame)', '#reader .rbtn.solid'], ['Reading nav (x frame)', '#reader .rnav .linkbtn:not([disabled])'],
+      ['review era tag (x frame: its era\'s colour, as given)', '#reviews .rev-era'], ['review stars (x frame: the gold)', '#reviews .rev-stars'],
+      ['review text (x frame)', '#reviews .rev-t'], ['review Edit (x frame)', '#reviews .rev-edit'],
+      ['Settings heading (x frame: mono, the soft ink)', '#settings .sset .sec-name'], ['Settings sub-heading (x frame)', '#settings .ssub'],
+      ['a setting\'s words (x frame)', '#settings .sdesc'], ['an unpressed segment (x frame: on the card)', '#settings .segbtn[aria-pressed="false"]'],
+      ['a Settings button (x frame)', '#settings .tool'],
       ['creator name', '.cname'], ['Settings label', '.slabel'], ['pressed setting', '.segbtn[aria-pressed="true"]'], ['Settings summary', '.sec-sum']];
-    const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '.ptools .tool', 'borderTopColor'],
+    const EDGE = [['chip outline', '#fsecs .chip[aria-pressed="false"]', 'borderTopColor'], ['button outline', '[data-act="expand-all"]', 'borderTopColor'],
       ['search outline', '#q', 'borderTopColor'], ['mark outline', '.row[data-s="unread"] .mark', 'borderTopColor'],
-      ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor']];
-    const fails = [], theme = [];
+      ['selected-tab underline', '.tab[aria-selected="true"]', 'borderBottomColor'], ['pinned chip outline (x frame)', '#pinbar .chip.pin', 'borderTopColor'],
+      ['ⓘ outline on its card (x frame)', '.card .info-btn', 'borderTopColor'], ['Mark arc outline on its card (x frame)', '.card .arc-acts .b', 'borderTopColor'],
+      ['Edit outline on its review card (x frame)', '#reviews .rev-edit', 'borderTopColor'], ['Reading Skip outline (x frame)', '#reader .rbtn.ghost', 'borderTopColor'],
+      ['segmented outline (x frame)', '#settings .sset .seg', 'borderTopColor'], ['Settings button outline (x frame)', '#settings .tool', 'borderTopColor'],
+      ['a switch that is on (x frame)', '#settings .tog[aria-pressed="true"]', 'backgroundColor']];
+    const fails = [], theme = [], cardsDrift = [], oneGold = [], asGiven = [];
+    /* the build nudges Pull's type badges against its card on every paper (tools/build.py PULL_CARDS): they must be the cards drawn here */
+    const PULL_CARDS = Object.fromEntries([...(require('fs').readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/'(\w+)': \((\d+), (\d+), (\d+)\)/g)].map(m => [m[1], [+m[2], +m[3], +m[4]]]));
     let worst = { r: 99 };
     for (const skin of SKINS) {
       for (const paper of PAPERS) {
-        const pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed('fixture', { skin, paper }) });
+        const pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: Object.assign(seed('fixture', { skin, paper }),
+          { 'fixture:v3:issue-reviews': JSON.stringify({ 'fixture-hero-1980-1': { r: 4, t: 'A review to measure.' } }) }) });
         await openAll(pg.page);
+        await pg.page.evaluate(() => { document.querySelector('#tab-reading').click(); document.querySelector('#tab-reviews').click(); });   // both drawn, then left
         await openSettings(pg.page);
         const r = await pg.page.evaluate(([lib, TEXT, EDGE]) => {
           eval('(' + lib + ')')();
           const row = document.querySelector('.row:not(.inert) .mark');
           row.click(); row.click();                                   // unread → reading → read
+          document.querySelector('.row:not(.inert) .b.bm').click();   // a bookmark: the pinned bar shows
           const out = [];
           for (const [what, sel] of TEXT) {
             const el = document.querySelector(sel);
@@ -84,19 +117,41 @@ module.exports = async function (t) {
             const bg = window.__bg(el);
             out.push([what, window.__ratio(window.__text(el, bg), bg), 4.5]);
           }
+          const badges = [...document.querySelectorAll('.card .type-badge')];   // every arc type, not only the first card's
+          out.push(['every type badge on its tint (x frame, ' + badges.length + ')', badges.length ? Math.min(...badges.map(b => { const bg = window.__bg(b); return window.__ratio(window.__text(b, bg), bg); })) : 0,
+                    badges.length ? 4.5 : 'missing']);
           for (const [what, sel, prop] of EDGE) {
             const el = document.querySelector(sel);
             if (!el) { out.push([what, 0, 'missing']); continue; }
             out.push([what, window.__ratio(window.__rgb(getComputedStyle(el)[prop]), window.__bg(el.parentElement)), 3]);
           }
-          return { out, meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
+          const chip = document.querySelector('#reader .rpill.eratok');
+          const golds = ['.row .core-star', '.row .b.bm[aria-pressed="true"]', '#reviews .rev-stars'].map(q => { const el = document.querySelector(q); return el ? getComputedStyle(el).color : 'missing ' + q; });
+          const tag = document.querySelector('#reviews .rev-era'), item = tag && tag.closest('.rev-item');
+          return { out, golds, tag: tag ? window.__rgb(getComputedStyle(tag).color).slice(0, 3) : null,
+                   tagEi: item ? +((item.getAttribute('style').match(/--ei:(\d+)/) || [])[1]) : -1, chipEi: chip ? +((chip.getAttribute('style').match(/--ei:(\d+)/) || [])[1]) : -1,
+                   card: window.__rgb(getComputedStyle(document.querySelector('.card')).backgroundColor).slice(0, 3),
+                   meta: document.querySelector('meta[name="theme-color"]').content, body: getComputedStyle(document.body).backgroundColor,
                    skin: document.documentElement.getAttribute('data-skin') };
         }, [PAGE_LIB.toString(), TEXT, EDGE]);
         for (const [what, ratio, need] of r.out) {
+          /* Reading's era chip is white on its era, as the tab is: a tracker's own colour under 4.5:1 is drawn as given in Pull
+             (John, 12 Oct) and passes only at exactly the ratio the build reported (as the era banners below) */
+          const own = skin === 'pull' && /^Reading era chip/.test(what) && BD.eras[r.chipEi] && BD.eras[r.chipEi].colour;
+          if (own && own.white < 4.5 && Math.abs(ratio - own.white) < 0.01) continue;
+          /* …and the review era tag is its era's colour as text, as given (John, 29 Oct): a tracker's own colour under 4.5:1
+             as text on the card passes only at exactly the ratio the build reported for this paper */
+          const tagOwn = skin === 'pull' && /^review era tag/.test(what) && BD.eras[r.tagEi] && BD.eras[r.tagEi].colour;
+          if (tagOwn && tagOwn.onCard && tagOwn.onCard[paper] < 4.5 && Math.abs(ratio - tagOwn.onCard[paper]) < 0.01) continue;
           if (need === 'missing' || ratio < need) fails.push(skin + '/' + paper + ': ' + what + ' ' + (need === 'missing' ? 'missing' : ratio.toFixed(2) + ' < ' + need));
           if (need === 4.5 && ratio < worst.r) worst = { r: ratio, at: skin + '/' + paper + ' ' + what };
         }
+        const want = BD.eras[r.tagEi] && require('../lib/colour').hexRgb(BD.eras[r.tagEi].pull.hex);
+        if (skin === 'pull' && (!r.tag || !want || r.tag.some((v, k) => Math.abs(v - want[k]) > 1)))
+          asGiven.push(paper + ': ' + (r.tag ? r.tag.join(',') : 'no tag') + ' for ' + (want ? BD.eras[r.tagEi].pull.hex : 'no era'));
+        if (new Set(r.golds).size !== 1) oneGold.push(skin + '/' + paper + ': ' + r.golds.join(' | '));
         if (r.meta !== r.body) theme.push(skin + '/' + paper + ': ' + r.meta + ' vs ' + r.body);
+        if (skin === 'pull' && JSON.stringify(r.card) !== JSON.stringify(PULL_CARDS[paper])) cardsDrift.push(paper + ': ' + r.card.join(',') + ' vs the build\'s ' + PULL_CARDS[paper]);
         if (r.skin !== skin) fails.push(skin + '/' + paper + ': the page is in ' + r.skin);
         if (pg.errors.length) fails.push(skin + '/' + paper + ': errors ' + pg.errors.join(' | '));
         await pg.close();
@@ -105,6 +160,10 @@ module.exports = async function (t) {
     t.eq('contrast in every skin × paper: ' + TEXT.length + ' text pairs at 4.5:1 and ' + EDGE.length + ' outlines at 3:1 (worst text ' +
          worst.r.toFixed(2) + ', ' + worst.at + ')', fails, []);
     t.eq('the browser chrome (theme-color) follows each skin\'s paper (F-39)', theme, []);
+    t.eq('the core star, a bookmark that is on and the review stars are one gold, in every skin × paper (x frame; B, John, 29 Oct)', oneGold, []);
+    t.eq('Pull draws the review era tag in its era\'s own colour, exactly as given, on every paper (John, 29 Oct)', asGiven, []);
+    t.eq('Pull\'s card on every paper is the one the build darkens the type badges against (tools/build.py PULL_CARDS, ' + Object.keys(PULL_CARDS).length + ')',
+         Object.keys(PULL_CARDS).length === PAPERS.length ? cardsDrift : ['PULL_CARDS names ' + Object.keys(PULL_CARDS).join(', ')], []);
 
     // ------------------------------------------------ era banners: 64 eras, every skin, split and one colour
     // Every text in the box (the first era complete, so its ✓ shows). Pull's are solid with white text
@@ -252,6 +311,41 @@ module.exports = async function (t) {
       }
       t.eq('every other skin ignores an era\'s colour: its eras look the same with and without them, split and one colour (John, 12 Oct)', changed, []);
       await psrv.close();
+    }
+
+    // ------------------------------------------------ "One colour" in the tracker's accent (John, 19 and 24 Oct)
+    // with no accent (the navy), a dark one (drawn as given) and Absolute's crimson (darkened as the build says): every era
+    // exactly that colour, its strip the reference's shade, and white, the 85 % years and the strip each at 4.5:1 or more
+    {
+      const bad = [], seen = [];
+      for (const [label, accent] of [['none', undefined], ['dark', '#7A1F2B'], ['crimson', '#E8123C']]) {
+        const dir = copyFixture('basic', 'look-accent-' + label), ds = readJSON(path.join(dir, 'dataset.json'));
+        if (accent) ds.franchise.accent = accent; else delete ds.franchise.accent;
+        writeJSON(path.join(dir, 'dataset.json'), ds);
+        const ab = build(path.join(dir, 'dataset.json'), { label: 'look-accent-' + label + '-out' }), AD = loadData(ab.out), asrv = await serve(ab.out);
+        const pg = await open(asrv.url, { width: 390, reducedMotion: 'reduce', storage: seed('fixture', { skin: 'pull', eraHues: 'mono' }) });
+        await openAll(pg.page);
+        const r = await pg.page.evaluate(lib => {
+          eval('(' + lib + ')')();
+          return [...document.querySelectorAll('.era-head')].map(h => {
+            const bg = window.__eraBg(h.querySelector('.bname'))[0], sbg = window.__eraBg(h.querySelector('.bcount'))[0];
+            return { bg: bg.slice(0, 3), sbg: sbg.slice(0, 3), white: window.__ratio(window.__text(h.querySelector('.bname'), bg), bg),
+                     years: window.__ratio(window.__text(h.querySelector('.byears'), bg), bg), strip: window.__ratio(window.__text(h.querySelector('.bcount'), sbg), sbg) };
+          });
+        }, PAGE_LIB.toString());
+        const want = C.hexRgb(AD.pullMono.hex), swant = want.map(v => Math.max(v - 25, 0));
+        seen.push(label + ' ' + AD.pullMono.hex);
+        if (!r.length) bad.push(label + ': no era banners');
+        r.forEach((e, i) => {
+          if (e.bg.join() !== want.join()) bad.push(label + ' era ' + i + ': ' + C.rgbHex(e.bg) + ', not ' + AD.pullMono.hex);
+          if (e.sbg.join() !== swant.join()) bad.push(label + ' era ' + i + ': its strip ' + C.rgbHex(e.sbg) + ', not ' + C.rgbHex(swant));
+          if (e.white < 4.5 || e.years < 4.5 || e.strip < 4.5) bad.push(label + ' era ' + i + ': ' + [e.white, e.years, e.strip].map(x => x.toFixed(2)).join('/'));
+        });
+        if (pg.errors.length) bad.push(label + ': errors ' + pg.errors.join(' | '));
+        await pg.close(); await asrv.close();
+      }
+      t.eq('"One colour" draws every era in the tracker\'s accent as the build gives it, its strip in the reference\'s shade, and every text on them at 4.5:1 or more (' +
+           seen.join(', ') + ')', bad.slice(0, 6), []);
     }
 
     // ------------------------------------------------ reachability: every control, every skin (V-5)

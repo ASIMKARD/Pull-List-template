@@ -1,7 +1,7 @@
 /* Rendering against the real DOM: collapsed landing, goal banners, lazy eras,
    arcs, rows, escaping. */
 'use strict';
-const { loadData, boot, wait, basic, noPeriods, stress } = require('../lib/helpers');
+const { loadData, boot, wait, basic, noPeriods, stress, openCards } = require('../lib/helpers');
 
 module.exports = async function (t) {
   const b = basic();
@@ -25,7 +25,7 @@ module.exports = async function (t) {
   t.ok('top-level banners show read count', $$('.band-head .bcount').every(x => /\d+ \/ \d+ read/.test(x.textContent)));
   t.ok('top-level banners show time left', $$('.band-head .bleft').length === D.periods.length);
   t.ok('top-level banners show a finish-by date', $$('.band-head .bfinish').length === D.periods.length);
-  t.ok('era banners inside a band show time left but no finish-by', $$('.era-head .bleft').length === D.eras.length && $$('.era-head .bfinish').length === 0);
+  t.ok('era banners inside a band show time left but no finish-by, in the head or the body (band heads keep theirs)', $$('.era-head .bleft').length === D.eras.length && $$('.era .bfinish').length === 0);
   t.ok('banners carry a progress bar', $$('.band-head progress, .era-head progress').length === D.periods.length + D.eras.length);
 
   // ---- open a band, then an era: only that era renders ----
@@ -34,9 +34,12 @@ module.exports = async function (t) {
   t.ok('opening a band renders no rows yet', $$('.row').length === 0);
   const storm = D.eras.findIndex(e => e.id === 'storm');
   $(`.era[data-e="${storm}"] > .era-head`).click();
+  t.ok('opening an era shows its arcs as cards, every one closed, and renders no rows yet (the x frame; John, 24 Oct)',
+       $$(`.era[data-e="${storm}"] .arc.card`).length > 1 && $$(`.era[data-e="${storm}"] .arc-toggle`).every(b => b.getAttribute('aria-expanded') === 'false') && $$('.row').length === 0);
+  openCards($(`.era[data-e="${storm}"]`));
   const want = D.issueEra.map((e, i) => i).filter(i => D.issueEra[i] === storm && !D.issueCompleteOnly[i]);
   const rows = $$('.row');
-  t.ok('opening an era renders exactly its in-view rows', rows.length === want.length && rows.every(r => D.issueEra[+r.dataset.i] === storm), rows.length + ' vs ' + want.length);
+  t.ok('opening its cards renders exactly its in-view rows', rows.length === want.length && rows.every(r => D.issueEra[+r.dataset.i] === storm), rows.length + ' vs ' + want.length);
   t.ok('Complete-only tie-ins are not rendered in Essential view', !$$('.row').some(r => /other-guy|bystander/.test(r.dataset.id)));
   t.ok('every rendered row appears once', new Set(rows.map(r => r.dataset.i)).size === rows.length);
   t.ok('a recurring arc is marked cont.', $$(`.era[data-e="${storm}"] .arc-head h3`).some(h => /Stormfront · cont\./.test(h.textContent)));
@@ -46,7 +49,10 @@ module.exports = async function (t) {
   t.ok('migrated row renders under its legacy id', !!$('.row[data-id="198706004"]'));
   t.ok('mark buttons are delegation-tagged (T-4)', $$('.row:not(.inert) .mark').every(m => m.dataset.act === 'mark'));
   t.ok('mark labels follow the medium (game: Not started)', /Not started$/.test($('.row[data-id="fixture-quest-1987"] .mark').getAttribute('aria-label')));
-  t.ok('core badge shown on core rows', !!$('.row[data-id="fixture-hero-quiet-storm-1986"] .b.core'));
+  const coreStar = $('.row[data-id="fixture-hero-quiet-storm-1986"] .core-star');
+  t.ok('a core row shows the core star right after its title, named "core" (x frame; the v9 frame\'s badge: 91-marks)', !!coreStar &&
+       coreStar.previousElementSibling.classList.contains('title') && coreStar.getAttribute('aria-label') === 'core' && !$('.row .b.core'));
+  t.ok('…and only core rows do', $$('.row:not(.inert)').every(r => !!r.querySelector('.core-star') === !!D.issues[+r.dataset.i][5]));
   t.ok('lookup link uses the configured searchUrl', $('.row[data-id="fixture-hero-1980-21"] a.mu').href.startsWith('https://example.invalid/search?q='));
   // closing keeps the body, reopening does not rebuild it
   $(`.era[data-e="${storm}"] > .era-head`).click();
@@ -56,6 +62,7 @@ module.exports = async function (t) {
   const rising = D.eras.findIndex(e => e.id === 'rising');
   $('.band[data-b="0"] > .band-head').click();
   $(`.era[data-e="${rising}"] > .era-head`).click();
+  openCards($(`.era[data-e="${rising}"]`));
   const gap = $('.row[data-id="gap-1983-hiatus"]');
   t.ok('inert row renders with no mark button (F-7)', gap && gap.classList.contains('inert') && !gap.querySelector('.mark'));
   const vo = $('.row[data-id="vela-and-orrin-1984-1"] .title');
@@ -63,7 +70,10 @@ module.exports = async function (t) {
   t.ok('markup in a title never becomes an element', vo && vo.children.length === 0);
   const fbRow = $('.row[data-id="vela-year-zero-1984-1"]');
   t.ok('flashback reads first in its era', $(`.era[data-e="${rising}"] .row`) === fbRow);
-  t.ok('flashback carries a note badge', !!(fbRow && fbRow.querySelector('.b.note')));
+  const fbNote = fbRow && fbRow.querySelector('.rbody > .subnote');
+  t.ok('a flashback\'s note sits under its title, named as one (x frame; the v9 frame\'s badge: 91-marks)', !!fbNote && !fbNote.hidden &&
+       !!fbNote.querySelector('.subkind') && fbNote.querySelector('.subkind').textContent === '↺ flashback' && /set before the first issue/.test(fbNote.textContent) && !fbRow.querySelector('.b.note'));
+  t.ok('a gap note is one line in the titles\' column, its glyph inline, no box (x frame)', !!gap.querySelector('.rbody > .title > .inert-glyph') && !gap.querySelector('.mark-inert'));
 
   // ---- expand all / collapse all (T-74, F-26) ----
   t.ok('expand/collapse buttons exist (T-74)', !!$('[data-act="expand-all"]') && !!$('[data-act="collapse-all"]'));
@@ -82,7 +92,8 @@ module.exports = async function (t) {
   await wait(20);
   const d2 = a2.document;
   t.ok('no-periods: no band elements (T-27)', d2.querySelectorAll('.band').length === 0);
-  t.ok('no-periods: eras are top-level banners with finish-by', d2.querySelectorAll('#app > .era .era-head .bfinish').length === loadData(np.out).eras.length);
+  t.ok('no-periods: eras are top-level banners with finish-by (the x frame puts it on the first line of the era\'s body; John, 24 Oct)',
+       d2.querySelectorAll('#app > .era > .era-body > .bfinish').length === loadData(np.out).eras.length && !d2.querySelector('#app > .era > .era-head .bfinish'));
   t.ok('no-periods: boots clean', a2.errors.length === 0, a2.errors.join(' | '));
   a2.window.close();
 
@@ -95,7 +106,9 @@ module.exports = async function (t) {
   t.ok('5,000 rows: landing renders zero rows', d3.querySelectorAll('.row').length === 0);
   t.ok('5,000 rows: one banner per era', d3.querySelectorAll('.era').length === s.eras);
   d3.querySelector('.era[data-e="17"] > .era-head').click();
-  t.ok('5,000 rows: opening one era renders only its rows', d3.querySelectorAll('.row').length === s.perEra &&
+  t.ok('5,000 rows: opening one era renders its cards and no rows', d3.querySelectorAll('.row').length === 0 && d3.querySelectorAll('.era[data-e="17"] .arc.card').length > 0);
+  openCards(d3.querySelector('.era[data-e="17"]'));
+  t.ok('5,000 rows: opening its cards renders only its rows', d3.querySelectorAll('.row').length === s.perEra &&
        [...d3.querySelectorAll('.row')].every(r => r.closest('.era').dataset.e === '17'));
   a3.window.close();
 

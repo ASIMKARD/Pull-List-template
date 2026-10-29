@@ -1,0 +1,1 @@
+franchise.signature.frame must be one of x, v9: 'v8'

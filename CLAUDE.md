@@ -3,28 +3,14 @@
 ## Repo rules (read first, every session)
 
 ### Read-only rule
-Only **Pull-List-Template** may be changed, plus the two exceptions below. Master-Repo,
+Only **Pull-List-Template** may be changed, plus what John approves below. Master-Repo,
 X-men and every other repo are **read-only**: read them from local copies
 (clone or pull only), and **never** commit, push, create branches, open pull requests
 on, or register them as repo roots.
 
-**Exceptions (John, 6 Oct; the Absolute one changed 8 Oct):**
-- **ASIMKARD/Absolute: a one-off exception for the pilot (John, 8 Oct).** v8 replaces v7 in
-  place on its `main` branch; Absolute-v3 is no longer needed. This applies to Absolute
-  only. The repo-safety rule below still holds for every other repo. The safeguards,
-  because `main` is live:
-  1. Before the first change, v7's commit (`7304f82`) is tagged `v7-final`: the one-step
-     rollback. This session can't push tags or `main`, so John creates the tag, and v8
-     reaches `main` through one pull request that John merges.
-  2. Nothing reaches `main` until it all passes on Absolute's own data: the harness, the
-     layout suite, the verify gate, and the migration proof in real Chromium.
-  3. The upgrade is tested in place. In Chromium, load v7, mark issues, add a bookmark and
-     a review, and pick a skin. Then serve v8 over it and reload. It must open as v8 with
-     everything intact, and the v7 service worker and its `absolute-v7` cache must hand
-     over cleanly.
-  4. The first deploy replaces everything (fonts, icons, manifest and `qrcode.js`
-     included) and removes v7's old files. Every file is verified live by hash after
-     the merge.
+**What John approves, per piece of work:**
+- **A tracker's own repo, for one migration or update he names** (for example
+  ASIMKARD/Absolute for v8, v9 and v10). See "Migrations go in place", below.
 - **Research-Repo is add-only.**
   - Each session writes only inside its own new folder,
     `sessions/<yyyy-mm-dd>-<label>/`, for its research caches, notes and gate reports.
@@ -36,14 +22,32 @@ on, or register them as repo roots.
     that CI can run it.
 
 ### Standing rule from John
-**Never edit any repo without John's explicit say-so.** Pull-List-Template is
-approved for the v3 work. Before the first edit to any other repo, **stop and tell
-John**, so he can create a fresh repo first. (The Absolute pilot is the one
-exception: John approved upgrading ASIMKARD/Absolute in place, 8 Oct; see above.)
-Every other migration goes into a fresh repo; the original stays untouched for
-comparison and rollback, and v3 takes over the original address only at a cut-over
-swap John approves. (Full text: Master-Repo
-`starter/STANDARDS.md`, "Repo safety".)
+**Never edit any repo without John's explicit say-so,** given per piece of work: for a
+migration, per migration. Pull-List-Template is approved for the v3 work. Before the
+first edit to any other repo, **stop and tell John**, and wait for his say-so. (Full
+text: Master-Repo `starter/STANDARDS.md`, "Repo safety".)
+
+### Migrations go in place (John, 23 Oct)
+Every migration goes in place, on the tracker's own repo, the way Absolute did (v8,
+8 Oct). This replaces the fresh repo and the cut-over swap. It covers Archie Sonic,
+IDW Sonic, Spider-Man, Dark Nights and X-Men's fixes. Because the tracker's `main` is live:
+1. **John tags the current `main` `vN-final` first:** the one-step rollback. A session
+   can't push tags or `main`, so John makes the tag. Before the first change, confirm the
+   tag exists and points at `main`; if it doesn't, stop and tell him.
+2. **The work reaches `main` only through a branch and a pull request John merges.**
+3. **Before the merge, it all passes on the tracker's own data:** the harness, the layout
+   suite, the verify gate, and the in-place upgrade proof in real Chromium. Load the old
+   version, mark issues, add a bookmark and a review, and pick a skin. Then serve the new
+   version over it at the same address and reload. It must open as the new version with
+   everything intact, and the old service worker and its cache must hand over cleanly.
+4. **After the merge, every file is verified live by hash.** A migration's first deploy
+   replaces everything (fonts, icons, manifest and `qrcode.js` included) and removes the
+   old tracker's own files.
+
+Saved progress carries over: the address and the origin stay the same, and v3 reads the
+old keys through `franchise.storage.legacy` and never writes them, so reverting `main` to
+its `vN-final` tag restores the old version as it was. Absolute's rollback tags are
+`v7-final` (`7304f82`), `v8-final` (`36fd088`) and `v9-final` (`27dca56`).
 
 ### Working method
 - Each session works on its own branch and pushes it. John reviews and merges.
@@ -76,8 +80,8 @@ swap John approves. (Full text: Master-Repo
 | `tools/verify_gate.py`, `tools/verify.py`, `tools/verify.lock` | the verify gate; `verify.py` is Research-Repo's, pinned byte for byte — never edit it here |
 | `tools/version_tag.py`, `.github/workflows/version-tag.yml` | version tags: a merge into `main` that changes the readable version is tagged `vN` (John, 12 Oct); never moves or touches an existing tag |
 | `README.md`, `BUILD-NOTES.md`, `MIGRATING.md`, `.claude/skills/comic-tracker-build/` | start a tracker; conventions; migrating; the Skill. `25-docs` checks every path and command they name |
-| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`). Same runner; CI runs it |
-| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `broken/*`, `gate/*`); `test/lib/colour.js`, the tests' own copy of the colour maths (OKLCH, the sRGB gamut, contrast) |
+| `test/layout/` | real-Chromium suites (`npm run test:layout`): overflow sweep, motion, fonts, the rule finder, contrast, Pull vs X-Men (`ref/`), the v9 frame's guard (47-frame-v9). Same runner; CI runs it |
+| `test/run.js` | the harness; `test/suites/*.test.js`; `test/fixtures/` (`basic`, `no-periods`, `mixed` formats, `minimal` (comics only, one era, no extras), `pull-ref` (the X-Men comparison's data), `sig-v9` (the v9 frame's guard), `broken/*`, `gate/*`); `test/lib/colour.js`, the tests' own copy of the colour maths (OKLCH, the sRGB gamut, contrast) |
 | `FEATURE-INVENTORY.md` | the parity checklist — v3 is not done until every line is present or dropped with a reason |
 
 ## Data rules (v3)
@@ -119,6 +123,12 @@ swap John approves. (Full text: Master-Repo
   ids listed, or every later position shifts.
 
 ## UI rules (v3)
+- **Two frames (John, 25 Oct).** The shared skins use the x frame, the X-Men
+  tracker's arrangement. A signature skin may keep the v9 frame (`"frame": "v9"`),
+  the template's arrangement as it was up to v9, exactly; Absolute's own skin
+  does. Scope every x-only rule to `:root[data-frame="x"]` and split a render path
+  only where the structure differs; `test/layout/47-frame-v9` fails on any change
+  to the v9 frame. Within a frame, a skin never moves a control.
 - **Data-driven visibility: a rule, not a one-off (decided 4 Oct).** A control or
   section renders only when the dataset gives it something to do. The data
   decides this, never a setting or a skin; skins never hide a control.
@@ -187,6 +197,14 @@ After session 4 (John's phone): a depth chip was cut off inside its own scrollin
 and Settings rows split their buttons. The page never got wider, so the sweep passed. "No
 page overflow" is not "it fits": `10-sweep` now checks every control against every box
 that clips it.
+
+### CI draws text with full hinting — [applies]
+GitHub's Ubuntu runner hints text fully by default, which rounds every glyph to whole
+pixels. A text-sized box measured in a session moved by 1 or 2 px in CI (47-frame-v9,
+28 Oct). `test/layout/lib.js` launches Chromium without hinting on every machine, so
+measure anything exact through it, never through a browser of your own. Symbols the
+vendored fonts lack (★ ✎ ↗ ✓) come from each machine's own fonts; anything measured to
+the pixel draws them from one face (`test/layout/ref/frame-map.js`).
 
 ### grep can't see multi-line CSS selectors — [applies]
 A grouped rule spanning lines won't match `grep '\.tabs.*{'`. Ask the browser:

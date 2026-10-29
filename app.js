@@ -11,7 +11,7 @@
 (function start() {
   'use strict';
   var D = window.TRACKER_DATA;
-  var SKIN_OK = '4';            // the skin beacon (F-57): the token contract styles.css must declare (4: the era box's strip, session 7)
+  var SKIN_OK = '5';            // the skin beacon (F-57): the token contract styles.css must declare (4: the era box's strip, session 7; 5: the x frame, session 8)
   if (staleShell()) return;
   var N = D.issues.length;
   var FL = D.flagBits;
@@ -197,6 +197,12 @@
   /* the tracker's own signature skin (John, 6 Oct), from config: offered first */
   if (D.signature) SKIN_NAMES.signature = D.signature.name;
   var SKINS = (D.signature ? ['signature'] : []).concat(D.franchise.skins || ['paper']).filter(function (k) { return SKIN_NAMES[k]; });
+  /* The frame a skin is drawn on (John, 25 Oct): the shared skins use "x", the
+     reference tracker's arrangement; a signature skin uses its own, and "v9" keeps the template's
+     arrangement as it was up to v9, exactly (a live tracker's own skin; 47-frame-v9).
+     The root carries it as data-frame, and the list remembers which frame it was
+     drawn for, so a skin change that crosses frames draws everything again. */
+  function frameOf(skin) { return skin === 'signature' && D.signature && D.signature.frame === 'v9' ? 'v9' : 'x'; }
   /* A first visit opens in the skin picked on the old tracker (its saved
      settings, read only, through the data's own map), else the signature
      skin, else the configured default. After that, the last one used. */
@@ -219,7 +225,12 @@
   ];
   function lookOf(k) { return LOOK.filter(function (l) { return l[0] === k; })[0]; }
   function lookOk(l, v) { return l[3].some(function (o) { return o[0] === v; }); }
-  function glyph(st) { return (GLYPHS[settings.marks] || GLYPHS.box)[st]; }
+  /* the x frame's Box is the reference tracker's checkbox: empty while unread, ― when skipped (its outline dashed) */
+  var X_BOX = { unread: '', reading: '◐', read: '✓', skip: '―' };
+  function glyph(st) {
+    var g = GLYPHS[settings.marks] ? settings.marks : 'box';
+    return (g === 'box' && frameOf(settings.skin) === 'x' ? X_BOX : GLYPHS[g])[st];
+  }
   /* ONE settings store. Defaults are filled in here and nowhere else, so a
      restored snapshot or an imported backup gets exactly the same treatment. */
   function withDefaults(s) {
@@ -233,8 +244,10 @@
     s.tab = s.tab || 'list';
     s.progressMode = s.progressMode || 'combined';
     s.refreshEvery = s.refreshEvery || 'quarter';
+    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin() : s.skin;
+    /* the mini bar: on by default on the v9 frame (v2), off on the x frame, as the reference tracker's (John, 24 Oct) */
     [['showJump', true], ['badges', true], ['combo', false], ['rev', false], ['reveal', false], ['gapNotes', true],
-     ['swipe', false], ['press', false], ['mini', true], ['banner', false], ['table', false]].forEach(function (d) {   // gestures off (3 Oct); mini on, banner and table off (v2)
+     ['swipe', false], ['press', false], ['mini', frameOf(s.skin) === 'v9'], ['banner', false], ['table', false]].forEach(function (d) {   // gestures off (3 Oct); banner and table off (v2)
       if (typeof s[d[0]] !== 'boolean') s[d[0]] = d[1];
     });
     s.eraNav = ERA_NAV.indexOf(s.eraNav) === -1 ? 'scroll' : s.eraNav;
@@ -243,7 +256,6 @@
     s.order = ORDERS.indexOf(s.order) === -1 ? 'reading' : s.order;
     s.events = s.events === 'complete' && HAS.events ? 'complete' : 'essential';
     s.presets = Array.isArray(s.presets) ? s.presets : [];
-    s.skin = SKINS.indexOf(s.skin) === -1 ? firstSkin() : s.skin;
     s.paper = PAPERS.some(function (p) { return p[0] === s.paper; }) ? s.paper : 'default';
     LOOK.forEach(function (l) { if (!lookOk(l, s[l[0]])) s[l[0]] = l[4]; });
     if (typeof s.dys !== 'boolean') s.dys = false;
@@ -533,7 +545,7 @@
   /* ======================================================================
      RENDER — string templates only
      ====================================================================== */
-  var open = { b: {}, e: {} };          // session-only: never persisted
+  var open = { b: {}, e: {}, a: {} };   // session-only: never persisted (a: the x frame's arc cards, 'era:arc:n')
   var rendered = {};                     // era index -> body rendered
   var wasNarrowing = false;              // leaving a search/filter returns to the collapsed landing
   var expandMatches = false;             // only a change made during THIS visit auto-expands matches;
@@ -545,10 +557,10 @@
     return t.ut ? '<span class="' + cls + '" data-untimed="' + t.ut + '" title="' + t.ut + ' left with no length in the data, so not in the time left">+' +
       t.ut + ' untimed</span>' : '';
   }
-  function leftHtml(t, cls) {
+  function leftHtml(t, cls, word) {
     if (remaining(t) === t.ut) return '';                            // only untimed rows left: no "0m left"
     var left = timeLeft(t);
-    return '<span class="' + cls + '" data-left-min="' + left.mins + '">' + left.text + ' left</span>';
+    return '<span class="' + cls + '" data-left-min="' + left.mins + '">' + left.text + ' ' + (word || 'left') + '</span>';
   }
   function statsHtml(t, finish) {
     var g = goal(t), done = remaining(t) === 0 && t.total > 0;
@@ -559,6 +571,22 @@
             : leftHtml(t, 'bleft') + untimedHtml(t, 'buntimed') +
               (finish ? '<span class="bfinish" data-finish="' + finish.iso + '" data-weeks="' + finish.weeks + '">finish by ' + escapeHtml(finish.text) + '</span>' : '')) +
       '</span><progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>';
+  }
+
+  /* The x frame's era strip, the reference tracker's: the count, the bar, the time
+     left (or ✓). An era's finish-by date moves to the first line of its open body
+     (John, 24 Oct); band heads keep theirs. */
+  function eraFootHtml(t) {
+    var g = goal(t), done = remaining(t) === 0 && t.total > 0;
+    return '<span class="bfoot"><span class="bstats"><span class="bcount">' + t.read + '/' + g + ' read' + (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
+      (browsing() ? '<span class="bfiltered">filtered</span>' : '') + '</span>' +
+      '<progress class="bar" max="' + (g || 1) + '" value="' + t.read + '" aria-label="progress"></progress>' +
+      '<span class="bstats bend">' + (done ? '<span class="bdone" aria-label="complete">✓</span>' : leftHtml(t, 'bleft') + untimedHtml(t, 'buntimed')) + '</span></span>';
+  }
+  var eraFin = {};                       // each top-level era's finish-by date (none inside bands), for its body's first line
+  function eraFinishHtml(e) {
+    var f = frameOf(settings.skin) === 'x' && eraFin[e];
+    return f ? '<p class="bfinish efinish" data-finish="' + f.iso + '" data-weeks="' + f.weeks + '">finish by ' + escapeHtml(f.text) + '</p>' : '';
   }
 
   function topUnits() { return HAS.bands ? D.periods.map(function (p, b) { return b; }) : D.eras.map(function (e, i) { return i; }); }
@@ -575,14 +603,17 @@
   function renderHeader(S) {
     var t = S.all, done = remaining(t) === 0;
     var fin = done ? null : finishBy(minutesLeft(t));
+    var finHtml = done ? '' : '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>';
     $('#pprog').innerHTML =
       '<progress class="bar pbar" max="' + (goal(t) || 1) + '" value="' + t.read + '" aria-label="Reading progress"></progress>' +
       '<p class="pstats"><span class="pcount">' + t.read + ' / ' + goal(t) + ' read' +
       (t.skip ? ' · ' + t.skip + ' skipped' : '') + '</span>' +
       (browsing() ? '<span class="pfiltered" title="Counting only what your search or browse filters show">filtered view</span>' : '') +
+      /* the x frame (John, 24 Oct): the count on the left; on the right the plan's finish-by date, then the
+         time remaining at the edge, as the reference tracker's. The v9 frame keeps its order. */
       (done ? '<span class="pdone">All caught up ✓</span>'
-            : leftHtml(t, 'pleft') + untimedHtml(t, 'puntimed') +
-              '<span class="pfinish" data-finish="' + fin.iso + '" data-weeks="' + fin.weeks + '">finish by ' + escapeHtml(fin.text) + '</span>') + '</p>' +
+            : frameOf(settings.skin) === 'x' ? '<span class="pright">' + finHtml + leftHtml(t, 'pleft', 'remaining') + untimedHtml(t, 'puntimed') + '</span>'
+            : leftHtml(t, 'pleft') + untimedHtml(t, 'puntimed') + finHtml) + '</p>' +
       (perFormat() ? '<ul class="pmedia">' + MEDIA_USED.map(function (m) {
         var x = S.med[m];
         return '<li class="pmed" data-m="' + m + '"><span class="pmed-name">' + escapeHtml(mediumLabel(m)) + '</span>' +
@@ -655,6 +686,7 @@
   var ROW_W = Math.max(2, String(N).length), ERA_W = Math.max(2, String(D.eras.length).length);
   function padN(n, w) { var s = String(n); while (s.length < w) s = '0' + s; return s; }
   function rowHtml(i) {
+    if (frameOf(settings.skin) === 'x') return xRowHtml(i);
     var r = D.issues[i], flags = r[6], id = D.ids[i];
     if (flags & INERT) {
       return '<div class="row inert" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '">' +
@@ -683,6 +715,111 @@
       glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
       '<span class="badges">' + badges + '</span>' + sub + '</div>';
   }
+  /* The x frame's row (John, 24 Oct; the reference tracker's): the mark, then the
+     title with the core star after it and the note under it, then look up, ✎ and
+     the bookmark at the row's right end. A flashback's or an alt's note sits under
+     the title too (tap to reveal still covers plain notes only, as HAS.reveal
+     says); a gap note is one line in the titles' column. */
+  function xRowHtml(i) {
+    var r = D.issues[i], flags = r[6], id = D.ids[i];
+    var attrs = ' data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '"';
+    if (flags & INERT) {
+      return '<div class="row inert"' + attrs + '><div class="rbody"><span class="title"><span class="inert-glyph" aria-hidden="true">' +
+        (flags & FL.RENUM ? '⟳' : '↷') + '</span>' + escapeHtml(r[1]) + '</span>' +
+        (r[7] ? '<p class="subnote">' + escapeHtml(r[7]) + '</p>' : '') + '</div></div>';
+    }
+    var st = stateOf(i), bm = progress.bookmarks.indexOf(id) !== -1;
+    var kind = flags & FL.FB ? '↺ flashback' : flags & FL.ALT ? 'alt' : '';
+    var note = kind ? r[7] || (flags & FL.FB ? 'Published later than it reads: this story fills in earlier events.' : 'A separate continuity from the main line.') : r[7];
+    var hide = !kind && note && settings.reveal;
+    var acts = (hide ? '<button type="button" class="b reveal" data-act="reveal" aria-expanded="false">note</button>' : '') +
+      (HAS.lookup ? '<a class="b mu" href="' + escapeAttr(D.franchise.searchUrl + encodeURIComponent(r[1])) +
+        '" target="_blank" rel="noopener" aria-label="' + escapeAttr('Look up ' + r[1]) + '"><span class="b-t">look up </span>↗</a>' : '') +
+      rvButton(i) +
+      '<button type="button" class="b bm" data-act="bm" aria-pressed="' + bm + '" aria-label="Bookmark ' + escapeAttr(r[1]) + '">' + (bm ? '★' : '☆') + '</button>';
+    return '<div class="row"' + attrs + ' data-s="' + st + '">' +
+      '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' + glyph(st) + '</button>' +
+      '<div class="rbody"><span class="title">' + escapeHtml(r[1]) + '</span>' +
+      (r[5] ? '<span class="core-star" role="img" aria-label="core">★</span>' : '') +
+      (settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '') +
+      (note ? '<p class="subnote"' + (hide ? ' hidden' : '') + '>' + (kind ? '<span class="subkind">' + kind + '</span> · ' : '') + escapeHtml(note) + '</p>' : '') +
+      '</div><span class="badges">' + acts + '</span></div>';
+  }
+
+  /* The x frame's arc cards (John, 24 Oct; the reference tracker's): an open era
+     shows its arcs as collapsed cards, and a card draws its rows when it first
+     opens. A card is one run of an arc's rows in the era's order, so an arc the
+     order splits gets "· cont." cards, as the headings did. Its head toggles it;
+     ⓘ shows the blurb and the credits. "Label on each row" keeps its rows. */
+  var CARDS = {}, CARD_ROWS = {};        // era -> its cards as last drawn; card key -> its rows
+  function eraCards(e) {
+    var filt = narrowing(), out = [], cur = null, seen = {};
+    orderedEraRows(e).forEach(function (i) {
+      if (filt ? !matches(i) : !inView(i)) return;
+      if (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE)) return;   // gap notes off (XM-10)
+      var a = D.issues[i][2];
+      if (!cur || cur.a !== a) {
+        seen[a] = (seen[a] || 0) + 1;
+        cur = { k: e + ':' + a + ':' + (seen[a] - 1), a: a, n: seen[a] - 1, rows: [] };
+        out.push(cur);
+      }
+      cur.rows.push(i);
+    });
+    return out;
+  }
+  function cardFrac(rows) {
+    var read = 0, total = 0, skip = 0;
+    rows.forEach(function (i) { if (!counted(i)) return; total++; var st = stateOf(i); if (st === 'read') read++; else if (st === 'skip') skip++; });
+    return read + '/' + (total - skip);
+  }
+  function cardId(k) { return 'arc-' + k.replace(/:/g, '-'); }
+  /* A card's type colour for the stylesheet, as tokens (like eraStyle): its type's
+     index, for the other skins' hue, and in Pull the stripe and the badge data.js
+     gives the type (the reference tracker's colours, the badge nudged to pass). */
+  function typeStyle(t) {
+    var c = D.typeColours && D.typeColours[t], num = function (v) { return typeof v === 'number' && isFinite(v); };
+    var s = '--ti:' + t;
+    if (c && Array.isArray(c.stripe) && Array.isArray(c.badge) && c.stripe.concat(c.badge).every(num)) {
+      s += ';--tc:1;--ts-l:' + c.stripe[0] + ';--ts-c:' + c.stripe[1] + ';--ts-h:' + c.stripe[2] +
+           ';--tb-l:' + c.badge[0] + ';--tb-c:' + c.badge[1] + ';--tb-h:' + c.badge[2];
+    }
+    return s;
+  }
+  function cardHtml(e, c, isOpen) {
+    var arc = D.arcs[c.a], again = c.n > 0, id = cardId(c.k);
+    var meta = [arc.y, arc.i ? 'importance ' + arc.i + '/5' : ''].filter(Boolean).join(' · ');   // V-12
+    var cred = again ? '' : creditsHtml(c.rows[0]);
+    var blurb = arc.b && !again && arc.b !== D.eras[e].intro ? arc.b : '';
+    var type = HAS.types && D.types[arc.t] ? '<span class="type-badge" data-t="' + arc.t + '">' + escapeHtml(D.types[arc.t]) + '</span>' : '';
+    return '<div class="arc card' + (isOpen ? ' open' : '') + '" data-a="' + c.a + '" data-k="' + c.k + '" style="' + typeStyle(arc.t) + '"><div class="arc-head"><span class="arc-tab" aria-hidden="true"></span>' +
+      '<h3><button type="button" class="arc-toggle" data-act="arc" aria-expanded="' + isOpen + '" aria-controls="' + id + '-body">' +
+      '<span class="arc-name">' + escapeHtml(arc.n) + (again ? ' · cont.' : '') + '</span>' +
+      (type || meta ? '<span class="arc-sub">' + type + (meta ? '<span class="arc-meta">' + escapeHtml(meta) + '</span>' : '') + '</span>' : '') +
+      '</button></h3><span class="arc-frac">' + cardFrac(c.rows) + '</span>' +
+      (blurb || cred ? '<button type="button" class="info-btn" data-act="arc-info" aria-expanded="false" aria-controls="' + id + '-info" aria-label="' +
+        escapeAttr('About ' + arc.n) + '">i</button>' : '') +
+      '<span class="arc-chev" aria-hidden="true">▸</span></div>' +
+      (blurb || cred ? '<div class="arc-info" id="' + id + '-info" hidden>' + (blurb ? '<p class="blurb">' + escapeHtml(blurb) + '</p>' : '') +
+        (cred ? '<p class="credits">' + cred + '</p>' : '') + '</div>' : '') +
+      '<div class="arc-body" id="' + id + '-body"' + (isOpen ? '' : ' hidden') + '>' + (isOpen ? cardBodyHtml(c) : '') + '</div></div>';
+  }
+  function cardBodyHtml(c) {
+    return (c.n ? '' : eventNote(c.a)) + '<div class="arc-acts">' +
+      '<button type="button" class="b" data-act="arc-mark" data-a="' + c.a + '" data-st="read">Mark arc read</button>' +
+      '<button type="button" class="b" data-act="arc-mark" data-a="' + c.a + '" data-st="unread">Mark arc unread</button></div>' +
+      '<div class="arc-rows">' + c.rows.map(rowHtml).join('') + '</div>';     // the reference's issue list, under its rule
+  }
+  function setCardOpen(k, on) {
+    open.a[k] = on;
+    var card = $('.arc[data-k="' + k + '"]');
+    if (!card) return;
+    var body = card.querySelector('.arc-body');
+    if (on && !body.firstChild && CARD_ROWS[k]) body.innerHTML = cardBodyHtml({ k: k, a: +card.dataset.a, n: +k.split(':')[2], rows: CARD_ROWS[k] });
+    body.hidden = !on;
+    card.classList.toggle('open', on);
+    card.querySelector('.arc-toggle').setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
+  function cardsOn() { return frameOf(settings.skin) === 'x' && settings.layout !== 'rows'; }
 
   function eraBodyHtml(e) {
     var filt = narrowing(), html = '', curArc = -1, seen = {};
@@ -691,7 +828,17 @@
         if ((filt ? !matches(i) : !inView(i)) || (!settings.gapNotes && (D.issues[i][6] & FL.GAPNOTE))) return;
         html += rowHtml(i);
       });
-      return (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
+      return eraFinishHtml(e) + (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + '<div class="arc rows">' + html + '</div>';
+    }
+    if (cardsOn()) {                                          // the x frame: collapsed cards; a search or filter change opens the ones it matches
+      var auto = filt && expandMatches;
+      CARDS[e] = eraCards(e);
+      html = CARDS[e].map(function (c) {
+        CARD_ROWS[c.k] = c.rows;
+        if (auto) open.a[c.k] = true;
+        return cardHtml(e, c, !!open.a[c.k]);
+      }).join('');
+      return eraFinishHtml(e) + (D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '') + html;
     }
     orderedEraRows(e).forEach(function (i) {
       if (filt ? !matches(i) : !inView(i)) return;
@@ -715,7 +862,7 @@
     });
     if (curArc !== -1) html += '</div>';
     var intro = D.eras[e].intro ? '<p class="era-intro">' + escapeHtml(D.eras[e].intro) + '</p>' : '';
-    return intro + html;
+    return eraFinishHtml(e) + intro + html;
   }
 
   /* An era's numbers for the stylesheet, as tokens: its index (for a pale
@@ -740,21 +887,24 @@
       '<button type="button" class="era-head" data-act="era" aria-expanded="' + isOpen + '" aria-controls="era-body-' + e + '">' +
       '<span class="bhead"><span class="bname" data-n="' + padN(e + 1, ERA_W) + '">' + escapeHtml(era.name) + '</span>' +
       (era.years ? '<span class="byears">' + escapeHtml(era.years) + '</span>' : '') + '</span>' +
-      '<span class="bfoot">' + statsHtml(S.era[e], fin) + '</span></button>' +     // the strip under the tab (Pull's folder tab, session 7)
+      (frameOf(settings.skin) === 'v9' ? statsHtml(S.era[e], fin) :              // the v9 frame: v9's era head, exactly
+        eraFootHtml(S.era[e])) + '</button>' +                                    // the x frame: the strip under the tab
       '<div class="era-body" id="era-body-' + e + '"' + (isOpen ? '' : ' hidden') + '>' +
-      (isOpen ? eraBodyHtml(e) : '') + '</div></section>';
+      (isOpen ? eraBodyHtml(e) : eraFinishHtml(e)) + '</div></section>';
   }
 
   function renderList() {
     var S = computeStats(), fins = finishMap(S), filt = narrowing();
-    rendered = {};
-    if (!filt && wasNarrowing) open = { b: {}, e: {} };
+    rendered = {}; CARDS = {}; CARD_ROWS = {};
+    eraFin = HAS.bands ? {} : fins;
+    $('#app').setAttribute('data-frame', frameOf(settings.skin));      // the frame this list was drawn for
+    if (!filt && wasNarrowing) open = { b: {}, e: {}, a: {} };
     wasNarrowing = filt;
     var visEra = D.eras.map(function () { return !filt; }), any = false;
     if (filt) {
       for (var i = 0; i < N; i++) if (matches(i)) { visEra[D.issueEra[i]] = true; any = true; }
       if (expandMatches) {
-        open = { b: {}, e: {} };
+        open = { b: {}, e: {}, a: {} };
         visEra.forEach(function (v, e) { if (v) { open.e[e] = true; if (BAND_OF_ERA[e] >= 0) open.b[BAND_OF_ERA[e]] = true; } });
       }
     }
@@ -788,12 +938,24 @@
 
   /* Repaint numbers only (after a mark): banners and header, no list rebuild. */
   function refreshStats() {
-    var S = computeStats(), fins = finishMap(S);
+    var S = computeStats(), fins = finishMap(S), x = frameOf(settings.skin) === 'x';
+    eraFin = HAS.bands ? {} : fins;
     D.eras.forEach(function (era, e) {
       var head = $('.era[data-e="' + e + '"] > .era-head');
       if (!head) return;
-      var old = head.querySelector('.bstats'), bar = head.querySelector('progress');
       var tmp = document.createElement('div');
+      if (x) {                                              // the strip, the finish-by line at the top of the body, and the cards' counts
+        (CARDS[e] || []).forEach(function (c) { var f = $('.arc[data-k="' + c.k + '"] .arc-frac'); if (f) f.textContent = cardFrac(c.rows); });
+        tmp.innerHTML = eraFootHtml(S.era[e]);
+        head.querySelector('.bfoot').replaceWith(tmp.firstChild);
+        var body = head.nextElementSibling, line = body.firstElementChild && body.firstElementChild.classList.contains('efinish') ? body.firstElementChild : null;
+        tmp.innerHTML = eraFinishHtml(e);
+        if (line && tmp.firstChild) line.replaceWith(tmp.firstChild);
+        else if (line) line.remove();
+        else if (tmp.firstChild) body.insertBefore(tmp.firstChild, body.firstChild);
+        return;
+      }
+      var old = head.querySelector('.bstats'), bar = head.querySelector('progress');
       tmp.innerHTML = statsHtml(S.era[e], HAS.bands ? null : fins[e]);
       old.replaceWith(tmp.firstChild); bar.replaceWith(tmp.lastChild);
     });
@@ -1099,7 +1261,7 @@
     settings.order = keepOrder;
     settings.events = 'essential';                            // shown as an active chip, so Clear all clears it
     $('#q').value = '';
-    open = { b: {}, e: {} };
+    open = { b: {}, e: {}, a: {} };
     refilter();
   }
 
@@ -1202,7 +1364,12 @@
   }
   function setAll(on) {
     D.periods.forEach(function (p, b) { if (!$('.band[data-b="' + b + '"]').hidden) setBandOpen(b, on); });
-    D.eras.forEach(function (era, e) { var s = $('.era[data-e="' + e + '"]'); if (s && !s.hidden) setEraOpen(e, on); });
+    D.eras.forEach(function (era, e) {
+      var s = $('.era[data-e="' + e + '"]');
+      if (!s || s.hidden) return;
+      setEraOpen(e, on);
+      if (cardsOn()) (CARDS[e] || []).forEach(function (c) { setCardOpen(c.k, on); });   // and every arc card in it
+    });
   }
 
   function jumpToIssue(id) {
@@ -1216,6 +1383,7 @@
     var e = D.issueEra[i];
     if (BAND_OF_ERA[e] >= 0) setBandOpen(BAND_OF_ERA[e], true);
     setEraOpen(e, true);
+    if (cardsOn()) (CARDS[e] || []).forEach(function (c) { if (c.rows.indexOf(i) !== -1) setCardOpen(c.k, true); });   // the card it sits in
     var row = $('.row[data-i="' + i + '"]');
     if (!row) return false;
     row.scrollIntoView({ block: 'center' });
@@ -1313,14 +1481,28 @@
     var known = Object.keys(reviews).filter(mine).sort(function (x, y) { return ID_I[x] - ID_I[y]; });
     var orphans = Object.keys(reviews).filter(function (id) { return !mine(id); });
     var legacy = (load('legacy-unmatched', null) || { reviews: {} }).reviews || {};
+    var x = frameOf(settings.skin) === 'x';
+    /* the x frame's review card (the reference tracker's): its era and arc, the issue, the stars, the text, and Edit */
+    var xItem = function (i, id, rv) {
+      var e = i === undefined ? -1 : D.issueEra[i];
+      return '<li class="rev-item' + (e >= 0 ? ' eratok" style="' + eraStyle(e) : '') + '">' +
+        (e >= 0 ? '<span class="rev-era">' + escapeHtml(D.arcs[D.issues[i][2]].n) + ' · ' + escapeHtml(D.eras[e].name) + '</span>' +
+          '<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-id="' + escapeAttr(id) + '">' + escapeHtml(D.issues[i][1]) + '</button>'
+          : '<span class="rev-name">' + escapeHtml(id) + '</span>') +
+        (rv.r ? '<span class="rev-stars" aria-label="' + rv.r + ' of 5 stars">' + stars(rv.r) + '</span>' : '') +
+        (rv.t ? '<p class="rev-t">' + escapeHtml(rv.t) + '</p>' : '') +
+        (e >= 0 ? '<button type="button" class="rev-edit" data-act="rv-edit" data-id="' + escapeAttr(id) + '" aria-label="' +
+          escapeAttr('Edit the review of ' + D.issues[i][1]) + '">Edit</button>' : '') + '</li>';
+    };
     var item = function (name, rv, extra) {
       return '<li class="rev-item"><div class="rev-top">' + name +
         (rv.r ? '<span class="rev-stars" aria-label="' + rv.r + ' of 5 stars">' + stars(rv.r) + '</span>' : '') + (extra || '') + '</div>' +
         (rv.t ? '<p class="rev-t">' + escapeHtml(rv.t) + '</p>' : '') + '</li>';
     };
-    var h = '<h2 class="pane-h">Reviews' + (known.length ? ' · ' + known.length : '') + '</h2>';
+    var h = '<h2 class="pane-h' + (x ? ' vh' : '') + '">Reviews' + (known.length ? ' · ' + known.length : '') + '</h2>';   // the x frame: for screen readers, as the reference shows none
     h += known.length ? '<ol class="revlist">' + known.map(function (id) {
       var i = ID_I[id];
+      if (x) return xItem(i, id, reviews[id]);
       return item('<button type="button" class="linkbtn rev-name" data-act="rv-jump" data-id="' + escapeAttr(id) + '">' + escapeHtml(D.issues[i][1]) + '</button>',
         reviews[id], '<span class="rev-era">' + escapeHtml(D.arcs[D.issues[i][2]].n) + ' · ' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>');
     }).join('') + '</ol>' : '<p class="muted">No reviews yet. Tap ✎ on any issue to rate it.</p>';
@@ -1329,7 +1511,8 @@
     if (kept.length) {
       h += '<h3 class="ssub">Kept from the previous version</h3><p class="muted">These could not be matched to an issue in this list. ' +
         'They are kept, never dropped.</p><ul class="revlist kept">' + kept.map(function (k) {
-          return item('<span class="rev-name">' + escapeHtml(k[0]) + '</span>', { r: +k[1].r || 0, t: k[1].t || '' });
+          var rv = { r: +k[1].r || 0, t: k[1].t || '' };
+          return x ? xItem(undefined, k[0], rv) : item('<span class="rev-name">' + escapeHtml(k[0]) + '</span>', rv);
         }).join('') + '</ul>';
     }
     $('#reviews').innerHTML = h;
@@ -1370,6 +1553,7 @@
     var i = list[at], r = D.issues[i], arc = D.arcs[r[2]], st = stateOf(i), id = D.ids[i];
     var pinned = progress.bookmarks.indexOf(id) !== -1, done = doneLabel(i);
     reader.id = id;
+    if (frameOf(settings.skin) === 'x') { host.innerHTML = xReadingHtml(i, at, list.length, st, pinned, done); return; }
     host.innerHTML = '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + list.length.toLocaleString('en-GB') + '</p>' +
       '<p class="rpills"><span class="rpill">' + escapeHtml(D.eras[D.issueEra[i]].name) + '</span>' +
@@ -1388,6 +1572,30 @@
       '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
       '<button type="button" class="linkbtn" data-act="rd-next"' + (at === list.length - 1 ? ' disabled' : '') + '>Next →</button>' +
       '</div><p class="muted rkeys">Keys: ← → step · R ' + escapeHtml(done.toLowerCase()) + ' · X skip · / search</p></div>';
+  }
+  /* The x frame's Reading tab (John, 24 Oct; the reference tracker's): the counter, with the state in it once there
+     is one; then the issue centred on the page (its era in the era's own colour, the title in the display face,
+     "arc · TYPE", the note and the blurb); then Skip and Mark Read, and the nav row. The key hint stays (v3). */
+  function xReadingHtml(i, at, n, st, pinned, done) {
+    var r = D.issues[i], arc = D.arcs[r[2]], e = D.issueEra[i], id = D.ids[i];
+    return '<p class="rcount">' + (at + 1).toLocaleString('en-GB') + ' of ' + n.toLocaleString('en-GB') +
+      (st !== 'unread' ? ' · ' + escapeHtml(labelOf(i, st).toUpperCase()) : '') + '</p>' +
+      '<div class="rcard" data-i="' + i + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
+      '<p class="rpills"><span class="rpill eratok" style="' + eraStyle(e) + '">' + escapeHtml(D.eras[e].name) + '</span>' +
+      (HAS.media ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
+      '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
+      '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]] + (r[5] ? ' · ★ CORE' : '')) + '</p>' +
+      (r[7] ? '<p class="rnote">' + escapeHtml(r[7]) + '</p>' : '') +
+      (arc.b ? '<p class="rblurb">' + escapeHtml(arc.b) + '</p>' : '') + '</div>' +
+      '<div class="racts">' +
+      '<button type="button" class="rbtn ghost" data-act="rd-skip" aria-pressed="' + (st === 'skip') + '">' + (st === 'skip' ? 'Skipped' : 'Skip') + '</button>' +
+      '<button type="button" class="rbtn solid" data-act="rd-done" aria-pressed="' + (st === 'read') + '">' +
+      escapeHtml(st === 'read' ? done + ' ✓' : 'Mark ' + done) + '</button></div>' +
+      '<div class="rnav">' +
+      '<button type="button" class="linkbtn" data-act="rd-prev"' + (at === 0 ? ' disabled' : '') + '>← Previous</button>' +
+      '<button type="button" class="linkbtn" data-act="rd-pin" aria-pressed="' + pinned + '">' + (pinned ? '★ Pinned' : '☆ Pin for later') + '</button>' +
+      '<button type="button" class="linkbtn" data-act="rd-next"' + (at === n - 1 ? ' disabled' : '') + '>Next →</button>' +
+      '</div><p class="muted rkeys">Keys: ← → step · R ' + escapeHtml(done.toLowerCase()) + ' · X skip · / search</p>';
   }
   function readerStep(delta) {
     var list = readerList(), at = list.indexOf(ID_I[reader.id]);
@@ -1424,7 +1632,7 @@
   function renderPinbar() {
     var list = bookmarked();
     $('#pinbar').hidden = !list.length;
-    $('#pinchips').innerHTML = list.map(function (i) {
+    $('#pinchips').innerHTML = (frameOf(settings.skin) === 'x' && list.length ? '<span class="pin-label" aria-hidden="true">PINNED</span>' : '') + list.map(function (i) {
       return '<button type="button" class="chip pin" data-act="bm-jump" data-id="' + escapeAttr(D.ids[i]) + '">★ ' +
         escapeHtml(D.issues[i][1]) + '</button>';
     }).join('');
@@ -1511,18 +1719,65 @@
     return res;
   }
 
+  /* The header and the filter bar on the frame's arrangement (session 8). The
+     page's own markup is the v9 frame's. The x frame (the reference tracker's)
+     moves the same controls, so each keeps its state and its listeners: the
+     version and the offline mark to the end of the offline line, Next unread
+     beside the search box, the Filters button with Expand all and Collapse all
+     in a row under it, and the bookmarks bar under the filter bar. A move back
+     restores v9's order exactly (47-frame-v9). */
+  var chrome = null;
+  function placeChrome() {
+    var x = frameOf(settings.skin) === 'x';
+    if (!chrome) {
+      chrome = { x: false, tools: $('.ptools'), badge: document.createElement('p'), ver: document.createElement('span'), ftools: document.createElement('div') };
+      chrome.badge.className = 'pbadge';
+      chrome.badge.textContent = 'Offline Edition — progress saves in this browser only, no account needed';
+      chrome.ver.className = 'pver';                       // "· vN" never wraps on its own
+      chrome.badge.append(chrome.ver);
+      chrome.ftools.className = 'ftools';
+    }
+    if (x === chrome.x) return;
+    chrome.x = x;
+    var tag = $('#buildtag'), net = $('#netState'), sep = tag.previousSibling, next = $('[data-act="next"]');
+    var all = [$('[data-act="expand-all"]'), $('[data-act="collapse-all"]')], tog = $('.ftoggle'), fbar = $('.fbar'), pin = $('#pinbar');
+    if (x) {
+      $('.ptitle').after(chrome.badge);
+      chrome.ver.append(sep, tag, net);
+      chrome.tools.remove();
+      fbar.append(next);
+      chrome.ftools.append(tog, all[0], all[1]);
+      fbar.after(chrome.ftools);
+      $('#fpanel').after(pin);
+    } else {
+      $('.pmeta').append(sep, tag, net);
+      chrome.badge.remove();
+      $('#pprog').after(chrome.tools);
+      chrome.tools.append(next, all[0], all[1]);
+      fbar.insertBefore(tog, $('#q'));
+      chrome.ftools.remove();
+      $('#fpanel').before(pin);
+    }
+    next.classList.toggle('jump', x);
+    next.innerHTML = x ? 'Next unread<span aria-hidden="true"> →</span>' : 'Next unread';
+    renderPinbar();
+    measureStack();
+  }
+
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
   var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css',
                 mini: 'stats', banner: 'stats', table: 'css' };
   function applyPrefs() {
     var root = document.documentElement;
-    $('.ptools [data-act="next"]').hidden = !settings.showJump;
+    placeChrome();
+    $('[data-act="next"]').hidden = !settings.showJump;
     root.setAttribute('data-badges', settings.badges ? '1' : '0');
     root.setAttribute('data-combo', settings.combo ? '1' : '0');
     root.setAttribute('data-reveal', settings.reveal ? '1' : '0');
     root.setAttribute('data-layout', settings.layout);
     root.setAttribute('data-skin', settings.skin);
+    root.setAttribute('data-frame', frameOf(settings.skin));
     root.setAttribute('data-paper', settings.paper);
     LOOK.forEach(function (l) { root.setAttribute('data-' + l[1], settings[l[0]]); });
     root.setAttribute('data-dys', settings.dys ? '1' : '0');
@@ -1534,11 +1789,13 @@
   /* a Look setting: validated, stored in the one store, applied as a root
      attribute. Mark style also changes the glyphs, so the rows re-render. */
   function setLook(k, v) {
+    var was = frameOf(settings.skin);
     if (k === 'skin') { if (SKINS.indexOf(v) === -1) return; settings.skin = v; }
     else if (k === 'paper') { if (!PAPERS.some(function (p) { return p[0] === v; })) return; settings.paper = v; }
     else { var l = lookOf(k); if (!l || !lookOk(l, v)) return; settings[k] = v; }
     saveSettings(); applyPrefs();
-    if (k === 'marks') { renderList(); if (activeTab === 'reading') renderReading(); }
+    if (frameOf(settings.skin) !== was) { rerenderAll(); if (activeTab === 'reading') renderReading(); }   // another arrangement: draw it all again
+    else if (k === 'marks') { renderList(); if (activeTab === 'reading') renderReading(); }
     if (activeTab === 'settings') renderSettings();
   }
   /* The skin beacon (F-57): styles.css declares the token contract it was
@@ -1579,7 +1836,7 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.typeColours && typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {
@@ -2002,7 +2259,7 @@
       if (HAS.eras && settings.rev) bits.push('newest era first');
       if (settings.table) bits.push('table view');
       if (settings.banner) bits.push('banner');
-      if (!settings.mini) bits.push('no mini bar');
+      if (settings.mini !== (frameOf(settings.skin) === 'v9')) bits.push(settings.mini ? 'mini bar' : 'no mini bar');   // only when it isn't the frame's default
     } else if (k === 'touch') {
       bits.push(settings.swipe && settings.press ? 'Swipe and long-press on' : settings.swipe ? 'Swipe on' : settings.press ? 'Long-press on' : 'Gestures off');
     } else if (k === 'bulk') {
@@ -2024,6 +2281,20 @@
   }
   function pref(k, label) {
     return '<button type="button" class="chip" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '">' + escapeHtml(label) + '</button>';
+  }
+  /* On/off settings, a group of them under one name. The v9 frame shows them as chips in one row; the x frame as the
+     reference tracker's switches (John, 24 Oct), one row each: a group of one is a row with the group's name and the
+     setting's words under it, a larger group a sub-heading over a row per setting. */
+  function prefs(group, list) {
+    list = list.filter(Boolean);
+    if (frameOf(settings.skin) !== 'x') return srow(group, list.map(function (p) { return pref(p[0], p[1]); }).join(''));
+    var row = function (k, label, desc) {
+      return '<div class="srow trow"><span class="slabel">' + escapeHtml(label) + (desc ? '<span class="sdesc">' + escapeHtml(desc) + '</span>' : '') + '</span>' +
+        '<div class="sctl"><button type="button" class="tog" data-act="pref" data-k="' + k + '" aria-pressed="' + !!settings[k] + '" aria-label="' +
+        escapeAttr(desc ? group + ': ' + desc : label) + '"></button></div></div>';
+    };
+    if (list.length === 1) return row(list[0][0], group, list[0][1]);
+    return '<h3 class="ssub">' + escapeHtml(group) + '</h3>' + list.map(function (p) { return row(p[0], p[1]); }).join('');
   }
   function bookmarksHtml() {
     var list = bookmarked();
@@ -2059,7 +2330,7 @@
       (HAS.media ? '<p class="muted shelp pace-dur">Comics are timed at your minutes per issue; shows and games count their own length.</p>' +
         srow('Progress', seg('pmode', 'Progress', [['combined', 'Combined'], ['medium', 'Per format']], settings.progressMode)) : '') +
       (HAS.events ? srow('Events', seg('events-view', 'Events', [['essential', 'Essential'], ['complete', 'Complete']], settings.events)) : '') +
-      srow('Next unread button', pref('showJump', 'Show it')));
+      prefs('Next unread button', [['showJump', 'Show it']]));
     var lookSeg = function (k, label, opts, cur) {
       return '<div class="seg" role="group" aria-label="' + escapeAttr(label) + '">' + opts.map(function (o) {
         return '<button type="button" class="segbtn" data-act="look" data-k="' + k + '" data-v="' + escapeAttr(o[0]) + '" aria-pressed="' +
@@ -2075,16 +2346,16 @@
       LOOK.filter(function (l) { return l[0] !== 'eraHues' || HAS.eras; }).map(function (l) {
         return srow(l[2], lookSeg(l[0], l[2], l[3], settings[l[0]]));
       }).join('') +
-      srow('Reading aid', pref('dys', 'Dyslexia-friendly font')));
+      prefs('Reading aid', [['dys', 'Dyslexia-friendly font']]));
     h += sset('display',
-      srow('Rows', pref('badges', 'Badges') + pref('combo', 'Combo badge') + (HAS.reveal ? pref('reveal', 'Tap to reveal notes') : '') +
-        (HAS.gapNotes ? pref('gapNotes', 'Gap notes') : '') + pref('table', 'Table view')) +
-      srow('Progress', pref('mini', 'Mini progress bar') + pref('banner', 'Persistent banner')) +
-      (HAS.eras ? srow('Order', pref('rev', 'Newest era first')) : '') +
+      prefs('Rows', [['badges', 'Badges'], ['combo', 'Combo badge'], HAS.reveal && ['reveal', 'Tap to reveal notes'],
+        HAS.gapNotes && ['gapNotes', 'Gap notes'], ['table', 'Table view']]) +
+      prefs('Progress', [['mini', 'Mini progress bar'], ['banner', 'Persistent banner']]) +
+      (HAS.eras ? prefs('Order', [['rev', 'Newest era first']]) : '') +
       srow('Arc headings', seg('layout', 'Arc headings', [['arcs', 'Headings'], ['rows', 'Label on each row']], settings.layout)) +
       (HAS.eras ? srow('Era navigation', seg('eranav', 'Era navigation', [['scroll', 'Plain scroll'], ['chips', 'Chips'], ['dropdown', 'Dropdown']], settings.eraNav)) : ''));
     h += sset('touch',
-      srow('Gestures', pref('swipe', 'Swipe to mark') + pref('press', 'Long-press to mark all read')) +
+      prefs('Gestures', [['swipe', 'Swipe to mark'], ['press', 'Long-press to mark all read']]) +
       '<p class="muted shelp">Swipe a row right to mark it read, left to skip it. Hold ' + (HAS.bands ? 'a band, era' : 'an era') +
       ' or arc heading to mark everything in it read; Undo puts every row back.</p>');
     var eraOpts = function (cur) {
@@ -2262,6 +2533,8 @@
   function onClick(ev) {
     checkOnline();
     if (swallowClick) { swallowClick = false; if (ev.target.closest('.band-head, .era-head, .arc-head')) return; }
+    var cardHead = !ev.target.closest('button, a') && ev.target.closest('.arc[data-k] > .arc-head');   // a card's stripe, count, chevron or empty space
+    if (cardHead) { setCardOpen(cardHead.parentNode.dataset.k, cardHead.querySelector('.arc-toggle').getAttribute('aria-expanded') !== 'true'); return; }
     var b = ev.target.closest('[data-act]');
     if (!b) return;
     var act = b.dataset.act, i;
@@ -2280,6 +2553,13 @@
         break;
       }
       case 'era': { var e = +b.closest('.era').dataset.e; setEraOpen(e, !open.e[e]); break; }
+      case 'arc': setCardOpen(b.closest('.arc').dataset.k, b.getAttribute('aria-expanded') !== 'true'); break;
+      case 'arc-info': {
+        var info = document.getElementById(b.getAttribute('aria-controls')), showInfo = info.hidden;
+        info.hidden = !showInfo;
+        b.setAttribute('aria-expanded', showInfo ? 'true' : 'false');
+        break;
+      }
       case 'band': { var bd = +b.closest('.band').dataset.b; setBandOpen(bd, !open.b[bd]); break; }
       case 'panel': {
         var body = $('#fbody'), show = body.hidden;
@@ -2328,6 +2608,12 @@
         break;
       }
       case 'rv-jump': jumpToIssue(b.dataset.id); break;
+      case 'rv-edit': {      // the x frame's Edit: to the issue, its review open
+        jumpToIssue(b.dataset.id);
+        var rvb = ID_I[b.dataset.id] === undefined ? null : $('.row[data-i="' + ID_I[b.dataset.id] + '"] .b.rv');
+        if (rvb && rvb.getAttribute('aria-expanded') !== 'true') toggleReview(rvb);
+        break;
+      }
       case 'rd-done': readerMark('read'); break;
       case 'rd-skip': readerMark('skip'); break;
       case 'rd-prev': readerStep(-1); break;
@@ -2509,11 +2795,20 @@
   /* The sticky stack's height (F-58), measured whenever it changes (the
      banner turning on, a wrap at a new width, a font landing). A
      ResizeObserver is not an event listener, so the budget is unchanged. */
+  /* On the x frame the header pins too, under the tabs (z-index), so what stays on
+     screen is the taller of the two (the reference tracker's pinning; John, 24 Oct).
+     It pins only while it takes at most 35 % of the screen: with the largest text on
+     a small phone the tabs pin alone (John, 28 Oct; 10-sweep). */
   function measureStack() {
-    var st = $('#stack');
-    document.documentElement.style.setProperty('--stack-h', (st ? st.offsetHeight : 0) + 'px');
+    var st = $('#stack'), h = st ? st.offsetHeight : 0, root = document.documentElement;
+    if (frameOf(settings.skin) === 'x') {
+      var ph = $('#phead').offsetHeight, pin = ph <= window.innerHeight * 0.35;
+      root.setAttribute('data-headpin', pin ? '1' : '0');
+      if (pin) h = Math.max(h, ph);
+    }
+    root.style.setProperty('--stack-h', h + 'px');
   }
-  if (window.ResizeObserver) new window.ResizeObserver(measureStack).observe($('#stack'));
+  if (window.ResizeObserver) { var stackObs = new window.ResizeObserver(measureStack); stackObs.observe($('#stack')); stackObs.observe($('#phead')); }
 
   applySignature();
   applyFranchise();

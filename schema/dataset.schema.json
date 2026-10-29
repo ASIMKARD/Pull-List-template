@@ -69,6 +69,10 @@
     "background": {
      "$ref": "#/$defs/colour"
     },
+    "accent": {
+     "$ref": "#/$defs/colour",
+     "description": "Optional, #RRGGBB. The colour Pull's \"One colour\" draws every era in, darkened by the palette's rule only as far as white text, the 85 % years and the strip need for 4.5:1, its hue kept (John, 19 and 24 Oct). Without one, the default palette's navy #1C3A5E."
+    },
     "searchUrl": {
      "type": "string"
     },
@@ -206,6 +210,13 @@
        "maxLength": 24,
        "description": "The name in the skin control."
       },
+      "frame": {
+       "enum": [
+        "x",
+        "v9"
+       ],
+       "description": "The arrangement the skin is drawn on (John, 25 Oct). \"x\" (the default) is the shared skins' X-Men layout; \"v9\" keeps the template's arrangement as it was up to v9 (Absolute's own skin), exactly, guarded by test/layout/47-frame-v9."
+      },
       "tokens": {
        "type": "object",
        "minProperties": 1,
@@ -328,7 +339,7 @@
      "colour": {
       "type": "string",
       "pattern": "^#[0-9A-Fa-f]{6}$",
-      "description": "Optional, #RRGGBB. Pull draws the era in this colour exactly, with white text, and its stats strip 25 darker per channel; the other skins ignore it (John, 9 and 12 Oct). The build warns when white text on it is under 4.5:1. Without one, Pull derives a colour from the era's hue."
+      "description": "Optional, #RRGGBB. Pull draws the era in this colour exactly, with white text, and its stats strip 25 darker per channel; the x frame's review era tag draws it as text on the card, as given (John, 29 Oct); the other skins ignore it (John, 9 and 12 Oct). The build warns when white text on it, or it as the review era tag, is under 4.5:1. Without one, Pull draws the era in its default palette (the reference tracker's eleven, in order)."
      }
     }
    }

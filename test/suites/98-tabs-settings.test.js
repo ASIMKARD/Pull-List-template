@@ -6,7 +6,7 @@
    Import from previous version. */
 'use strict';
 const path = require('path');
-const { ROOT, build, loadData, boot, wait, basic, mixed, openSettings } = require('../lib/helpers');
+const { ROOT, FIX, build, loadData, boot, wait, basic, mixed, openSettings } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1), DAY = 864e5;
 
@@ -98,12 +98,34 @@ module.exports = async function (t) {
   t.ok('back to combined: the lines go', !$('#pprog .pmedia'));
 
   // ----------------------------------------------- jump button (XM-19)
-  const next = () => $('.ptools [data-act="next"]');
+  const next = () => $('[data-act="next"]');
   t.ok('Next unread button shows by default', !next().hidden);
   $('#settings [data-act="pref"][data-k="showJump"]').click();
   t.ok('switching it off hides the button', next().hidden && stored(app, 'settings').showJump === false);
   $('#settings [data-act="pref"][data-k="showJump"]').click();
   t.ok('switching it on shows it again', !next().hidden);
+
+  // --------------------------------------------- on/off as switches (the x frame; John, 24 Oct)
+  const togs = $$('#settings [data-act="pref"]');
+  t.ok('the x frame draws every on/off setting as a switch, one row each, none as a chip', togs.length > 8 && togs.every(b => b.matches('.tog') &&
+       b.closest('.srow.trow') && b.closest('.srow').querySelectorAll('[data-act="pref"]').length === 1 && b.hasAttribute('aria-label')) &&
+       !$('#settings .chip[data-act="pref"]'));
+  const lone = $('#settings [data-act="pref"][data-k="showJump"]').closest('.srow');
+  t.ok('…a setting alone in its group is one row with the group\'s name and its own words under it', lone.querySelector('.slabel').firstChild.textContent === 'Next unread button' &&
+       !!lone.querySelector('.sdesc') && lone.querySelector('.sdesc').textContent === 'Show it' && $('#settings [data-k="showJump"]').getAttribute('aria-label') === 'Next unread button: Show it');
+  const rowsGrp = $('#settings [data-act="pref"][data-k="badges"]').closest('.srow');
+  t.ok('…a larger group is a sub-heading over a row per setting', rowsGrp.previousElementSibling && rowsGrp.previousElementSibling.matches('h3.ssub') &&
+       rowsGrp.previousElementSibling.textContent === 'Rows' && rowsGrp.querySelector('.slabel').textContent === 'Badges');
+  {   // the v9 frame keeps its chips (John, 25 Oct)
+    const v9 = build(path.join(FIX, 'sig-v9', 'dataset.json'), { label: 'settings-v9' }), a9 = boot(v9.out, { now: NOW, storage: {} });
+    await wait(20);
+    a9.document.querySelector('#tab-settings').click();
+    const c9 = [...a9.document.querySelectorAll('#settings [data-act="pref"]')];
+    t.ok('the v9 frame keeps its on/off chips, grouped in one row each, and draws no switch', a9.document.documentElement.getAttribute('data-frame') === 'v9' &&
+         c9.length > 8 && c9.every(b => b.matches('.chip')) && !a9.document.querySelector('#settings .tog, #settings .trow') &&
+         a9.document.querySelector('#settings [data-k="badges"]').closest('.srow').querySelectorAll('[data-act="pref"]').length > 1);
+    a9.window.close();
+  }
 
   // --------------------------------------------- About & legend (F-31)
   t.ok('About shows the title, counts and "Version N"', new RegExp(D.counts.total + ' entries').test($('.about').textContent) &&

@@ -158,7 +158,7 @@ module.exports = async function (t) {
   t.ok('the app adds the signature CSS once, as it came from the build', styles.length === 1 && styles[0].textContent === css);
   t.eq('…and opens in it on a first visit', d.documentElement.getAttribute('data-skin'), 'signature');
   t.ok('…without tripping the stale-styles beacon (it only reads the page\'s own stylesheet)', !/out of date/.test(d.querySelector('#toastMsg').textContent));
-  d.querySelector('.ptools [data-act="expand-all"]').click();
+  d.querySelector('[data-act="expand-all"]').click();
   const padTo = (n, w) => String(n).padStart(w, '0'), rw = Math.max(2, String(D.issues.length).length);
   const rowsN = [...d.querySelectorAll('.row[data-i]')];
   t.ok('every row carries its reading position for decorations (data-n, zero-padded to the list\'s width), inert rows too',

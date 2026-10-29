@@ -14,6 +14,7 @@ one build step, an offline web app, a generated workbook, and two test suites
 
 1. **Get a fresh repo.** John creates it. Copy this template in with fresh
    history; never build a new tracker inside the template or inside a live repo.
+   (A live tracker moves onto v3 in place, on its own repo: `MIGRATING.md`.)
 2. **Install the test tools.** `npm ci` (jsdom, ajv, playwright-core). Cloud
    sessions do this at start-up (`.claude/settings.json`).
 3. **Write `dataset.json`** — the master; everything else is generated from it.
@@ -21,8 +22,8 @@ one build step, an offline web app, a generated workbook, and two test suites
    is a complete invented franchise that uses every feature.
    - `franchise`: `key` (unique across every tracker you host: it namespaces
      saved progress, the QR prefix and the cache name), `wordmark`, `title`,
-     `strapline`, `span`, `theme`, and optionally `background`, `searchUrl`,
-     `icons`, `skins` / `skin`, `signature`, `storage`, `versionStart`.
+     `strapline`, `span`, `theme`, and optionally `background`, `accent` (Pull's "One
+     colour"), `searchUrl`, `icons`, `skins` / `skin`, `signature`, `storage`, `versionStart`.
    - `eras` with ranks from 5000, spaced 10; `periods` (optional bands);
      `strands`, `types`, `tiers`, `media`; `arcs`.
    - Rows inline (`rows`) or one file per era (`sources`, schema

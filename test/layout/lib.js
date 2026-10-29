@@ -17,7 +17,10 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
                 '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
 /* Chromium: CHROMIUM_PATH if set, else Playwright's own (PLAYWRIGHT_BROWSERS_PATH
-   in cloud sessions, the CI install otherwise), else /opt/pw-browsers/chromium. */
+   in cloud sessions, the CI install otherwise), else /opt/pw-browsers/chromium.
+   Text is drawn without hinting everywhere: CI's runner hints fully by default,
+   which rounds every glyph to whole pixels, so text-sized boxes measured in a
+   session (47-frame-v9's references) moved by a pixel or two there (28 Oct). */
 let browserP = null;
 function browser() {
   if (browserP) return browserP;
@@ -29,7 +32,7 @@ function browser() {
   browserP = (async () => {
     const errs = [];
     for (const executablePath of tries) {
-      try { return await chromium.launch({ executablePath }); } catch (e) { errs.push((executablePath || 'playwright default') + ': ' + e.message.split('\n')[0]); }
+      try { return await chromium.launch({ executablePath, args: ['--font-render-hinting=none'] }); } catch (e) { errs.push((executablePath || 'playwright default') + ': ' + e.message.split('\n')[0]); }
     }
     throw new Error('No Chromium available for the layout suite, so nothing visual was checked. Tried ' + errs.join(' | '));
   })();
@@ -108,7 +111,7 @@ async function openAll(page) {
     const p = document.querySelector('[data-act="panel"]');
     if (p.getAttribute('aria-expanded') !== 'true') p.click();
     tap('#fsecs .sec-head[aria-expanded="false"]');
-    document.querySelector('.ptools [data-act="expand-all"]').click();
+    document.querySelector('[data-act="expand-all"]').click();
   });
 }
 async function openSettings(page) {

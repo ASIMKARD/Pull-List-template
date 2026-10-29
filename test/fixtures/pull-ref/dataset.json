@@ -1,0 +1,866 @@
+{
+ "$schema": "../../../schema/dataset.schema.json",
+ "schemaVersion": 1,
+ "franchise": {
+  "key": "pull-ref",
+  "wordmark": "Reference Line",
+  "title": "Reference Line — Reading Order",
+  "strapline": "comparison fixture · 1963–2017",
+  "span": "1963–2017",
+  "theme": "#1C3A5E",
+  "strictCredits": false
+ },
+ "eras": [
+  {
+   "id": "beginnings",
+   "name": "Beginnings",
+   "rank": 5000,
+   "years": "1963–75",
+   "intro": "Where the team gathers for the first time, and the first villains make their move.",
+   "colour": "#A6791E"
+  },
+  {
+   "id": "second-wave",
+   "name": "Second Wave",
+   "rank": 5010,
+   "years": "1975–91",
+   "intro": "A new roster arrives, and the stories grow longer and stranger.",
+   "colour": "#A6303C"
+  },
+  {
+   "id": "new-horizons",
+   "name": "New Horizons",
+   "rank": 5020,
+   "years": "1991–2000",
+   "intro": "Relaunches, crossovers and a much bigger cast.",
+   "colour": "#7B3F94"
+  },
+  {
+   "id": "new-century",
+   "name": "New Century",
+   "rank": 5030,
+   "years": "2001–08",
+   "intro": "A school, a new look and a darker turn.",
+   "colour": "#2C6E8C"
+  },
+  {
+   "id": "island",
+   "name": "The Island",
+   "rank": 5040,
+   "years": "2008–12",
+   "intro": "The team moves to an island off the coast.",
+   "colour": "#1F7A5C"
+  },
+  {
+   "id": "long-road",
+   "name": "The Long Road",
+   "rank": 5050,
+   "years": "2012–17",
+   "intro": "Time travel, a new school and a war with old allies.",
+   "colour": "#B08A1F"
+  }
+ ],
+ "strands": [
+  "Main"
+ ],
+ "types": [
+  "MAIN",
+  "SPIN-OFF",
+  "SOLO",
+  "MINI",
+  "EVENT"
+ ],
+ "tiers": [
+  "Everything"
+ ],
+ "media": [
+  "comic"
+ ],
+ "arcs": [
+  {
+   "id": "origin-tale",
+   "name": "Origin Tale",
+   "era": "beginnings",
+   "strands": [
+    "Main"
+   ],
+   "type": "SOLO",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1963",
+   "blurb": "Years before the team, one of its members finds out what he can do."
+  },
+  {
+   "id": "first-class",
+   "name": "First Class",
+   "era": "beginnings",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1963",
+   "blurb": "Five students learn to master their gifts as the first villain declares war."
+  },
+  {
+   "id": "road-trip",
+   "name": "Road Trip",
+   "era": "beginnings",
+   "strands": [
+    "Main"
+   ],
+   "type": "SPIN-OFF",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1966"
+  },
+  {
+   "id": "short-run",
+   "name": "Short Run",
+   "era": "beginnings",
+   "strands": [
+    "Main"
+   ],
+   "type": "MINI",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1970",
+   "blurb": "A four-issue detour across the ocean."
+  },
+  {
+   "id": "the-crossing",
+   "name": "The Crossing",
+   "era": "beginnings",
+   "strands": [
+    "Main"
+   ],
+   "type": "EVENT",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1974",
+   "blurb": "Every title crosses over for one long summer."
+  },
+  {
+   "id": "team-up",
+   "name": "Team-Up",
+   "era": "beginnings",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1975",
+   "blurb": "Two teams, one enemy."
+  },
+  {
+   "id": "new-roster",
+   "name": "New Roster",
+   "era": "second-wave",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1976",
+   "blurb": "A new team assembles from around the world."
+  },
+  {
+   "id": "long-night",
+   "name": "The Long Night",
+   "era": "second-wave",
+   "strands": [
+    "Main"
+   ],
+   "type": "EVENT",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1980",
+   "blurb": "The darkest storyline of the decade."
+  },
+  {
+   "id": "solo-road",
+   "name": "Solo Road",
+   "era": "second-wave",
+   "strands": [
+    "Main"
+   ],
+   "type": "SOLO",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1982"
+  },
+  {
+   "id": "relaunch",
+   "name": "Relaunch",
+   "era": "new-horizons",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1991",
+   "blurb": "Two teams, two titles, one huge relaunch."
+  },
+  {
+   "id": "side-step",
+   "name": "Side Step",
+   "era": "new-horizons",
+   "strands": [
+    "Main"
+   ],
+   "type": "MINI",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "1995",
+   "blurb": "A short story set between the big ones."
+  },
+  {
+   "id": "school-days",
+   "name": "School Days",
+   "era": "new-century",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "2001",
+   "blurb": "The school opens its doors."
+  },
+  {
+   "id": "island-life",
+   "name": "Island Life",
+   "era": "island",
+   "strands": [
+    "Main"
+   ],
+   "type": "MAIN",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "2008",
+   "blurb": "Life on the island."
+  },
+  {
+   "id": "time-out",
+   "name": "Time Out",
+   "era": "long-road",
+   "strands": [
+    "Main"
+   ],
+   "type": "EVENT",
+   "mo": "M",
+   "tier": "Everything",
+   "year": "2012",
+   "blurb": "The first team arrives from the past."
+  }
+ ],
+ "rows": [
+  {
+   "issueId": "lone-hero-1963-1",
+   "series": "Lone Hero",
+   "vol": "1963",
+   "num": "1",
+   "title": "Lone Hero (1963) #1",
+   "era": "beginnings",
+   "arc": "origin-tale",
+   "date": {
+    "cover": "1963-01",
+    "source": "invented for the X-Men comparison"
+   },
+   "note": "His childhood revealed"
+  },
+  {
+   "issueId": "lone-hero-1963-2",
+   "series": "Lone Hero",
+   "vol": "1963",
+   "num": "2",
+   "title": "Lone Hero (1963) #2",
+   "era": "beginnings",
+   "arc": "origin-tale",
+   "date": {
+    "cover": "1963-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "lone-hero-1963-3",
+   "series": "Lone Hero",
+   "vol": "1963",
+   "num": "3",
+   "title": "Lone Hero (1963) #3",
+   "era": "beginnings",
+   "arc": "origin-tale",
+   "date": {
+    "cover": "1963-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-1",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "1",
+   "title": "Team Hero (1963) #1",
+   "era": "beginnings",
+   "arc": "first-class",
+   "date": {
+    "cover": "1963-04",
+    "source": "invented for the X-Men comparison"
+   },
+   "core": true,
+   "note": "First appearance of the team and its first villain"
+  },
+  {
+   "issueId": "team-hero-1963-2",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "2",
+   "title": "Team Hero (1963) #2",
+   "era": "beginnings",
+   "arc": "first-class",
+   "date": {
+    "cover": "1963-05",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-3",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "3",
+   "title": "Team Hero (1963) #3",
+   "era": "beginnings",
+   "arc": "first-class",
+   "date": {
+    "cover": "1963-06",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-4",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "4",
+   "title": "Team Hero (1963) #4",
+   "era": "beginnings",
+   "arc": "first-class",
+   "date": {
+    "cover": "1963-07",
+    "source": "invented for the X-Men comparison"
+   },
+   "note": "First appearance of two new rivals"
+  },
+  {
+   "issueId": "team-hero-1963-5",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "5",
+   "title": "Team Hero (1963) #5",
+   "era": "beginnings",
+   "arc": "first-class",
+   "date": {
+    "cover": "1963-08",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-6",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "6",
+   "title": "Team Hero (1963) #6",
+   "era": "beginnings",
+   "arc": "first-class",
+   "date": {
+    "cover": "1963-09",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-spotlight-1966-1",
+   "series": "Team Hero Spotlight",
+   "vol": "1966",
+   "num": "1",
+   "title": "Team Hero Spotlight (1966) #1",
+   "era": "beginnings",
+   "arc": "road-trip",
+   "date": {
+    "cover": "1966-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-spotlight-1966-2",
+   "series": "Team Hero Spotlight",
+   "vol": "1966",
+   "num": "2",
+   "title": "Team Hero Spotlight (1966) #2",
+   "era": "beginnings",
+   "arc": "road-trip",
+   "date": {
+    "cover": "1966-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "short-run-1970-1",
+   "series": "Short Run",
+   "vol": "1970",
+   "num": "1",
+   "title": "Short Run (1970) #1",
+   "era": "beginnings",
+   "arc": "short-run",
+   "date": {
+    "cover": "1970-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "short-run-1970-2",
+   "series": "Short Run",
+   "vol": "1970",
+   "num": "2",
+   "title": "Short Run (1970) #2",
+   "era": "beginnings",
+   "arc": "short-run",
+   "date": {
+    "cover": "1970-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "short-run-1970-3",
+   "series": "Short Run",
+   "vol": "1970",
+   "num": "3",
+   "title": "Short Run (1970) #3",
+   "era": "beginnings",
+   "arc": "short-run",
+   "date": {
+    "cover": "1970-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "short-run-1970-4",
+   "series": "Short Run",
+   "vol": "1970",
+   "num": "4",
+   "title": "Short Run (1970) #4",
+   "era": "beginnings",
+   "arc": "short-run",
+   "date": {
+    "cover": "1970-04",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "the-crossing-1974-1",
+   "series": "The Crossing",
+   "vol": "1974",
+   "num": "1",
+   "title": "The Crossing (1974) #1",
+   "era": "beginnings",
+   "arc": "the-crossing",
+   "date": {
+    "cover": "1974-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "the-crossing-1974-2",
+   "series": "The Crossing",
+   "vol": "1974",
+   "num": "2",
+   "title": "The Crossing (1974) #2",
+   "era": "beginnings",
+   "arc": "the-crossing",
+   "date": {
+    "cover": "1974-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "the-crossing-1974-3",
+   "series": "The Crossing",
+   "vol": "1974",
+   "num": "3",
+   "title": "The Crossing (1974) #3",
+   "era": "beginnings",
+   "arc": "the-crossing",
+   "date": {
+    "cover": "1974-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-7",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "7",
+   "title": "Team Hero (1963) #7",
+   "era": "beginnings",
+   "arc": "team-up",
+   "date": {
+    "cover": "1975-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-8",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "8",
+   "title": "Team Hero (1963) #8",
+   "era": "beginnings",
+   "arc": "team-up",
+   "date": {
+    "cover": "1975-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-9",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "9",
+   "title": "Team Hero (1963) #9",
+   "era": "beginnings",
+   "arc": "team-up",
+   "date": {
+    "cover": "1975-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-94",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "94",
+   "title": "Team Hero (1963) #94",
+   "era": "second-wave",
+   "arc": "new-roster",
+   "date": {
+    "cover": "1976-01",
+    "source": "invented for the X-Men comparison"
+   },
+   "core": true
+  },
+  {
+   "issueId": "team-hero-1963-95",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "95",
+   "title": "Team Hero (1963) #95",
+   "era": "second-wave",
+   "arc": "new-roster",
+   "date": {
+    "cover": "1976-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-96",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "96",
+   "title": "Team Hero (1963) #96",
+   "era": "second-wave",
+   "arc": "new-roster",
+   "date": {
+    "cover": "1976-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-97",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "97",
+   "title": "Team Hero (1963) #97",
+   "era": "second-wave",
+   "arc": "new-roster",
+   "date": {
+    "cover": "1976-04",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-129",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "129",
+   "title": "Team Hero (1963) #129",
+   "era": "second-wave",
+   "arc": "long-night",
+   "date": {
+    "cover": "1980-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-130",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "130",
+   "title": "Team Hero (1963) #130",
+   "era": "second-wave",
+   "arc": "long-night",
+   "date": {
+    "cover": "1980-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "id": "gap-1980-skip",
+   "title": "Publication gap",
+   "era": "second-wave",
+   "arc": "long-night",
+   "flags": [
+    "GAPNOTE"
+   ],
+   "note": "The title skipped two months here.",
+   "date": {
+    "cover": "1980-03"
+   }
+  },
+  {
+   "issueId": "team-hero-1963-131",
+   "series": "Team Hero",
+   "vol": "1963",
+   "num": "131",
+   "title": "Team Hero (1963) #131",
+   "era": "second-wave",
+   "arc": "long-night",
+   "date": {
+    "cover": "1980-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "lone-hero-1982-1",
+   "series": "Lone Hero",
+   "vol": "1982",
+   "num": "1",
+   "title": "Lone Hero (1982) #1",
+   "era": "second-wave",
+   "arc": "solo-road",
+   "date": {
+    "cover": "1982-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "lone-hero-1982-2",
+   "series": "Lone Hero",
+   "vol": "1982",
+   "num": "2",
+   "title": "Lone Hero (1982) #2",
+   "era": "second-wave",
+   "arc": "solo-road",
+   "date": {
+    "cover": "1982-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "lone-hero-1982-3",
+   "series": "Lone Hero",
+   "vol": "1982",
+   "num": "3",
+   "title": "Lone Hero (1982) #3",
+   "era": "second-wave",
+   "arc": "solo-road",
+   "date": {
+    "cover": "1982-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "lone-hero-1982-4",
+   "series": "Lone Hero",
+   "vol": "1982",
+   "num": "4",
+   "title": "Lone Hero (1982) #4",
+   "era": "second-wave",
+   "arc": "solo-road",
+   "date": {
+    "cover": "1982-04",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1991-1",
+   "series": "Team Hero",
+   "vol": "1991",
+   "num": "1",
+   "title": "Team Hero (1991) #1",
+   "era": "new-horizons",
+   "arc": "relaunch",
+   "date": {
+    "cover": "1991-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1991-2",
+   "series": "Team Hero",
+   "vol": "1991",
+   "num": "2",
+   "title": "Team Hero (1991) #2",
+   "era": "new-horizons",
+   "arc": "relaunch",
+   "date": {
+    "cover": "1991-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-1991-3",
+   "series": "Team Hero",
+   "vol": "1991",
+   "num": "3",
+   "title": "Team Hero (1991) #3",
+   "era": "new-horizons",
+   "arc": "relaunch",
+   "date": {
+    "cover": "1991-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "side-step-1995-1",
+   "series": "Side Step",
+   "vol": "1995",
+   "num": "1",
+   "title": "Side Step (1995) #1",
+   "era": "new-horizons",
+   "arc": "side-step",
+   "date": {
+    "cover": "1995-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "side-step-1995-2",
+   "series": "Side Step",
+   "vol": "1995",
+   "num": "2",
+   "title": "Side Step (1995) #2",
+   "era": "new-horizons",
+   "arc": "side-step",
+   "date": {
+    "cover": "1995-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "new-team-2001-114",
+   "series": "New Team",
+   "vol": "2001",
+   "num": "114",
+   "title": "New Team (2001) #114",
+   "era": "new-century",
+   "arc": "school-days",
+   "date": {
+    "cover": "2001-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "new-team-2001-115",
+   "series": "New Team",
+   "vol": "2001",
+   "num": "115",
+   "title": "New Team (2001) #115",
+   "era": "new-century",
+   "arc": "school-days",
+   "date": {
+    "cover": "2001-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "new-team-2001-116",
+   "series": "New Team",
+   "vol": "2001",
+   "num": "116",
+   "title": "New Team (2001) #116",
+   "era": "new-century",
+   "arc": "school-days",
+   "date": {
+    "cover": "2001-03",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-2008-500",
+   "series": "Team Hero",
+   "vol": "2008",
+   "num": "500",
+   "title": "Team Hero (2008) #500",
+   "era": "island",
+   "arc": "island-life",
+   "date": {
+    "cover": "2008-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "team-hero-2008-501",
+   "series": "Team Hero",
+   "vol": "2008",
+   "num": "501",
+   "title": "Team Hero (2008) #501",
+   "era": "island",
+   "arc": "island-life",
+   "date": {
+    "cover": "2008-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "all-new-team-2012-1",
+   "series": "All-New Team",
+   "vol": "2012",
+   "num": "1",
+   "title": "All-New Team (2012) #1",
+   "era": "long-road",
+   "arc": "time-out",
+   "date": {
+    "cover": "2012-01",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "all-new-team-2012-2",
+   "series": "All-New Team",
+   "vol": "2012",
+   "num": "2",
+   "title": "All-New Team (2012) #2",
+   "era": "long-road",
+   "arc": "time-out",
+   "date": {
+    "cover": "2012-02",
+    "source": "invented for the X-Men comparison"
+   }
+  },
+  {
+   "issueId": "all-new-team-2012-3",
+   "series": "All-New Team",
+   "vol": "2012",
+   "num": "3",
+   "title": "All-New Team (2012) #3",
+   "era": "long-road",
+   "arc": "time-out",
+   "date": {
+    "cover": "2012-03",
+    "source": "invented for the X-Men comparison"
+   }
+  }
+ ]
+}

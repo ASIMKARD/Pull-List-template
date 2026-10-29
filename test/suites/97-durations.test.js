@@ -38,12 +38,16 @@ function tally(D, marks, pred) {
   return { all, era, band };
 }
 const left = x => x.total - x.read - x.skip;
+/* The header's word for the time left: "remaining" on the x frame, the reference tracker's (John, 24 Oct),
+   and "left" on the v9 frame, as in v9 (John, 25 Oct). Every fixture here opens on the x frame; the repo's
+   own dataset opens on its default skin's (Absolute's signature skin: v9). */
+const headWord = frame => frame === 'v9' ? 'left' : 'remaining';
 
 /* Read every figure off the real DOM. */
 function readFigures(doc, D) {
-  const pick = (head, p) => {
+  const pick = (head, p, finishIn) => {
     if (!head) return null;
-    const l = head.querySelector('.' + p + 'left'), f = head.querySelector('.' + p + 'finish'), u = head.querySelector('.' + p + 'untimed');
+    const l = head.querySelector('.' + p + 'left'), f = (finishIn || head).querySelector('.' + p + 'finish'), u = head.querySelector('.' + p + 'untimed');
     return { left: l ? +l.dataset.leftMin : null, leftText: l ? l.textContent : null,
              weeks: f ? f.dataset.weeks : null, finish: f ? f.dataset.finish : null, finishText: f ? f.textContent : null,
              untimed: u ? +u.dataset.untimed : 0 };
@@ -51,7 +55,8 @@ function readFigures(doc, D) {
   return {
     header: pick(doc.querySelector('#pprog'), 'p'),
     bands: D.periods.map((p, b) => pick(doc.querySelector(`.band[data-b="${b}"] > .band-head`), 'b')),
-    eras: D.eras.map((e, ei) => pick(doc.querySelector(`.era[data-e="${ei}"] > .era-head`), 'b'))
+    // an era's finish-by date is the first line of its body on the x frame (John, 24 Oct)
+    eras: D.eras.map((e, ei) => pick(doc.querySelector(`.era[data-e="${ei}"] > .era-head`), 'b', doc.querySelector(`.era[data-e="${ei}"]`)))
   };
 }
 
@@ -59,10 +64,10 @@ function readFigures(doc, D) {
    time left = remaining x minutes per issue; finish-by = cumulative remaining
    / issues per week, top-level units only. `weeks` is compared as the full
    double (data-weeks), so "exactly" means bit-identical, not just the same day. */
-function oldFigures(D, T, m, w) {
-  const unit = (x, cumRemaining) => {
+function oldFigures(D, T, m, w, frame = 'x') {
+  const unit = (x, cumRemaining, word = 'left') => {
     if (left(x) === 0) return { left: null, leftText: null, weeks: null, finish: null, finishText: null, untimed: 0 };
-    return { left: left(x) * m, leftText: timeText(left(x) * m) + ' left',
+    return { left: left(x) * m, leftText: timeText(left(x) * m) + ' ' + word,
              weeks: cumRemaining == null ? null : String(cumRemaining / w),
              finish: cumRemaining == null ? null : isoOf(cumRemaining / w),
              finishText: cumRemaining == null ? null : 'finish by ' + textOf(cumRemaining / w), untimed: 0 };
@@ -71,19 +76,19 @@ function oldFigures(D, T, m, w) {
   let cum = 0;
   const top = (bands ? T.band : T.era).map(x => { cum += left(x); return unit(x, cum); });
   return {
-    header: unit(T.all, left(T.all)),
+    header: unit(T.all, left(T.all), headWord(frame)),
     bands: bands ? top : [],
     eras: bands ? T.era.map(x => unit(x, null)) : top
   };
 }
 
 /* The new model: own minutes; finish = cumulative minutes / (w x m). */
-function newFigures(D, T, m, w) {
+function newFigures(D, T, m, w, frame = 'x') {
   const mins = x => x.comics * m + x.fixed;
-  const unit = (x, cumMins) => {
+  const unit = (x, cumMins, word = 'left') => {
     if (left(x) === 0) return { left: null, leftText: null, weeks: null, finish: null, finishText: null, untimed: 0 };
     const onlyUntimed = left(x) === x.untimed;
-    return { left: onlyUntimed ? null : mins(x), leftText: onlyUntimed ? null : timeText(mins(x)) + ' left',
+    return { left: onlyUntimed ? null : mins(x), leftText: onlyUntimed ? null : timeText(mins(x)) + ' ' + word,
              weeks: cumMins == null ? null : String(cumMins / (w * m)),
              finish: cumMins == null ? null : isoOf(cumMins / (w * m)),
              finishText: cumMins == null ? null : 'finish by ' + textOf(cumMins / (w * m)), untimed: x.untimed };
@@ -91,7 +96,7 @@ function newFigures(D, T, m, w) {
   const bands = D.periods.length > 0;
   let cum = 0;
   const top = (bands ? T.band : T.era).map(x => { cum += mins(x); return unit(x, cum); });
-  return { header: unit(T.all, mins(T.all)), bands: bands ? top : [], eras: bands ? T.era.map(x => unit(x, null)) : top };
+  return { header: unit(T.all, mins(T.all), headWord(frame)), bands: bands ? top : [], eras: bands ? T.era.map(x => unit(x, null)) : top };
 }
 
 /* Comics-only copies of basic and no-periods: the game and the show removed. */
@@ -260,11 +265,12 @@ module.exports = async function (t) {
     Dc.ids.forEach((id, i) => { const s = i % 7 === 0 ? 'skip' : i % 3 === 0 ? 'read' : i % 11 === 0 ? 'reading' : null; if (s) mk[id] = s; });
     const a = boot(b.out, { now: NOW, storage: { [Dc.franchise.key + ':v3:progress']: JSON.stringify({ marks: mk, bookmarks: [] }) } });
     await wait(20);
-    const Tn = tally(Dc, mk);
+    const Tn = tally(Dc, mk), frame = a.document.documentElement.dataset.frame;
+    t.ok(name + ': it opens on a frame (' + frame + ')', frame === 'x' || frame === 'v9', frame);
     for (const m of MINUTES) for (const w of WEEKLY) {
       a.window.PullList.setPace(m, w);
       t.eq(`${name}, ${m} min x ${w}/week: every header, band and era figure equals the session-2 result`,
-           readFigures(a.document, Dc), oldFigures(Dc, Tn, m, w));
+           readFigures(a.document, Dc), oldFigures(Dc, Tn, m, w, frame));
     }
     t.ok(name + ': no runtime errors', a.errors.length === 0, a.errors.join(' | '));
     a.window.close();

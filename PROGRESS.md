@@ -3,8 +3,8 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1645 assertions, 0 failed, 36 suites (session 7, before the PR: Pull's default palette, the 3 px mini bar). **Layout suite (real Chromium, in CI too):** 409 checks, 0 failed, 11 suites.
-Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353) and session 7 at 1645 (+ 409).
+**Harness:** 1720 assertions, 0 failed, 37 suites (session 8, the template PR: the X-Men layout for the shared skins, Absolute's own skin kept on v9's). **Layout suite (real Chromium, in CI too):** 468 checks, 0 failed, 12 suites.
+Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
 
 ---
 
@@ -3051,3 +3051,965 @@ Absolute gets all of this as v10, with its next issue refresh. Its own `PROGRESS
 Absolute's, so it isn't changed here. The trial run on its data (step 6) covered the folder tab
 and the derived colours. Its two eras will now be Pull's first two palette colours, `#8A6100` and
 `#A6303C`, and the next update re-runs everything on its data.
+
+## Session 8 checkpoint — step 4b done (arc cards: the look), 29 Oct 2026
+
+### Done
+- **The build emits the type colours** (`typeColours` in `data.js`, one per type, in the data's order;
+  `tools/build.py`, `pull_type`).
+  - **Pull's stripes** are X-Men's TYPE_COLORS for the type's name, exactly (`PULL_TYPES`); any other
+    name gets X-Men's fallback, `#666666`.
+  - **Pull's badges** are the same colour, darkened by the palette's rule only as far as their text
+    needs for 4.5:1 on their own tint, on every one of Pull's seven papers (`PULL_CARDS`). SPIN-OFF
+    and EVENT are untouched.
+  - **The other skins** draw washes by type index, as era washes are.
+  - **`staleShell`** also requires `typeColours`, so a new `app.js` never meets an old `data.js`.
+- **The tint is opaque:** a `color-mix` of the badge colour into the card, so contrast is measured on
+  what is painted. 80-guards accepts a `color-mix` only when every part is a token, with self-tests
+  that a literal colour or share inside one is still caught.
+- **Pull's measured card:** 1.45 line height, the 10.5 px year line, the 9 px badge, the 12 px count,
+  the 24 × 24 ⓘ, Mark arc's buttons, and the rule above the rows.
+- **ⓘ and Mark arc** are outlined in a new `--soft-edge`: Pull's `#8A8577`; the control outline elsewhere.
+- **Focus rings: none is cut, so no inset rule.** The cards keep `overflow: hidden` (for swipe). In Chromium
+  each of the 189 controls in the open cards was focused from the keyboard, in Pull, Paper and Night at 320, 390
+  and 1024 px. Every ring (`:focus-visible`, the browser's own) sits inside every box that clips it. The
+  measure caught a ring pushed 12 px toward the card's edge (cut by 4 px), so it can see one.
+- **Checks:**
+  - 20-build: each stripe is X-Men's colour for its name; there are seven cards; every badge passes on
+    every card, at the ratio the build reports; each darkening is the least that passes; the OKLCH
+    numbers round-trip.
+  - 40-look: every type badge on its tint, and the outlines, in every skin × paper. Translucent layers
+    are now composited. Pull's card on every paper equals the build's `PULL_CARDS`.
+  - 45-pull: the `era/arc *`, `type badge`, `info button`, `arc action*` and `issue list` entries are
+    off the list; what's left of the card is tied to a kept item or to C and G.
+- **Mutation-proved 8 of 8:**
+  - the badges darkened against Pull's paper only;
+  - a badge darkened a step too far;
+  - a stripe drawn in its badge's colour;
+  - the tint translucent again;
+  - ⓘ and Mark arc in G's `#8F8A7C`;
+  - the build's rose card drifting from the one drawn;
+  - the other skins' type ink too light;
+  - the card at the body's line height.
+- **45-pull:** 1317 match (1240 at step 4a), 480 listed.
+- **Docs:** BUILD-NOTES "The x frame's arc cards" (the look); FEATURE-INVENTORY X-17.
+
+**Harness:** 1682 assertions, 0 failed, 37 suites. **Layout:** 425 checks, 0 failed, 12 suites.
+
+### The case for John (step 4b): C and G on every paper — ruled
+John ruled C (the type badges) and G (the ⓘ and Mark arc outlines) on Pull's own paper. Pull's card
+changes with the paper swatch, and on four papers the ruled colours fall short:
+
+| | Ruled | On grey, sky, rose, lilac | Built (every paper) | Lowest built |
+|---|---|---|---|---|
+| MAIN badge | `#266886` | 4.24–4.39:1 | `#206381` | 4.52:1 |
+| SOLO badge | `#0A6E51` | 4.26–4.42:1 | `#00694D` | 4.54:1 |
+| MINI badge | `#A04600` | 4.23–4.41:1 | `#994300` | 4.50:1 |
+| ⓘ, Mark arc | `#8F8A7C` | 2.82–2.94:1 | `#8A8577` | 3.02:1 |
+
+**Ruled (John, 29 Oct): the every-paper colours, as built.** 45-pull's reasons cite the ruling.
+
+### Step 5 begins with
+The issue rows on the x frame: `rowHtml` in `app.js` gets an x-only path (the note under the title,
+the core ★ inline after it, then the quiet ☆/★ bookmark, ✎ and "look up ↗" in the right-hand
+cluster; flashback and alt notes under the title). Then Pull's measured row values (`styles.css`),
+then 45-pull's `arc/issue *` entries off the list. Table view and the framed body's sides
+(50-table) must still hold. The rows move toward the card's clipped edges, so step 5 also adds the focus-ring measure to
+`10-sweep`: no focus ring inside a card cut by a box that clips it, mutation-proved.
+
+## Session 8 checkpoint — step 5 done (the x frame's rows), 29 Oct 2026
+
+### Done
+- **The x frame draws X-Men's rows** (`xRowHtml`). The v9 frame's `rowHtml` is untouched.
+  - **In order:** the mark; the title with the core star after it and the note under it; then look up ↗, ✎ and the
+    ☆ bookmark. The bookmark sits rightmost, where X-Men's sits; ✎ and look up go before it (kept: reviews and v3).
+  - **Flashbacks and alts:** their note sits under the title ("↺ flashback · …"), so the x frame has no note badge or
+    popover. Tap to reveal still covers plain notes only, as its capability says.
+  - **A gap note** is one line in the titles' column, its glyph inline.
+- **The mark** is X-Men's checkbox:
+  - 2 px, 5 px round, on the card;
+  - read in the ink with the paper's ✓ at 700; skipped ― on a dashed outline;
+  - unread empty: the Box style's glyphs on the x frame, while the v9 frame keeps ☐ ✓ ⊘;
+  - its size stays with the Button size setting (kept: mark24), so the titles' column starts at 53 px, not X-Men's 41.
+- **The title:** read, struck through in the soft ink; skipped, italic. The note is 11.5 px, 1 px under it. Its line
+  now takes the title's height (the strut of `.rbody`'s own font had put the note 3 px low).
+- **The quiet controls:** no outline or fill, 24 × 24 px (E; 44 px with large buttons), in `--quiet`. A bookmark that
+  is on, and the core star, are in `--gold`. Pull draws A and B to pass on every paper (the case below).
+- **Found by the new focus-ring check:** an event's "Complete view adds N issues" sat at the card's edge, which cut
+  2 px off its ring. It is now inset as Mark arc is. (The pull-ref fixture has no events, so step 4b's probe missed it.)
+- **45-pull:** the unread mark is now measured as well: a map row, with X-Men re-captured after a drift check matched
+  exactly (still `663fe46`). That found Pull's unread box filled with the paper (X-Men's is the card). 1428 match
+  (1317 at step 4b), 384 listed.
+- **Checks:**
+  - 10-sweep: no focus ring inside a card cut, every set at every width;
+  - 40-look: the read title, the core star, the quiet and the lit bookmark, ✎, look up, the gap note and a
+    flashback's note, in every skin × paper;
+  - 90-render, 91-marks, 9g-look, 9h: the parts in both frames.
+- **Mutation-proved 14 of 14:**
+  - the x row on the v9 frame;
+  - the read title's strike leaking into v9;
+  - the core star unnamed;
+  - a flashback's note back behind a badge;
+  - a gap note in its v9 box;
+  - the bookmark before ✎;
+  - the note 3 px low;
+  - the star button at 22 px;
+  - A as ruled;
+  - B as ruled;
+  - the event note at the card's edge;
+  - the x frame's box with v9's glyphs, and the reverse;
+  - the unread box on the paper.
+- **Docs:** BUILD-NOTES "The x frame's rows"; FEATURE-INVENTORY X-18, plus F-7, F-8, S-5, T-8 and T-9.
+
+**Harness:** 1688 assertions, 0 failed, 37 suites. **Layout:** 464 checks, 0 failed, 12 suites.
+
+### The case for John (step 5): A and B on every paper — ruled
+A (the quiet ☆) and B (the gold: the core star, a bookmark that is on) were ruled on Pull's own paper. As with C and
+G (29 Oct), on four papers they fall short:
+
+| | Ruled | On grey, sky, rose, lilac | Built (every paper) | Lowest built |
+|---|---|---|---|---|
+| A, the quiet ☆ | `#726D60` | 4.22–4.40:1 | `#6D685B` | 4.55:1 |
+| B, the gold | `#896900` | 4.21–4.39:1 | `#836400` | 4.54:1 |
+
+Each built colour is X-Men's (`#C9C4B5`, `#B08A1F`) darkened by the palette's rule only as far as the worst paper
+needs. B's review stars follow in step 6a. **Ruled (John, 29 Oct): the every-paper colours, as built.** 45-pull's reasons cite
+the ruling.
+
+### Step 6a begins with
+Reading and Reviews on the x frame. Start with `renderReading` in `app.js`: X-Men's centred card (an era chip, the
+Anton title, "arc · type", the note and the blurb; Skip and Mark Read; the nav row), with the read state moved into
+the counter and the key hint kept (kept: v3). Then `renderReviews`: X-Men's review cards, per issue in reading order
+(kept: reviews), with the review stars in B's gold. Then 45-pull's `reading/*` and `reviews/*` entries come off the
+list, and the `.rstate`, `#reviews .pane-h` and `#reviews .rev-top` ONLY entries go.
+
+## Session 8 checkpoint — step 6a done (the x frame's Reading and Reviews), 29 Oct 2026
+
+### Done
+- **Reading is X-Men's view** (`xReadingHtml`; the v9 frame's card untouched).
+  - The counter carries the state once there is one ("1 of 45 · READ", "· BEATEN", "· SKIPPED"). The separate state
+    line goes.
+  - The issue is centred on the page, with no card:
+    - the era chip in the era's own colour;
+    - the title in the display face;
+    - "arc · TYPE · ★ CORE", the type as written;
+    - the note in italics, and the blurb under a dashed rule.
+  - Skip and Mark Read are X-Men's two large buttons, in the ink in Pull; then the nav row. The key hint stays
+    (kept: v3).
+- **Reviews are X-Men's cards**, per issue in reading order (kept: reviews): the era tag, the issue, the stars in the
+  gold, the text, and **Edit**, which goes to the issue with its review open. The heading stays for screen readers
+  only.
+- **An era's text shade** (superseded the same day: John ruled the tag draws the colour as given). The build gave every colour Pull draws an era in a text shade, darkened only as far as
+  4.5:1 on Pull's card on every paper needs (`pull_colour`). Anything drawn in an era's colour outside the era box
+  carries `.eratok` and the era's tokens. `staleShell` now also requires the shade.
+- **45-pull:** both sides now show the same issue in Reading. X-Men opens at the first issue; the template resumes
+  at the first not done (kept: v3), so its driver steps back once. 1645 match (1428 at step 5), 167 listed. Reading
+  matches X-Men entirely. Reviews differ in three colours, each already ruled:
+  - the era tag: Pull's palette, John 13 Oct;
+  - the stars: B;
+  - Edit's outline: G.
+- **Checks:**
+  - 9a-reading: the counter and the type, both frames;
+  - 9b-reviews: the card's parts, Edit, both frames;
+  - 20-build: every text shade is the least that passes, as OKLCH;
+  - 40-look: the Reading chip, counter, title, arc line, Skip, Mark Read and nav; the review era tag, stars, text
+    and Edit; Edit's and Skip's outlines; in every skin × paper. A tracker's own colour under 4.5:1 passes on the
+    chip only at exactly the ratio the build reported, as on the tab.
+  - 40-look also checks **one gold**: the core star, a bookmark that is on and the review stars are one colour.
+    45-pull lists the stars' colour as a difference without pinning it, so nothing had caught the stars in the
+    accent.
+- **Mutation-proved 12 of 12:**
+  - the x Reading view on the v9 frame;
+  - the state left out of the counter;
+  - the type lower-cased;
+  - no text shade;
+  - a shade darkened past the least;
+  - the era tag in the tab's colour;
+  - Edit that only jumps;
+  - the heading shown;
+  - the chip in the accent wash;
+  - the buttons at 6 px;
+  - the stars in the accent;
+  - Reading back on a card.
+
+  A shade aiming for 4.51:1 instead of 4.50:1 changed nothing on these colours (an equivalent mutant), so the
+  proof aims for 4.55:1.
+- **Docs:** BUILD-NOTES "The x frame's Reading and Reviews"; FEATURE-INVENTORY X-19, F-2 and F-3.
+
+**Harness:** 1698 assertions, 0 failed, 37 suites. **Layout:** 465 checks, 0 failed, 12 suites.
+
+### The case for John (step 6a): an era's own light colour as text — ruled: as given
+X-Men's review era tag is the era's colour as 10 px text on the card. Pull's palette colours pass as they are. A
+tracker's own light colour does not: the basic fixture's `#A6791E` measures 3.20–3.48:1 across the papers. Built,
+following the rule of 29 Oct (C, G, A and B): its text shade, `#8A6100`, 4.54:1 at the lowest. The tab keeps the
+colour as given (John, 12 Oct). **Ruled (John, 29 Oct): the colour as given.** The text shade is gone (see the decisions,
+29 Oct, "step 6a's case").
+
+### Step 6b begins with
+Settings on the x frame (45-pull's `settings/*.*@*`, the last step entry). Keep the collapsible sections (kept:
+filters, settings), restyled as X-Men's: mono section headings, X-Men's rows and labels, and switches for on/off.
+Off stays X-Men's `#C9C4B5` exactly (F). Start with `renderSettings` in `app.js`, its `srow` and `pref` helpers, then
+the x-frame rules. Then the scrolled view at every width, and any `step 6` entry left.
+
+## Session 8 checkpoint — the eras the same size (John, 29 Oct), 29 Oct 2026
+
+### Done
+- **Measured first.** At 320, 390 and 1024 px X-Men's era box was 90.8 px and Pull's 86.9, a step of 104.8 px against
+  100.9. The names and years were the same face and size; all of it was line height. X-Men sets every line at 1.45,
+  Pull at `normal` (about 1.3 for Plex Sans). So any text over two or more lines (intros, blurbs, notes) read about 11 %
+  shorter, which is the 10–15 % John saw.
+- **Pull now sets every line at 1.45** (`--body-lh`; `normal` in the other skins, the v9 frame untouched). The era box,
+  its tab and its strip are X-Men's to the tenth of a pixel at every width (90.8, 62.8, 27.9; each era 104.8 px below
+  the last). A closed arc card is 55.8 px against 55.6.
+- **Found by measuring:**
+  - X-Men's buttons and fields keep the browser's line height; they don't inherit the page's. So the x frame's
+    controls do the same, at a bare element's weight, so class rules still win. Without it the tabs, search and
+    Next unread grew 2–5 px.
+  - The template's era and band heads, a card's name and a review's title are buttons, where X-Men's are plain
+    blocks. They keep the page's 1.45.
+  - The search box's own `font: inherit` needed `normal` as well.
+- **45-pull** now measures line height on every text (`TEXT`), the page's line height, and the era box's, tab's and
+  strip's heights. X-Men was re-captured after a drift check matched exactly (still `663fe46`). 1786 match (1648
+  before), 167 listed.
+- **Mutation-proved 4 of 4:** Pull back at `normal`; the controls at 1.45; the era head at `normal`; the search box at
+  1.45.
+- **Docs:** BUILD-NOTES "Line height"; FEATURE-INVENTORY X-20.
+
+**Harness:** 1700 assertions, 0 failed, 37 suites. **Layout:** 466 checks, 0 failed, 12 suites.
+
+### Next
+Step 6b, as "Step 6b begins with" under step 6a's checkpoint (Settings on the x frame).
+
+## Session 8 checkpoint — step 6b done (the x frame's Settings), 29 Oct 2026
+
+### Done
+- **Settings are drawn in X-Men's look, the sections still collapsible** (John, 24 Oct). Each section is a band with a
+  rule under it, its head in the mono face; the icon, summary and chevron are kept. Rows are 9 px apart, the label
+  and the control at either end.
+- **Every on/off setting is a switch on its own row** (`prefs`; the v9 frame keeps its chips). A group of one carries
+  the setting's words under its name ("Order" / "Newest era first"); a larger group gets a sub-heading. A switch that
+  is off is the line colour exactly (F). The switch keeps `data-act="pref"`, `data-k` and `aria-pressed`, so
+  `togglePref` and every test selector are unchanged.
+- **The segmented control is X-Men's joined pill.** Its segments wrap their own words, so "Issues per week" fits at
+  320 px with the largest text (looked at, and 10-sweep: nothing cut).
+- **The small buttons** are X-Men's, outlined in the control outline. Backup's two buttons, which sit outside a row,
+  are now 8 px apart (they touched). **The swatches** are 24 px (E).
+- **45-pull:**
+  - a new map row, `setting desc` (X-Men's `.setting-desc`), with X-Men re-captured after an exact drift check;
+  - 1900 match (1786 before), 80 listed;
+  - the two Settings differences left are both ruled: the buttons' outline (as the pinned chips) and the swatch size
+    (E). **No `step` entry remains in the list.**
+- **Checks:**
+  - 98-tabs-settings: the x frame's switches, the one-setting row and the group, and the v9 frame's chips;
+  - 40-look: the Settings heading, sub-heading, a setting's words, an unpressed segment, a button, the segmented and
+    button outlines, and a switch that is on;
+  - 20-motion: now scans `::before` and `::after`, and sees the knob.
+- **Mutation-proved 9 of 9:**
+  - chips back on the x frame;
+  - switches on the v9 frame;
+  - a one-setting row without its words;
+  - the pill unjoined;
+  - the buttons in `#C9C4B5`;
+  - the swatches at 22 px;
+  - the heading in the body face;
+  - the knob moving under reduced motion;
+  - an off switch not in the line colour.
+- **Docs:** BUILD-NOTES "The x frame's Settings"; FEATURE-INVENTORY X-21 and F-4.
+
+**Harness:** 1704 assertions, 0 failed, 37 suites. **Layout:** 467 checks, 0 failed, 12 suites.
+
+### Step 7 begins with
+"One colour" with the tracker's accent (B, John 19 and 24 Oct). Start with `schema/dataset.schema.json`: an optional
+`franchise.accent` (`#RRGGBB`). Then `tools/build.py`: `pull_mono` takes `pull_colour` of the accent nudged by the
+palette's rule (white text, the 85 % years and the strip at 4.5:1, hue kept), or the navy `#1C3A5E` without one. Then
+20-build: no accent, a dark accent drawn as given, and a light accent nudged minimally. Then 40-look: all three in
+Chromium with `data-eras="mono"`.
+
+## Session 8 checkpoint — step 7 done ("One colour" in the tracker's accent), 29 Oct 2026
+
+### Done
+- **`franchise.accent`** (optional, `#RRGGBB`; schema and build) is the colour Pull's "One colour" draws every era in.
+  It is darkened by the palette's rule only as far as white text, the 85 % years and the strip need for 4.5:1, its
+  hue kept. Without one, "One colour" is the navy `#1C3A5E`, as before. A tracker's own era colours are untouched.
+  A malformed accent fails the build.
+- **The build reports what it drew** (`oneColour`: source, colour, nudge). It warns if that colour reads under
+  4.5:1 as the review era tag; it doesn't for any accent tried.
+- **What Absolute would get:** its crimson, v7's `#E8123C`, drawn `#C90030` (white 5.96:1, years 4.53:1, strip
+  7.35:1; 127 steps). Absolute keeps the navy until John sets its accent. Its `theme`, `#0D0616`, is the browser
+  chrome's colour, not an accent.
+  - *Corrected 29 Oct:* this line first gave `#E8113F` → `#C90033`. That was a near-miss, never Absolute's colour.
+    v7's stylesheet uses `#E8123C` 95 times; the v9 skin draws it as `hsl(348, 86%, 49%)` = `#E8113C`. Both are
+    drawn `#C90030`. The tests' crimson case now uses `#E8123C`.
+- **The schema's era colour text** no longer says Pull derives a colour from the era's hue. It names the default
+  palette and the review era tag.
+- **Checks:**
+  - 20-build: no accent; a dark accent drawn as given; Absolute's crimson and a yellow at the gamut's edge, each the
+    least darkening that passes, the hue within the 8-bit rounding; malformed ones fail; the eras' own colours
+    untouched.
+  - 40-look: the three in Chromium with "One colour" on. Every era is that colour exactly, its strip the shade, and
+    every text on it 4.5:1 or more.
+- **Mutation-proved 6 of 6:**
+  - the accent ignored;
+  - drawn unnudged (twice, in the build and in Chromium);
+  - darkened past the least;
+  - a malformed accent accepted;
+  - the accent laid over the eras' own colours.
+- **Docs:** BUILD-NOTES "Era colours"; MIGRATING (set the accent); README; FEATURE-INVENTORY X-22.
+- 45-pull is unchanged, because pull-ref has no accent: 1900 match, 80 listed.
+
+**Harness:** 1716 assertions, 0 failed, 37 suites. **Layout:** 468 checks, 0 failed, 12 suites.
+
+### Step 8 begins with
+The proof that Absolute's own skin is v9's (G), writing nothing to Absolute:
+1. A scratch copy of Absolute's `main` with this template copied in, its signature block gaining `"frame": "v9"`.
+2. On that copy: the gate, the harness and the layout suite, 47-frame-v9 against a `frame-ref.json` captured from v9
+   (`27dca56`), 55-decor and 45-root.
+3. Side-by-side screenshots and a pixel diff against v9 served as Pages serves it, at 320, 390 and 1024 px in the
+   five views. **None at all** is required.
+
+## Session 8 checkpoint — step 8 done (Absolute's own skin is v9's, G), 29 Oct 2026
+
+### Done
+**Nothing was written to Absolute.** The work used two scratch copies:
+- **v9 as it is:** `git archive 27dca56` (`v9-final`).
+- **The same, with this template copied in** as MIGRATING §2 copies it, and Absolute's own files kept (`dataset.json`,
+  `signature.css`, `icons/`, `README.md`, `CLAUDE.md`, `PROGRESS.md`, `.nojekyll`).
+  - Its signature block gained `"frame": "v9"`, the only change to its dataset.
+  - One build: v10 (`9a43dd507f47`), 134 rows, 2 eras; `--check` fresh.
+  - Its `app.js` and `styles.css` are this branch's byte for byte; `index.html` differs only by the build's stamps.
+
+**The results** (John, 28 Oct: none at all may differ):
+- **Inventory (47-frame-v9's measure):** v9's reference was captured from `27dca56` itself. Against it, the new copy
+  has **0 differences**: 982 elements in 15 views (landing, era open, an arc's rows, scrolled, Reading × 320, 390 and
+  1024 px), on the v9 frame in the signature skin.
+- **Pixels:** both copies were served with Pages' headers.
+  - Every differing pixel is inside the version label: "v9" → "v10", the one intended change.
+  - **0 differ outside it, in all 15 views.**
+
+  | View | 320 px | 390 px | 1024 px |
+  |---|---|---|---|
+  | landing | 96 | 96 | 100 |
+  | era open | 96 | 96 | 100 |
+  | an arc's rows | 0 | 0 | 0 |
+  | scrolled | 0 | 0 | 0 |
+  | Reading | 96 | 96 | 100 |
+
+  The label is off screen in the rows and scrolled views, so nothing differs there.
+- **The five touches,** found by name in both inventories and identical in every view they appear in:
+  - era numbers: 12;
+  - the row-number gutter: 30;
+  - the `[ ] [/] [X] [-]` marks: 30, all four states;
+  - the `//` arc prefix: 13;
+  - the full-width era bars: 12.
+
+**On the copy, with Absolute's data:**
+- **Gate:** passed (134 rows, 0 failures, 0 warnings).
+- **Harness:** 1719 assertions, 0 failed.
+- **Layout:** 477 checks, 0 failed, including:
+  - 47-frame-v9's root run against v9's reference (982 elements in 15 views);
+  - 55-decor: 2244 decorations measured;
+  - 45-root: contrast in five skins × 7 papers (worst text 4.55:1) and every control reachable (11,748 checked).
+
+**One template test was wrong; found here and fixed.**
+- **The problem:** 97-durations' root check expected the x frame's header word, "remaining". Absolute opens on the
+  v9 frame, which keeps v9's "left" (G). Every figure matched; only the word differed. Without the fix, Absolute's
+  CI would have failed at v10.
+- **The fix:** the oracle now takes the word from the frame the page opens on, and checks that the page opens on one.
+- **Mutation-proved 2 of 2:**
+  - the v9 frame given "remaining": 12 failures, on Absolute's copy;
+  - the x frame given "left": 56 failures, on the template.
+
+**Absolute in Pull against X-Men** (390 px: landing, an era, an arc, Reading). This is a look, not a map, because
+the data differs:
+- The era box's shape is X-Men's: the cut at .89 and .94, the hatch .4.
+- The box is 72.8 px against X-Men's 90.8, because Absolute's eras give no years. Each era sits 86.8 px below the
+  last (X-Men's: 104.8).
+- The eras take Pull's default palette: Foundations `#8A6100`, After Absolute Evil `#A6303C`.
+- With "· v10" the offline line takes a second line, as ruled on 24 Oct.
+- Nothing else is new.
+
+The screenshots are sent to John: five v9 | new | difference images, and four Absolute in Pull | X-Men pairs.
+
+**Harness (template):** 1720 assertions, 0 failed, 37 suites (+4: each dataset opens on a frame). **Layout
+(template):** 468 checks, 0 failed, 12 suites.
+
+### For E (Absolute v10), from this step
+- **Absolute's `frame-ref.json`** comes from v9 itself:
+  ```
+  git archive 27dca56 | tar -x -C DIR
+  node test/layout/ref/capture-frame.js --dir DIR --out frame-ref.json
+  ```
+  47-frame-v9's root run reads it from then on.
+- **The copy:** every file the template tracks, except its `PROGRESS.md`, `FEATURE-INVENTORY.md`, demo
+  `dataset.json`, `README.md`, `CLAUDE.md`, `icons/`, `workbook.xlsx` and the generated files.
+
+### Step 9 begins with
+The close-out:
+1. Docs. MIGRATING §5 gets how a signature skin keeps the v9 frame: `"frame": "v9"`, and a `frame-ref.json`
+   captured from the old version's tag. Then a pass over BUILD-NOTES, FEATURE-INVENTORY and the top of PROGRESS,
+   with this session's counts.
+2. `build.py --check`, the gate, both suites, push, CI.
+3. Open the template PR, and wait for John to merge it.
+
+## Session 8 checkpoint — step 9 done (close-out; the template PR), 29 Oct 2026
+
+### Done
+- **45-pull is locked.** `CURRENT_STEP` is `9`, the last step, so a difference can no longer be tied to a step.
+  1900 properties match; the 80 listed are each a kept item, an accessibility ruling, unseen, or John's ruling.
+- **The skin beacon is 5** (`--skin-ok`, `SKIN_OK`).
+  - Session 7 raised it to 4 when the era box's markup changed, so that an older stylesheet meeting new markup is
+    loaded again.
+  - Session 8 changed far more markup: the x frame's header, rows, cards, Reading, Reviews and Settings. A 4 could
+    not tell `main`'s stylesheet from this one. Absolute v9's (3) is caught either way.
+- **Docs:**
+  - BUILD-NOTES: "Two frames" names every place the render paths split, and points to MIGRATING for keeping the v9
+    frame. "Pull matches the X-Men tracker" has the counts to the end, with none tied to a step.
+  - MIGRATING: §5 covers a signature skin that keeps the v9 frame, with its frame-ref.json captured from the old
+    version's tag. §6's suites include 47-frame-v9.
+  - The Skill: the two frames.
+  - CLAUDE.md's repo map: 47-frame-v9, and the `pull-ref` and `sig-v9` fixtures.
+  - FEATURE-INVENTORY:
+    - the legend gains S7 and S8;
+    - X-8 is session 8's whole-page measure;
+    - X-13 has step 8's proof;
+    - X-14 to X-22 are in order.
+- **Mutation-proved 2 of 2:**
+  - a reason tied to step 7 fails 45-pull now, and passed under the old `6b`;
+  - a stylesheet with beacon 4 fails 80-guards.
+- **The template PR** opens from this commit (base `main`, `4db1ba1`; 23 commits). Nothing deploys when it merges:
+  the template is not a live tracker, and its key (`starter`) makes no version tag.
+
+**Harness:** 1720 assertions, 0 failed, 37 suites. **Layout:** 468 checks, 0 failed, 12 suites.
+
+### E begins with (after John merges the template PR)
+Absolute v10, in place (John approved edits to Absolute for v10 only):
+1. **Confirm the rollback tag.** `v9-final` must point at `27dca56` on GitHub. If it doesn't, stop and tell John.
+2. **Absolute's session branch from its `main`:**
+   - Copy in the merged template, as step 8 did. That is every file the template tracks, except its
+     `PROGRESS.md`, `FEATURE-INVENTORY.md`, demo `dataset.json`, `README.md`, `CLAUDE.md`, `icons/`,
+     `workbook.xlsx` and the generated files. Absolute's own files stay.
+   - Its signature block gains `"frame": "v9"`.
+   - frame-ref.json beside `dataset.json`, from `git archive 27dca56` (MIGRATING §5).
+   - Absolute's CLAUDE.md: the in-place route is the standard now (23 Oct), not a one-off, and the two frames.
+   - Its PROGRESS.
+3. **New issues since v9.**
+   - List them with their DC Database dates, fetched and cached in a new Research-Repo folder,
+     `sessions/<date>-absolute-v10/` (add-only).
+   - John sees a change report before any go in.
+4. **The checks:**
+   - the build, the gate and both suites on Absolute's data, 47-frame-v9 included;
+   - the v9 → v10 in-place proof in Chromium with Pages' headers. Marks, a bookmark, a review and the skin must
+     survive one reload, and the old worker and its cache must hand over.
+5. **Then Absolute's PR.** After John merges it:
+   - every file verified live by sha256;
+   - the `v10` tag appears (the workflow comes with the copy);
+   - live Absolute in Pull measured against live X-Men at 390 px, with screenshots.
+
+## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
+
+### 19 Oct: session 7's last two calls
+- **Accepted:** in table view, Pull's framed era body gives its sides back to the row, so a title
+  keeps half of it (`styles.css`, the table rule; 50-table).
+- **"One colour" in Pull uses the tracker's own accent colour**, not X-Men's navy. The default stays
+  the eleven-colour palette. The accent is darkened by the palette's rule (OKLCH lightness lowered
+  only as far as needed, hue kept, inside sRGB) so white text, the 85 % years and the strip each
+  pass 4.5:1. Without an accent, the navy `#1C3A5E`.
+  - **The accent's source (24 Oct):** a new optional `franchise.accent` (`#RRGGBB`).
+    `franchise.theme` is required, so it couldn't be the "none" case. Absolute keeps the navy until
+    its accent is set.
+
+### 22 Oct: Absolute v10 follows this work
+Absolute v10 goes out as soon as this session's template work is merged, without waiting for its
+next issue refresh. It is how a real phone confirms that the template's Pull matches X-Men, before
+Archie Sonic's build step. Absolute keeps its own skin as the default.
+
+### 23 Oct: repo safety — migrations go in place
+Every migration goes in place on the tracker's own repo, the way Absolute did, replacing the fresh
+repo and the cut-over swap: Archie Sonic, IDW Sonic, Spider-Man, Dark Nights and X-Men's fixes.
+- John tags the current `main` `vN-final` first (the one-step rollback);
+- the work reaches `main` only through a branch and a pull request John merges;
+- the in-place upgrade proof passes in Chromium before the merge;
+- every file is verified live by hash after it;
+- no repo is edited without John's explicit say-so, given per migration.
+
+`CLAUDE.md`, `MIGRATING.md` and the Skill say so (step 0).
+
+### 24 Oct: the layout matches X-Men
+Session 7 matched the era boxes' styles, but the page is arranged differently from X-Men, so Pull
+still doesn't look like it. Change the template's layout, then make Pull identical to X-Men in every
+visual, measured against the live X-Men tracker at 320, 390 and 1024 px, in every view (Checklist
+landing, an era open, an arc open, Reading, Reviews, Settings, and the pinned header when
+scrolling). Every difference left is fixed or tied to a kept item. Side-by-side screenshots of X-Men
+and Pull at 390 px at every step.
+1. **Arc cards.** An open era shows its arcs as collapsed cards: the type-coloured stripe, the type
+   badge, the read count, ⓘ and ▸. An open card shows Mark arc read / Mark arc unread and its
+   issues; issues render when their arc opens. "Label on each row" keeps opening an era straight
+   to its rows, with arc labels.
+2. **Era box.** The years under the name, and one strip with the read count, the bar and the time
+   left. "Finish by" leaves the box: each era's date is the first line of its open body, above the
+   intro, and the plan's sits beside the time remaining under the header bar. Band heads keep
+   theirs.
+3. **Header.** Read count on the left, time remaining on the right; Next unread as a filled button
+   beside search; Expand all and Collapse all in the filter area. Both of X-Men's lines: its
+   offline line on every tracker, ending "· vN" and the offline state, and the strapline in the
+   subtitle's place.
+4. **Issue rows.** X-Men's rounded checkbox, the note under the title, a quiet star.
+5. **Everything else** in Pull identical to X-Men on every tab. In the x frame (below) the page pins
+   like X-Men: the tabs at the top and the header's lines and progress under them, replacing 4 Oct's
+   "only the stack is sticky" there; the mini bar goes off by default, as X-Men's is, and stays a
+   setting. Settings keep their collapsible sections (tied to the kept Filters sections), restyled
+   in X-Men's look.
+
+Kept on purpose, not matched: the Filters button and its collapsible sections (1 Oct); the
+franchise name as the title (24 Oct); per-issue reviews with ✎ on every row (8 Oct); the 24 px read
+mark and the two accessibility outlines (9 Oct); every v3 feature X-Men lacks stays reachable.
+
+**X-Men visuals that fail contrast or the 24 px rule** (the quiet ☆, the MINI badge, the gold ★ on
+cards, the 0.6-opacity offline line, the 22 px bookmark, the 20 px review stars, and any others the
+measurement finds) go to John one by one, each with X-Men's version and the passing one side by
+side. Until he rules, the passing version is built and listed as awaiting him.
+
+### 25 Oct: Absolute's own skin keeps v9's arrangement (G)
+Absolute's signature skin must look and work exactly as in v9: its era boxes, arc headings (no
+cards), rows, header, what pins when scrolling, and its width. The X-Men layout is for the shared
+skins (Paper, Newsprint, Pull, Night); in v10 only Absolute's Pull and the other shared skins change.
+No Sonic work in this session.
+- **The switch (my design, approved 28 Oct):** `franchise.signature.frame`, `"x"` (default) or
+  `"v9"`. Today's arrangement is the v9 frame, kept untouched; the X-Men arrangement is the x frame.
+  The shared skins always use x; a signature skin uses its own frame.
+- **Proved in step 8:** Absolute's skin on v9 against the new template at 320, 390 and 1024 px (the
+  landing, an era open, an arc's rows, scrolled, Reading), with screenshots and the differences
+  measured. **CI guards it** (`47-frame-v9`), so a later template change can't drift it.
+
+### 28 Oct: the plan approved, with two notes
+- **The mini bar in the v9 frame stays 6 px**, exactly as v9 draws it, so Absolute's own skin shows
+  no differences at all in step 8. The x frame keeps 3 px (13 Oct).
+- **The X-Men pinning applies to the x frame only.** The v9 frame keeps today's pinning: the tabs,
+  the banner and the mini bar; the header scrolls away.
+
+### 28 Oct: the accessibility cases, ruled one by one
+Each X-Men visual that fails a check the template keeps (the table in step 1's checkpoint):
+- **A.** The quiet ☆: `#726D60` (4.52:1).
+- **B.** The gold (the core ★, the bookmarked ★, the review stars): `#896900` (4.51:1).
+- **C.** Type badges: MAIN `#266886`, SOLO `#0A6E51`, MINI `#A04600`, each nudged only as far as it
+  must to pass; the stripes keep X-Men's exact colours.
+- **D.** The offline line at 62 % (4.51:1).
+- **E.** The ☆ button, the review stars and the paper swatches at 24 × 24 px, glyphs unchanged.
+- **F.** A switch that is off stays X-Men's `#C9C4B5`, exactly (John's choice).
+- **G.** Control outlines (ⓘ, Mark arc, pinned chips): `#8F8A7C` (3.02:1).
+
+A, B, C, D, E and G are listed in 45-pull as `accessible:` in the step that builds them. F matches
+X-Men, so it needs no entry.
+
+### 28 Oct: step 3's case, ruled
+- **The era tab's right padding stays `max(44px, 12%)`.** A long name wraps before the cut at
+  every width. X-Men's 44 px lets it run under the clipped corner on wide screens; Pull differs
+  from X-Men only there (88 px at 1024 px).
+
+### 28 Oct: step 2's three cases, ruled one by one
+- **The offline line: 64 %** (D revised). 62 % passes on Pull's own paper (4.51:1) but falls to
+  4.35:1 on the other papers and skins; every skin × paper needs 63.1 %, and 64 % keeps a step in hand.
+- **The pinned chips: the control outline** (`--edge`). The PINNED row sits on the paper, where
+  G's `#8F8A7C` is 2.71:1 (2.50:1 on rose); the control outline is 3:1 or more on every paper. G
+  stays as ruled for ⓘ and Mark arc, which sit on a card (step 4b).
+- **The pinned header: the tabs pin alone past 35 %.** The x frame's header pins under the tabs
+  while it takes at most 35 % of the screen; with the largest text on a 320 × 568 phone (38 %) only
+  the tabs pin.
+
+### 29 Oct: step 4b's case, ruled
+- **C and G pass on every paper** (C and G revised). Pull's card changes with the paper swatch, and
+  the 28 Oct colours passed on Pull's own paper only: 4.23–4.42:1 for the badges and 2.82–2.94:1 for
+  the outline on the grey, sky, rose and lilac papers. Each is now darkened only as far as the worst
+  paper needs:
+  - the badges: MAIN `#206381`, SOLO `#00694D` and MINI `#994300` (lowest 4.50:1); SPIN-OFF and
+    EVENT unchanged; the stripes keep X-Men's exact colours;
+  - the ⓘ and Mark arc outline: `#8A8577` (lowest 3.02:1).
+
+### 29 Oct: step 5's case, ruled
+- **A and B pass on every paper** (A and B revised), as C and G do. The 28 Oct colours passed on Pull's own paper
+  only: 4.21–4.40:1 on the grey, sky, rose and lilac papers. Each is X-Men's own colour darkened only as far as the
+  worst paper needs:
+  - A, the quiet ☆: `#6D685B` (lowest 4.55:1);
+  - B, the gold (the core star, a bookmark that is on, and the review stars in step 6a): `#836400` (lowest 4.54:1).
+
+### 29 Oct: step 6a's case, ruled
+- **The review era tag draws its era's colour as given,** as X-Men's does and as the tab does (12 Oct), not a darkened
+  text shade. The palette's eleven pass as text on every paper as they are (lowest 4.54:1), so only a tracker's own
+  light colour falls short. Then:
+  - the build reports how it reads as text on each paper (`era.colour.onCard`) and warns;
+  - its hint passes as the tag too;
+  - 40-look lets it through only at exactly the reported ratio, and checks that Pull draws the tag in the era's colour
+    exactly.
+
+  The text shade is removed: nothing would read it.
+
+### 29 Oct: the eras the same size
+- **"Make the eras the same size (currently X-Men's seems 10–15 % bigger)."** Measured: line height, not size. Pull
+  takes X-Men's 1.45 for every line; its controls keep the browser's, as X-Men's do.
+
+### 29 Oct: Absolute v10
+- **Absolute Cassandra Cain: The Shadow's Hand #1 goes in,** as SOLO, optional, under the Catwoman strand. v9 had
+  flagged it when the scope was locked.
+- **DC All In Saga: Darkseid vs. the World #1 goes in as optional** (EVENT), though the DC Database files it under
+  Prime Earth.
+- **Absolute's `franchise.accent` is its signature crimson,** so "One colour" in Pull draws it as the build darkens it:
+  `#E8123C` → `#C90030`. Absolute's own skin is unaffected.
+- **The change report for the new rows goes to John before they are added,** as for v8 and v9.
+
+## Session 8 plan (approved 28 Oct 2026)
+Each step ends committed, pushed and green (the harness, the layout suite and CI), with a
+checkpoint here and X-Men | Pull screenshots at 390 px sent to John. Every new check is
+mutation-proved.
+0. **Records and docs.** These decisions; `CLAUDE.md`, `MIGRATING.md` and the Skill to the in-place
+   route.
+1. **Measure first.** The X-Men capture extended to the whole page (seven views × 320, 390, 1024 px)
+   against the live tracker, a `pull-ref` fixture, 45-pull comparing all of it with every remaining
+   difference tied to a kept item or to the step that fixes it. Ends with the accessibility cases
+   put to John one by one.
+1b. **The frame switch and the v9 guard**, before any layout change: `signature.frame`, root
+   `data-frame`, a `sig-v9` fixture and `47-frame-v9` (five views × three widths, every visible
+   element's box and look against a recorded reference). Every later layout change is x-only.
+2. **Header and page frame** (x): the pinned header, the split progress line, Next unread beside
+   search, Expand/Collapse in the filter area, the 760 px column.
+3. **Era box** (x): years under the name, one strip, finish-by moved.
+4a. **Arc cards: structure and behaviour** (x). 4b. **Arc cards: the look.**
+5. **Issue rows** (x).
+6a. **Reading and Reviews.** 6b. **Settings and the rest.**
+7. **One colour:** `franchise.accent`, nudged; tested with an accent, without, and a light one.
+8. **Absolute's skin proved unchanged from v9**, and Absolute in Pull measured against X-Men.
+9. **Close-out** and the template pull request; then Absolute v10 in place after John merges it.
+
+## Session 8 checkpoint — step 0 done (records and the in-place route), 28 Oct 2026
+
+### Done
+- The decisions of 19–28 Oct and the approved plan, above.
+- **The in-place route (John, 23 Oct)** in the template's own docs:
+  - `CLAUDE.md`: the repo rules ("What John approves, per piece of work"), the standing rule
+    (say-so per migration), and a new "Migrations go in place" with the four safeguards and
+    Absolute's three rollback tags;
+  - `MIGRATING.md`: §1 is now "In place, on the tracker's own repo", §2 copies over the old files
+    on a branch, §7 names Pages' headers for the proof, and §8 is "Deploy and verify" (the
+    cut-over swap is gone);
+  - the Skill: migrations in place, the `vN-final` tag confirmed before the first change;
+  - `README.md` points a live tracker at `MIGRATING.md`; FEATURE-INVENTORY V-28 re-expressed.
+- The branch was restarted from `main` (`4db1ba1`) and pushed.
+
+**Harness:** 1645 assertions, 0 failed, 36 suites. **Layout:** 409 checks, 0 failed, 11 suites.
+
+### Step 1 begins with
+`test/layout/ref/pull-map.js`: views × widths, then `capture-x-men.js` against the live tracker,
+then 45-pull. The comparison fixture is `test/fixtures/pull-ref/`.
+
+## Session 8 checkpoint — step 1 done (measure first), 28 Oct 2026
+
+### Done
+- **`test/layout/ref/x-men.json` now holds the live X-Men tracker's whole page.**
+  - Eight views: the landing, an era open, an arc open, scrolled 300 px, Reading, Reviews (one
+    review written through the UI), Settings, and "extras" (a core row and a gap note).
+  - Three widths: 320, 390 and 1024 px.
+  - Captured from https://asimkard.github.io/X-men/, byte-identical to the read-only clone at
+    `663fe46` (sha256 `fc885da7…`).
+  - The folder tab's shape (at 390 px) and the eleven era colours are kept.
+- **`test/layout/ref/pull-map.js`** maps every element view by view, with each page's driver.
+  - New measures: positions relative to an anchor (`rel*`), the gap to the previous match,
+    the pinned top and bottom, scroll, and a `<progress>`'s fill (read from its winning rule,
+    since Chromium doesn't compute `::-webkit-progress-value`).
+  - `ONLY` lists one-sided elements with their reason: X-Men's filter chips and per-arc reviews
+    on one side; the Filters button, ✎, finish-by, the banner, the jump bar, Settings' own rows
+    and the key hint on the other.
+  - `WRAPPERS` lists containers that draw nothing.
+  - `DIFFERENCES` ties every remaining difference to a kept item or a step; `CURRENT_STEP` is 1.
+- **The capture refuses to write** while any visible X-Men element is unmapped (its first runs
+  did, until the map covered everything).
+- **New fixture `test/fixtures/pull-ref/`:** six top-level eras in X-Men's first six colours, 14
+  arcs of X-Men's five types, notes, core rows and a gap note.
+- **`45-pull` rewritten** to compare all of it, both ways:
+  - every visible template element accounted for (the inventory);
+  - every template-only entry still on the page;
+  - every difference listed, and every listed one still a difference;
+  - each reason a kept item, accessible, John's ruling or a step not yet done;
+  - the reference captured with this map (a hash).
+  - `PULL_REPORT=file` writes the measured differences for a report.
+- **The numbers:** 858 properties match X-Men, and 966 differences are listed, every one tied to
+  steps 2 to 6b.
+- **`test/layout/ref/side-by-side.js`** joins X-Men | Pull screenshots per view (session-only).
+- **Mutation-proved,** 7 of 7 caught:
+  - a wrapper dropped;
+  - a stale template-only entry;
+  - a difference unlisted;
+  - a listed one that no longer differs;
+  - a step already done;
+  - a reason in no known form;
+  - an X-Men selector changed after the capture.
+- **Docs:** BUILD-NOTES' "Pull matches the X-Men tracker".
+
+**Harness:** 1645 assertions, 0 failed, 36 suites. **Layout:** 413 checks, 0 failed, 11 suites.
+
+### The accessibility cases, put to John one by one (28 Oct)
+X-Men visuals that would fail a check the template keeps. For each, the least change that passes:
+
+| Case | X-Men | Passing |
+|---|---|---|
+| A. The quiet ☆ (bookmark off) | `#C9C4B5` on the card, 1.53:1 | `#726D60`, 4.52:1 (hue kept) |
+| B. Gold: core ★, bookmarked ★, review stars | `#B08A1F`, 2.83:1 | `#896900`, 4.51:1 |
+| C. Type badges (text on its 13 % tint) | MAIN 4.18, SOLO 3.88, MINI 3.14 | MAIN `#266886` 4.51, SOLO `#0A6E51` 4.55, MINI `#A04600` 4.50 (SPIN-OFF 5.07, EVENT 4.82 already pass) |
+| D. The offline line | ink at 60 %, 4.25:1 | at 62 %, 4.51:1 |
+| E. Small targets | the ☆ button 22 px, review stars 20 px, paper swatches 22 px | 24 × 24 px, glyphs unchanged |
+| F. A switch that is off | `#C9C4B5` on the paper, 1.37:1 | `#878274`, 3.02:1 |
+| G. Control outlines (ⓘ, Mark arc, pinned chips) | `#C9C4B5`, 1.53:1 | `#8F8A7C`, 3.02:1 |
+
+### Step 1b begins with
+`franchise.signature.frame` in `schema/dataset.schema.json` and `tools/build.py`, then root
+`data-frame` in `app.js`, then the `sig-v9` fixture and `47-frame-v9`.
+
+## Session 8 checkpoint — step 1b done (the frame switch and the v9 guard), 28 Oct 2026
+
+### Done
+- **`franchise.signature.frame`**, `"x"` (the default) or `"v9"`:
+  - in the schema and `tools/build.py`; any other value fails the build
+    (`test/fixtures/broken/signature-frame/`);
+  - root `data-frame` on the page, from the active skin: the shared skins are always on x, and a
+    signature skin is on its own frame;
+  - a skin change that crosses frames draws the list again (and Reading, if it is open).
+- **The v9 frame is today's arrangement, exactly.** Session 7's Pull-era work had touched shared
+  rules, so they were scoped to the x frame: the era head's background layers, the years, the
+  stats strip and its wrapper (`.bfoot`, now an x-only render path), finish-by and "filtered",
+  the done mark, the era head's bar and the era body's frame. The v9 frame draws them as v9 itself
+  did (Absolute `27dca56`, before session 7), the 6 px mini bar included (John, 28 Oct).
+- **New fixture `test/fixtures/sig-v9/`:** no-periods' data (by `sources`) and a demo signature
+  skin on the v9 frame that uses all five decoration types (era numbers, a row gutter, `// ` arc
+  prefixes, bracket marks, full-width era bars). Its `frame-ref.json` was captured from this
+  branch's v9 frame once that measured no difference from v9 itself on Absolute's data (below).
+  The plan said to capture it from `main` (`4db1ba1`), but `main` already carries session 7's era
+  strip and the 3 px mini bar, which v9 never had: 743 measured differences from the v9 frame on
+  this fixture, all of them those two.
+- **New suite `test/layout/47-frame-v9`** (8 checks): every visible element in five views (the
+  landing, an era open, an arc's rows, scrolled, Reading) at 320, 390 and 1024 px, as box, look and
+  `::before`/`::after`, against the reference: 1130 elements in 15 views, positions and sizes
+  within 0.5 px, looks exact; the 6 px mini bar; signature → Pull → signature redraws on each
+  frame; no page errors; a tracker's own `frame-ref.json` is checked when its skin is on v9.
+- **`test/layout/ref/capture-frame.js`** (session-only) records or compares a reference, from a
+  fixture, the repo's own dataset, or any built tracker served as it is.
+- **Mutation-proved,** 6 of 6 caught:
+  - an x-only rule leaking into v9 (the folder tab's layers unscoped);
+  - the 3 px mini bar on every frame;
+  - a skin change that doesn't redraw;
+  - a 1 px shift in the v9 header;
+  - the frame ignored (every skin on x);
+  - v9's era head given session 7's strip wrapper.
+- **Docs:** CLAUDE.md's UI rules and BUILD-NOTES' "Two frames"; FEATURE-INVENTORY X-13.
+
+### The early check on Absolute (a scratch copy; nothing written to Absolute)
+Absolute v9 (`27dca56`, served as it is) against the new template with Absolute's own data and
+`"frame": "v9"`, in its signature skin:
+- **the 47-frame-v9 inventory: no differences** in all 15 views (every element's box and look);
+- **pixels:** 0 differ in the arc's rows and scrolled views. 93–95 differ in the landing, an era
+  open and Reading, all in one place: the header's version label ("· v9" against the scratch
+  build's "· v12"). The real build will read v10, so step 8 compares against that label.
+
+### One call of mine (open to veto)
+- **The mini bar's default follows the frame in step 2, not here.** Until the x frame's header pins
+  (step 2), the mini bar is its only progress once scrolled, so turning it off now would leave
+  nothing. Step 2 turns it off by default on the x frame with the pinned header, for visitors who
+  haven't chosen; the v9 frame keeps it on.
+
+### CI caught one more thing
+The first push failed 47-frame-v9 in CI only: GitHub's runner hints text fully by default, so every
+glyph rounds to whole pixels there, and text-sized boxes measured here moved by 1 or 2 px (the
+header count 131.3 px here, 133 in CI). Reproduced here by forcing full hinting: the same
+differences, to the tenth of a pixel. `test/layout/lib.js` now launches Chromium with
+`--font-render-hinting=none` on every machine; here that changes nothing (it was already the
+default), and in CI it draws text as here. CLAUDE.md has the trap.
+
+The second push failed it in CI on the boxes that hold a symbol (★ on the pinned chips, ✎ and ↗
+on the row badges): IBM Plex and Anton have none of them, so each machine drew them from its own
+fonts. Reproduced here by setting this machine's fallback fonts aside (fontconfig). Every page
+47-frame-v9 measures now draws its symbols from one face, `test/layout/ref/frame-symbols.woff2`
+(the symbol blocks of DejaVu Sans, renamed as its licence requires; the licence beside it), added
+beside each face the page declares, with its weight and style. (A first version gave it every
+weight, so bold letters matched it and fell to a system font; Chromium's own font report caught
+that.) The reference was captured again: the v9 frame's code is unchanged since `ed7878e`, and
+measured the new way Absolute v9 (`27dca56`) against the new template on Absolute's data still
+shows no difference in all 15 views. 47-frame-v9 now passes here with three different sets of
+fallback fonts.
+
+**Harness:** 1647 assertions, 0 failed, 36 suites. **Layout:** 421 checks, 0 failed, 12 suites.
+
+### Step 2 begins with
+`renderHeader` (`app.js`) on the x frame: `#phead`'s offline line and strapline, then `#pprog`'s split
+line, then `.fbar` with Next unread and the new `.ftools` row, then the pinned header and
+`measureStack`; then 45-pull's header entries come off the list.
+
+## Session 8 checkpoint — step 2 done (the x frame's header and page frame), 28 Oct 2026
+
+Every change is on the x frame (the shared skins); 47-frame-v9 holds the v9 frame exactly.
+
+### Done
+- **One 760 px column** for the header, the tabs and the page.
+- **The header pins under the tabs, as X-Men's:** the header is sticky (z-index 40) and the
+  tab stack (41) covers its top, so the offline line, the subtitle and the progress stay in
+  view. `--stack-h` is what stays pinned, so jumps and era chips land below it.
+- **The header's lines:** the franchise name as the title (kept), 28 px, 24 px at 420 px
+  and under; X-Men's offline line, ending "· vN" and the offline mark; the strapline in the
+  subtitle's place.
+- **The progress line:** X-Men's 8 px track; the count on the left; on the right the plan's
+  finish-by date beside the time remaining (now "remaining", X-Men's word), then "+N untimed".
+- **The filter bar:** no card; the search box with a filled **Next unread →** beside it (at
+  320 px it takes two lines, as X-Men's); then the Filters button, Expand all and Collapse all
+  (kept); then "Showing X of Y". The header's tool row is gone on the x frame.
+- **The bookmarks bar** sits under the filter bar as X-Men's PINNED row.
+- **The tabs** share the bar equally with X-Men's padding, 12.5 px at every width.
+- **The mini bar is off by default on the x frame**, as X-Men's; the v9 frame keeps it on.
+  Visitors who have a saved setting keep it. The Display summary names the mini bar only
+  when it isn't its frame's default.
+- **How (`app.js`, `placeChrome`):** the page's markup stays the v9 frame's; the x frame moves
+  the same controls, and a switch back restores v9's order exactly.
+- **New checks, mutation-proved 11 of 11:**
+  - 10-sweep: the header pins whenever it takes at most 35 % of the screen, and never more
+    (every skin, 320 × 568 and 390 × 844, default and the largest text);
+  - 45-pull: the finish-by date sits right beside the time remaining at every width;
+  - 47-frame-v9: after signature → Pull → signature the landing is as recorded;
+  - 40-look and 45-root: the offline line, Next unread and the pinned chips' outline in
+    every skin × paper;
+  - 9h: the mini bar's default on each frame; 60-stack: `--stack-h` is what stays pinned.
+  - Proved by: the 35 % cap removed; the header never pinning; John's 62 %; G's outline on
+    the chips; the bookmarks bar and Next unread not put back on v9; the mini bar's default
+    wrong on either frame; `--stack-h` the stack alone; a 1 px header rule; the finish-by
+    date split from the time remaining.
+- **Tests changed on purpose:** the selectors that reached the tools through `.ptools` now
+  name the controls (both frames); 95-pace and 97-durations expect "remaining" in the header;
+  9h, 50-table and 60-stack seed the mini bar on where they measure it; 60-stack measures the
+  tab bar across the column and the pinned area.
+- **45-pull:** 1063 properties match X-Men (858 at step 1), 761 listed. In the header only
+  these are left, each from a ruling:
+  - the offline line's alpha (accessible: below);
+  - at 390 px the offline line takes two lines, because it ends "· vN" (John, 24 Oct);
+  - at 320 px the finish-by date and the time remaining take a line of their own (John, 24 Oct);
+  - the selected tab's underline and the search box's outline (kept: outlines);
+  - the pinned chips' outline (accessible: below).
+- **Docs:** BUILD-NOTES "The x frame's header"; FEATURE-INVENTORY F-17, F-58 and X-14.
+
+**Harness:** 1651 assertions, 0 failed, 36 suites. **Layout:** 424 checks, 0 failed, 12 suites.
+
+### Three cases for John (ruled 28 Oct: each as built; see the decisions above)
+1. **The offline line.** John ruled 62 % (D, 28 Oct): 4.51:1 on Pull's paper, as shown. On the
+   other papers and skins 62 % measures down to 4.35:1 (Pull on lilac); every skin × paper needs
+   63.1 %. Built: 64 %, a step in hand.
+2. **The pinned chips' outline.** G (`#8F8A7C`) was measured against the card (3.02:1), but
+   the pinned bar sits on the paper, where it measures 2.71:1 (2.50:1 on rose). Built: the
+   control outline, 3:1 on every paper (3.29:1 on Pull's). G stays as ruled for ⓘ and Mark
+   arc, which sit on a card (step 4b).
+3. **The pinned header with the largest text.** On a 320 × 568 phone with the largest text the
+   header would take 38 % of the screen. Built: it pins only while it takes at most 35 % (the
+   plan's bound); there, the tabs pin alone.
+
+### Step 3 begins with
+`eraHtml` (`app.js`) on the x frame: the years under the name, then one strip (the count and
+"filtered", the bar, the time left or ✓, "+N untimed"); then each era's finish-by date as the
+first line of its open body; then 95-pace, 96 and 97 re-pointed from `.era-head .bfinish`.
+
+## Session 8 checkpoint — step 3 done (the x frame's era box), 28 Oct 2026
+
+### Done
+- **The tab:** the years under the name, as X-Men's.
+- **One strip under it**, as X-Men's:
+  - the count ("1/21 read", X-Men's form) and "filtered" on the left;
+  - the bar between, 10 px from each;
+  - the time left, "+N untimed" or ✓ on the right.
+
+  `eraFootHtml` draws it on the x frame; the v9 frame keeps `statsHtml`.
+- **An era's finish-by date is the first line of its body**, above the intro (John, 24 Oct).
+  - Band heads keep theirs, and an era inside a band shows none.
+  - The line sits in a closed body too, so it is always in the page.
+  - `refreshStats` keeps it current after a mark or a pace change.
+- **The intro** has X-Men's padding and dashed rule.
+- **X-Men's ▸ chevron never shows.** It sits in the tab's clipped corner, open or shut (read from
+  pixels at 3×). So Pull draws none, and the reference lists it as `unseen`, a new reason form
+  for an X-Men element that never paints.
+- **45-pull** measures the strip's bar by its gaps to the figures beside it, so the fixture's
+  shorter counts still compare.
+  - X-Men's reference was re-captured for this map change.
+  - The live site still equals the clone at `663fe46`; a drift check before the change matched
+    exactly, and only the bar's two properties and the chevron changed.
+  - **The numbers:** 1102 match (1063 at step 2), 695 listed.
+  - **Left for the era box:** the intro under the finish-by line (John, 24 Oct), and the tab's
+    padding at 1024 px (below).
+- **Tests changed on purpose:**
+  - 90-render: the finish-by line, and none inside bands, head or body;
+  - 91-marks and 9a: the "1/N" count;
+  - 97-durations: an era's date read from its section.
+- **Mutation-proved, 7 of 7:**
+  - the years beside the name;
+  - the strip a grid;
+  - no finish-by line;
+  - a finish-by line inside bands;
+  - the line not refreshed;
+  - the count with spaces;
+  - the v9 era head given the x strip.
+- **Docs:** BUILD-NOTES "The x frame's era box"; FEATURE-INVENTORY X-15.
+
+**Harness:** 1651 assertions, 0 failed, 36 suites. **Layout:** 424 checks, 0 failed, 12 suites.
+
+### One case for John (ruled 28 Oct: as built; see the decisions above)
+- **The tab's right padding at wide screens.** X-Men pads 44 px at every width. At 1024 px
+  that lets a long era name run under the clipped corner, where X-Men cuts it off.
+- Built: session 7's `max(44px, 12%)`, so a long name wraps before the cut (10-sweep checks
+  it with long names at 320 and 1024 px). At 1024 px that is 88 px.
+
+### Step 4a begins with
+`eraBodyHtml` (`app.js`) on the x frame in "Headings" mode: an era opens to collapsed arc cards
+(`div.arc > div.arc-head > span.arc-tab, h3 > button.arc-toggle, button.info-btn, span.arc-chev`),
+rows rendered on a card's first open; then `setAll`, `jumpToIssue`, a search match and an era
+chip opening cards; then 90-render, 92, 94, 99, 9c, 9d and 9j.
+
+## Session 8 checkpoint — step 4a done (arc cards: structure and behaviour), 28 Oct 2026
+
+### Done
+- **An open era shows its arcs as cards, all shut**, as X-Men's.
+  - A card is one run of an arc's rows in the era's order (`eraCards`), so an arc the order
+    splits gets "· cont." cards, as the headings did.
+  - Rows are drawn when a card first opens; reopening keeps them.
+- **The head:**
+  - the stripe;
+  - the name, a button that opens and shuts the card;
+  - the type badge (only with two or more types in use) with the year and importance;
+  - the count of its own rows, which marks move;
+  - ⓘ and the chevron.
+
+  A tap anywhere on the head but ⓘ opens or shuts it.
+- **ⓘ**, only when the arc has a blurb or credits, shows them without opening the card.
+- **An open card** holds the event's note, Mark arc read and Mark arc unread, then the rows.
+- **What reaches the cards:**
+  - Expand all and Collapse all;
+  - a jump (Next unread, bookmarks, reviews, Reading) opens the row's own card;
+  - a search or a filter change opens the cards it matches;
+  - an era chip opens the era with its cards shut.
+- **Unchanged:** "Label on each row" keeps its rows, and the v9 frame keeps its arc headings.
+- **The pull-ref fixture:** Team Hero #1–#6 now date April to September 1963, after Origin
+  Tale's three. Each arc then reads as one run, as X-Men's first arcs do; before, the two
+  interleaved month by month, so the first card held one issue.
+- **New suite `9l-cards`** (22 checks), mutation-proved 11 of 11:
+  - cards drawn open;
+  - rows drawn into shut cards;
+  - the head's parts not toggling;
+  - every opening rebuilding the rows;
+  - ⓘ opening the card;
+  - the count not refreshed;
+  - Expand all, a jump or a search leaving cards shut;
+  - the cards branch winning in "Label on each row";
+  - cards on the v9 frame.
+- **Tests changed on purpose:** 90-render, 91, 92, 99, 9c, 9d, 9g and 9h open the cards
+  (`openCards` in `test/lib/helpers.js`) where they look for rows. 90-render now says an
+  open era shows shut cards and no rows. 9c and 9d find Mark arc, the event's note and the
+  credits inside the card.
+- **45-pull:** 1240 match (1102 at step 3), 557 listed.
+- **Docs:** BUILD-NOTES "The x frame's arc cards"; FEATURE-INVENTORY X-16.
+
+**Harness:** 1675 assertions, 0 failed, 37 suites. **Layout:** 424 checks, 0 failed, 12 suites.
+
+### Step 4b begins with
+The type colours: `tools/build.py` emits a table (X-Men's TYPE_COLORS by name in Pull,
+nudged per C; washes by type index in the other skins), then the card's stripe and badge from
+it, then Pull's measured card values (`styles.css`, the x frame's card rules), then 45-pull's
+`era/arc *`, `type badge`, `info button`, `arc action*` and `issue list` entries off the list.
+

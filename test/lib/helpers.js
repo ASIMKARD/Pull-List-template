@@ -115,6 +115,11 @@ function openSections(app, g, keys) {
   const heads = [...app.document.querySelectorAll('.sec-head[data-g="' + g + '"]')];
   heads.filter(h => !keys || keys.includes(h.dataset.k)).forEach(h => { if (h.getAttribute('aria-expanded') !== 'true') h.click(); });
 }
+/* The x frame's arc cards (session 8): open every closed card inside el, so its
+   rows are drawn (an open era shows its cards closed). */
+function openCards(el) {
+  if (el) [...el.querySelectorAll('.arc-toggle[aria-expanded="false"]')].forEach(b => b.click());
+}
 /* Go to Settings and open its sections (all of them unless keys are named). */
 function openSettings(app, keys) {
   app.document.querySelector('#tab-settings').click();
@@ -169,6 +174,15 @@ function noPeriods() {
   return npCache;
 }
 
+/* The X-Men comparison fixture (session 8): top-level eras with X-Men's type
+   names, intros, blurbs, notes, core rows and a gap note, so 45-pull compares
+   like with like. Its three era colours are X-Men's first three. */
+let pullRefCache = null;
+function pullRef() {
+  if (!pullRefCache) pullRefCache = build(path.join(FIX, 'pull-ref', 'dataset.json'), { label: 'pull-ref-shared' });
+  return pullRefCache;
+}
+
 /* The mixed-format fixture (comics, a show, a timed and an untimed game). */
 let mixedCache = null;
 function mixed() {
@@ -184,4 +198,4 @@ const ROOT_DATASET = readJSON(path.join(ROOT, 'dataset.json'));
 const IS_TEMPLATE = ROOT_DATASET.franchise.key === 'starter';
 
 module.exports = { ROOT, FIX, BUILD, ROOT_DATASET, IS_TEMPLATE, tmpdir, build, loadData, readJSON, writeJSON, sha12, copyFixture,
-                   validateIssueIds, boot, wait, openSections, openSettings, typeInto, stress, basic, noPeriods, mixed };
+                   validateIssueIds, boot, wait, openSections, openSettings, openCards, typeInto, stress, basic, noPeriods, mixed, pullRef };

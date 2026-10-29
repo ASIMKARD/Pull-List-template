@@ -6,7 +6,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { ROOT, build, boot, wait, basic, loadData, copyFixture, readJSON, writeJSON, openSettings } = require('../lib/helpers');
+const { ROOT, FIX, build, boot, wait, basic, loadData, copyFixture, readJSON, writeJSON, openSettings, openCards } = require('../lib/helpers');
 
 const ATTRS = ['data-skin', 'data-paper', 'data-eras', 'data-text', 'data-density', 'data-tap', 'data-marks', 'data-dys'];
 
@@ -70,6 +70,7 @@ module.exports = async function (t) {
   // ------------------------------------------------ mark styles change the glyphs (S-5, XM-17)
   $('#tab-list').click();
   $('.era-head').click();
+  openCards($('.era'));
   const row = $('.row:not(.inert)'), mark = () => row.querySelector('.mark').textContent;
   const glyphs = {};
   for (const style of ['box', 'dot', 'tick']) {
@@ -82,8 +83,19 @@ module.exports = async function (t) {
     glyphs[style].push($('.row[data-i="' + row.dataset.i + '"] .mark').textContent);
     $('.row[data-i="' + row.dataset.i + '"] .mark').click();                                // back to unread
   }
-  t.eq('box, dot and tick-and-cross marks: unread / read / skipped glyphs', glyphs, { box: ['☐', '✓', '⊘'], dot: ['○', '●', '⊘'], tick: ['', '✓', '✗'] });
+  t.eq('box, dot and tick-and-cross marks: unread / read / skipped glyphs (the x frame\'s box is the reference tracker\'s: empty, ✓, ―)', glyphs,
+       { box: ['', '✓', '―'], dot: ['○', '●', '⊘'], tick: ['', '✓', '✗'] });
   t.ok('…the label for screen readers still names the state', /— Unread$/.test($('.row[data-i="' + row.dataset.i + '"] .mark').getAttribute('aria-label')));
+  {   // the v9 frame keeps its own Box glyphs (John, 25 Oct)
+    const v9 = build(path.join(FIX, 'sig-v9', 'dataset.json'), { label: 'look-v9' }), a9 = boot(v9.out, { storage: {} });
+    await wait(20);
+    const d9 = a9.document, m9 = () => d9.querySelector('.row[data-i="' + i9 + '"] .mark');
+    d9.querySelector('[data-act="expand-all"]').click();
+    const i9 = d9.querySelector('.row:not(.inert)').dataset.i, seen = [m9().textContent];
+    m9().click(); m9().click(); seen.push(m9().textContent); m9().click(); seen.push(m9().textContent);
+    t.eq('…the v9 frame keeps its Box glyphs: ☐, ✓, ⊘', [d9.documentElement.getAttribute('data-frame')].concat(seen), ['v9', '☐', '✓', '⊘']);
+    a9.window.close();
+  }
 
   // ------------------------------------------------ the one store, and the next visit
   await wait(450);

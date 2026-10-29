@@ -1,7 +1,8 @@
 /* The sticky stack, measured (session 4, step 6; F-58, L-1…L-6). The tabs,
-   the banner and the mini bar stay pinned together, in every skin; its height
-   is measured into --stack-h, so jumps land below it; bands keep their spacing;
-   and a swiped row slides under the card edge, not past it. */
+   the banner and the mini bar stay pinned together, in every skin; on the x
+   frame the header pins too, under them (the reference tracker's; John, 24 Oct).
+   What stays on screen is measured into --stack-h, so jumps land below it; bands
+   keep their spacing; and a swiped row slides under the card edge, not past it. */
 'use strict';
 const { basic } = require('../lib/helpers');
 const { serve, open, openAll, openSettings, closeBrowser } = require('./lib');
@@ -10,8 +11,10 @@ const SKINS = ['signature', 'paper', 'newsprint', 'pull', 'night'];     // the b
 const seed = (s) => ({ 'fixture:v3:settings': JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, s)) });
 const geo = () => {
   const g = s => { const e = document.querySelector(s), r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, pos: getComputedStyle(e).position }; };
-  return { stack: g('#stack'), tabs: g('#tabs'), banner: g('#pbanner'), mini: g('#mini'), y: scrollY,
-           h: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--stack-h')), sh: document.querySelector('#stack').offsetHeight };
+  const x = document.documentElement.getAttribute('data-frame') === 'x', sh = document.querySelector('#stack').offsetHeight;
+  return { stack: g('#stack'), tabs: g('#tabs'), banner: g('#pbanner'), mini: g('#mini'), head: g('#phead'), y: scrollY, x,
+           h: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--stack-h')), sh,
+           pinned: x ? Math.max(sh, document.querySelector('#phead').offsetHeight) : sh };
 };
 
 module.exports = async function (t) {
@@ -30,14 +33,15 @@ module.exports = async function (t) {
         if (await pg.page.evaluate(() => document.documentElement.getAttribute('data-skin')) !== skin) pinned.push(at + ': the page is not in that skin');
         if (m.y < 600 || Math.abs(m.tabs.top) >= 1) pinned.push(at + ': tabs at ' + m.tabs.top + ' after scrolling to ' + m.y);
         if (Math.abs(m.banner.top - m.tabs.bottom) >= 2) under.push(at + ': banner ' + (m.banner.top - m.tabs.bottom).toFixed(1) + ' px from the tabs');
-        if (Math.abs(m.h - m.sh) > 0.5) measured.push(at + ': --stack-h ' + m.h + ' vs ' + m.sh);
+        if (Math.abs(m.h - m.pinned) > 0.5) measured.push(at + ': --stack-h ' + m.h + ' vs ' + m.pinned);
+        if (m.x && (m.head.pos !== 'sticky' || Math.abs(m.head.top) >= 1 || m.head.bottom < m.tabs.bottom)) pinned.push(at + ': the header is ' + m.head.pos + ' at ' + m.head.top + '…' + m.head.bottom);
         t.eq(at + ': no page errors', pg.errors, []);
         await pg.close();
       }
     }
-    t.eq('the stack holding the tabs is sticky and pins them to the top after scrolling, every skin, Checklist and Settings (L-1, L-2)', pinned, []);
+    t.eq('the stack holding the tabs is sticky and pins them to the top after scrolling, every skin, Checklist and Settings (L-1, L-2); on the x frame the header pins under them', pinned, []);
     t.eq('the banner is pinned directly under the tabs (L-3, L-4)', under, []);
-    t.eq('--stack-h is the stack\'s measured height (F-58)', measured, []);
+    t.eq('--stack-h is what stays on screen: the stack, or on the x frame the taller of it and the header (F-58)', measured, []);
 
     // ------------------------------------------------ the tab bar: edge to edge in Pull only (John, 9 Oct)
     const bar = [];
@@ -46,7 +50,8 @@ module.exports = async function (t) {
         const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage: seed({ skin }) });
         await openAll(pg.page);
         const at = async () => pg.page.evaluate(() => { const nav = document.querySelector('#tabs'), r = nav.getBoundingClientRect(), cs = getComputedStyle(nav);
-          return { left: r.left, right: innerWidth - r.right, corner: cs.borderTopLeftRadius, vw: innerWidth, sw: document.documentElement.scrollWidth }; });
+          const col = document.documentElement.getAttribute('data-frame') === 'x' ? Math.max(0, (innerWidth - 760) / 2) : 0;   // the x frame's 760 px column
+          return { left: r.left - col, right: innerWidth - r.right - col, corner: cs.borderTopLeftRadius, vw: innerWidth, sw: document.documentElement.scrollWidth }; });
         const top = await at();
         await pg.page.evaluate(() => window.scrollTo(0, 700));
         await pg.page.waitForTimeout(50);
@@ -59,14 +64,14 @@ module.exports = async function (t) {
         await pg.close();
       }
     }
-    t.eq('the tab bar runs edge to edge in Pull (square corners) and stays 16 px in every other skin, at 320, 390 and 1024 px, at the top and pinned (John, 9 Oct)', bar, []);
+    t.eq('the tab bar runs edge to edge in Pull (square corners) and stays 16 px in every other skin, at 320, 390 and 1024 px, at the top and pinned (John, 9 Oct), across the x frame\'s 760 px column', bar, []);
 
     // ------------------------------------------------ the mini progress bar under the tabs (F-17) is 3 px, in every skin
     // (session 7: progress.bar's 6 px used to win over it, being more specific)
     const thin = [];
     for (const skin of SKINS) {
       for (const [w, extra] of [[390, {}], [320, { textSize: 'l', tap: 'large' }]]) {
-        const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage: seed(Object.assign({ skin }, extra)) });
+        const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage: seed(Object.assign({ skin, mini: true }, extra)) });   // on: the x frame's default is off
         const h = await pg.page.evaluate(() => { const m = document.querySelector('#miniBar'); return m && m.getClientRects().length ? m.getBoundingClientRect().height : null; });
         if (h !== 3) thin.push(skin + ' @' + w + (extra.textSize ? ' largest' : '') + ': ' + h + ' px');
         await pg.close();
@@ -81,13 +86,14 @@ module.exports = async function (t) {
     await pg.page.click('[data-act="pref"][data-k="banner"]');
     await pg.page.waitForTimeout(100);
     const after = await pg.page.evaluate(geo);
-    t.ok('turning the banner on grows the stack, and --stack-h follows without a reload', after.sh > before.sh + 10 && Math.abs(after.h - after.sh) <= 0.5,
-         JSON.stringify({ before: [before.h, before.sh], after: [after.h, after.sh] }));
+    t.ok('turning the banner on grows the stack, and --stack-h follows without a reload', after.sh > before.sh + 10 && Math.abs(after.h - after.pinned) <= 0.5,
+         JSON.stringify({ before: [before.h, before.pinned], after: [after.h, after.pinned] }));
     // ------------------------------------------------ jumps land below the stack
     const landing = await pg.page.evaluate(async () => {
-      const out = [], stackBottom = () => document.querySelector('#stack').getBoundingClientRect().bottom;
+      const out = [], stackBottom = () => Math.max(document.querySelector('#stack').getBoundingClientRect().bottom,
+        document.documentElement.getAttribute('data-frame') === 'x' ? document.querySelector('#phead').getBoundingClientRect().bottom : 0);   // what is pinned
       document.querySelector('#tab-list').click();
-      document.querySelector('.ptools [data-act="collapse-all"]').click();
+      document.querySelector('[data-act="collapse-all"]').click();
       for (const e of [...document.querySelectorAll('.era')].slice(1).map(x => +x.dataset.e)) {
         window.scrollTo(0, 0);
         const id = window.TRACKER_DATA.ids[window.TRACKER_DATA.issueEra.indexOf(e)];
@@ -109,7 +115,8 @@ module.exports = async function (t) {
         await new Promise(r => setTimeout(r, 30));
         const head = document.querySelector('.era[data-e="' + chip.dataset.e + '"] > .era-head');
         const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 1;   // the last eras can't scroll to the top
-        out.push([Math.round(head.getBoundingClientRect().top - document.querySelector('#stack').getBoundingClientRect().bottom), atEnd]);
+        const pinnedBottom = Math.max(document.querySelector('#stack').getBoundingClientRect().bottom, document.querySelector('#phead').getBoundingClientRect().bottom);   // the x frame pins the header too
+        out.push([Math.round(head.getBoundingClientRect().top - pinnedBottom), atEnd]);
       }
       return out;
     });
@@ -123,7 +130,7 @@ module.exports = async function (t) {
     for (const density of ['compact', 'normal', 'roomy']) {
       pg = await open(srv.url, { width: 390, reducedMotion: 'reduce', storage: seed({ density }) });
       const m = await pg.page.evaluate(() => {
-        document.querySelector('.ptools [data-act="collapse-all"]').click();
+        document.querySelector('[data-act="collapse-all"]').click();
         document.querySelectorAll('.band-head').forEach(h => h.click());
         window.scrollTo(0, 200);
         const bands = [...document.querySelectorAll('.band')];

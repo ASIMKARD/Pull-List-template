@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
-const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir } = require('../lib/helpers');
+const { ROOT, FIX, BUILD, build, loadData, readJSON, writeJSON, copyFixture, tmpdir, pullRef, basic } = require('../lib/helpers');
 const C = require('../lib/colour');
 const shade = rgb => rgb.map(v => Math.max(v - 25, 0));      // the reference tracker's strip: each channel 25 darker
 
@@ -151,11 +151,29 @@ module.exports = async function (t) {
     t.eq('…with the ratios of white text, the 85 % years and white text on the strip, as measured here',
          own.map(e => [e.colour.white, e.colour.years, e.colour.stripWhite]),
          own.map(e => { const rgb = C.hexRgb(e.colour.hex); return [C.contrast(C.WHITE, rgb), C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb), C.contrast(C.WHITE, shade(rgb))].map(x => Math.round(x * 1000) / 1000); }));
-    t.ok('the colour under 4.5:1 warns, never fails: era dawn, 3.91:1 and 3.29:1 (its strip 5.51:1), with a passing shade as a hint',
-         /era dawn: white text on its colour #A6791E is 3\.91:1 \(the years at 85 %: 3\.29:1; on its strip #8D6005: 5\.51:1\), under 4\.5:1 \(WCAG AA\)\. Pull draws it as given \(John, 12 Oct\)\. The nearest shade of its hue where all pass: #[0-9A-F]{6}/.test(b.stderr), b.stderr);
+    const CARDS = Object.fromEntries([...(fs.readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/'(\w+)': \((\d+), (\d+), (\d+)\)/g)].map(m => [m[1], [+m[2], +m[3], +m[4]]]));
+    const onCard = h => Object.fromEntries(Object.entries(CARDS).map(([k, card]) => [k, Math.round(C.contrast(C.hexRgb(h), card) * 1000) / 1000]));
+    const lowest = h => Math.min(...Object.values(onCard(h)));
+    t.ok('the colour under 4.5:1 warns, never fails: era dawn, 3.91:1 and 3.29:1 (its strip 5.51:1; as the review era tag on Pull\'s card ' +
+         lowest('#A6791E').toFixed(2) + ':1 at the lowest), with a passing shade as a hint',
+         new RegExp('era dawn: white text on its colour #A6791E is 3\\.91:1 \\(the years at 85 %: 3\\.29:1; on its strip #8D6005: 5\\.51:1; as text on Pull\'s card, ' +
+           'the review era tag: ' + lowest('#A6791E').toFixed(2).replace('.', '\\.') + ':1 at the lowest\\), under 4\\.5:1 \\(WCAG AA\\)\\. Pull draws it as given \\(John, 12 and 29 Oct\\)\\. ' +
+           'The nearest shade of its hue where all pass: #[0-9A-F]{6}').test(b.stderr), b.stderr);
     const hint = (b.stderr.match(/all pass: (#[0-9A-F]{6})/) || [])[1], hr = hint ? C.hexRgb(hint) : null;
-    t.ok('…and the hint does pass (white, the 85 % years and the strip at 4.5:1 or more): ' + hint,
-         !!hint && C.contrast(C.WHITE, hr) >= 4.5 && C.contrast(C.over(C.WHITE, C.YEARS, hr), hr) >= 4.5 && C.contrast(C.WHITE, shade(hr)) >= 4.5);
+    t.ok('…and the hint does pass (white, the 85 % years, the strip, and as text on Pull\'s card on every paper, at 4.5:1 or more): ' + hint,
+         !!hint && C.contrast(C.WHITE, hr) >= 4.5 && C.contrast(C.over(C.WHITE, C.YEARS, hr), hr) >= 4.5 && C.contrast(C.WHITE, shade(hr)) >= 4.5 && lowest(hint) >= 4.5);
+    t.eq('…and each own colour reports how it reads as text on Pull\'s card on every paper, as measured here (the review era tag, drawn as given; John, 29 Oct)',
+         own.map(e => e.colour.onCard), own.map(e => onCard(e.colour.hex)));
+    {   // a colour whose white text passes but which reads under 4.5:1 as the review era tag still warns, and its hint passes as the tag
+      const dir = copyFixture('basic', 'tag-only'), ds = readJSON(path.join(dir, 'dataset.json'));
+      ds.eras.find(e => e.id === 'rising').colour = '#546F66';
+      writeJSON(path.join(dir, 'dataset.json'), ds);
+      const tb = build(path.join(dir, 'dataset.json'), { label: 'tag-only' }), m = tb.stderr.match(/era rising: [^\n]*all pass: (#[0-9A-F]{6})/);
+      t.ok('a colour that passes white text but reads under 4.5:1 as the review era tag warns too: #546F66, ' + lowest('#546F66').toFixed(2) + ':1 at the lowest',
+           tb.status === 0 && !!m && m[0].includes('the review era tag: ' + lowest('#546F66').toFixed(2) + ':1 at the lowest'), tb.stderr.slice(0, 300));
+      t.ok('…and its hint passes as the tag on every paper: ' + (m && m[1]), !!m && lowest(m[1]) >= 4.5);
+    }
     t.ok('…the colour that passes (storm, 6.75:1) doesn\'t warn', !/era storm: white text/.test(b.stderr));
     t.eq('the report counts them', b.report.eraColours, { set: 2, underAA: ['dawn'] });
     t.eq('…and Pull draws them untouched, never nudged: dawn and storm in their own colours, the other eras in the palette\'s by index',
@@ -167,6 +185,41 @@ module.exports = async function (t) {
       const r = build(path.join(bad, 'dataset.json'), { label: 'bad-colour' });
       t.ok('a malformed colour fails the build: ' + JSON.stringify(v), r.status === 1 && /era rising: colour must be #RRGGBB/.test(r.stderr), r.stderr.split('\n')[0]);
     }
+  }
+
+  // Pull's arc-type colours (session 8; John, 24 and 28 Oct): each stripe the reference tracker's colour exactly, each
+  // badge darkened only as far as its text must be to pass on its own tint, on Pull's card on every paper
+  {
+    const XM = { MAIN: '#2C6E8C', 'SPIN-OFF': '#7B3F94', SOLO: '#1F7A5C', MINI: '#C0622A', EVENT: '#A6303C' };   // X-Men index.html TYPE_COLORS (663fe46); '#666' for any other
+    const TD = loadData(pullRef().out), TC = TD.typeColours || [];
+    const CARDS = [...(fs.readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/\((\d+), (\d+), (\d+)\)/g)].map(m => [+m[1], +m[2], +m[3]]);
+    const badge = h => { const rgb = C.hexRgb(h); return Math.min(...CARDS.map(card => C.contrast(rgb, C.over(rgb, 34 / 255, card)))); };
+    t.eq('every arc type has a stripe in the reference tracker\'s colour for its name, exactly, and a badge (' + TD.types.join(', ') + ')',
+         TC.map(c => c.hex), TD.types.map(n => XM[n] || '#666666'));
+    t.ok('…the build knows Pull\'s card on all seven papers', CARDS.length === 7);
+    t.eq('every badge passes 4.5:1 on its own tint (at 0x22) on Pull\'s card on every paper, as the build reports', TC.filter(c => badge(c.badgeHex) < 4.5 ||
+         Math.abs(badge(c.badgeHex) - c.ratio) > 0.0005).map(c => c.badgeHex + ' ' + badge(c.badgeHex).toFixed(3)), []);
+    t.eq('…the ones that pass as they are are untouched: SPIN-OFF and EVENT', TC.filter(c => !c.nudged).map(c => TD.types[TC.indexOf(c)]), ['SPIN-OFF', 'EVENT']);
+    const STEP = 0.0005, cand = (src, k) => { const [L, Cs, H] = C.rgbOklch(C.hexRgb(src)), x = L - k * STEP; return C.rgbHex(C.oklchRgb(x, C.inGamut(x, Cs, H) ? Cs : C.maxChroma(x, H), H)); };
+    t.eq('…and each darkening is the least that passes: one step (0.0005 of lightness) less still fails', TC.filter(c => c.nudged).filter(c =>
+         cand(c.hex, c.nudged.steps) !== c.badgeHex || badge(cand(c.hex, c.nudged.steps - 1)) >= 4.5).map(c => c.hex), []);
+    t.eq('…and every stripe and badge is OKLCH numbers that come back to its colour', TC.filter(c => C.rgbHex(C.oklchRgb(...c.stripe)) !== c.hex ||
+         C.rgbHex(C.oklchRgb(...c.badge)) !== c.badgeHex).map(c => c.hex), []);
+  }
+
+  // an era's colour as text on Pull's card (session 8, step 6a: the x frame's review era tag, drawn as given; John, 29 Oct):
+  // Pull's default palette passes as it is, on every paper, so only a tracker's own colour can fall short (and warns, above)
+  {
+    const CARDS = [...(fs.readFileSync(path.join(ROOT, 'tools', 'build.py'), 'utf8').match(/^PULL_CARDS = \{([^}]*)\}/m) || ['', ''])[1]
+      .matchAll(/\((\d+), (\d+), (\d+)\)/g)].map(m => [+m[1], +m[2], +m[3]]);
+    const lowest = h => Math.min(...CARDS.map(card => C.contrast(C.hexRgb(h), card)));
+    const all = [];
+    for (const out of [basic().out, pullRef().out]) { const XD = loadData(out); XD.eras.forEach(e => { if (!e.colour) all.push(e.pull.hex); }); all.push(XD.pullMono.hex); }
+    t.eq('every palette colour Pull draws an era in passes 4.5:1 as text on its card on every paper (' + [...new Set(all)].length + ')',
+         [...new Set(all)].filter(h => lowest(h) < 4.5).map(h => h + ' ' + lowest(h).toFixed(2)), []);
+    t.eq('…and the build gives no shade of its own for the tag: the era is drawn in the one colour', [basic().out, pullRef().out].flatMap(o => loadData(o).eras)
+         .filter(e => 'text' in e.pull || 'textHex' in e.pull).map(e => e.id), []);
   }
 
   // Pull's default palette (John, 13 Oct): the reference tracker's eleven era colours, each nudged only as far as it must
@@ -215,6 +268,38 @@ module.exports = async function (t) {
     t.eq('…each as OKLCH numbers that come back to the same colour, and its strip to the reference\'s shade',
          PD.eras.filter(e => C.rgbHex(C.oklchRgb(...e.pull.tab)) !== e.pull.hex || C.rgbHex(C.oklchRgb(...e.pull.strip)) !== C.rgbHex(shade(C.hexRgb(e.pull.hex)))).map(e => e.id), []);
     t.eq('"One colour" draws every era in the palette\'s navy, the reference tracker\'s accent', PD.pullMono && PD.pullMono.hex, PAL[10].hex);
+  }
+  // "One colour" in the tracker's accent (John, 19 and 24 Oct): franchise.accent, darkened by the palette's rule only as far as
+  // white text, the 85 % years and the strip need, its hue kept; the navy without one; a tracker's own era colours untouched
+  {
+    const passes = rgb => C.contrast(C.WHITE, rgb) >= 4.5 && C.contrast(C.over(C.WHITE, C.YEARS, rgb), rgb) >= 4.5 && C.contrast(C.WHITE, shade(rgb)) >= 4.5;
+    const STEP = 0.0005, cand = (src, k) => { const [L, Cs, H] = C.rgbOklch(C.hexRgb(src)), x = L - k * STEP; return C.rgbHex(C.oklchRgb(x, C.inGamut(x, Cs, H) ? Cs : C.maxChroma(x, H), H)); };
+    const least = src => { if (passes(C.hexRgb(src))) return src.toUpperCase(); for (let k = 1; k < 4000; k++) if (passes(C.hexRgb(cand(src, k)))) return cand(src, k); return null; };
+    const withAccent = (label, accent) => {
+      const dir = copyFixture('basic', label), ds = readJSON(path.join(dir, 'dataset.json'));
+      if (accent === undefined) delete ds.franchise.accent; else ds.franchise.accent = accent;
+      writeJSON(path.join(dir, 'dataset.json'), ds);
+      const r = build(path.join(dir, 'dataset.json'), { label: label + '-out' });
+      return { r, D: r.status === 0 ? loadData(r.out) : null };
+    };
+    const none = withAccent('accent-none'), dark = withAccent('accent-dark', '#7A1F2B');
+    const light = withAccent('accent-crimson', '#E8123C'), yellow = withAccent('accent-yellow', '#E0A040');
+    t.eq('without an accent, "One colour" is the palette\'s navy, and the report says so', [none.D && none.D.pullMono.hex, none.r.report && none.r.report.oneColour],
+         [PAL[10].hex, { source: null, hex: PAL[10].hex, nudged: null }]);
+    t.eq('a dark accent is drawn as given: #7A1F2B', [dark.D && dark.D.pullMono.hex, dark.r.report && dark.r.report.oneColour.nudged], ['#7A1F2B', null]);
+    const hue = h => C.rgbOklch(C.hexRgb(h))[2];
+    for (const [name, x, src] of [['a light accent (Absolute\'s crimson)', light, '#E8123C'], ['a yellow one, where the gamut runs out first', yellow, '#E0A040']]) {
+      const got = x.D && x.D.pullMono.hex;
+      t.ok(name + ' is darkened only as far as it must be: ' + src + ' → ' + got + ', passing, and one step less still fails',
+           !!got && got === least(src) && passes(C.hexRgb(got)) && got !== src && x.r.report.oneColour.source === src && x.r.report.oneColour.nudged.steps > 0);
+      t.ok('…its hue kept (' + hue(src).toFixed(1) + '° → ' + (got ? hue(got).toFixed(1) : '?') + '°, within the 8-bit rounding)', !!got && Math.abs(hue(got) - hue(src)) < 1.5);
+    }
+    t.eq('…and an accent never touches a tracker\'s own era colours: dawn and storm drawn as given beside it', light.D && light.D.eras.filter(e => e.colour).map(e => e.pull.hex), ['#A6791E', '#A6303C']);
+    t.ok('…nor the tab and strip it draws in: the strip is the reference\'s shade of the drawn colour', !!light.D && C.rgbHex(C.oklchRgb(...light.D.pullMono.strip)) === C.rgbHex(shade(C.hexRgb(light.D.pullMono.hex))));
+    for (const bad of ['red', '#12345', '#GGGGGG', 7]) {
+      const b = withAccent('accent-bad', bad);
+      t.ok('a malformed accent fails the build: ' + JSON.stringify(bad), b.r.status === 1 && /franchise\.accent must be #RRGGBB/.test(b.r.stderr), b.r.stderr.split('\n')[0]);
+    }
   }
   // the build run on its own (tools/ without the app shell, as the verify gate's tests run it): it still builds
   {

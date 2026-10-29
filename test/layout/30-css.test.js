@@ -18,7 +18,7 @@ module.exports = async function (t) {
     let rules = await rulesFor(page, '#tabs');
     t.ok('the rule finder sees a grouped selector that spans lines (what grep misses)', rules.some(r => /nothing-here/.test(r.selector) && /outline-offset/.test(r.css)),
          JSON.stringify(rules));
-    rules = await rulesFor(page, '.ptools .tool');
+    rules = await rulesFor(page, '[data-act="expand-all"]');
     t.ok('…and the real stylesheet\'s grouped rule for .tool', rules.some(r => /\.tool,\s*\.linkbtn/.test(r.selector)), JSON.stringify(rules.map(r => r.selector)));
     t.ok('…and no stylesheet is unreadable (served over http, not file://)', !rules.some(r => /^!unreadable/.test(r.selector)));
 

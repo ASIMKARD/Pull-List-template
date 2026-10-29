@@ -5,7 +5,7 @@
      badges on/off, gap notes on/off, era navigation style, layout C;
    - the depth chips sit in one row that never wraps (T-95). */
 'use strict';
-const { loadData, boot, wait, basic, noPeriods, openSettings } = require('../lib/helpers');
+const { loadData, boot, wait, basic, noPeriods, openSettings, openCards } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -121,11 +121,13 @@ module.exports = async function (t) {
   app.window.PullList.jumpToIssue('fixture-hero-1980-6');
   const rising = D.eras.findIndex(e => e.id === 'rising');
   $(`.era[data-e="${rising}"] > .era-head`).click();
+  openCards($(`.era[data-e="${rising}"]`));
   t.ok('gap notes show by default', !!$('.row[data-id="gap-1983-hiatus"]'));
   settingsTab();
   pref('gapNotes').click();
   app.window.PullList.jumpToIssue('fixture-hero-1980-6');
   $(`.era[data-e="${rising}"] > .era-head`).click();
+  openCards($(`.era[data-e="${rising}"]`));
   t.ok('gap notes off hides them (XM-10)', !$('.row[data-id="gap-1983-hiatus"]') && $$(`.era[data-e="${rising}"] .row`).length > 0);
   t.ok('…and never changes a figure', figures() === base);
   settingsTab();

@@ -40,7 +40,7 @@ module.exports = async function (t) {
   const hLeft = d.querySelector('#pprog .pleft'), hFin = d.querySelector('#pprog .pfinish');
   t.ok('basic is fully timed: a game and a show carry their own minutes', D.issueDuration.some(x => x > 0) && !D.issueDuration.includes(-1));
   t.ok('header time left = each remaining row\'s own minutes (comics x 15)', +hLeft.dataset.leftMin === all.mins(15), hLeft.dataset.leftMin + ' vs ' + all.mins(15));
-  t.ok('header time left text', hLeft.textContent === timeText(all.mins(15)) + ' left', hLeft.textContent);
+  t.ok('header time left text ("remaining" on the x frame, as the reference tracker; John, 24 Oct)', hLeft.textContent === timeText(all.mins(15)) + ' remaining', hLeft.textContent);
   t.ok('header finish-by = minutes left / (12 x 15) per week', hFin.dataset.finish === iso(all.mins(15) / 180), hFin.dataset.finish + ' vs ' + iso(all.mins(15) / 180));
   t.ok('finish-by reads as a month and year', /^finish by [A-Z][a-z]{2} \d{4}$/.test(hFin.textContent), hFin.textContent);
 

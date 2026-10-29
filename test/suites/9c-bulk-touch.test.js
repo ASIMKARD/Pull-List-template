@@ -7,7 +7,7 @@
      / arc head to mark it all read. No haptics: navigator.vibrate is never
      called (guarded statically in 80-guards and at runtime here). */
 'use strict';
-const { loadData, boot, wait, basic, stress, openSettings } = require('../lib/helpers');
+const { loadData, boot, wait, basic, stress, openSettings, openCards } = require('../lib/helpers');
 
 const NOW = Date.UTC(2026, 0, 1);
 
@@ -79,19 +79,20 @@ module.exports = async function (t) {
 
   // ------------------------------------------------ arc (XM-11)
   W.PullList.jumpToIssue('fixture-hero-1980-6');
-  const arcHead = $('.era[data-e="0"] .arc-head'), a = +arcHead.closest('.arc').dataset.a;
+  const arcCard = $('.row[data-id="fixture-hero-1980-6"]').closest('.arc'), a = +arcCard.dataset.a;   // the card the jump opened
+  openCards($('.era[data-e="0"]'));                                     // the arc's other cards in the era too
   const arcRows = D.ids.map((id, i) => i).filter(i => D.issues[i][2] === a && counted(i));
   // what a person sees: every rendered row of the arc, its state and its glyph
   const shown = () => arcRows.map(i => { const r = $('.row[data-i="' + i + '"]'); return r ? r.dataset.s + ' ' + r.querySelector('.mark').textContent : 'not rendered'; });
   const arcBefore = shown();
   t.ok('the arc\'s rows are rendered (its era is open)', arcBefore.length > 1 && arcBefore.every(x => x !== 'not rendered'), arcBefore.join(' | '));
-  arcHead.querySelector('[data-act="arc-mark"][data-st="read"]').click();
-  t.ok('"Mark arc read" on the arc head marks the whole arc (XM-11)', arcRows.every(i => marks()[D.ids[i]] === 'read'));
+  arcCard.querySelector('[data-act="arc-mark"][data-st="read"]').click();
+  t.ok('"Mark arc read" in the open arc card marks the whole arc (XM-11)', arcRows.every(i => marks()[D.ids[i]] === 'read'));
   t.ok('…and every rendered row of the arc shows it: state and glyph', shown().every(x => x === 'read ✓'), shown().join(' | '));
   undo();
   t.eq('…Undo restores the start', marks(), start);
   t.eq('…and puts every rendered row back as it was', shown(), arcBefore);
-  arcHead.querySelector('[data-act="arc-mark"][data-st="unread"]').click();
+  arcCard.querySelector('[data-act="arc-mark"][data-st="unread"]').click();
   t.ok('"Mark arc unread" clears it', arcRows.every(i => !marks()[D.ids[i]]));
   undo();
   t.eq('…Undo restores the start (only the latest action is undoable: one toast)', marks(), start);
