@@ -3505,6 +3505,46 @@ Absolute v10, in place (John approved edits to Absolute for v10 only):
    - the `v10` tag appears (the workflow comes with the copy);
    - live Absolute in Pull measured against live X-Men at 390 px, with screenshots.
 
+## Session 8 checkpoint — E done: Absolute v10 is live, 30 Oct 2026
+
+### Done
+- **The template PR** (ASIMKARD/Pull-List-template#9) was merged as `b8d9da5` (29 Oct, 14:42Z). It includes the crimson
+  correction (`66864ff`).
+- **The research** (Research-Repo#3, merged; `sessions/2026-10-29-absolute-v10/`):
+  - 8 issues released since v9;
+  - John's two calls (29 Oct): the Cassandra Cain one-shot (SOLO, optional), and DC All In Saga (EVENT, optional);
+  - the change report, which John approved on 30 Oct.
+- **Absolute v10** (ASIMKARD/Absolute#4, merged as `ec34fa9`, 30 Oct, 05:10Z):
+  1. `a08a10b`: the template copied in, `"frame": "v9"`, `franchise.accent` `#E8123C`, and `frame-ref.json`;
+  2. `6fd322b`: the 8 rows, exactly as reported, and the reference re-captured from v9's own shell on this data;
+  3. `2c832ec`: the in-place proof recorded.
+- **Checked before the merge, on Absolute's data:**
+  - the gate: 142 rows, 0 failures;
+  - harness 1719, layout 477;
+  - the Absolute skin against v9's shell on the same data: 0 differences in 982 elements, and 0 differing pixels in 15
+    views;
+  - the v9 → v10 proof: 24 of 24 with Pull, and 24 of 24 with the Absolute skin. Served v9 as if it were v10, it fails 5.
+- **Checked live:**
+  - all 201 files match by sha256;
+  - the `v10` tag is annotated on `ec34fa9`, from the workflow's first run in a tracker;
+  - real Chromium reads v10 in the Absolute skin (v9 frame) and in Pull (x frame);
+  - live Absolute in Pull has X-Men's era box shape, 18 px shorter because its eras give no years.
+- **Learned:** for hours after each merge, the git proxy and the GitHub tool showed the old state. For example, #9
+  read "open" after it had merged. GitHub's public API was right each time, so check merges there.
+
+### For John (not done)
+- **MIGRATING §5** says to capture a v9-frame reference "from the old version's tag". Once the data changes, that
+  reference has to be the old shell built on the tracker's current data, as v10's is; otherwise new rows trip it.
+  That's a one-line docs change in the template, whenever John wants it.
+
+## Transfer checkpoint — end of session 8, 30 Oct 2026
+- **The template** (`main` `b8d9da5`): the X-Men layout for the shared skins, two frames, and "One colour" in the
+  tracker's accent. Harness 1720, layout 468, CI green.
+- **Absolute v10 is live** (`ec34fa9`, tag `v10`). Its rollback is `v9-final` (`27dca56`).
+- **Next, by the 22 Oct decision:** on a real phone, with Absolute v10, John confirms that the template's Pull
+  matches X-Men. Archie Sonic's build step comes after that. That migration goes in place, on Archie Sonic's own repo,
+  once John says so and has tagged its `main`.
+
 ## Session 8: decisions (John, 19–28 Oct 2026) — do not reopen
 
 ### 19 Oct: session 7's last two calls
