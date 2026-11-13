@@ -6,7 +6,8 @@
 Only **Pull-List-Template** may be changed, plus what John approves below. Master-Repo,
 X-men and every other repo are **read-only**: read them from local copies
 (clone or pull only), and **never** commit, push, create branches, open pull requests
-on, or register them as repo roots.
+on, or register them as repo roots. The one exception is Master-Repo's session log and
+archive, under "Master-Repo log and archive" below, once John approves it for the session.
 
 **What John approves, per piece of work:**
 - **A tracker's own repo, for one migration or update he names** (for example
@@ -48,6 +49,38 @@ Saved progress carries over: the address and the origin stay the same, and v3 re
 old keys through `franchise.storage.legacy` and never writes them, so reverting `main` to
 its `vN-final` tag restores the old version as it was. Absolute's rollback tags are
 `v7-final` (`7304f82`), `v8-final` (`36fd088`) and `v9-final` (`27dca56`).
+
+### Master-Repo log and archive (John, 13 Nov)
+Every Pull List session keeps Master-Repo up to date as it goes, without being asked:
+a running log of what it did, and a word-for-word archive of the session.
+- **Name.** The session's name is its title, for example "Green Lantern #1" or "Archie
+  Sonic Code #2". Its file name is that name in lower case, with spaces and `#` as
+  dashes: `green-lantern-1`. If the title isn't a name like that, ask John for it.
+- **Ask once, at the start.** Before the first update, ask John, with a question form,
+  to approve adding to Master-Repo's `log/` and `archive/code/` for this session. Without
+  that approval, never touch Master-Repo. Any other Master-Repo file still needs its own
+  say-so.
+- **When.** After every commit you push to the session's own repo, at least every three
+  of John's messages, and before you stop.
+- **What.**
+  1. `log/<file name>.md`: append an entry. Give the date and time (UTC), what changed
+     (commits and PRs, with their short hashes), each decision John made (dated, in his
+     words where they're short), and what's next. Never rewrite earlier entries. The
+     first entry also names the repos the session works on.
+  2. `archive/code/<file name>.md`: rebuild it from the session's own transcript, in
+     the format Master-Repo's `archive/INDEX.md` describes. Do it entirely in a script
+     that writes the file. Never print transcript text in a reply or tool output; report
+     only counts and checks (messages missing = 0, tokens remaining = 0). Remove GitHub
+     tokens and claude.ai export links. If a safety check stops this step, keep the log
+     going, tell John, and don't retry the archive.
+- **How.** Push to your session's own branch in Master-Repo, started from the latest
+  `main`. Keep one pull request open for it, opened with GitHub's REST API. If that pull
+  request has been merged, start the branch again from the new `main` and open a new one.
+  Master-Repo merges a pull request automatically when it only adds or changes files in
+  `log/` and `archive/` (never `archive/INDEX.md`); anything else waits for John.
+- **Check merges with GitHub's public API.** The git proxy and the GitHub tool have
+  shown a merged `main` as unmerged for hours.
+- **Never edit `archive/INDEX.md`.** The next Master-Repo update indexes new files.
 
 ### Working method
 - Each session works on its own branch and pushes it. John reviews and merges.
@@ -372,3 +405,4 @@ Never synthetic elements. Boot the real `index.html` + generated `data.js`.
    another franchise's artwork).
 5. Verify a deploy **by hash**, not HTTP 200; GitHub Pages takes ~100 s.
 6. First deploy uploads everything: `fonts/`, `icons/`, manifest, `qrcode.js`.
+7. Master-Repo's log and archive are up to date for this session ("Master-Repo log and archive", above).

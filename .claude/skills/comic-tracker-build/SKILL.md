@@ -20,7 +20,12 @@ description: Build, change, migrate or check a Pull List comic reading-order tra
      merges;
    - the in-place upgrade proof passes in real Chromium before the merge;
    - every file is verified live by hash after it (`MIGRATING.md`).
-4. `npm ci` if `node_modules/` is missing.
+4. **Keep Master-Repo's log and archive current (John, 13 Nov).** Ask John once,
+   at the start, to approve it for this session. Then, after every pushed commit, at
+   least every three of his messages, and before stopping, append to the session's
+   log and rebuild its word-for-word archive. Do it by script, never printing
+   transcript text. The full rule is in `CLAUDE.md`, "Master-Repo log and archive".
+5. `npm ci` if `node_modules/` is missing.
 
 ## The loop
 ```

@@ -8,6 +8,14 @@ Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (
 
 ---
 
+## 13 Nov 2026 — Master-Repo log and archive (John, via the Master Chat)
+
+- **Decided (John, 13 Nov):** every Pull List session keeps Master-Repo current without being asked. It appends to its own log in Master-Repo `log/` and rebuilds its word-for-word archive in `archive/code/`, after every pushed commit, at least every three of John's messages, and before stopping. It asks John once per session for approval before the first update. Master-Repo merges a pull request automatically when it only touches `log/` and `archive/` (never `archive/INDEX.md`); anything else waits for John.
+- **Written into:** `CLAUDE.md` ("Master-Repo log and archive", the read-only rule's one exception, and the closing checklist) and the Skill ("Before anything", step 4). No code changed.
+- **Session names (John, 13 Nov):** a chat's name is its title, numbered per project: Template #1 to #5 so far, Green Lantern #1 next. Trackers that also have older claude.ai chats add "Code": Archie Sonic Code #1, IDW Sonic Code #1 and so on.
+
+---
+
 ## Transfer checkpoint — end of session 1 (scaffold), 2 Oct 2026
 
 ### Done
