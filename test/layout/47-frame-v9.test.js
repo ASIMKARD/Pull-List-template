@@ -14,6 +14,10 @@
      frame-ref.json sits beside dataset.json (Absolute's, captured from v9 itself),
      so a template change copied in can't move its skin either.
    Symbols (★ ✎ ↗ …) are drawn from one face on every machine (ref/frame-map.js).
+   The page draws dates (the finish-by line), so every measurement pins the
+   page's clock to noon UTC on the day its reference records as `captured`
+   (template T0, John, 15 Nov). Unpinned, the guard failed once "finish by Jan
+   2027" became "Feb 2027", 0.7 px wider.
    Re-capture only after John has seen the difference: ref/capture-frame.js. */
 'use strict';
 const fs = require('fs');
@@ -21,7 +25,7 @@ const path = require('path');
 const { ROOT, FIX, ROOT_DATASET, build, loadData } = require('../lib/helpers');
 const { serve, open, closeBrowser } = require('./lib');
 const FM = require('./ref/frame-map');
-const { measureAll } = require('./ref/capture-frame');
+const { measureAll, noon } = require('./ref/capture-frame');
 
 function check(t, name, ref, got) {
   t.ok(name + ': the reference is on the v9 frame, at every width and in every view', ref.frame === 'v9' &&
@@ -38,8 +42,9 @@ module.exports = async function (t) {
     const dir = path.join(FIX, 'sig-v9'), ref = JSON.parse(fs.readFileSync(path.join(dir, 'frame-ref.json'), 'utf8'));
     const b = build(path.join(dir, 'dataset.json'), { label: 'sig-v9' });
     t.eq('the sig-v9 fixture builds, its signature skin on the v9 frame', [b.status, loadData(b.out).signature.frame], [0, 'v9']);
+    t.ok('the reference records the day it was captured (' + ref.captured + '): the page draws dates, so it is measured at that day', /^\d{4}-\d{2}-\d{2}$/.test(ref.captured || ''));
     let srv = await serve(b.out);
-    const got = await measureAll(srv.url, loadData(b.out));
+    const got = await measureAll(srv.url, loadData(b.out), ref.captured);
     await srv.close();
     t.ok('…and draws the page on it (data-frame="v9", in the signature skin)', FM.WIDTHS.every(w => FM.VIEWS.every(v => got[w][v].frame === 'v9' && got[w][v].skin === 'signature')));
     check(t, 'sig-v9', ref, got);
@@ -50,7 +55,8 @@ module.exports = async function (t) {
 
     // ------------------------------------------------ a skin change that crosses frames draws it all again
     srv = await serve(b.out);
-    const pg = await open(srv.url, { width: 390, height: 844, reducedMotion: 'reduce', storage: FM.seed(loadData(b.out)) });
+    const pg = await open(srv.url, { width: 390, height: 844, reducedMotion: 'reduce', storage: FM.seed(loadData(b.out)), at: noon(ref.captured) });
+    t.eq('…its clock reads the reference\'s day, so the finish-by dates it draws are the ones recorded', await pg.page.evaluate(() => new Date().toISOString().slice(0, 10)), ref.captured);
     const state = () => pg.page.evaluate(() => ({ root: document.documentElement.getAttribute('data-frame'), list: document.querySelector('#app').getAttribute('data-frame'),
       foot: !!document.querySelector('.era-head .bfoot') }));
     await pg.page.waitForSelector('.era-head');
@@ -79,10 +85,12 @@ module.exports = async function (t) {
     if (sig && sig.frame === 'v9') {
       t.ok('this tracker\'s signature skin is on the v9 frame, and its reference is here (frame-ref.json)', fs.existsSync(own));
       if (fs.existsSync(own)) {
+        const mineRef = JSON.parse(fs.readFileSync(own, 'utf8'));
+        t.ok('…which records the day it was captured (' + mineRef.captured + '), the day it is measured at', /^\d{4}-\d{2}-\d{2}$/.test(mineRef.captured || ''));
         srv = await serve(null);
-        const mine = await measureAll(srv.url, loadData(ROOT));
+        const mine = await measureAll(srv.url, loadData(ROOT), mineRef.captured);
         await srv.close();
-        check(t, ROOT_DATASET.franchise.wordmark, JSON.parse(fs.readFileSync(own, 'utf8')), mine);
+        check(t, ROOT_DATASET.franchise.wordmark, mineRef, mine);
       }
     } else {
       t.ok('the repo\'s own skin isn\'t on the v9 frame: only the fixture is held to it', true);

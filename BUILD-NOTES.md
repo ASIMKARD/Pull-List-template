@@ -95,6 +95,11 @@ are in `schema/dataset.schema.json`.
     beside its `dataset.json` when its skin is on the v9 frame. Re-capture (`node test/layout/ref/capture-frame.js`) only after John
     has seen the difference. A tracker moving onto this template with its own skin
     on the v9 frame captures its reference from its old version (`MIGRATING.md` §5).
+  - **The clock is pinned to the reference's day (John, 15 Nov; template T0).**
+    - The page draws dates: the finish-by line.
+    - So every v9-frame measurement runs with Chromium's clock fixed at noon UTC on the day the reference records as `captured`. That covers the capture itself, a `--compare`, and the guard.
+    - It is set with `open()`'s `at` in `test/layout/lib.js` (Playwright's `clock.setFixedTime`).
+    - Unpinned, the guard failed from 14–15 Nov, when the fixture's "finish by Jan 2027" became "Feb 2027", 0.7 px wider. No reference changed.
   - The v9 frame keeps v9's 6 px mini bar, on by default; the x frame's is 3 px and
     off by default, as the reference tracker's (John, 13, 24 and 28 Oct). The
     Display summary names the mini bar only when it isn't its frame's default.
