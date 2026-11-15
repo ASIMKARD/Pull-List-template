@@ -3,8 +3,28 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1720 assertions, 0 failed, 37 suites (session 8, the template PR: the X-Men layout for the shared skins, Absolute's own skin kept on v9's). **Layout suite (real Chromium, in CI too):** 468 checks, 0 failed, 12 suites.
+**Harness:** 1720 assertions, 0 failed, 37 suites (session 8, the template PR: the X-Men layout for the shared skins, Absolute's own skin kept on v9's). **Layout suite (real Chromium, in CI too):** 470 checks, 0 failed, 12 suites (T0, 15 Nov: +2 in 47-frame-v9).
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
+
+---
+
+## 15 Nov 2026 — T0: the v9-frame guard's clock is pinned (John, from Green Lantern #1)
+
+- **Found by Green Lantern #1:** `test/layout/47-frame-v9` began failing on 14 or 15 Nov, with no change to any file.
+  - The sig-v9 fixture's finish-by line is worked out from today's date.
+  - When the reference was recorded on 28 Oct, the line read "finish by Jan 2027", 107 px wide.
+  - It now reads "Feb 2027", 107.7 px wide (measured in Chromium with the clock pinned to each date).
+  - CI was green on 13 Nov (`f7ae723`), and the next push anywhere would have failed.
+- **Decided (John, 15 Nov):** pin the test's clock to the date its reference was recorded, and change no recorded reference. It goes in as its own template PR, before T1.
+- **Built:**
+  - `test/layout/lib.js`: `open()` takes `at`, which calls Playwright's `clock.setFixedTime`, so Date reads it and timers still run.
+  - `test/layout/ref/capture-frame.js`: `measureAll(url, D, day)` measures at noon UTC on `day`. A capture records today and measures at it, and `--compare` measures at the compared reference's day.
+  - `test/layout/47-frame-v9.test.js`:
+    - the fixture, the round-trip page and a tracker's own reference are each measured at the reference's `captured` day;
+    - two new checks: each reference records its day, and the page's clock reads it.
+  - `BUILD-NOTES.md`, "Two frames": the pinned clock.
+- **Proved by putting the bug back:** with the pin removed, the guard fails 3 times, the original 2 and the new clock check. With it, it passes. No `frame-ref.json` changed.
+- **Trackers:** each picks this up when it next copies the template. Absolute's own CI runs the same guard, so it fails on its next push until then. Its shell files change only with John's say-so.
 
 ---
 

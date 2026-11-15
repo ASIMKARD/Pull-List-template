@@ -85,12 +85,16 @@ function serve(dataDir, opts) {
 
 /* A page at a width, with storage seeded BEFORE load (CLAUDE.md: writing it
    while the page is open is overwritten by the pagehide flush). Collects page
-   errors and console errors (L-9). */
+   errors and console errors (L-9). `at` (an ISO date-time) pins the page's
+   clock: Date and Date.now read it, timers still run (Playwright's
+   clock.setFixedTime). A measurement compared with a recorded reference pins it
+   to the reference's day, because the page draws dates (finish by …). */
 async function open(url, opts) {
   opts = opts || {};
   const b = await browser();
   const ctx = await b.newContext({ viewport: { width: opts.width || 390, height: opts.height || 800 },
                                    reducedMotion: opts.reducedMotion || 'no-preference' });
+  if (opts.at) await ctx.clock.setFixedTime(new Date(opts.at));
   if (opts.storage) {
     await ctx.addInitScript(s => { if (!sessionStorage.getItem('__seeded')) { for (const k of Object.keys(s)) localStorage.setItem(k, s[k]); sessionStorage.setItem('__seeded', '1'); } }, opts.storage);
   }

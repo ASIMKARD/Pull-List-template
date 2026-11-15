@@ -31,11 +31,18 @@ function serveDir(dir) {
   });
 }
 
-/* Measure one served tracker at every width. D is its data (for the seed). */
-async function measureAll(url, D) {
+/* Noon UTC on a recorded day, for a pinned clock; none without a day. */
+function noon(day) { return day ? day + 'T12:00:00Z' : null; }
+
+/* Measure one served tracker at every width. D is its data (for the seed). `day`
+   (YYYY-MM-DD) pins the page's clock to noon UTC that day: the page draws dates
+   (the finish-by line), so a reference is measured, and compared, at the day it
+   records as `captured` (template T0, 15 Nov: unpinned, 47-frame-v9 failed once
+   the finish-by month changed). */
+async function measureAll(url, D, day) {
   const measured = {};
   for (const w of FM.WIDTHS) {
-    const pg = await open(url, { width: w, height: FM.HEIGHTS[w], reducedMotion: 'reduce', storage: FM.seed(D) });
+    const pg = await open(url, { width: w, height: FM.HEIGHTS[w], reducedMotion: 'reduce', storage: FM.seed(D), at: noon(day) });
     measured[w] = await FM.measurePage(pg.page);
     if (pg.errors.length) throw new Error('page errors at ' + w + ' px: ' + pg.errors.join(' | '));
     await pg.close();
@@ -46,16 +53,16 @@ async function measureAll(url, D) {
 async function measureSource(opts) {
   if (opts.dir) {
     const dir = path.resolve(opts.dir), srv = await serveDir(dir);
-    try { return { source: path.basename(dir), measured: await measureAll(srv.url, loadData(dir)) }; } finally { await srv.close(); }
+    try { return { source: path.basename(dir), measured: await measureAll(srv.url, loadData(dir), opts.day) }; } finally { await srv.close(); }
   }
   if (opts.root) {
     const srv = await serve(null);
-    try { return { source: 'the repo\'s own dataset', measured: await measureAll(srv.url, loadData(ROOT)) }; } finally { await srv.close(); }
+    try { return { source: 'the repo\'s own dataset', measured: await measureAll(srv.url, loadData(ROOT), opts.day) }; } finally { await srv.close(); }
   }
   const b = build(path.resolve(opts.fixture), { label: 'frame-ref' });
   if (b.status !== 0) throw new Error('the fixture does not build:\n' + b.stderr);
   const srv = await serve(b.out);
-  try { return { source: path.relative(ROOT, path.resolve(opts.fixture)), measured: await measureAll(srv.url, loadData(b.out)) }; } finally { await srv.close(); }
+  try { return { source: path.relative(ROOT, path.resolve(opts.fixture)), measured: await measureAll(srv.url, loadData(b.out), opts.day) }; } finally { await srv.close(); }
 }
 
 function diffAll(ref, got) {
@@ -64,14 +71,17 @@ function diffAll(ref, got) {
   return out;
 }
 
-module.exports = { measureSource, measureAll, serveDir, diffAll };
+module.exports = { measureSource, measureAll, serveDir, diffAll, noon };
 
 if (require.main === module) {
   const args = process.argv.slice(2), opt = k => { const i = args.indexOf(k); return i === -1 ? null : args[i + 1]; };
   const opts = { fixture: opt('--fixture'), dir: opt('--dir'), root: args.includes('--root') };
   if (!opts.fixture && !opts.dir && !opts.root) { console.error('usage: capture-frame.js --fixture DATASET | --root | --dir DIR [--out FILE] [--compare FILE]'); process.exit(2); }
+  // a capture records today and measures at it; a comparison measures at the compared reference's day
+  const cmpFile = opt('--compare');
+  opts.day = cmpFile ? JSON.parse(fs.readFileSync(cmpFile, 'utf8')).captured : new Date().toISOString().slice(0, 10);
   measureSource(opts).then(got => {
-    const ref = Object.assign({ frame: 'v9', widths: FM.WIDTHS, views: FM.VIEWS, captured: new Date().toISOString().slice(0, 10) }, got);
+    const ref = Object.assign({ frame: 'v9', widths: FM.WIDTHS, views: FM.VIEWS, captured: opts.day }, got);
     const cmp = opt('--compare');
     if (cmp) {
       const diffs = diffAll(JSON.parse(fs.readFileSync(cmp, 'utf8')), ref);
