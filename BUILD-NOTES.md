@@ -434,6 +434,10 @@ One skin of the tracker's own, from `franchise.signature`:
     (Barebones, the core path) are the overall CORE, exactly as before. With
     characters chosen, both follow those characters' picks (OR). The Characters
     section says so in one line. `9m-scoped-core` covers it.
+  - Only chosen characters who have picks count. If none of them has any, ★ and
+    Barebones stay the overall CORE (John, 21 Nov).
+  - A chosen character's pick shows at every depth, whatever its own, so the depths
+    still nest: Barebones ⊆ Essential ⊆ Everything (John, 21 Nov).
 
 ## The workbook
 

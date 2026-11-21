@@ -142,6 +142,9 @@
     };
   }
   var HAS = buildHas();
+  /* the characters that have core picks (T1): only they scope ★ and Barebones (John, 21 Nov) */
+  var HAS_PICKS = {};
+  D.issueCoreFor.forEach(function (list) { list.forEach(function (c) { HAS_PICKS[c] = true; }); });
   var ORDERS = ['reading'].concat(HAS.publication ? ['publication'] : [], HAS.arcOrder ? ['arc'] : []);
 
   /* ======================================================================
@@ -503,11 +506,23 @@
     return D.issuePresence[i].some(function (p) { return F.chars.indexOf(p[0]) !== -1 && p[1] <= top; });
   }
   /* Per-character CORE (T1): with a character chosen, the core star and the narrowest depth (Barebones, the core
-     path) follow the chosen characters' picks (several chips combine as OR). With none chosen, the overall core. */
-  function scopedCore() { return HAS.coreFor && F.chars.length > 0; }
-  function coreForChosen(i) { return D.issueCoreFor[i].some(function (c) { return F.chars.indexOf(c) !== -1; }); }
+     path) follow the chosen characters' picks (several chips combine as OR). With none chosen, the overall core.
+     - Only chosen characters who have picks count; if none of them has any, ★ and Barebones are the overall core,
+       as with no character chosen (John, 21 Nov).
+     - A chosen character's pick shows at every depth, so the depths still nest: Barebones ⊆ Essential ⊆ Everything
+       (John, 21 Nov). */
+  function pickChars() { return F.chars.filter(function (c) { return HAS_PICKS[c]; }); }
+  function scopedCore() { return HAS.coreFor && pickChars().length > 0; }
+  function coreForChosen(i) {
+    var cs = pickChars();
+    return D.issueCoreFor[i].some(function (c) { return cs.indexOf(c) !== -1; });
+  }
   function isCore(i) { return scopedCore() ? coreForChosen(i) : !!D.issues[i][5]; }
-  function tierOk(i, ti) { return scopedCore() && ti === 0 ? coreForChosen(i) : D.issueTier[i] <= ti; }
+  function tierOk(i, ti) {
+    if (!scopedCore()) return D.issueTier[i] <= ti;
+    if (coreForChosen(i)) return true;                          // a chosen character's pick: every depth
+    return ti > 0 && D.issueTier[i] <= ti;                      // Barebones is the picks alone
+  }
   /* What the list shows: plan + browse + display-only. */
   function matches(i) {
     if (!planOk(i) || !browseOk(i)) return false;

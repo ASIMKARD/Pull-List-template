@@ -3,7 +3,7 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1752 assertions, 0 failed, 38 suites (T1 + T2, 21 Nov). **Layout suite (real Chromium, in CI too):** 470 checks, 0 failed, 12 suites (T0, 15 Nov: +2 in 47-frame-v9).
+**Harness:** 1765 assertions, 0 failed, 38 suites (T1 + T2, 21 Nov). **Layout suite (real Chromium, in CI too):** 470 checks, 0 failed, 12 suites (T0, 15 Nov: +2 in 47-frame-v9).
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
 
 ---
@@ -43,6 +43,11 @@ Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (
   | the Core for column left empty | 1 |
 
   Every file is restored.
+- **John's review of #13 (21 Nov), two changes before the merge:**
+  1. **A bug: with a character chosen, the depths stopped nesting.** Vela's pick Vela and Orrin (1984) #1, whose own depth is Everything, showed at Barebones and Everything but not at Essential. Now a chosen character's pick passes `tierOk` at every depth. A new 9m check asserts Barebones ⊆ Essential ⊆ Everything row by row; with the bug put back, 2 checks fail.
+  2. **His decision:** if none of the chosen characters has any picks, ★ and Barebones fall back to the overall core; with several chosen, only those with picks count (`pickChars`). The fixture's Kestrel now has none: her two picks moved, and Orrin gained one on a row where he is minor. With the bug put back, 3 checks fail.
+
+  `9m-scoped-core` now has 32 checks.
 - **Trackers:** each picks this up when it next copies the template. A tracker without `coreFor` draws the same page. Its `data.js` gains an empty `issueCoreFor`, and "Include cameos" becomes "Including cameos", next to "Appearances" and, where both grades are used, "Lead".
 
 ---
