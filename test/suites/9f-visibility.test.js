@@ -33,7 +33,9 @@ const ROWS = [
   { cap: ['presence', 'strands'], tab: 'list', what: 'Characters section', has: d => any(d, '.fsec[data-k="chars"]') },
   { cap: 'presence', tab: 'list', what: 'appearance chips', has: d => label(d, 'Appearances') },
   { cap: 'strands', tab: 'list', what: 'strand chips', has: d => label(d, 'Strands') || any(d, '#fsecs .chip[data-k="strands"]') },
-  { cap: 'cameos', tab: 'list', what: 'Include cameos', has: d => any(d, '#fsecs .chip[data-k="cameos"]') },
+  { cap: 'cameos', tab: 'list', what: 'Including cameos (T2)', has: d => any(d, '#fsecs .chip[data-k="appear"][data-v="cameos"]') },
+  { cap: 'lead', tab: 'list', what: 'Lead (T2: major and minor grades both in use)', has: d => any(d, '#fsecs .chip[data-k="appear"][data-v="lead"]') },
+  { cap: 'coreFor', tab: 'list', what: 'per-character core hint (T1)', has: d => any(d, '#fsecs .corehint') },
   // creators
   { cap: 'credits', tab: 'list', what: 'Creators section', has: d => any(d, '.fsec[data-k="creators"]') },
   { cap: 'credits', tab: 'list', what: 'tappable creator names', has: d => any(d, '#app .cname') },
@@ -98,7 +100,7 @@ const ALWAYS = [
 ];
 /* A capability whose controls live inside another's section is forced
    together with it. */
-const REQUIRES = { cameos: ['presence'] };
+const REQUIRES = { cameos: ['presence'], lead: ['presence'], coreFor: ['presence'] };
 /* Settings that make a capability's control show when it is offered. */
 const SEED = { progressMode: 'medium', eraNav: 'chips', reveal: true, gapNotes: true, banner: true };
 

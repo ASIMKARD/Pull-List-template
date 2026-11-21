@@ -41,6 +41,9 @@
      "grade": "minor"
     }
    ],
+   "coreFor": [
+    "vela"
+   ],
    "seq": 1
   },
   {

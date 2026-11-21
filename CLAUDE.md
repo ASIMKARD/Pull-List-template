@@ -178,7 +178,8 @@ a running log of what it did, and a word-for-word archive of the session.
     - no era jump bar with only one era.
   - **Extended (accepted 4 Oct).** Each control needs:
     - depth, type and strand chips: two or more in use;
-    - "Include cameos": cameo data;
+    - "Including cameos": cameo data; "Lead": both major and minor grades in use (T2);
+    - the per-character core hint: `coreFor` data (T1);
     - "Mandatory only": both mandatory and optional rows;
     - "Notes only" and tap to reveal: notes;
     - "Gap notes": a gap note;

@@ -3,11 +3,49 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1720 assertions, 0 failed, 37 suites (session 8, the template PR: the X-Men layout for the shared skins, Absolute's own skin kept on v9's). **Layout suite (real Chromium, in CI too):** 470 checks, 0 failed, 12 suites (T0, 15 Nov: +2 in 47-frame-v9).
+**Harness:** 1752 assertions, 0 failed, 38 suites (T1 + T2, 21 Nov). **Layout suite (real Chromium, in CI too):** 470 checks, 0 failed, 12 suites (T0, 15 Nov: +2 in 47-frame-v9).
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
 
 ---
 
+## 21 Nov 2026 — T1 + T2: per-character CORE, "Lead" appearances, the workbook's new columns (John, from Green Lantern #1)
+
+- **Decided (John, 14 and 15 Nov):** T1 done from Green Lantern before its stage 2, as its own template PR, with T2 ("Lead only") added; pasted to John before he merges it. The design note is Research-Repo `sessions/2026-11-14-green-lantern/t1-design.md`.
+- **T1, data:** `rows[].coreFor`, a unique list of character ids (`schema/dataset.schema.json`). `tools/build.py` fails a name that isn't a character or isn't in the row's presence as major or minor, and emits `issueCoreFor`.
+- **T1, app:**
+  - `HAS.coreFor`.
+  - With characters chosen, ★ (badge, x-frame star, Reading card) and the narrowest depth (`tierOk`) follow their `coreFor` picks, OR across chips. With none, the overall CORE.
+  - The depth chip counts follow too.
+  - A one-line hint under the character chips.
+  - The stale-mix check now also needs `issueCoreFor`.
+- **T2:**
+  - "Counts as an appearance" is Lead / Appearances / Including cameos (`filters.appear`, saved by name). It replaces the Include cameos chip.
+  - Lead needs both major and minor grades in the data (`HAS.lead`).
+  - An old `cameos: true` reads as Including cameos.
+- **The workbook:** the Reading Order sheet gains Strands, Core for, Presence and Importance (30 columns). `24-workbook` names columns past Z properly (AA, AB …).
+- **Tests:**
+  - `20`/`60`: three broken cases, `corefor-unknown-character`, `corefor-cameo-only`, `corefor-not-present`.
+  - New `9m-scoped-core` (19 checks).
+  - `9d-story-filters`: the three choices.
+  - `92-filters`: saved by name, the old flag read, an unknown value ignored.
+  - `9f-visibility`: rows for `lead` and `coreFor`.
+  - `24-workbook`: the four columns.
+  - The `basic` fixture gains `coreFor` on five rows.
+- **Proved by putting each bug back:**
+
+  | Bug put back | Checks that fail |
+  |---|---|
+  | ★ ignores the chosen characters | 3 |
+  | Barebones ignores them | 6 |
+  | Lead counts minor too | 2 |
+  | the old save not read | 2 |
+  | the build doesn't check `coreFor` | 3 |
+  | the Core for column left empty | 1 |
+
+  Every file is restored.
+- **Trackers:** each picks this up when it next copies the template. A tracker without `coreFor` draws the same page. Its `data.js` gains an empty `issueCoreFor`, and "Include cameos" becomes "Including cameos", next to "Appearances" and, where both grades are used, "Lead".
+
+---
 ## 15 Nov 2026 — T0: the v9-frame guard's clock is pinned (John, from Green Lantern #1)
 
 - **Found by Green Lantern #1:** `test/layout/47-frame-v9` began failing on 14 or 15 Nov, with no change to any file.

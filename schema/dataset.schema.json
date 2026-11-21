@@ -780,6 +780,14 @@
     "presence": {
      "$ref": "#/$defs/presence"
     },
+    "coreFor": {
+     "type": "array",
+     "uniqueItems": true,
+     "items": {
+      "$ref": "#/$defs/slug"
+     },
+     "description": "Per-character CORE (T1): the characters this issue is core for. Each must be in the row's presence as major or minor. With a character chosen, the core star and the Barebones depth follow these picks."
+    },
     "importance": {
      "$ref": "#/$defs/oneToFive"
     },

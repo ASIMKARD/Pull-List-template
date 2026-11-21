@@ -1153,6 +1153,18 @@ def build(dataset_path, previous_datajs=None, keep=None):
             if p.get('who') in seen_who:
                 errs.append('%s: %s listed twice in presence' % (w, p.get('who')))
             seen_who.add(p.get('who'))
+        # per-character CORE (T1): each name is a character this row has as major or minor; a cameo can't be core
+        if 'coreFor' in r:
+            cf = r['coreFor']
+            if not isinstance(cf, list) or not all(isinstance(x, str) for x in cf) or len(set(cf)) != len(cf):
+                errs.append('%s: coreFor must be a list of distinct character ids' % w)
+            else:
+                grade_of = {p.get('who'): p.get('grade') for p in r.get('presence') or []}
+                for who in cf:
+                    if who not in CHAR:
+                        errs.append('%s: coreFor names unknown character %r' % (w, who))
+                    elif grade_of.get(who) not in ('major', 'minor'):
+                        errs.append('%s: coreFor names %s, who is not in its presence as major or minor' % (w, who))
 
     if errs:
         raise BuildError(errs)
@@ -1369,6 +1381,7 @@ def build(dataset_path, previous_datajs=None, keep=None):
         'issueCompleteOnly': [0 if r.get('_essential', True) else 1 for r in rows],
         'issuePresence': [[[CHAR[p['who']], GRADES.index(p['grade'])] for p in (r.get('presence') or [])]
                           for r in rows],
+        'issueCoreFor': [[CHAR[c] for c in (r.get('coreFor') or [])] for r in rows],   # per-character CORE (T1)
         'issueWriters': [[CI[n] for n in r['_w']] for r in rows],
         'issueArtists': [[CI[n] for n in r['_a']] for r in rows],
         'creators': [{'n': n, 'w': creators[n][0], 'a': creators[n][1]} for n in creator_names],

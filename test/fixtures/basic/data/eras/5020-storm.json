@@ -22,6 +22,9 @@
      "who": "kestrel",
      "grade": "minor"
     }
+   ],
+   "coreFor": [
+    "kestrel"
    ]
   },
   {
@@ -238,6 +241,9 @@
      "who": "kestrel",
      "grade": "major"
     }
+   ],
+   "coreFor": [
+    "kestrel"
    ]
   },
   {

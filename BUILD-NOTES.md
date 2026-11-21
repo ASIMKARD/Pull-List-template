@@ -409,10 +409,38 @@ One skin of the tracker's own, from `franchise.signature`:
 - 45-pull: two Settings differences are left, each ruled; no `step` entry remains anywhere. After this step: 1900 match,
   80 listed.
 
+## Characters: appearances and per-character CORE (T1, T2)
+
+- **Appearances.** A row's `presence` lists `{who, grade}`, grades `major`, `minor`
+  or `cameo`. Characters → Appearances offers a chip per character (several combine
+  as OR), as a browse filter.
+- **What counts as an appearance (T2).** A three-way choice under the chips:
+  - **Lead:** major only;
+  - **Appearances:** major and minor, the default;
+  - **Including cameos.**
+
+  It is saved by name (`filters.appear`). Lead is offered only when the data uses
+  both major and minor grades (`HAS.lead`), and Including cameos only with cameo data
+  (`HAS.cameos`). A save from before T2 (`filters.cameos: true`) reads as Including
+  cameos and is never written again.
+- **Per-character CORE (T1).** A row's `coreFor` names the characters it is core
+  for: "the best of Kestrel" as distinct from the tracker's overall `core`.
+  - The build fails when a name isn't a character, or isn't in the row's presence
+    as major or minor (a cameo can't be core): `test/fixtures/broken/corefor-unknown-character/`,
+    `test/fixtures/broken/corefor-cameo-only/` and `test/fixtures/broken/corefor-not-present/`.
+  - `data.js` carries `issueCoreFor`, one list of character indices per row, empty
+    when no row names any.
+  - In the app (`HAS.coreFor`): with no character chosen, ★ and the narrowest depth
+    (Barebones, the core path) are the overall CORE, exactly as before. With
+    characters chosen, both follow those characters' picks (OR). The Characters
+    section says so in one line. `9m-scoped-core` covers it.
+
 ## The workbook
 
 - `tools/build_workbook.py` writes five sheets (Reading Order, Arcs, Eras,
-  Creators, Events), each with named, bold, frozen, filterable headers.
+  Creators, Events), each with named, bold, frozen, filterable headers. The
+  Reading Order sheet has 30 columns, including Strands, Core for, Presence
+  ("Vela (major); Orrin (minor)") and Importance (the row's own, else its arc's).
   Bytes are deterministic (parts stored, fixed timestamps), so `--check` can
   cover it. Read it by header name; `--shuffle-columns` proves a reader does.
 - Web-app-only trackers turn it off: `"deliverables": {"workbook": false}`. The
