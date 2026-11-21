@@ -53,6 +53,9 @@
      "who": "orrin",
      "grade": "major"
     }
+   ],
+   "coreFor": [
+    "orrin"
    ]
   },
   {
@@ -131,6 +134,10 @@
      "who": "orrin",
      "grade": "major"
     }
+   ],
+   "coreFor": [
+    "vela",
+    "orrin"
    ]
   },
   {

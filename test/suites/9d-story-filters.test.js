@@ -1,8 +1,8 @@
 /* Story, character and creator filters; presets (session 3, step 7).
    - Essential / Complete (V-10, FP-4): a PLAN setting. Totals follow it; in
      Essential view the event's own heading says "Complete view adds N".
-   - Appearances (V-11, FP-5): BROWSE. Meaningful (major + minor) by default,
-     cameos on request.
+   - Appearances (V-11, FP-5): BROWSE. Meaningful (major + minor) by default;
+     "Counts as an appearance" (T2) narrows to Lead or adds cameos.
    - Creators (CR-7/8/10): a picker with counts and a writers / artists
      switch; tapping a credited name filters to that creator's work exactly.
    - Presets (F-22, S-24, FP-9): saved by name, applied, deleted with Undo.
@@ -63,16 +63,23 @@ module.exports = async function (t) {
   // ------------------------------------------------ appearances
   t.eq('Characters: strands, then a chip per character (T-70 with presence)', $$('#fsec-chars .chip[data-k="chars"]').map(c => c.textContent), D.characters);
   const kest = D.characters.indexOf('Kestrel');
-  const withK = cameos => all.filter(i => essential(i) && D.issuePresence[i].some(p => p[0] === kest && (p[1] < 2 || cameos))).length;
+  const withK = top => all.filter(i => essential(i) && D.issuePresence[i].some(p => p[0] === kest && p[1] <= top)).length;   // 0 major, 1 minor, 2 cameo
   $(`#fsec-chars .chip[data-k="chars"][data-v="${kest}"]`).click();
-  t.ok('a character shows their meaningful appearances (major + minor) by default (V-11)', showing() === withK(false) && withK(false) === 13, showing());
+  t.ok('a character shows their meaningful appearances (major + minor) by default (V-11)', showing() === withK(1) && withK(1) === 13, showing());
   t.ok('appearances are a browse filter: marked "filtered"', marked());
-  $('#fsec-chars .chip[data-k="cameos"]').click();
-  t.ok('Include cameos adds the cameo appearances (FP-5)', showing() === withK(true) && withK(true) === 17, showing());
+  t.eq('Counts as an appearance: Lead, Appearances (pressed), Including cameos (T2)',
+       $$('#fsec-chars .chip[data-k="appear"]').map(c => c.textContent + (c.getAttribute('aria-pressed') === 'true' ? ' *' : '')), ['Lead', 'Appearances *', 'Including cameos']);
+  $('#fsec-chars .chip[data-k="appear"][data-v="lead"]').click();
+  t.ok('Lead counts major appearances only (T2)', showing() === withK(0) && withK(0) === 3, showing());
+  t.ok('…the chip and summary say so', $$('#fchips .chip').some(c => /Kestrel \(lead\)/.test(c.textContent)) &&
+       /Kestrel as lead/.test($('#fsecs .sec-head[data-k="chars"] .sec-sum').textContent));
+  $('#fsec-chars .chip[data-k="appear"][data-v="cameos"]').click();
+  t.ok('Including cameos adds the cameo appearances (FP-5)', showing() === withK(2) && withK(2) === 17, showing());
   t.ok('the chip and summary say so', $$('#fchips .chip').some(c => /Kestrel \(incl\. cameos\)/.test(c.textContent)) &&
        /Kestrel incl\. cameos/.test($('#fsecs .sec-head[data-k="chars"] .sec-sum').textContent));
   const st1 = stored();
-  t.ok('stored by name, like every saved filter', JSON.stringify(st1.filters.chars) === '["Kestrel"]' && st1.filters.cameos === true);
+  t.ok('stored by name, like every saved filter', JSON.stringify(st1.filters.chars) === '["Kestrel"]' && st1.filters.appear === 'cameos' &&
+       !('cameos' in st1.filters));
   $('[data-act="clear"]').click();
   ['story', 'chars', 'creators'].forEach(k => { if ($(`#fsecs .sec-head[data-k="${k}"]`).getAttribute('aria-expanded') !== 'true') $(`#fsecs .sec-head[data-k="${k}"]`).click(); });
 

@@ -119,6 +119,10 @@
       presence: some(function (i) { return D.issuePresence[i].length > 0; }),   // appearance chips
       strands: distinct([].concat.apply([], D.arcs.map(function (a) { return a.s; }))) > 1,
       cameos: some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 2; }); }),
+      /* "Lead" (T2) needs both grades to tell apart: some major and some minor appearances */
+      lead: some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 0; }); }) &&
+            some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 1; }); }),
+      coreFor: some(function (i) { return D.issueCoreFor[i].length > 0; }),   // per-character CORE (T1)
       credits: D.creators.length > 0,        // Creators section, tappable names, "creators" in the search hint
       events: D.issueCompleteOnly.some(Boolean),            // Essential / Complete changes what is in view
       alt: HAS_ALT,
@@ -138,6 +142,9 @@
     };
   }
   var HAS = buildHas();
+  /* the characters that have core picks (T1): only they scope ★ and Barebones (John, 21 Nov) */
+  var HAS_PICKS = {};
+  D.issueCoreFor.forEach(function (list) { list.forEach(function (c) { HAS_PICKS[c] = true; }); });
   var ORDERS = ['reading'].concat(HAS.publication ? ['publication'] : [], HAS.arcOrder ? ['arc'] : []);
 
   /* ======================================================================
@@ -174,10 +181,13 @@
   function defaultFilters() {
     return { q: '', creator: '', tier: D.tiers.length - 1, unread: false, hideSkip: false, mandatory: false,
              eras: [], types: [], media: [], strands: [], alt: true, notesOnly: false,
-             chars: [], cameos: false, role: 'any', creatorExact: false };
+             chars: [], appear: 'appearances', role: 'any', creatorExact: false };
   }
   var PERSISTED_FILTERS = ['tier', 'unread', 'hideSkip', 'mandatory', 'eras', 'types', 'media', 'strands', 'alt', 'notesOnly',
-                           'chars', 'cameos'];
+                           'chars', 'appear'];
+  /* What counts as an appearance (T2): saved by name. "lead" is major only, "appearances" major and minor (the
+     default), "cameos" all three. Builds before T2 saved a cameos: true flag, read here as "cameos" and never written. */
+  var GRADE_TOP = { lead: 0, appearances: 1, cameos: 2 };
   var progress = load('progress', null) || { marks: {}, bookmarks: [] };
   progress.marks = progress.marks || {};
   progress.bookmarks = progress.bookmarks || [];
@@ -277,7 +287,7 @@
   }
   /* A saved filter whose control isn't offered (data-driven visibility) is
      ignored: nothing can filter through a control you can't see. */
-  var FILTER_CAP = { tier: 'tiers', types: 'types', media: 'media', strands: 'strands', chars: 'presence', cameos: 'cameos',
+  var FILTER_CAP = { tier: 'tiers', types: 'types', media: 'media', strands: 'strands', chars: 'presence',
                      alt: 'alt', mandatory: 'mandatory', notesOnly: 'notes', eras: 'eras' };
   function filtersFromSettings() {
     var saved = settings.filters || {};
@@ -285,9 +295,15 @@
     PERSISTED_FILTERS.forEach(function (k) {
       if (saved[k] === undefined || (FILTER_CAP[k] && !HAS[FILTER_CAP[k]])) return;
       if (k === 'tier') { var ti = D.tiers.indexOf(saved.tier); if (ti !== -1) F.tier = ti; }
+      else if (k === 'appear') { if (appearOffered(saved.appear)) F.appear = saved.appear; }
       else if (FILTER_VOCAB[k]) F[k] = toIdx(k, saved[k]);
       else F[k] = !!saved[k];
     });
+    if (saved.appear === undefined && saved.cameos === true && appearOffered('cameos')) F.appear = 'cameos';   // a save from before T2
+  }
+  /* a saved choice for a control that isn't offered is ignored (data-driven visibility) */
+  function appearOffered(v) {
+    return v === 'appearances' || (v === 'lead' && HAS.presence && HAS.lead) || (v === 'cameos' && HAS.presence && HAS.cameos);
   }
   filtersFromSettings();
   function saveSettings() {
@@ -456,7 +472,7 @@
     if (!inView(i)) return false;
     if (!F.alt && (r[6] & FL.ALT)) return false;
     if (isInert(i)) return true;
-    if (D.issueTier[i] > F.tier) return false;
+    if (!tierOk(i, F.tier)) return false;
     if (F.mandatory && !r[4]) return false;
     if (F.hideSkip && stateOf(i) === 'skip') return false;
     if (F.media.length && F.media.indexOf(D.issueMedium[i]) === -1) return false;
@@ -484,9 +500,28 @@
     var hay = F.role === 'w' ? W_HAY[i] : F.role === 'a' ? A_HAY[i] : CREATORS_HAY[i];
     return hay.indexOf(F.creator.toLowerCase()) !== -1;
   }
-  /* Appearances (V-11, FP-5): meaningful = major or minor; cameos only when asked. */
+  /* Appearances (V-11, FP-5; T2): by default major or minor; "Lead" narrows to major, "Including cameos" adds cameos. */
   function presenceOk(i) {
-    return D.issuePresence[i].some(function (p) { return F.chars.indexOf(p[0]) !== -1 && (p[1] < 2 || F.cameos); });
+    var top = GRADE_TOP[F.appear];
+    return D.issuePresence[i].some(function (p) { return F.chars.indexOf(p[0]) !== -1 && p[1] <= top; });
+  }
+  /* Per-character CORE (T1): with a character chosen, the core star and the narrowest depth (Barebones, the core
+     path) follow the chosen characters' picks (several chips combine as OR). With none chosen, the overall core.
+     - Only chosen characters who have picks count; if none of them has any, ★ and Barebones are the overall core,
+       as with no character chosen (John, 21 Nov).
+     - A chosen character's pick shows at every depth, so the depths still nest: Barebones ⊆ Essential ⊆ Everything
+       (John, 21 Nov). */
+  function pickChars() { return F.chars.filter(function (c) { return HAS_PICKS[c]; }); }
+  function scopedCore() { return HAS.coreFor && pickChars().length > 0; }
+  function coreForChosen(i) {
+    var cs = pickChars();
+    return D.issueCoreFor[i].some(function (c) { return cs.indexOf(c) !== -1; });
+  }
+  function isCore(i) { return scopedCore() ? coreForChosen(i) : !!D.issues[i][5]; }
+  function tierOk(i, ti) {
+    if (!scopedCore()) return D.issueTier[i] <= ti;
+    if (coreForChosen(i)) return true;                          // a chosen character's pick: every depth
+    return ti > 0 && D.issueTier[i] <= ti;                      // Barebones is the picks alone
   }
   /* What the list shows: plan + browse + display-only. */
   function matches(i) {
@@ -696,7 +731,7 @@
     }
     var st = stateOf(i), bm = progress.bookmarks.indexOf(id) !== -1;
     var badges = '';
-    if (r[5]) badges += '<span class="b core">★<span class="b-t"> core</span></span>';
+    if (isCore(i)) badges += '<span class="b core">★<span class="b-t"> core</span></span>';
     if (flags & FL.FB) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" aria-label="Flashback note" data-note="' +
       escapeAttr(r[7] || 'Published later than it reads: this story fills in earlier events.') + '">↺<span class="b-t"> flashback</span></button>';
     if (flags & FL.ALT) badges += '<button type="button" class="b note" data-act="note" aria-expanded="false" data-note="' +
@@ -740,7 +775,7 @@
     return '<div class="row"' + attrs + ' data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' + glyph(st) + '</button>' +
       '<div class="rbody"><span class="title">' + escapeHtml(r[1]) + '</span>' +
-      (r[5] ? '<span class="core-star" role="img" aria-label="core">★</span>' : '') +
+      (isCore(i) ? '<span class="core-star" role="img" aria-label="core">★</span>' : '') +
       (settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '') +
       (note ? '<p class="subnote"' + (hide ? ' hidden' : '') + '>' + (kind ? '<span class="subkind">' + kind + '</span> · ' : '') + escapeHtml(note) + '</p>' : '') +
       '</div><span class="badges">' + acts + '</span></div>';
@@ -1047,13 +1082,15 @@
     }
     if (k === 'chars') {
       if (F.strands.length) bits.push(names(F.strands, function (s) { return D.strands[s]; }));
-      if (F.chars.length) bits.push(names(F.chars, function (c) { return D.characters[c]; }) + (F.cameos ? ' incl. cameos' : ''));
+      if (F.chars.length) bits.push(names(F.chars, function (c) { return D.characters[c]; }) + APPEAR_SUM[F.appear]);
       return bits.join(' · ');
     }
     if (k === 'creators') return F.creator ? '“' + F.creator + '”' + ROLE_NOTE[F.role] : (F.role !== 'any' ? ROLE_LABEL[F.role].toLowerCase() + ' only' : '');
     return orderLabel(settings.order);
   }
   var SUMMARY_DEFAULT = { reading: 'All issues', story: 'Everything', chars: 'All characters', creators: 'All creators' };
+  var APPEAR_SUM = { lead: ' as lead', appearances: '', cameos: ' incl. cameos' };
+  var APPEAR_CHIP = { lead: ' (lead)', appearances: '', cameos: ' (incl. cameos)' };
   var ROLE_LABEL = { any: 'Writers and artists', w: 'Writers', a: 'Artists' };
   var ROLE_NOTE = { any: '', w: ' as writer', a: ' as artist' };
 
@@ -1071,7 +1108,7 @@
     F.types.forEach(function (t) { c.push(['types', t, D.types[t].toLowerCase()]); });
     F.media.forEach(function (m) { c.push(['media', m, mediumLabel(m)]); });
     F.strands.forEach(function (s) { c.push(['strands', s, D.strands[s]]); });
-    F.chars.forEach(function (ch) { c.push(['chars', ch, D.characters[ch] + (F.cameos ? ' (incl. cameos)' : '')]); });
+    F.chars.forEach(function (ch) { c.push(['chars', ch, D.characters[ch] + APPEAR_CHIP[F.appear]]); });
     if (!F.alt) c.push(['alt', '', 'No alternate stories']);
     return c;
   }
@@ -1098,7 +1135,7 @@
       if (HAS.tiers) {
         h += '<div class="flabel">Depth</div><div class="depthrow">';    // one row that never wraps (T-95)
         D.tiers.forEach(function (t, ti) {
-          h += tierChip(ti, t, countWhere(function (i) { return D.issueTier[i] <= ti; }));
+          h += tierChip(ti, t, countWhere(function (i) { return tierOk(i, ti); }));
         });
         h += '</div>';
       }
@@ -1131,8 +1168,15 @@
       if (HAS.presence) {
         h += '<div class="flabel">Appearances</div>';
         D.characters.forEach(function (c, ci) { h += chip('chars', ci, c, F.chars.indexOf(ci) !== -1); });
+        if (HAS.coreFor) h += '<p class="muted corehint">With a character chosen, ★ core and the ' + escapeHtml(D.tiers[0]) +
+          ' depth show that character’s core picks.</p>';                                          // per-character CORE (T1)
       }
-      if (HAS.cameos) h += '<div class="flabel">Counts as an appearance</div>' + chip('cameos', '', 'Include cameos', F.cameos);
+      if (HAS.presence && (HAS.lead || HAS.cameos)) {             // T2: offered choices only (Lead needs both grades)
+        h += '<div class="flabel">Counts as an appearance</div>' +
+          (HAS.lead ? chip('appear', 'lead', 'Lead', F.appear === 'lead') : '') +
+          chip('appear', 'appearances', 'Appearances', F.appear === 'appearances') +
+          (HAS.cameos ? chip('appear', 'cameos', 'Including cameos', F.appear === 'cameos') : '');
+      }
     } else if (k === 'creators') {
       h += '<input class="search" id="cq" type="search" placeholder="Search writers and artists" aria-label="Search writers and artists" value="' +
         escapeAttr(F.creator) + '" autocomplete="off">';
@@ -1246,6 +1290,7 @@
     }
     else if (k === 'events') settings.events = v === 'complete' ? 'complete' : 'essential';
     else if (k === 'role') F.role = ROLE_LABEL[v] ? v : 'any';
+    else if (k === 'appear') F.appear = appearOffered(v) ? v : 'appearances';
     else if (['eras', 'types', 'media', 'strands', 'chars'].indexOf(k) !== -1) {
       var n = +v, at = F[k].indexOf(n);
       if (on === undefined) on = at === -1;
@@ -1584,7 +1629,7 @@
       '<p class="rpills"><span class="rpill eratok" style="' + eraStyle(e) + '">' + escapeHtml(D.eras[e].name) + '</span>' +
       (HAS.media ? '<span class="rpill rmed">' + escapeHtml(mediumLabel(D.issueMedium[i])) + '</span>' : '') + '</p>' +
       '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
-      '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]] + (r[5] ? ' · ★ CORE' : '')) + '</p>' +
+      '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]] + (isCore(i) ? ' · ★ CORE' : '')) + '</p>' +
       (r[7] ? '<p class="rnote">' + escapeHtml(r[7]) + '</p>' : '') +
       (arc.b ? '<p class="rblurb">' + escapeHtml(arc.b) + '</p>' : '') + '</div>' +
       '<div class="racts">' +
@@ -1836,7 +1881,8 @@
   function staleShell() {
     var beacon = '';
     try { beacon = getComputedStyle(document.documentElement).getPropertyValue('--skin-ok').trim(); } catch (e) { beacon = ''; }
-    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.typeColours && typeof D.version === 'number';
+    var ok = D && D.franchise && D.flagBits && D.ids && D.issues && D.eras && D.arcs && D.pullMono && D.typeColours && D.issueCoreFor &&
+             typeof D.version === 'number';
     if (ok && (beacon === '' || beacon === SKIN_OK)) return false;     // '' = no stylesheet computed yet: the beacon toast covers it
     var app = document.getElementById('app'), stamp = Date.now();
     if (window.__shellRetried) {

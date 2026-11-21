@@ -14,6 +14,8 @@ const { readWorkbook } = require('../lib/xlsx');
 
 const WB = path.join(ROOT, 'tools', 'build_workbook.py');
 const SHEETS = ['Reading Order', 'Arcs', 'Eras', 'Creators', 'Events'];
+/* a spreadsheet column's letters from its 0-based index: A … Z, AA, AB … (the Reading Order sheet passes 26 columns) */
+const colName = n => { let s = ''; for (n += 1; n; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
 const canon = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map(y => [y, x[y]])) : x);
 const minimalWith = (label, extra) => {
   const dir = copyFixture('minimal', label), p = path.join(dir, 'dataset.json'), ds = readJSON(p);
@@ -38,7 +40,7 @@ module.exports = async function (t) {
   }).map(p => p.name);
   t.eq('every part is well-formed XML (' + W.parts.length + ' parts)', bad, []);
   const shape = SHEETS.filter(n => {
-    const s = W.sheets[n], last = String.fromCharCode(64 + s.headers.length), rows = s.records.length + 1;
+    const s = W.sheets[n], last = colName(s.headers.length - 1), rows = s.records.length + 1;
     return !(s.headers.length && new Set(s.headers).size === s.headers.length && s.headers.every(h => typeof h === 'string' && h) &&
              /<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"\/>/.test(s.xml) &&
              s.xml.includes('<autoFilter ref="A1:' + last + rows + '"/>') && /<row r="1">(<c r="[A-Z]+1" s="1" t="inlineStr">.*?<\/c>)+<\/row>/.test(s.xml));
@@ -56,7 +58,11 @@ module.exports = async function (t) {
     const want = { '#': i + 1, 'Issue ID': D.issueIds[i], Title: iss[1], Series: s.series || '', Volume: s.vol || '', Number: s.num === undefined ? '' : String(s.num),
       Era: D.eras[D.issueEra[i]].name, Arc: D.arcs[iss[2]].n, Type: D.types[iss[3]], Mandatory: iss[4] ? 'yes' : 'no', Core: iss[5] ? 'yes' : 'no',
       'Cover date': (s.date || {}).cover || '', 'Date source': (s.date || {}).source || '', Writers: D.issueWriters[i].map(w => names[w]).join('; '),
-      Event: ev >= 0 ? D.events[ev].name : '', 'Complete only': D.issueCompleteOnly[i] ? 'yes' : 'no', Note: iss[7], 'Sort key': iss[0], 'Publication key': iss[8] };
+      Event: ev >= 0 ? D.events[ev].name : '', 'Complete only': D.issueCompleteOnly[i] ? 'yes' : 'no', Note: iss[7], 'Sort key': iss[0], 'Publication key': iss[8],
+      // T1: per-character CORE and the presence, importance and strands columns
+      'Core for': D.issueCoreFor[i].map(c => D.characters[c]).join('; '),
+      Presence: D.issuePresence[i].map(p => D.characters[p[0]] + ' (' + D.grades[p[1]] + ')').join('; '),
+      Importance: D.issueImportance[i] || D.arcs[iss[2]].i || '', Strands: D.arcs[iss[2]].s.map(x => D.strands[x]).join('; ') };
     const off = Object.keys(want).filter(k => r[k] !== want[k]);
     return off.length ? D.ids[i] + ': ' + off.map(k => k + ' ' + JSON.stringify(r[k]) + ' ≠ ' + JSON.stringify(want[k])).join(', ') : null;
   }).filter(Boolean);
@@ -138,7 +144,7 @@ module.exports = async function (t) {
       'print(json.dumps([[ws.title, ws.freeze_panes, ws.auto_filter.ref, ws.max_row, bool(ws["A1"].font.b)] for ws in wb]))'].join('\n'), file], { encoding: 'utf8' });
     const got = r.status === 0 ? JSON.parse(r.stdout) : r.stderr;
     t.eq('openpyxl opens it: sheet names, frozen panes, filters, row counts and bold headers', got,
-         SHEETS.map(n => [n, 'A2', 'A1:' + String.fromCharCode(64 + W.sheets[n].headers.length) + (W.sheets[n].records.length + 1), W.sheets[n].records.length + 1, true]));
+         SHEETS.map(n => [n, 'A2', 'A1:' + colName(W.sheets[n].headers.length - 1) + (W.sheets[n].records.length + 1), W.sheets[n].records.length + 1, true]));
   } else {
     t.ok('no openpyxl here (CI): the workbook\'s structure is checked by the reader above', true);
   }

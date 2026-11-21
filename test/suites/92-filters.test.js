@@ -184,4 +184,29 @@ module.exports = async function (t) {
     t.ok('filters are written back as names, never indices', sf.eras.join() === 'echo' && sf.strands.join() === 'Kestrel' && sf.tier === 'Essential');
     ds.window.close();
   }
+
+  // ---- T2: what counts as an appearance is saved by name; a save from before T2 still reads ----
+  {
+    const kest = D.characters.indexOf('Kestrel');
+    const count = top => D.ids.filter((x, i) => !D.issueCompleteOnly[i] && D.issuePresence[i].some(p => p[0] === kest && p[1] <= top)).length;
+    const bootWith = async filters => {
+      const a = boot(b.out, { storage: { [ns + 'settings']: JSON.stringify({ v: 3, filters }) } });
+      await wait(20);
+      a.document.querySelector('[data-act="panel"]').click();
+      return a;
+    };
+    const shown = a => +(a.document.querySelector('#fshow').textContent.match(/Showing ([\d,]+)/) || [0, '-1'])[1].replace(/,/g, '');
+    const back = a => { a.window.dispatchEvent(new a.window.Event('pagehide')); return JSON.parse(a.window.localStorage.getItem(ns + 'settings')).filters; };
+    let a = await bootWith({ chars: ['Kestrel'], cameos: true });
+    t.ok('a save from before T2 (cameos: true) reads as Including cameos', shown(a) === count(2) && count(2) > count(1), shown(a));
+    const sf2 = back(a);
+    t.ok('…and is written back by name, the old flag never written again', sf2.appear === 'cameos' && !('cameos' in sf2));
+    a.window.close();
+    a = await bootWith({ chars: ['Kestrel'], appear: 'lead' });
+    t.ok('a saved "lead" is restored: major appearances only', shown(a) === count(0) && count(0) < count(1), shown(a));
+    a.window.close();
+    a = await bootWith({ chars: ['Kestrel'], appear: 'everything' });
+    t.ok('an unknown saved choice falls back to Appearances', shown(a) === count(1), shown(a));
+    a.window.close();
+  }
 };

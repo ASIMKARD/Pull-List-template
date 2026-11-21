@@ -46,9 +46,9 @@ def sheets_for(payload, keep):
         for e in p['eras']:
             period_of[e] = p['name']
 
-    ro_h = ['#', 'Id', 'Issue ID', 'Title', 'Series', 'Volume', 'Number', 'Era', 'Arc', 'Type', 'Mandatory', 'Core',
-            'Tier', 'Medium', 'Minutes', 'Cover date', 'On sale', 'Date source', 'Writers', 'Artists', 'Event',
-            'Complete only', 'Flags', 'Note', 'Sort key', 'Publication key']
+    ro_h = ['#', 'Id', 'Issue ID', 'Title', 'Series', 'Volume', 'Number', 'Era', 'Arc', 'Strands', 'Type', 'Mandatory', 'Core',
+            'Core for', 'Presence', 'Importance', 'Tier', 'Medium', 'Minutes', 'Cover date', 'On sale', 'Date source', 'Writers',
+            'Artists', 'Event', 'Complete only', 'Flags', 'Note', 'Sort key', 'Publication key']
     ro = []
     for i, iss in enumerate(D['issues']):
         key, title, arc, typ, mand, core, flags, note, alt = iss
@@ -56,9 +56,14 @@ def sheets_for(payload, keep):
         date = src.get('date') if isinstance(src.get('date'), dict) else {}
         dur = D['issueDuration'][i]
         ev = D['issueEvent'][i]
+        a = D['arcs'][arc]
+        presence = '; '.join('%s (%s)' % (D['characters'][who], D['grades'][g]) for who, g in D['issuePresence'][i])
+        core_for = '; '.join(D['characters'][c] for c in D['issueCoreFor'][i])          # per-character CORE (T1)
+        importance = D['issueImportance'][i] or a['i'] or ''                            # the row's own, else its arc's
         ro.append([i + 1, D['ids'][i], D['issueIds'][i], title, src.get('series') or '', src.get('vol') or '',
-                   '' if src.get('num') is None else str(src.get('num')), eras[D['issueEra'][i]]['name'], D['arcs'][arc]['n'],
-                   D['types'][typ], yes(mand), yes(core), D['tiers'][D['issueTier'][i]], D['media'][D['issueMedium'][i]],
+                   '' if src.get('num') is None else str(src.get('num')), eras[D['issueEra'][i]]['name'], a['n'],
+                   '; '.join(D['strands'][s] for s in a['s']), D['types'][typ], yes(mand), yes(core), core_for, presence,
+                   importance, D['tiers'][D['issueTier'][i]], D['media'][D['issueMedium'][i]],
                    dur if dur > 0 else '', date.get('cover') or '', date.get('onsale') or '', date.get('source') or '',
                    '; '.join(names[w] for w in D['issueWriters'][i]), '; '.join(names[a] for a in D['issueArtists'][i]),
                    D['events'][ev]['name'] if ev >= 0 else '', yes(D['issueCompleteOnly'][i]),
