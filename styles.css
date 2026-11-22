@@ -588,7 +588,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .slabel { min-width: 9em; font-size: calc(14px * var(--scale)); }
 .sctl { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
 .sctl .chip { margin: 0; }
-.sgrp { display: inline-flex; gap: 6px; align-items: center; }   /* "through" stays with the range's end */
+.sgrp { display: inline-flex; gap: 6px; align-items: center; min-width: 0; max-width: 100%; }   /* "through" stays with the range's end */
 .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .segbtn { padding: 6px 12px; border: 1px solid var(--edge); border-radius: 999px; background: none; font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .segbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -614,7 +614,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .tcount { font-variant-numeric: tabular-nums; }
 .eranav-in { display: flex; gap: 6px; overflow-x: auto; margin: 0 16px var(--gap); }
 .eranav-in .chip { flex: none; margin: 0; white-space: nowrap; }
-.erasel { height: 36px; padding: 0 8px; border: 1px solid var(--edge); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit; }
+.erasel { height: 36px; padding: 0 8px; border: 1px solid var(--edge); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit;
+  min-width: 0; max-width: 100%; }   /* a select is as wide as its longest option: a long era name shrinks it to its row (T7) */
 .arclabel { display: block; font-size: calc(12px * var(--scale)); color: var(--ink-soft); }
 :root[data-badges="0"] .badges, :root[data-badges="0"] .core-star { display: none; }
 /* combo badge: a row that is both bookmarked and read gets a filled star */

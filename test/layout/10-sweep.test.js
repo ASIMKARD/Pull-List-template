@@ -151,12 +151,15 @@ module.exports = async function (t) {
     }
     // the folder tab with era names long enough to wrap, at 320 px and on a wide screen (where its cut is widest):
     // every skin, default and the largest text. The real build of the basic fixture with its eras renamed.
+    // The same names reach the era selects (Mark era, Mark range, Jump to an era): a select is as wide as its
+    // longest option, so every control on the List and in Settings must still fit its box (T7; Green Lantern's
+    // "Secret Origin to Agent Orange" cut Mark range off at 320 px, 22 Nov).
     const long = copyFixture('basic', 'long-eras'), lds = readJSON(path.join(long, 'dataset.json'));
     lds.eras.forEach(e => { e.name = e.name + ' and the Long Years of Its Many Crossovers'; e.years = e.years + ', and after'; });
     writeJSON(path.join(long, 'dataset.json'), lds);
     const lb = build(path.join(long, 'dataset.json'), { label: 'long-eras-out' });
-    const wide = [], srv = await serve(lb.out);
-    let tabs = 0;
+    const wide = [], longClip = [], srv = await serve(lb.out);
+    let tabs = 0, selects = 0;
     for (const skin of ['signature', 'paper', 'newsprint', 'pull', 'night']) {
       for (const w of [320, 1024]) {
         for (const look of [{}, { textSize: 'l', tap: 'large', dys: true }]) {
@@ -164,7 +167,12 @@ module.exports = async function (t) {
           await openAll(pg.page);
           const f = await fit(pg.page);
           tabs += await pg.page.evaluate(() => document.querySelectorAll('.era-head .bhead').length);
-          wide.push(...f.cutText.map(x => skin + ' @' + w + (look.textSize ? ' largest' : '') + ': ' + x));
+          const at = skin + ' @' + w + (look.textSize ? ' largest' : '');
+          wide.push(...f.cutText.map(x => at + ': ' + x));
+          longClip.push(...f.clipped.map(x => at + ', list: ' + x));
+          await openSettings(pg.page);
+          selects += await pg.page.evaluate(() => document.querySelectorAll('#settings select.erasel').length);
+          longClip.push(...(await fit(pg.page)).clipped.map(x => at + ', settings: ' + x));
           await pg.close();
         }
       }
@@ -172,6 +180,9 @@ module.exports = async function (t) {
     await srv.close();
     t.eq('era names long enough to wrap, at 320 and 1024 px, in every skin with default and the largest text: no era text crosses its tab\'s cut (' + tabs + ' tabs)',
          lb.status === 0 ? wide : ['the build failed: ' + lb.stderr.slice(-200)], []);
+    t.ok('…and Settings offers the era selects with those names (Mark era, Mark range): ' + selects, selects >= 3 * 20);
+    t.eq('…and no control on the List or in Settings is cut off by a box that clips it, the era selects included (T7)',
+         lb.status === 0 ? longClip : ['the build failed'], []);
 
     // the pinned header (the x frame; John, 24 Oct): it pins under the tabs, as the reference tracker's, whenever it
     // takes at most 35 % of the screen, and never more; with the largest text on a 320 × 568 phone the tabs pin alone
