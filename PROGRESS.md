@@ -3,10 +3,26 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1765 assertions, 0 failed, 38 suites (T1 + T2, 21 Nov). **Layout suite (real Chromium, in CI too):** 470 checks, 0 failed, 12 suites (T0, 15 Nov: +2 in 47-frame-v9).
+**Harness:** 1765 assertions, 0 failed, 38 suites (T1 + T2, 21 Nov). **Layout suite (real Chromium, in CI too):** 472 checks, 0 failed, 12 suites (T7, 22 Nov: +2 in 10-sweep).
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
 
 ---
+
+## 22 Nov 2026 — T7: era selects shrink to fit their row (John, from Green Lantern #1)
+
+- **Found by Green Lantern's stage 2:** its third sub-era is "Secret Origin to Agent Orange".
+  - With it, `10-sweep` found Settings → Mark range's end select cut off by its section: 9 px at 320 px, and 46 px with large text.
+  - A select is as wide as its longest option, and `.erasel` had no `max-width`.
+  - The template's own data has short era names, so the bug was latent here.
+- **Decided (John, 22 Nov):** fix it as template change T7, in its own template PR. Green Lantern's sub-era 3 waits for it.
+- **The fix (`styles.css`):** `.erasel` (Mark era, Mark range, Jump to an era) and the range's `.sgrp` take `min-width: 0; max-width: 100%`.
+- **The test (`10-sweep`):**
+  - The long-era-names check (the basic fixture's eras renamed) now also checks every control on the List and in Settings, with the era selects counted (60).
+  - Written first: on the old CSS it fails, Mark era and Mark range cut off by 108–167 px. With the fix it passes.
+- **Checks:**
+  - Green Lantern's sub-eras 1–3 with this `styles.css`: `10-sweep` passes (313 checks).
+  - Harness 1765 (unchanged), layout 472 (+2), 0 failed. `47-frame-v9` unchanged.
+- **Trackers:** each picks this up when it next copies the template; Green Lantern copies it once John merges.
 
 ## 21 Nov 2026 — T1 + T2: per-character CORE, "Lead" appearances, the workbook's new columns (John, from Green Lantern #1)
 

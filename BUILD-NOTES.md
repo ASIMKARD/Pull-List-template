@@ -408,6 +408,11 @@ One skin of the tracker's own, from `franchise.signature`:
   pinned chips). **Swatches** are 24 px (E).
 - 45-pull: two Settings differences are left, each ruled; no `step` entry remains anywhere. After this step: 1900 match,
   80 listed.
+- **Era selects shrink to fit their row (T7, John, 22 Nov).** Mark era, Mark range and Jump to an era are `select.erasel`.
+  A select is as wide as its longest option, so a long era name pushed one past its Settings section at 320 px
+  ("Secret Origin to Agent Orange", Green Lantern's third sub-era). `.erasel` and the range's `.sgrp` take
+  `min-width: 0; max-width: 100%`. A narrowed select shortens its own text, and the list it opens shows the names
+  in full. `10-sweep` checks every control on the List and in Settings with era names long enough to wrap.
 
 ## Characters: appearances and per-character CORE (T1, T2)
 
