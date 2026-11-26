@@ -29,7 +29,10 @@ one build step, an offline web app, a generated workbook, and two test suites
    - Rows inline (`rows`) or one file per era (`sources`, schema
      `schema/era-file.schema.json`; the basic fixture keeps them in
      `test/fixtures/basic/data/eras/`). Every row has an `issueId` and a
-     sourced date (`date: {cover, onsale?, source}`); keys are derived, never written.
+     sourced date (`date: {cover, onsale?, order?, source}`); keys are derived, never written.
+     A cited story note can place a row after or before another issue (`place`), and a
+     cited `date.order` orders Publication order where no on-sale date is stated
+     (`BUILD-NOTES.md`, "Two orders").
    - Shared events live in `events/` (schema `schema/event.schema.json`); each
      one the tracker joins is listed with its era in `dataset.json`.
    - `deliverables`: the workbook is on unless you set `{"workbook": false}`

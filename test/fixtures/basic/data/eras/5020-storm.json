@@ -294,7 +294,11 @@
      "who": "vela",
      "grade": "major"
     }
-   ]
+   ],
+   "place": {
+    "after": "fixture-hero-1980-29",
+    "source": "fixture ledger (invented): \"This story takes place right after Fixture Hero #29\""
+   }
   },
   {
    "issueId": "fixture-quest-1987",

@@ -508,6 +508,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 :root[data-frame="x"] .row[data-s="skip"] .title { color: var(--ink-soft); text-decoration: none; font-style: italic; }
 :root[data-frame="x"] .core-star { margin-left: 4px; font-size: calc(var(--core-size) * var(--scale)); font-weight: var(--row-weight); color: var(--gold); }
 :root[data-frame="x"] .rbody .subnote { margin: 1px 0 0; font-size: calc(var(--note-size) * var(--scale)); }
+:root[data-frame="x"] .rbody .placed { margin: 1px 0 0; font-size: calc(var(--note-size) * var(--scale)); }
 :root[data-frame="x"] .row .badges { flex: none; flex-wrap: nowrap; align-items: center; gap: 2px; }
 :root[data-frame="x"] .row .badges .b { min-width: var(--bm-box); min-height: var(--bm-box); padding: 0 2px; border: 0; background: none;
   justify-content: center; color: var(--quiet); }
@@ -548,6 +549,9 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .b.bm[aria-pressed="true"] { color: var(--accent); }
 .subnote, .notepop { flex-basis: 100%; margin: 0 0 0 calc(var(--tap) + 10px); font-size: calc(13px * var(--scale)); color: var(--ink-soft); }
 .notepop { margin: 0; padding: 6px 10px 8px calc(var(--tap) + 16px); background: var(--accent-wash); }
+/* a story placement's line (T6): under the title in the reading order; its source opens like a note */
+.placed { flex-basis: 100%; margin: 0 0 0 calc(var(--tap) + 10px); font-size: calc(13px * var(--scale)); font-style: italic; color: var(--ink-soft); }
+.placed .linkbtn { padding: 0 6px; font-size: inherit; font-style: normal; }
 
 /* ---- the sticky stack (F-58): tabs, banner and mini bar, pinned together. Full
    width, so the paper behind it covers what scrolls under. Never give it (or
@@ -701,6 +705,8 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 .rtitle { margin: 10px 0 4px; font-size: calc(22px * var(--scale)); line-height: 1.25; overflow-wrap: anywhere; }
 .rmeta, .rstate { margin: 0; font-size: calc(14px * var(--scale)); color: var(--ink-soft); }
 .rnote { margin: 10px 0 0; font-size: calc(15px * var(--scale)); }
+.rplaced { margin: 10px 0 0; font-size: calc(14px * var(--scale)); font-style: italic; color: var(--ink-soft); }
+.rplaced-src { display: block; margin-top: 2px; font-size: calc(12px * var(--scale)); font-style: normal; }
 .rblurb { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: calc(14px * var(--scale)); color: var(--ink-soft); }
 .racts { display: flex; gap: 10px; margin: 16px 0 0; }
 .rbtn { flex: 1; min-height: 44px; border-radius: var(--radius-sm); border: 1px solid var(--accent); font-weight: 600; }
@@ -723,6 +729,7 @@ progress.bar::-moz-progress-bar { background: var(--accent); border-radius: 3px;
 @media (max-width: 420px) { :root[data-frame="x"] .rtitle { font-size: calc(22px * var(--scale)); } }
 :root[data-frame="x"] .rmeta { font-size: calc(14px * var(--scale)); }
 :root[data-frame="x"] .rnote { max-width: 440px; margin: 6px 0 0; font-size: calc(13.5px * var(--scale)); font-style: italic; color: var(--ink-soft); }
+:root[data-frame="x"] .rplaced { max-width: 440px; margin: 6px 0 0; font-size: calc(13px * var(--scale)); }
 :root[data-frame="x"] .rblurb { max-width: 440px; margin: 14px 0 0; padding-top: 14px; border-top-style: dashed; font-size: calc(13px * var(--scale)); }
 :root[data-frame="x"] .racts { gap: 12px; margin: 0; padding: 10px 0; }
 :root[data-frame="x"] .rbtn { padding: 16px; line-height: normal; border: var(--mark-edge-w) solid var(--mark-on); border-radius: var(--rbtn-radius);

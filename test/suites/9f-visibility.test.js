@@ -66,6 +66,8 @@ const ROWS = [
   { cap: 'reveal', tab: 'settings', what: 'Tap to reveal notes', has: d => any(d, '[data-act="pref"][data-k="reveal"]') },
   { cap: 'gapNotes', tab: 'settings', what: 'Gap notes toggle', has: d => any(d, '[data-act="pref"][data-k="gapNotes"]') },
   { cap: 'lookup', tab: 'list', what: 'look-up link', has: d => any(d, '#app .b.mu') },
+  { cap: 'place', tab: 'list', what: '"Placed after …" line with its source (T6)', has: d => any(d, '#app .placed [data-act="note"]') },
+  { cap: 'place', tab: 'settings', what: 'help copy on placements (T6)', has: d => any(d, '#settings .placed-help') },
   { cap: 'legacy', tab: 'settings', what: 'Import from previous version', has: d => any(d, '[data-act="import-legacy"]') },
   { cap: 'skins', tab: 'settings', what: 'skin control (more than one skin offered)', has: d => any(d, '[data-act="look"][data-k="skin"]') },
   { cap: 'eras', tab: 'settings', what: 'era colours setting', has: d => any(d, '[data-act="look"][data-k="eraHues"]') }

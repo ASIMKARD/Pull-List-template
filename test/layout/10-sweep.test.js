@@ -115,7 +115,7 @@ module.exports = async function (t) {
         const storage = look ? { [key + ':v3:settings']: JSON.stringify(Object.assign({ v: 3, migrated: { format: 'v2' } }, look)) } : undefined;
         const pg = await open(srv.url, { width: w, reducedMotion: 'reduce', storage });
         const over = [], cut = [], clipped = [], split = [], depth = [], cutText = [], rings = [];
-        let hasDepth = false;
+        let hasDepth = false, placed = null;
         for (const tab of TABS) {
           if (tab === 'list') await openAll(pg.page);
           else if (tab === 'settings') await openSettings(pg.page);
@@ -136,6 +136,12 @@ module.exports = async function (t) {
           if (tab === 'settings') split.push(...f.split);
           if (tab === 'list' && f.depth) { hasDepth = true; depth.push(...f.depth); }
           if (tab === 'list') { cutText.push(...f.cutText); rings.push(...f.rings); }
+          /* T6: a placed row's line ("Placed after …" and its source button) sits inside its row, the button 24 px or more */
+          if (tab === 'list') placed = await pg.page.evaluate(() => [...document.querySelectorAll('#app .placed')].filter(p => p.getClientRects().length).map(p => {
+            const row = p.closest('.row').getBoundingClientRect(), r = p.getBoundingClientRect(), b = p.querySelector('button').getBoundingClientRect();
+            return (r.left < row.left - 0.5 || r.right > row.right + 0.5 ? 'the line leaves its row; ' : '') + (b.height < 24 || b.width < 24 ? 'the button is ' +
+              Math.round(b.width) + ' × ' + Math.round(b.height) + ' px; ' : '') + (b.right > row.right + 0.5 ? 'the button leaves the row' : '');
+          }));
         }
         t.eq(name + ' @ ' + w + ' px: no horizontal overflow on any tab, everything open', over, []);
         t.eq(name + ' @ ' + w + ' px: all four tabs fully visible in the bar', cut, []);
@@ -144,6 +150,8 @@ module.exports = async function (t) {
         if (hasDepth) t.eq(name + ' @ ' + w + ' px: the depth chips sit on one line and none is cut off (T-95)', depth, []);
         t.eq(name + ' @ ' + w + ' px: no era text crosses its tab\'s cut or leaves the tab (Pull\'s folder tab)', cutText, []);
         t.eq(name + ' @ ' + w + ' px: no focus ring inside a card is cut by a box that clips it (x frame)', rings, []);
+        if (dir === basic().out) t.eq(name + ' @ ' + w + ' px: the placement line (T6) is drawn inside its row, its source button 24 px or more',
+                                      placed && placed.length ? placed.filter(Boolean) : ['no placement line drawn'], []);
         t.eq(name + ' @ ' + w + ' px: no page or console errors (L-9)', pg.errors, []);
         await pg.close();
       }
