@@ -28,6 +28,55 @@ are in `schema/dataset.schema.json`.
 - Every date names its source. "Cadence", "interpolated" or "assumed" is not a
   source; the build and the gate both refuse it.
 
+## Two orders: story placements and the release order (T6)
+
+John decided this for Green Lantern on 18 and 20 Nov; the design note is in Research-Repo's
+Green Lantern session folder (t6-design.md).
+
+- **The reading order is the story order. Publication order is the release order.**
+- **Within a cover month,** `seq` (a hint) and an event's chapter order give the story order, as before.
+- **Across months, a row's `place` says it:** `{"after": "<issueId>", "source": "…"}` or `{"before": …}`.
+  - The source is required, like a date's: the note that places it, with its page and revision.
+  - The build moves the row to just after (or before) its target. It takes the target's era and
+    month in its key (`RRRR·YYYYMM·NNN`, renumbered) and keeps its own `date`.
+  - Several rows placed on one target keep their own order, and a chain (a placed row as a target)
+    follows its links.
+  - Because the app has one era per row, a placed row must be in its target's era. It is read there
+    in both orders, and counts there in the era bar, the banners and progress.
+- **The build fails on:**
+  - an unknown target, a cycle, an ALT target, or a target in another era;
+  - `place` with `sortDate`, or `place` without its source;
+  - a placement that puts an issue before a lower number of its own series. The numbering check runs
+    on the placed order ("numbering goes backwards").
+
+  The cases are `test/fixtures/broken/place-*/`.
+- **`dataVersion` follows the order,** as with any order change: compact QR codes made earlier stop
+  matching, while the full code and the backup survive. A placement the order already agrees with
+  moves nothing and changes nothing.
+- **The release order (`altKey`) ignores `place`:** a row stays in its cover month.
+  - Within the month it sorts by release date: `date.onsale` (the date of record), else a cited
+    `date.order: {"date": "YYYY-MM-DD", "source": "…"}`, such as the Grand Comics Database's. A row
+    can't have both.
+  - A row with neither comes last, not first. Ties go by issue number, then title.
+  - `seq` (the story order) no longer decides Publication order.
+  - A gap or relaunch note isn't a release. It stays just after the row it follows in the story order
+    when that row shares its cover month, and otherwise opens the month.
+  - `date.order`'s failures are `test/fixtures/broken/order-*/`.
+  - A tracker's Publication order changes only where a month mixes dated and undated rows, or undated
+    rows whose `seq` ran against their numbers; each tracker's update lists those moves.
+- **`data.js`:** `placed` (`[{i, t, w, s}]`: the row, its target, "after" or "before", the source)
+  appears only when the data has a placement. A tracker without one builds the same `data.js`.
+- **The app (`HAS.place`):**
+  - In the reading order a placed row carries a line, "Placed after Fixture Hero (1980) #29", and a
+    "source" button that opens the note like any note.
+  - Publication and arc order draw no line.
+  - Table view, one line a row, leaves the line out (not drawn, never hidden).
+  - The Reading card shows the line and its source in full.
+  - Settings → About explains the line.
+  - The checks are `9n-placement`, `9f-visibility`'s two rows and `10-sweep`, which checks the line at
+    320 px.
+- **The workbook:** Reading Order has Order date, Order date source and Placed ("after <target> — <source>").
+
 ## Versions
 
 - The header shows a readable version ("v13"); Settings → About shows it with
@@ -448,8 +497,9 @@ One skin of the tracker's own, from `franchise.signature`:
 
 - `tools/build_workbook.py` writes five sheets (Reading Order, Arcs, Eras,
   Creators, Events), each with named, bold, frozen, filterable headers. The
-  Reading Order sheet has 30 columns, including Strands, Core for, Presence
-  ("Vela (major); Orrin (minor)") and Importance (the row's own, else its arc's).
+  Reading Order sheet has 33 columns, including Strands, Core for, Presence
+  ("Vela (major); Orrin (minor)"), Importance (the row's own, else its arc's), and T6's
+  Order date, Order date source and Placed.
   Bytes are deterministic (parts stored, fixed timestamps), so `--check` can
   cover it. Read it by header name; `--shuffle-columns` proves a reader does.
 - Web-app-only trackers turn it off: `"deliverables": {"workbook": false}`. The

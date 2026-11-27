@@ -123,6 +123,7 @@
       lead: some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 0; }); }) &&
             some(function (i) { return D.issuePresence[i].some(function (p) { return p[1] === 1; }); }),
       coreFor: some(function (i) { return D.issueCoreFor[i].length > 0; }),   // per-character CORE (T1)
+      place: (D.placed || []).length > 0,    // story placements (T6): the "Placed after …" line
       credits: D.creators.length > 0,        // Creators section, tappable names, "creators" in the search hint
       events: D.issueCompleteOnly.some(Boolean),            // Essential / Complete changes what is in view
       alt: HAS_ALT,
@@ -146,6 +147,23 @@
   var HAS_PICKS = {};
   D.issueCoreFor.forEach(function (list) { list.forEach(function (c) { HAS_PICKS[c] = true; }); });
   var ORDERS = ['reading'].concat(HAS.publication ? ['publication'] : [], HAS.arcOrder ? ['arc'] : []);
+  /* Story placements (T6; John, 18 and 20 Nov): a row placed after (or before) another issue by a cited
+     note. The build draws it there in the reading order, keeping its own date; Publication order keeps it
+     at its cover month. In the reading order a line says where it was placed, and its source opens like
+     a note. Only a dataset with placements carries D.placed. */
+  var PLACED = {};
+  (D.placed || []).forEach(function (p) { PLACED[p.i] = p; });
+  function placedText(i) {
+    var p = PLACED[i];
+    return p && settings.order === 'reading' ? 'Placed ' + p.w + ' ' + D.issues[p.t][1] : '';
+  }
+  /* Table view draws one line per row, so a row's placement line isn't drawn there (a note line is
+     hidden there too); the line holds a control, so it is left out, never hidden (50-table). */
+  function placedHtml(i) {
+    var text = settings.table ? '' : placedText(i);
+    return text ? '<p class="placed">' + escapeHtml(text) + ' <button type="button" class="linkbtn placed-src" data-act="note" ' +
+      'aria-expanded="false" aria-label="' + escapeAttr('Source: ' + text) + '" data-note="' + escapeAttr(PLACED[i].s) + '">source</button></p>' : '';
+  }
 
   /* ======================================================================
      STORAGE — namespaced per franchise, localStorage with an in-memory
@@ -748,7 +766,7 @@
     return '<div class="row" data-i="' + i + '" data-n="' + padN(i + 1, ROW_W) + '" data-id="' + escapeAttr(id) + '" data-s="' + st + '">' +
       '<button type="button" class="mark" data-act="mark" aria-label="' + escapeAttr(r[1] + ' — ' + labelOf(i, st)) + '">' +
       glyph(st) + '</button><span class="title">' + escapeHtml(r[1]) + label + '</span>' +
-      '<span class="badges">' + badges + '</span>' + sub + '</div>';
+      '<span class="badges">' + badges + '</span>' + sub + placedHtml(i) + '</div>';
   }
   /* The x frame's row (John, 24 Oct; the reference tracker's): the mark, then the
      title with the core star after it and the note under it, then look up, ✎ and
@@ -778,7 +796,7 @@
       (isCore(i) ? '<span class="core-star" role="img" aria-label="core">★</span>' : '') +
       (settings.layout === 'rows' ? '<span class="arclabel">' + escapeHtml(D.arcs[r[2]].n) + '</span>' : '') +
       (note ? '<p class="subnote"' + (hide ? ' hidden' : '') + '>' + (kind ? '<span class="subkind">' + kind + '</span> · ' : '') + escapeHtml(note) + '</p>' : '') +
-      '</div><span class="badges">' + acts + '</span></div>';
+      placedHtml(i) + '</div><span class="badges">' + acts + '</span></div>';
   }
 
   /* The x frame's arc cards (John, 24 Oct; the reference tracker's): an open era
@@ -1607,6 +1625,7 @@
       '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]].toLowerCase()) + '</p>' +
       '<p class="rstate">' + escapeHtml(labelOf(i, st)) + '</p>' +
       (r[7] ? '<p class="rnote">' + escapeHtml(r[7]) + '</p>' : '') +
+      (placedText(i) ? '<p class="rplaced">' + escapeHtml(placedText(i)) + '<span class="rplaced-src">' + escapeHtml(PLACED[i].s) + '</span></p>' : '') +
       (arc.b ? '<p class="rblurb">' + escapeHtml(arc.b) + '</p>' : '') +
       '<div class="racts">' +
       '<button type="button" class="rbtn ghost" data-act="rd-skip" aria-pressed="' + (st === 'skip') + '">' + (st === 'skip' ? 'Skipped' : 'Skip') + '</button>' +
@@ -1631,6 +1650,7 @@
       '<h2 class="rtitle">' + escapeHtml(r[1]) + '</h2>' +
       '<p class="rmeta">' + escapeHtml(arc.n + ' · ' + D.types[r[3]] + (isCore(i) ? ' · ★ CORE' : '')) + '</p>' +
       (r[7] ? '<p class="rnote">' + escapeHtml(r[7]) + '</p>' : '') +
+      (placedText(i) ? '<p class="rplaced">' + escapeHtml(placedText(i)) + '<span class="rplaced-src">' + escapeHtml(PLACED[i].s) + '</span></p>' : '') +
       (arc.b ? '<p class="rblurb">' + escapeHtml(arc.b) + '</p>' : '') + '</div>' +
       '<div class="racts">' +
       '<button type="button" class="rbtn ghost" data-act="rd-skip" aria-pressed="' + (st === 'skip') + '">' + (st === 'skip' ? 'Skipped' : 'Skip') + '</button>' +
@@ -1812,7 +1832,7 @@
   /* ---- preferences: on/off settings. CSS-only ones become root flags in
      applyPrefs; the ones that change what is rendered re-render the list. ---- */
   var PREFS = { showJump: 'css', badges: 'css', combo: 'css', rev: 'list', reveal: 'list', gapNotes: 'list', swipe: 'css', press: 'css', dys: 'css',
-                mini: 'stats', banner: 'stats', table: 'css' };
+                mini: 'stats', banner: 'stats', table: HAS.place ? 'list' : 'css' };   // table view leaves out placement lines (T6)
   function applyPrefs() {
     var root = document.documentElement;
     placeChrome();
@@ -2365,7 +2385,10 @@
       (D.legend.length ? '<dl class="legend">' + D.legend.map(function (l) {
         return '<dt>' + escapeHtml(l.term) + '</dt><dd>' + escapeHtml(l.meaning) + '</dd>';
       }).join('') + '</dl>' : '') +
-      (D.maintenance.length ? '<ul class="maint">' + D.maintenance.map(function (m) { return '<li>' + escapeHtml(m) + '</li>'; }).join('') + '</ul>' : '');
+      (D.maintenance.length ? '<ul class="maint">' + D.maintenance.map(function (m) { return '<li>' + escapeHtml(m) + '</li>'; }).join('') + '</ul>' : '') +
+      (HAS.place ? '<p class="muted shelp placed-help">“Placed after …”: in the reading order, a cited story note puts an issue just after ' +
+        '(or before) another. It keeps its own date' + (HAS.publication ? ', and ' + escapeHtml(orderLabel('publication')) + ' keeps it in its cover month' : '') +
+        '. Tap “source” for the note.</p>' : '');
   }
   function renderSettings() {
     var S = computeStats(), ae = document.activeElement, keep = ae && ae.dataset ? [ae.dataset.act, ae.dataset.v, ae.dataset.k] : null;

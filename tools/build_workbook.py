@@ -47,13 +47,17 @@ def sheets_for(payload, keep):
             period_of[e] = p['name']
 
     ro_h = ['#', 'Id', 'Issue ID', 'Title', 'Series', 'Volume', 'Number', 'Era', 'Arc', 'Strands', 'Type', 'Mandatory', 'Core',
-            'Core for', 'Presence', 'Importance', 'Tier', 'Medium', 'Minutes', 'Cover date', 'On sale', 'Date source', 'Writers',
-            'Artists', 'Event', 'Complete only', 'Flags', 'Note', 'Sort key', 'Publication key']
+            'Core for', 'Presence', 'Importance', 'Tier', 'Medium', 'Minutes', 'Cover date', 'On sale', 'Date source',
+            'Order date', 'Order date source', 'Writers', 'Artists', 'Event', 'Complete only', 'Flags', 'Note', 'Placed',
+            'Sort key', 'Publication key']
+    # T6: a story placement, "after <target> — <source>", and the cited ordering date Publication order uses
+    placed = {p['i']: '%s %s — %s' % (p['w'], D['issues'][p['t']][1], p['s']) for p in D.get('placed') or []}
     ro = []
     for i, iss in enumerate(D['issues']):
         key, title, arc, typ, mand, core, flags, note, alt = iss
         src = stitched.get(D['ids'][i], {})
         date = src.get('date') if isinstance(src.get('date'), dict) else {}
+        order = date.get('order') if isinstance(date.get('order'), dict) else {}
         dur = D['issueDuration'][i]
         ev = D['issueEvent'][i]
         a = D['arcs'][arc]
@@ -65,9 +69,10 @@ def sheets_for(payload, keep):
                    '; '.join(D['strands'][s] for s in a['s']), D['types'][typ], yes(mand), yes(core), core_for, presence,
                    importance, D['tiers'][D['issueTier'][i]], D['media'][D['issueMedium'][i]],
                    dur if dur > 0 else '', date.get('cover') or '', date.get('onsale') or '', date.get('source') or '',
+                   order.get('date') or '', order.get('source') or '',
                    '; '.join(names[w] for w in D['issueWriters'][i]), '; '.join(names[a] for a in D['issueArtists'][i]),
                    D['events'][ev]['name'] if ev >= 0 else '', yes(D['issueCompleteOnly'][i]),
-                   ' '.join(f for f in flag_names if flags & D['flagBits'][f]), note, key, alt])
+                   ' '.join(f for f in flag_names if flags & D['flagBits'][f]), note, placed.get(i, ''), key, alt])
 
     per_arc, per_era = {}, {}
     for i, iss in enumerate(D['issues']):

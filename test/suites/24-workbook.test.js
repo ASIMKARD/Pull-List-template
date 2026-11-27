@@ -62,13 +62,29 @@ module.exports = async function (t) {
       // T1: per-character CORE and the presence, importance and strands columns
       'Core for': D.issueCoreFor[i].map(c => D.characters[c]).join('; '),
       Presence: D.issuePresence[i].map(p => D.characters[p[0]] + ' (' + D.grades[p[1]] + ')').join('; '),
-      Importance: D.issueImportance[i] || D.arcs[iss[2]].i || '', Strands: D.arcs[iss[2]].s.map(x => D.strands[x]).join('; ') };
+      Importance: D.issueImportance[i] || D.arcs[iss[2]].i || '', Strands: D.arcs[iss[2]].s.map(x => D.strands[x]).join('; '),
+      // T6: a story placement and the cited ordering date
+      Placed: (D.placed || []).filter(p => p.i === i).map(p => p.w + ' ' + D.issues[p.t][1] + ' — ' + p.s).join(''),
+      'Order date': ((s.date || {}).order || {}).date || '', 'Order date source': ((s.date || {}).order || {}).source || '' };
     const off = Object.keys(want).filter(k => r[k] !== want[k]);
     return off.length ? D.ids[i] + ': ' + off.map(k => k + ' ' + JSON.stringify(r[k]) + ' ≠ ' + JSON.stringify(want[k])).join(', ') : null;
   }).filter(Boolean);
   t.eq('…and every field read by its header matches the dataset (titles, series, dates and sources, eras, arcs, credits, events, keys)', wrong.slice(0, 5), []);
   t.ok('…including the event chapters the tracker didn\'t have and the inert marker rows',
        RO.some(r => r.Event && r['Complete only'] === 'yes') && RO.some(r => /GAPNOTE|RENUM/.test(r.Flags)));
+  t.eq('T6: the Placed column names the side, the target and the source (Fixture Hero: Quiet Storm)',
+       (RO.find(r => r.Id === 'fixture-hero-quiet-storm-1986') || {}).Placed,
+       'after Fixture Hero (1980) #29 — ' + src['fixture-hero-quiet-storm-1986'].place.source);
+  {
+    const p = minimalWith('wb-order', {}), ds = readJSON(p);
+    ds.rows[0].date.order = { date: ds.rows[0].date.cover.slice(0, 7) + '-09', source: 'Grand Comics Database (invented)' };
+    writeJSON(p, ds);
+    const r = build(p, { label: 'wb-order-out' });
+    const first = r.status === 0 && readWorkbook(fs.readFileSync(path.join(r.out, 'workbook.xlsx'))).sheets['Reading Order'].records
+      .find(x => x.Id === (ds.rows[0].id || ds.rows[0].issueId));
+    t.eq('T6: a cited ordering date has its own two columns, the date and its source',
+         first && [first['Order date'], first['Order date source'], first['On sale']], [ds.rows[0].date.order.date, 'Grand Comics Database (invented)', '']);
+  }
   const A = W.sheets.Arcs.records, E = W.sheets.Eras.records, C = W.sheets.Creators.records, V = W.sheets.Events.records;
   t.ok('Arcs: one per arc, with era, strands, credits and an issue count that adds up', A.length === D.arcs.length &&
        A.every((a, i) => a.Id === D.arcs[i].id && a.Era === D.eras[D.arcs[i].e].name && a.Strands) &&

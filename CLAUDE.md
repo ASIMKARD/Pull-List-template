@@ -132,6 +132,11 @@ a running log of what it did, and a word-for-word archive of the session.
   only a hint. `altKey` is pure publication order (no era rank).
 - **Dates are sourced individually** (`date: {cover, onsale?, source}`). Never
   interpolate, never write series data from memory.
+- **Two orders (T6; John, 18 and 20 Nov).** The reading order is the story order; Publication
+  order is the release order. A row's `place: {after|before, source}` moves it next to another
+  issue in the reading order by a cited note, keeping its date; it must be in its target's era.
+  Publication order sorts a cover month by `date.onsale`, else a cited `date.order`, blanks last,
+  and ignores `place` and `seq`. `BUILD-NOTES.md`, "Two orders".
 - **Events state their era** in `dataset.json` (`events: [{id, era}]`); chapters
   the tracker doesn't have are placed inside that era by date then event order.
 - **An era's own colour** (`eras[].colour`, `#RRGGBB`, optional) is drawn exactly

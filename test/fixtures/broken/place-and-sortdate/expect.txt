@@ -1,0 +1,1 @@
+a row may not have both place and sortDate

@@ -301,6 +301,98 @@ module.exports = async function (t) {
       t.ok('a malformed accent fails the build: ' + JSON.stringify(bad), b.r.status === 1 && /franchise\.accent must be #RRGGBB/.test(b.r.stderr), b.r.stderr.split('\n')[0]);
     }
   }
+  // ---------------------------------------------------------------- T6: story placements and the release order
+  // (John, 18 and 20 Nov; Research-Repo sessions/2026-11-14-green-lantern/t6-design.md). The failures are
+  // broken/place-* and broken/order-* (60-validation); these are what a placement and the release order do.
+  {
+    const SRC = 'fixture ledger (invented): "This story takes place right after Probe #3"';
+    const scenario = (label, edit) => {
+      const dir = copyFixture('broken/_valid', label), p = path.join(dir, 'dataset.json'), ds = readJSON(p);
+      edit(ds, iid => ds.rows.find(r => r.issueId === iid));
+      writeJSON(p, ds);
+      const r = build(p, { label: label + '-out' });
+      return { r, D: r.status === 0 ? loadData(r.out) : null, js: r.status === 0 ? fs.readFileSync(path.join(r.out, 'data.js'), 'utf8') : '' };
+    };
+    const side = (n, cover, extra) => Object.assign({ issueId: 'side-1991-' + n, series: 'Side', vol: '1991', num: String(n), title: 'Side (1991) #' + n,
+      era: 'two', arc: 'b', date: { cover, source: 'fixture ledger (invented)' } }, extra || {});
+    const key = (x, id) => x.D.issues[x.D.ids.indexOf(id)][0];
+    const alt = (x, id) => x.D.issues[x.D.ids.indexOf(id)][8];
+    const byAlt = x => x.D.ids.slice().sort((a, b) => alt(x, a) - alt(x, b));
+    const ok = (name, x) => t.ok(name + ' builds', x.r.status === 0, x.r.stderr.split('\n')[0]);
+
+    // ---- after: the row moves to just after its target, takes its era and month, keeps its own date
+    const none = scenario('t6-none', ds => ds.rows.push(side(1, '1991-03')));
+    const after = scenario('t6-after', ds => ds.rows.push(side(1, '1991-03', { place: { after: 'probe-1990-3', source: SRC } })));
+    ok('T6: a dataset with a placement', after);
+    t.eq('without it, the row reads at its cover month (after Probe #4)', none.D.ids, ['probe-1990-1', 'probe-1990-2', 'probe-1990-3', 'probe-1990-4', 'side-1991-1']);
+    t.eq('placed after Probe #3, it reads just after Probe #3', after.D.ids, ['probe-1990-1', 'probe-1990-2', 'probe-1990-3', 'side-1991-1', 'probe-1990-4']);
+    t.eq('…its key takes the target\'s era rank and month, renumbered (5010·199101·002)', key(after, 'side-1991-1'), 5010199101002);
+    t.eq('…and the rows around it keep theirs (Probe #3 5010·199101·001, Probe #4 5010·199102·001)',
+         [key(after, 'probe-1990-3'), key(after, 'probe-1990-4')], [5010199101001, 5010199102001]);
+    t.ok('…it keeps its own date: Publication order (altKey) leaves it in its cover month, March 1991', Math.floor(alt(after, 'side-1991-1') / 1000) === 199103);
+    t.eq('altKey ignores place: every row\'s publication key is the same as without the placement',
+         after.D.ids.map(id => [id, alt(after, id)]).sort(), none.D.ids.map(id => [id, alt(none, id)]).sort());
+    t.ok('…while dataVersion follows the new order (old compact QR codes stop matching, by design)', after.D.dataVersion !== none.D.dataVersion);
+    t.eq('data.js carries the placement: the row, its target, the side and the source', after.D.placed, [{ i: 3, t: 2, w: 'after', s: SRC }]);
+    t.eq('…and the build report lists it', after.r.report.placed, [['Side (1991) #1', 'after', 'Probe (1990) #3']]);
+    t.ok('without a placement, data.js has no "placed" at all (a tracker without one builds the same data.js)', none.D.placed === undefined && !/"placed"/.test(none.js));
+
+    // ---- before
+    const before = scenario('t6-before', ds => ds.rows.push(side(1, '1991-03', { place: { before: 'probe-1990-3', source: SRC } })));
+    ok('T6: a "before" placement', before);
+    t.eq('placed before Probe #3, it reads just before it', before.D.ids, ['probe-1990-1', 'probe-1990-2', 'side-1991-1', 'probe-1990-3', 'probe-1990-4']);
+    t.eq('…with the target\'s era and month (5010·199101·001), Probe #3 after it (…·002)',
+         [key(before, 'side-1991-1'), key(before, 'probe-1990-3')], [5010199101001, 5010199101002]);
+
+    // ---- several rows on one target keep their own order; a chain follows its links
+    const two = scenario('t6-two', ds => ds.rows.push(side(1, '1991-03', { place: { after: 'probe-1990-3', source: SRC } }),
+                                                       side(2, '1991-04', { place: { after: 'probe-1990-3', source: SRC } })));
+    ok('T6: two rows placed after one target', two);
+    t.eq('two rows placed after one target keep their own order (Side #1, then #2)', two.D.ids,
+         ['probe-1990-1', 'probe-1990-2', 'probe-1990-3', 'side-1991-1', 'side-1991-2', 'probe-1990-4']);
+    const chain = scenario('t6-chain', ds => ds.rows.push(side(1, '1991-05', { place: { after: 'probe-1990-3', source: SRC } }),
+                                                          side(2, '1991-01', { place: { after: 'side-1991-1', source: SRC } })));
+    ok('T6: a chain (Side #2 after Side #1, after Probe #3)', chain);
+    t.eq('a chain is resolved in order, though Side #2\'s own date is earliest', chain.D.ids,
+         ['probe-1990-1', 'probe-1990-2', 'probe-1990-3', 'side-1991-1', 'side-1991-2', 'probe-1990-4']);
+    t.eq('…every row of the chain takes the first target\'s month (5010·199101·001–003)',
+         ['probe-1990-3', 'side-1991-1', 'side-1991-2'].map(id => key(chain, id)), [5010199101001, 5010199101002, 5010199101003]);
+    const still = scenario('t6-still', ds => ds.rows.push(side(1, '1991-03', { place: { after: 'probe-1990-4', source: SRC } })));
+    ok('T6: a placement the order already agrees with', still);
+    t.ok('a placement the order already agrees with moves nothing: the same rows, order and dataVersion',
+         JSON.stringify(still.D.ids) === JSON.stringify(none.D.ids) && still.D.dataVersion === none.D.dataVersion && !!still.D.placed);
+
+    // ---- the release order: date.onsale, else the cited date.order; a blank last; ties by number, then title
+    const rel = scenario('t6-release', ds => {
+      ds.rows.push(side(1, '1991-02', { date: { cover: '1991-02', onsale: '1990-12-20', source: 'fixture ledger (invented)' } }));
+      ds.rows.push(side(2, '1991-02', { date: { cover: '1991-02', source: 'fixture ledger (invented)', order: { date: '1990-12-13', source: 'Grand Comics Database (invented)' } } }));
+      ds.rows.push(side(3, '1991-02'));
+    });
+    ok('T6: one cover month with an on-sale date, a cited ordering date and a blank', rel);
+    t.eq('Publication order: the ordering date (13 Dec), then the on-sale date (20 Dec), then the blanks last, by issue number (#3, #4)',
+         byAlt(rel).filter(id => Math.floor(alt(rel, id) / 1000) === 199102), ['side-1991-2', 'side-1991-1', 'side-1991-3', 'probe-1990-4']);
+    const seqA = scenario('t6-seq-a', (ds, row) => { row('probe-1990-4').seq = 1; ds.rows.push(side(1, '1991-02', { seq: 2 })); });
+    const seqB = scenario('t6-seq-b', (ds, row) => { row('probe-1990-4').seq = 2; ds.rows.push(side(1, '1991-02', { seq: 1 })); });
+    t.ok('seq (the story order) changes the reading order …', seqA.r.status === 0 && seqB.r.status === 0 &&
+         seqA.D.ids.indexOf('probe-1990-4') < seqA.D.ids.indexOf('side-1991-1') && seqB.D.ids.indexOf('probe-1990-4') > seqB.D.ids.indexOf('side-1991-1'));
+    t.eq('…but no longer Publication order (Side #1 before Probe #4 both times: by number)', [byAlt(seqA), byAlt(seqB)].map(o => o.slice(-2)),
+         [['side-1991-1', 'probe-1990-4'], ['side-1991-1', 'probe-1990-4']]);
+    const tie = scenario('t6-tie', ds => ds.rows.push(side(4, '1991-02')));
+    t.eq('a tie (no date, #4 each) goes by title: Probe (1990) #4 before Side (1991) #4', tie.r.status === 0 && byAlt(tie).slice(-2), ['probe-1990-4', 'side-1991-4']);
+    const gap = { id: 'gap-1991', title: 'A gap in the run', era: 'two', arc: 'b', flags: ['GAPNOTE'], date: { cover: '1991-02' } };
+    const gapAfter = scenario('t6-gap-after', ds => {
+      ds.rows.find(r => r.issueId === 'probe-1990-4').seq = 1;
+      ds.rows.push(Object.assign({}, gap, { seq: 2 }), side(1, '1991-02', { seq: 3, date: { cover: '1991-02', onsale: '1991-01-02', source: 'fixture ledger (invented)' } }));
+    });
+    t.eq('a gap note isn\'t a release: it stays just after the row it follows in the story order (Probe #4), wherever that row sorts',
+         gapAfter.r.status === 0 && byAlt(gapAfter).slice(-3), ['side-1991-1', 'probe-1990-4', 'gap-1991']);
+    const gapFirst = scenario('t6-gap-first', ds => {
+      ds.rows.push(Object.assign({}, gap, { seq: 0 }), side(1, '1991-02', { seq: 1, date: { cover: '1991-02', onsale: '1991-01-02', source: 'fixture ledger (invented)' } }));
+      ds.rows.find(r => r.issueId === 'probe-1990-4').seq = 2;
+    });
+    t.eq('…and when the row before it in the story order is in another month, it opens its month',
+         gapFirst.r.status === 0 && byAlt(gapFirst).slice(-3), ['gap-1991', 'side-1991-1', 'probe-1990-4']);
+  }
   // the build run on its own (tools/ without the app shell, as the verify gate's tests run it): it still builds
   {
     const dir = tmpdir('tools-only');

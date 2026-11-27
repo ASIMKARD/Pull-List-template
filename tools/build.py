@@ -50,6 +50,7 @@ STAMPED = ('styles.css', 'data.js', 'app.js')
 STAMP_RX = re.compile(r'((?:href|src)="\./(?:%s))(?:\?v=[0-9a-f]{12})?(?=")' % '|'.join(re.escape(f) for f in STAMPED))
 
 DATE_RX = re.compile(r'^(\d{4})-(\d{2})(?:-(\d{2}))?$')
+FULL_DATE_RX = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 ISSUE_ID_RX = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 YEAR_TOKEN_RX = re.compile(r'^(1[89]\d\d|20\d\d)$')
 UNSOURCED_RX = re.compile(r'cadence|interpolat|assum', re.I)
@@ -1135,11 +1136,42 @@ def build(dataset_path, previous_datajs=None, keep=None):
                 errs.append('%s: date.source missing (every date is sourced individually)' % w)
             elif UNSOURCED_RX.search(src):
                 errs.append('%s: date.source %r is not a source (no cadence/interpolation)' % (w, src))
+        # the release order's date (T6): the date of record, date.onsale; else a cited ordering
+        # date, date.order {date, source}, used only to order Publication order (John, 20 Nov)
+        r['_release'] = d.get('onsale') if parse_date(d.get('onsale')) else None
+        if 'order' in d:
+            od = d['order']
+            if not isinstance(od, dict) or set(od) - {'date', 'source'}:
+                errs.append('%s: date.order must be {"date": "YYYY-MM-DD", "source": "…"}' % w)
+            else:
+                if not isinstance(od.get('date'), str) or not FULL_DATE_RX.match(od['date']) or parse_date(od['date']) is None:
+                    errs.append('%s: date.order.date must be YYYY-MM-DD' % w)
+                elif d.get('onsale') is None:
+                    r['_release'] = od['date']
+                if not isinstance(od.get('source'), str) or not od['source'].strip():
+                    errs.append('%s: date.order.source missing (an ordering date is cited like any date)' % w)
+                elif UNSOURCED_RX.search(od['source']):
+                    errs.append('%s: date.order.source %r is not a source (no cadence/interpolation)' % (w, od['source']))
+                if d.get('onsale') is not None:
+                    errs.append('%s: date.order is for a row without date.onsale (the date of record orders it)' % w)
         r['_place'] = r['_cover']
         if 'sortDate' in r:
             r['_place'] = parse_date(r['sortDate'])
             if r['_place'] is None:
                 errs.append('%s: sortDate must be YYYY-MM or YYYY-MM-DD' % w)
+        # a story placement (T6): after or before another issue, by a cited note; the row keeps its own date
+        if 'place' in r:
+            pl = r['place']
+            sides = [k for k in ('after', 'before') if isinstance(pl, dict) and k in pl]
+            if not isinstance(pl, dict) or len(sides) != 1 or set(pl) - {'after', 'before', 'source'}:
+                errs.append('%s: place must be {"after": "<issueId>", "source": "…"} or {"before": …}, one of the two' % w)
+            else:
+                if not isinstance(pl[sides[0]], str) or not pl[sides[0]]:
+                    errs.append('%s: place.%s must name an issueId' % (w, sides[0]))
+                if not isinstance(pl.get('source'), str) or not pl['source'].strip():
+                    errs.append('%s: place.source missing (a placement is cited like a date)' % w)
+            if 'sortDate' in r:
+                errs.append('%s: a row may not have both place and sortDate' % w)
         if 'seq' in r and (not isinstance(r['seq'], int) or r['seq'] < 0):
             errs.append('%s: seq must be a non-negative integer' % w)
         if 'importance' in r and r['importance'] not in (1, 2, 3, 4, 5):
@@ -1169,6 +1201,37 @@ def build(dataset_path, previous_datajs=None, keep=None):
     if errs:
         raise BuildError(errs)
 
+    # ---- story placements (T6): each placed row's target, checked before any key is made ----
+    by_iid = {r['issueId']: r for r in rows if r.get('issueId')}
+    placed = [r for r in rows if 'place' in r]
+    for r in placed:
+        w = 'row %s (%s)' % (r.get('id'), r['_src'])
+        side = 'after' if 'after' in r['place'] else 'before'
+        tgt = by_iid.get(r['place'][side])
+        if tgt is None:
+            errs.append('%s: place.%s names unknown issueId %r' % (w, side, r['place'][side]))
+        elif 'ALT' in (tgt.get('flags') or []):
+            errs.append('%s: placed %s %s, an ALT row (ALT rows are walled off from the main order)'
+                        % (w, side, tgt['title']))
+        elif tgt.get('era') != r.get('era'):
+            errs.append('%s: placed %s %s, which is in era %r: a placed row is read in its target\'s era, '
+                        'so give it era %r' % (w, side, tgt['title'], tgt.get('era'), tgt.get('era')))
+        else:
+            r['_target'], r['_side'] = tgt, side
+    for r in placed:                         # follow each chain of targets; a row met twice is a cycle
+        seen, cur = [r], r
+        while '_target' in cur:
+            cur = cur['_target']
+            at = next((k for k, x in enumerate(seen) if x is cur), -1)
+            if at >= 0:
+                loop = seen[at:]
+                if r is min(loop, key=lambda x: x['_order']):       # each cycle reported once
+                    errs.append('placement cycle: %s' % ' → '.join(x['title'] for x in loop + [cur]))
+                break
+            seen.append(cur)
+    if errs:
+        raise BuildError(errs)
+
     # ---- keys: RRRR·YYYYMM·NNN, NNN assigned within era + month ----
     groups = {}
     for r in rows:
@@ -1176,19 +1239,68 @@ def build(dataset_path, previous_datajs=None, keep=None):
         groups.setdefault((r['era'], y, m), []).append(r)
     for (era_id, y, m), grp in groups.items():
         grp.sort(key=lambda r: (r['_place'], r.get('seq', 0), r.get('_eorder', 0), r['_order']))
-        if len(grp) > 999:
-            errs.append('era %s month %04d-%02d holds more than 999 rows' % (era_id, y, m))
         rank = eras[ERA[era_id]]['rank']
         for n, r in enumerate(grp, 1):
             r['_key'] = rank * 10**9 + y * 10**5 + m * 10**3 + n
-    # altKey: pure publication order, YYYYMM·NNN, no era rank
+    # Each placed row then moves to just after (or before) its target and takes the target's era and
+    # month; several rows placed on one target keep their own order, and a chain follows its links.
+    # Without a placement this renumbers every row to the same key.
+    base = sorted(rows, key=lambda r: r['_key'])
+    hang = {}
+    for r in base:
+        if '_target' in r:
+            hang.setdefault((id(r['_target']), r['_side']), []).append(r)
+    story = []
+    def emit(r):
+        for x in hang.get((id(r), 'before'), []):
+            emit(x)
+        story.append(r)
+        for x in hang.get((id(r), 'after'), []):
+            emit(x)
+    for r in base:
+        if '_target' not in r:
+            emit(r)
+    count_in = {}
+    for r in story:
+        root = r
+        while '_target' in root:
+            root = root['_target']
+        y, m, _ = root['_place']
+        g = (root['era'], y, m)
+        count_in[g] = count_in.get(g, 0) + 1
+        r['_key'] = eras[ERA[g[0]]]['rank'] * 10**9 + y * 10**5 + m * 10**3 + count_in[g]
+    for (era_id, y, m), n in count_in.items():
+        if n > 999:
+            errs.append('era %s month %04d-%02d holds more than 999 rows' % (era_id, y, m))
+    # altKey: the release order (T6), YYYYMM·NNN, no era rank. A row stays in its cover month
+    # (a placement doesn't move it) and the month goes by release date: date.onsale, else the
+    # cited date.order; a row with neither comes last; ties go by issue number, then title.
+    # seq is the story order, so it no longer decides this one. A gap or relaunch note isn't a
+    # release: it stays just after the row it follows in the story order when that row is in its
+    # month, and otherwise opens the month.
+    def release(r):
+        nv = num_value(r['num']) if r.get('num') not in (None, '') else None
+        return (r['_cover'], 0 if r['_release'] else 1, r['_release'] or '',
+                (0, nv[0], nv[1]) if nv else (1, '', 0), r.get('title') or '', r['_key'])
+    story_prev = {}
+    for k, r in enumerate(story):
+        story_prev[id(r)] = story[k - 1] if k else None
     pub = {}
     for r in rows:
         y, m, _ = r['_cover']
         pub.setdefault((y, m), []).append(r)
     for (y, m), grp in pub.items():
-        grp.sort(key=lambda r: (r['_cover'], (r.get('date') or {}).get('onsale') or '',
-                                r.get('seq', 0), r['_key']))
+        notes = sorted((r for r in grp if r['_inert']), key=lambda r: r['_key'])
+        grp[:] = sorted((r for r in grp if not r['_inert']), key=release)
+        front = 0
+        for r in notes:
+            prev = story_prev[id(r)]
+            at = next((k for k, x in enumerate(grp) if x is prev), -1)
+            if at >= 0:
+                grp.insert(at + 1, r)
+            else:
+                grp.insert(front, r)
+                front += 1
         if len(grp) > 999:
             errs.append('cover month %04d-%02d holds more than 999 rows' % (y, m))
         for n, r in enumerate(grp, 1):
@@ -1407,7 +1519,14 @@ def build(dataset_path, previous_datajs=None, keep=None):
         # so a retired issue keeps its slot and later positions don't shift
         'retiredIds': sorted(retired),
     }
+    # story placements (T6), only when the data has one, so a tracker without them builds the same data.js:
+    # i is the placed row, t its target, w "after" or "before", s the source
+    placements = [{'i': i, 't': POS[r['_target']['id']], 'w': r['_side'], 's': r['place']['source']}
+                  for i, r in enumerate(rows) if '_target' in r]
+    if placements:
+        payload['placed'] = placements
     report = {'warnings': warns, 'rows': len(rows), 'checkable': len(checkable),
+              'placed': [[r['title'], r['_side'], r['_target']['title']] for r in rows if '_target' in r],
               'eras': len(eras), 'events': events_out, 'creditsCoverage': coverage,
               'durationsCoverage': dur_coverage, 'creators': len(creator_names),
               'versionStart': version_start, 'deliverables': deliverables,

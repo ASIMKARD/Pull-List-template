@@ -3,8 +3,91 @@
 Updated at the end of every step. The next session starts by reading this file,
 `CLAUDE.md`, and Master-Repo `starter/v3/V3-SPEC.md`.
 
-**Harness:** 1765 assertions, 0 failed, 38 suites (T1 + T2, 21 Nov). **Layout suite (real Chromium, in CI too):** 472 checks, 0 failed, 12 suites (T7, 22 Nov: +2 in 10-sweep).
+**Harness:** 1844 assertions, 0 failed, 39 suites (T6, 26 Nov). **Layout suite (real Chromium, in CI too):** 490 checks, 0 failed, 12 suites (T6, 26 Nov: +18 in 10-sweep).
 Session 1 ended at 307, session 2 at 617, session 3 at 1105, session 4 at 1298 (+ 153 layout checks), session 5 at 1472 (+ 267 layout checks), session 6 at 1547 (+ 353), session 7 at 1645 (+ 409) and session 8's template work at 1720 (+ 468).
+
+---
+
+## 26 Nov 2026 — T6: story placements across months, and a clean release order (John, from Green Lantern #2)
+
+- **Decided (John, 18 and 20 Nov):** the reading order is the story order; Publication order is the release order.
+  - The design note is in Research-Repo's Green Lantern session folder (t6-design.md). John approved it on 20 Nov with four choices:
+    1. "between A and B" lands nearest the row's own date;
+    2. the release date is `date.order` with a citation;
+    3. "before the epilogue of" means before the whole issue;
+    4. the reader sees a "Placed after …" line.
+  - Its own template PR, after Green Lantern's stage-2 sub-eras, merged before that tracker's go-live v1 (22 Nov).
+- **Data (`schema/dataset.schema.json`):**
+  - `rows[].place`: `{after|before: <issueId>, source}`;
+  - `date.order`: `{date: YYYY-MM-DD, source}`, a cited release date for a row without `date.onsale`.
+- **The build (`tools/build.py`):**
+  - Each placed row moves to just after (or before) its target, taking the target's era and month in its key, renumbered. Several rows on one target keep their own order, and chains follow their links.
+  - The numbering check runs on the placed order.
+  - It fails on an unknown target, a cycle, an ALT target, a target in another era, `place` with `sortDate`, `place` or `date.order` without a source, a malformed `date.order`, and `date.order` beside `date.onsale` (11 new `broken/` cases).
+  - `altKey` ignores `place`. A cover month sorts by `date.onsale`, else `date.order`; a row with neither comes last; ties go by issue number, then title. `seq` no longer decides it.
+  - `data.js` gains `placed` only when the data has a placement. The report lists them.
+- **The app (`HAS.place`):**
+  - in the reading order, a "Placed after …" line on the row with a "source" button that opens the note (both frames);
+  - none in Publication or arc order, and none in Table view;
+  - the line and its source on the Reading card;
+  - help copy in Settings → About.
+- **The workbook:** Order date, Order date source and Placed columns (33 in all).
+- **Beyond the design, for John's check:**
+  1. **A placed row must be in its target's era.** The app has one era per row and draws Publication order era by era, so the row is in the target's era in both orders. The build fails otherwise, naming the era to give it.
+  2. **Gap and relaunch notes in the release order:** a note isn't a release. It stays just after the row it follows in the story order when that row shares its cover month, and otherwise opens the month. This keeps every fixture's notes where they were, and puts Green Lantern's Absolute note after Green Lantern (2023) #22 in both orders.
+  3. **Table view leaves the line out.** Table view draws one line a row and hides note lines with CSS. The placement line holds a control, which must never be hidden (`50-table` caught it), so it isn't drawn. With placements in the data, toggling Table view redraws the list.
+  4. **Order date in the workbook, and the About copy.** The cited ordering date gets its own two columns. The help copy is the capability's tracker-wide control, so `9f-visibility`'s self-test can force it, and it is visible even where a placement moves nothing.
+  5. **`date.order` beside `date.onsale` fails,** since the date of record already orders the row.
+- **Fixtures:**
+  - `basic`: Fixture Hero: Quiet Storm is placed after Fixture Hero (1980) #29, a placement the order already agrees with. Nothing moves, `dataVersion` is unchanged, and the line shows (`sig-v9` and `no-periods` share the rows).
+  - The real moves are built in `20-build` and `9n-placement`.
+- **Publication order in the fixtures:** `basic`'s undated same-month rows now go by issue number (9 rows move). The template's own data, `mixed` and `pull-ref` keep theirs. Every reading-order key is unchanged without a placement.
+- **Tests:**
+  - harness 1844 (+79): `20-build` +28, `60-validation` +11, `10-schema` +11, `24-workbook` +2, the new `9n-placement` 27;
+  - layout 490 (+18, `10-sweep`: the line at 320, 360 and 390 px in every skin and with large text and buttons);
+  - `47-frame-v9` unchanged.
+- **Proved by putting each bug back** (32 bugs, each caught; every file restored and the suites clean after):
+
+  | Bug put back | Checks that fail |
+  |---|---|
+  | the placed row isn't moved | 6 |
+  | the placed row keeps its own month (not the target's) | 11 |
+  | several rows on one target in reverse order | 2 |
+  | the numbering check reads the order before placement | 1 |
+  | a placement is emitted as data even when there is none | 2 |
+  | an unknown target is ignored | 1 |
+  | an ALT target is allowed | 1 |
+  | a target in another era is allowed | 1 |
+  | a cycle isn't reported | 1 |
+  | place with sortDate is allowed | 1 |
+  | place without a source is allowed | 1 |
+  | date.order without a source is allowed | 1 |
+  | date.order with date.onsale is allowed | 1 |
+  | date.order's date isn't checked | 1 |
+  | Publication order follows the placement | 5 |
+  | a blank sorts first (as before T6) | 3 |
+  | the cited ordering date is ignored | 1 |
+  | seq still decides Publication order | 1 |
+  | ties ignore the issue number | 2 |
+  | a gap note sorts like an undated issue | 1 |
+  | the line isn't drawn | 8 |
+  | the line shows in every order | 2 |
+  | Table view draws the line | 1 |
+  | "source" doesn't open the note | 4 |
+  | the Reading card has no line | 1 |
+  | the v9 frame's row has no line | 1 |
+  | the capability is always on | 3 |
+  | the About help is missing | 3 |
+  | the Placed column is empty | 2 |
+  | the order date columns are empty | 1 |
+  | Table view hides the line with CSS (the guard) | 1 |
+  | the line's source button is too small (10-sweep) | 18 |
+- **On Green Lantern's data** (a scratch copy at its `8e55264`, with the two placements John approved and the GCD dates stage 1 used):
+  - only Hal Jordan and the GLC: Rebirth #1 and Green Lantern (2021) Annual #1 move;
+  - 381 of 381 rows have a release date (22 DC Database, 358 GCD, 1 DC.com);
+  - Publication order goes from 3 neighbouring pairs against their release dates to 0, with 12 rows moved;
+  - the gate passes.
+- **Trackers:** each picks this up when it next copies the template. A tracker without `place` builds the same reading order and `dataVersion`. Its Publication order changes only where a month mixes dated and undated rows, or undated rows whose `seq` ran against their numbers.
 
 ---
 
